@@ -38,6 +38,9 @@ static int client_id;
 static int supported_operation[6] = {0};
 struct device device_list[128] = {0};
 int device_count = 0;
+static int is_fragmented_packet = 0;
+static int fragment_size;
+static struct stream* splitted_packet;
 
 /*****************************************************************************/
 int APP_CC
@@ -133,34 +136,85 @@ dev_redir_data_in(struct stream* s, int chan_id, int chan_flags, int length,
   int component;
   int packetId;
   int result;
+  struct stream* packet;
+
+  if(length != total_length)
+  {
+  	log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_data_in]: "
+  			"packet is fragmented");
+  	if(is_fragmented_packet == 0)
+  	{
+  		log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_data_in]: "
+  				"packet is fragmented : first part");
+  		is_fragmented_packet = 1;
+  		fragment_size = length;
+  		make_stream(splitted_packet);
+  		init_stream(splitted_packet, total_length);
+  		g_memcpy(splitted_packet->p,s->p, length );
+  		log_hexdump(&log_conf, LOG_LEVEL_DEBUG, s->p, length);
+  		return 0;
+  	}
+  	else
+  	{
+  		g_memcpy(splitted_packet->p+fragment_size, s->p, length );
+  		fragment_size += length;
+  		printf("total length : %i, length = %i, fragment_size : %i\n",total_length, length, fragment_size);
+  		if (fragment_size == total_length )
+  		{
+    		log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_data_in]: "
+    				"packet is fragmented : last part");
+  			packet = splitted_packet;
+  		}
+  		else
+  		{
+    		log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_data_in]: "
+    				"packet is fragmented : next part");
+  			return 0;
+  		}
+  	}
+  }
+  else
+  {
+  	packet = s;
+  }
   log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_data_in]: data received:");
-  log_hexdump(&log_conf, LOG_LEVEL_DEBUG, s->p, length);
-  in_uint16_le(s, component);
-  in_uint16_le(s, packetId);
+  log_hexdump(&log_conf, LOG_LEVEL_DEBUG, packet->p, total_length);
+  in_uint16_le(packet, component);
+  in_uint16_le(packet, packetId);
   log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_data_in]: component=0x%04x packetId=0x%04x", component, packetId);
   if ( component == RDPDR_CTYP_CORE )
   {
     switch (packetId)
     {
     case PAKID_CORE_CLIENTID_CONFIRM :
-      return dev_redir_clientID_confirm(s);
+      result = dev_redir_clientID_confirm(packet);
+      break;
 
     case PAKID_CORE_CLIENT_NAME :
-      return dev_redir_client_name(s);
+    	result =  dev_redir_client_name(packet);
+    	break;
 
     case PAKID_CORE_CLIENT_CAPABILITY:
-      return dev_redir_client_capability(s);
+    	result = dev_redir_client_capability(packet);
+    	break;
 
     case PAKID_CORE_DEVICELIST_ANNOUNCE:
-      return dev_redir_devicelist_announce(s);
+    	result = dev_redir_devicelist_announce(packet);
       break;
 
     default:
       log_message(&log_conf, LOG_LEVEL_WARNING, "rdpdr channel[dev_redir_data_in]: unknown message");
-      return 1;
+      result = 1;
     }
+    if(is_fragmented_packet == 1)
+    {
+    	is_fragmented_packet = 0;
+    	fragment_size = 0;
+    	free_stream(packet);
+    }
+
   }
-  return 0;
+  return result;
 }
 
 /*****************************************************************************/

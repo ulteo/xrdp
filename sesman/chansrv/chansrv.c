@@ -199,6 +199,7 @@ process_message_channel_setup(struct stream* s)
   g_rdpdr_chan_id = -1;
   LOG(10, ("process_message_channel_setup:"));
   in_uint16_le(s, num_chans);
+  user_channel_do_up();
   LOG(10, ("process_message_channel_setup: num_chans %d", num_chans));
   for (index = 0; index < num_chans; index++)
   {

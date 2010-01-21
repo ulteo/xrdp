@@ -37,7 +37,6 @@ user_channel_send( int chan_id, char* mess, int size){
   int rv;
 
   rv = send_channel_data(chan_id, mess, size);
-  printf("comp : %i, %i\n",size, rv);
   log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_send]: "
   		"message sended: %s", mess);
   return rv;
@@ -49,7 +48,6 @@ user_channel_transmit(int socket, char* mess, int size )
 {
   struct stream* s;
   int rv;
-  printf("size : %i\n",size);
   make_stream(s);
   init_stream(s, 1024);
   out_uint32_be(s, size);
@@ -68,22 +66,41 @@ user_channel_transmit(int socket, char* mess, int size )
 	return rv;
 }
 
+
+/*****************************************************************************/
+int APP_CC
+user_channel_do_up()
+{
+	g_sprintf(socket_name, "/tmp/channel_socket%s",getenv("DISPLAY"));
+	user_channel_socket = g_create_unix_socket(socket_name);
+	g_chmod_hex(socket_name, 0xFFFF);
+	g_user_channel_up = 1;
+	return 0;
+}
+
+
 /*****************************************************************************/
 int APP_CC
 user_channel_init(char* channel_name, int channel_id)
 {
+	int i;
+	for( i=0 ; i<channel_count; i++)
+	{
+		if(strcmp(user_channels[i].channel_name, channel_name) == 0)
+		{
+			log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
+					"new connection for channel %s with id= %i", user_channels[i].channel_name, channel_id);
+			user_channels[i].channel_id = channel_id;
+			channel_count++;
+			return 0;
+		}
+	}
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
+			"new client connection for channel %s with id= %i (no server)", user_channels[i].channel_name, channel_id);
 	user_channels[channel_count].channel_id = channel_id;
 	g_strcpy(user_channels[channel_count].channel_name, channel_name);
 	user_channels[channel_count].channel_socket = 0;
 	channel_count++;
-
-	if(g_user_channel_up == 0)
-	{
-		g_sprintf(socket_name, "/tmp/channel_socket%s",getenv("DISPLAY"));
-		user_channel_socket = g_create_unix_socket(socket_name);
-		g_chmod_hex(socket_name, 0xFFFF);
-		g_user_channel_up = 1;
-	}
 	return 0;
 }
 
@@ -110,11 +127,16 @@ user_channel_data_in(struct stream* s, int chan_id, int chan_flags, int length,
 		{
 			size = s->end - s->p;
 			g_strncpy(buf, (char*)s->p, size+1);
-		  printf("data size : %i\n",size);
-		  printf("data : %s\n", buf);
 		  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_data_in]: "
 		  		"new client message for channel %s ",user_channels[i].channel_name);
 			log_hexdump(&log_conf, LOG_LEVEL_DEBUG, buf, size);
+			if(user_channels[i].channel_socket == 0 )
+			{
+			  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_data_in]: "
+			  		"server channel is not opened");
+			  s->p+=s->size+1;
+				return 0;
+			}
 			user_channel_transmit(user_channels[i].channel_socket, buf, size );
 			return 0;
 		}
@@ -209,10 +231,19 @@ user_channel_process_channel_opening(int client)
 		if(strcmp(user_channels[i].channel_name, s->data) == 0)
 		{
 			log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
-					"new connection for channel %s ", user_channels[i].channel_name);
+					"new server connection for channel %s ", user_channels[i].channel_name);
 			user_channels[i].channel_socket = client;
+			printf("socket : %i\n",user_channels[i].channel_id);
+			return 0;
 		}
 	}
+	/* the channel did not exist */
+	user_channels[channel_count].channel_id = -1;
+	g_strcpy(user_channels[channel_count].channel_name, s->data);
+	user_channels[channel_count].channel_socket = client;
+	channel_count++;
+	return 0;
+
 
 	free_stream(s);
 }
@@ -257,6 +288,13 @@ user_channel_check_wait_objs(void)
     	  		"data : %s\n",s->data);
 				log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
 						"data received : %s",s->data);
+				if( user_channels[i].channel_id == -1)
+				{
+					log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
+					    	  		"client channel is not opened");
+					free_stream(s);
+					return 0 ;
+				}
 				user_channel_send(user_channels[i].channel_id, s->data, size);
 			}
 			else

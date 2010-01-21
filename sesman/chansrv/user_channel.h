@@ -32,6 +32,8 @@ struct user_channel
 	int channel_socket;
 };
 
+int APP_CC
+user_channel_do_up();
 
 int APP_CC
 user_channel_init(char* channel_name, int channel_id);
