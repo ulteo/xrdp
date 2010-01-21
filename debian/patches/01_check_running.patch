@@ -1,0 +1,22 @@
+--- a/instfiles/xrdp.sh
++++ b/instfiles/xrdp.sh
+@@ -46,8 +46,7 @@
+ 
+ is_xrdp_running()
+ {
+-  ps u --noheading -C xrdp | grep -q -i xrdp
+-  if test $? -eq 0
++  if [ -s /var/run/xrdp.pid ] && kill -0 $(cat /var/run/xrdp.pid) >/dev/null 2>&1
+   then
+     return 1;
+   else
+@@ -57,8 +56,7 @@
+ 
+ is_sesman_running()
+ {
+-  ps u --noheading -C xrdp-sesman | grep -q -i xrdp-sesman
+-  if test $? -eq 0
++  if [ -s /var/run/xrdp.pid ] && kill -0 $(cat /var/run/xrdp.pid) >/dev/null 2>&1
+   then
+     return 1;
+   else
