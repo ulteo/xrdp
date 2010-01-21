@@ -113,6 +113,14 @@ scp_session_set_width(struct SCP_SESSION* s, tui16 w)
 
 /*******************************************************************/
 int
+scp_session_set_keylayout(struct SCP_SESSION* s, tui16 w)
+{
+  s->keylayout = w;
+  return 0;
+}
+
+/*******************************************************************/
+int
 scp_session_set_bpp(struct SCP_SESSION* s, tui8 bpp)
 {
   switch (bpp)

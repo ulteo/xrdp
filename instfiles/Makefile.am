@@ -1,6 +1,7 @@
 
 SUBDIRS = \
-  pam.d
+  pam.d \
+  Xserver
 
 startscriptdir=$(sysconfdir)/xrdp
 
@@ -13,6 +14,14 @@ startscript_DATA = \
   km-0419.ini \
   km-041d.ini
 
+startinitdir=$(sysconfdir)/init.d
+
+startinit_DATA = \
+  xrdp.sh
+
 # must be tab below
 install-data-hook:
-	chmod 755 $(DESTDIR)$(sysconfdir)/xrdp/xrdp.sh
+	chmod 755 $(DESTDIR)$(sysconfdir)/init.d/xrdp.sh
+
+EXTRA_DIST = \
+  $(startscript_DATA)

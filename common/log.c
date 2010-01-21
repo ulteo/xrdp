@@ -105,6 +105,15 @@ log_lvl2str(int lvl, char* str)
 int DEFAULT_CC
 log_message(struct log_config* l_cfg, const unsigned int lvl, const char* msg, ...)
 {
+  if (l_cfg->enable_syslog  && (lvl > l_cfg->syslog_level))
+  {
+    return 0;
+  }
+  if (lvl > l_cfg->log_level)
+  {
+    return 0;
+  }
+
   char buff[LOG_BUFFER_SIZE + 31]; /* 19 (datetime) 4 (space+cr+lf+\0) */
   va_list ap;
   int len = 0;
@@ -157,7 +166,7 @@ log_message(struct log_config* l_cfg, const unsigned int lvl, const char* msg, .
     #endif
   #endif
 
-  if (l_cfg->enable_syslog  && (lvl <= l_cfg->log_level))
+  if (l_cfg->enable_syslog  && (lvl <= l_cfg->syslog_level))
   {
     /* log to syslog */
     syslog(log_xrdp2syslog(lvl), buff + 20);
@@ -293,4 +302,68 @@ log_text2level(char* buf)
     return LOG_LEVEL_INFO;
   }
   return LOG_LEVEL_DEBUG;
+}
+
+/*****************************************************************************/
+int DEFAULT_CC
+log_text2bool(char* s)
+{
+  if (0 == g_strcasecmp(s, "1") ||
+      0 == g_strcasecmp(s, "true") ||
+      0 == g_strcasecmp(s, "yes"))
+  {
+    return 1;
+  }
+  return 0;
+}
+
+
+/* produce a hex dump */
+void DEFAULT_CC
+log_hexdump(struct log_config* l_cfg, const unsigned int lvl, unsigned char *p, unsigned int len)
+{
+  if (l_cfg->enable_syslog  && (lvl > l_cfg->syslog_level))
+  {
+    return ;
+  }
+  if (lvl > l_cfg->log_level)
+  {
+    return ;
+  }
+  unsigned char *line = p;
+  char* dump = g_malloc(128, 1);
+  char* dump_offset = dump;
+  int size;
+  int i, thisline, offset = 0;
+
+  while (offset < len)
+  {
+    size = g_sprintf(dump_offset, "%04x ", offset);
+    dump_offset += size;
+
+    thisline = len - offset;
+    if (thisline > 16)
+      thisline = 16;
+    for (i = 0; i < thisline; i++)
+    {
+      size = g_sprintf(dump_offset, "%02x ", line[i]);
+      dump_offset += size;
+    }
+    for (; i < 16; i++)
+    {
+      size = g_sprintf(dump_offset, "   ");
+      dump_offset += size;
+    }
+    for (i = 0; i < thisline; i++)
+    {
+      size = g_sprintf(dump_offset, "%c", (line[i] >= 0x20 && line[i] < 0x7f) ? line[i] : '.');
+      dump_offset += size;
+    }
+    dump_offset = 0;
+    log_message(l_cfg, lvl, dump );
+    dump_offset = dump;
+    offset += thisline;
+    line += thisline;
+  }
+  g_free(dump);
 }

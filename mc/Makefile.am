@@ -11,7 +11,8 @@ INCLUDES = \
 lib_LTLIBRARIES = \
   libmc.la
 
-libmc_la_SOURCES = mc.c
+libmc_la_SOURCES = \
+  mc.c mc.h
 
 libmc_la_LIBADD = \
-  $(top_srcdir)/common/libcommon.la
+  $(top_builddir)/common/libcommon.la

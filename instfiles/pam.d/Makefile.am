@@ -17,3 +17,6 @@ pamddir=$(sysconfdir)/pam.d
 
 pamd_DATA = \
   $(PAMFILE)
+
+EXTRA_DIST = \
+  xrdp-sesman

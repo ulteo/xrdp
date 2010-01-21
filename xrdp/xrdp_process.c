@@ -173,6 +173,8 @@ xrdp_process_main_loop(struct xrdp_process* self)
         break;
       }
     }
+    xrdp_mm_send_disconnect(self->wm->mm);
+
     g_delete_wait_obj_from_socket(sck_obj);
     libxrdp_disconnect(self->session);
   }

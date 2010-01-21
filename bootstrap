@@ -1,5 +1,7 @@
 #!/bin/sh
 
+BZR_VERSION=`bzr version-info |grep revno|sed "s/revno: //g"`
+
 which autoconf
 if ! test $? -eq 0
 then
@@ -27,4 +29,6 @@ touch AUTHORS
 touch README
 touch ChangeLog
 ln -s ../config.c $PWD/sesman/tools/config.c
-autoreconf -fvi
+sed -e "s/0.5.0/0.5.$BZR_VERSION/g" < configure.ac.in > configure.ac
+autoreconf -fvi 
+

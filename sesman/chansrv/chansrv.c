@@ -17,6 +17,7 @@
    Copyright (C) Jay Sorg 2009
 */
 
+#include "log.h"
 #include "arch.h"
 #include "os_calls.h"
 #include "thread_calls.h"
@@ -26,6 +27,8 @@
 #include "sound.h"
 #include "clipboard.h"
 #include "devredir.h"
+#include "seamrdp.h"
+#include "user_channel.h"
 #include "list.h"
 #include "file.h"
 #include "file_loc.h"
@@ -37,16 +40,18 @@ static int g_num_chan_items = 0;
 static int g_cliprdr_index = -1;
 static int g_rdpsnd_index = -1;
 static int g_rdpdr_index = -1;
+static int g_seamrdp_index = -1;
 
 static tbus g_term_event = 0;
 static tbus g_thread_done_event = 0;
-
+char* username = 0;
 static int g_use_unix_socket = 0;
-
+struct log_config log_conf;
 int g_display_num = 0;
 int g_cliprdr_chan_id = -1; /* cliprdr */
 int g_rdpsnd_chan_id = -1; /* rdpsnd */
 int g_rdpdr_chan_id = -1; /* rdpdr */
+int g_seamrdp_chan_id = -1; /* seamrdp */
 
 /*****************************************************************************/
 /* returns error */
@@ -89,11 +94,14 @@ send_channel_data(int chan_id, char* data, int size)
     out_uint32_le(s, total_size);
     out_uint8a(s, data + sent, size);
     s_mark_end(s);
+    printf("data  : %s\n",data);
     rv = trans_force_write(g_con_trans);
     if (rv != 0)
     {
       break;
     }
+  	printf("error\n");
+
     sent += size;
     s = trans_get_out_s(g_con_trans, 8192);
   }
@@ -201,11 +209,13 @@ process_message_channel_setup(struct stream* s)
     in_uint16_le(s, ci->flags);
     LOG(10, ("process_message_channel_setup: chan name '%s' "
              "id %d flags %8.8x", ci->name, ci->id, ci->flags));
+    printf("channel_name : %s\n", ci->name);
     if (g_strcasecmp(ci->name, "cliprdr") == 0)
     {
       g_cliprdr_index = g_num_chan_items;
       g_cliprdr_chan_id = ci->id;
     }
+
     else if (g_strcasecmp(ci->name, "rdpsnd") == 0)
     {
       g_rdpsnd_index = g_num_chan_items;
@@ -215,6 +225,15 @@ process_message_channel_setup(struct stream* s)
     {
       g_rdpdr_index = g_num_chan_items;
       g_rdpdr_chan_id = ci->id;
+    }
+    else if (g_strcasecmp(ci->name, "seamrdp") == 0)
+    {
+      g_seamrdp_index = g_num_chan_items;
+      g_seamrdp_chan_id = ci->id;
+    }
+    else
+    {
+    	user_channel_init(ci->name, ci->id);
     }
     g_num_chan_items++;
   }
@@ -230,6 +249,10 @@ process_message_channel_setup(struct stream* s)
   if (g_rdpdr_index >= 0)
   {
     dev_redir_init();
+  }
+  if (g_seamrdp_index >= 0)
+  {
+    seamrdp_init();
   }
   return rv;
 }
@@ -265,6 +288,14 @@ process_message_channel_data(struct stream* s)
     else if (chan_id == g_rdpdr_chan_id)
     {
       rv = dev_redir_data_in(s, chan_id, chan_flags, length, total_length);
+    }
+    else if (chan_id == g_seamrdp_chan_id)
+    {
+      rv = seamrdp_data_in(s, chan_id, chan_flags, length, total_length);
+    }
+    else
+    {
+      rv = user_channel_data_in(s, chan_id, chan_flags, length, total_length);
     }
   }
   return rv;
@@ -435,7 +466,6 @@ channel_thread_loop(void* in_val)
   int timeout;
   int error;
   THREAD_RV rv;
-
   LOG(1, ("channel_thread_loop: thread start"));
   rv = 0;
   error = setup_listen();
@@ -454,10 +484,12 @@ channel_thread_loop(void* in_val)
         clipboard_deinit();
         sound_deinit();
         dev_redir_deinit();
+        seamrdp_deinit();
         break;
       }
       if (g_lis_trans != 0)
       {
+        printf("username : %s\n",username);
         if (trans_check_wait_objs(g_lis_trans) != 0)
         {
           LOG(0, ("channel_thread_loop: trans_check_wait_objs error"));
@@ -472,10 +504,10 @@ channel_thread_loop(void* in_val)
           clipboard_deinit();
           sound_deinit();
           dev_redir_deinit();
-          /* delete g_con_trans */
+          seamrdp_deinit();
+
           trans_delete(g_con_trans);
           g_con_trans = 0;
-          /* create new listener */
           error = setup_listen();
           if (error != 0)
           {
@@ -486,6 +518,8 @@ channel_thread_loop(void* in_val)
       clipboard_check_wait_objs();
       sound_check_wait_objs();
       dev_redir_check_wait_objs();
+      seamrdp_check_wait_objs();
+      user_channel_check_wait_objs();
       timeout = 0;
       num_objs = 0;
       objs[num_objs] = g_term_event;
@@ -495,6 +529,9 @@ channel_thread_loop(void* in_val)
       clipboard_get_wait_objs(objs, &num_objs, &timeout);
       sound_get_wait_objs(objs, &num_objs, &timeout);
       dev_redir_get_wait_objs(objs, &num_objs, &timeout);
+      seamrdp_get_wait_objs(objs, &num_objs, &timeout);
+      user_channel_get_wait_objs(objs, &num_objs, &timeout);
+
     }
   }
   trans_delete(g_lis_trans);
@@ -620,6 +657,60 @@ read_ini(void)
   return 0;
 }
 
+
+/*****************************************************************************/
+static int APP_CC
+read_logging_conf(void)
+{
+  char filename[256];
+  struct list* names;
+  struct list* values;
+  char* name;
+  char* value;
+  int index;
+
+  log_conf.program_name = g_strdup("chansrv");
+  log_conf.log_file = 0;
+  log_conf.fd = 0;
+  log_conf.log_level = LOG_LEVEL_DEBUG;
+  log_conf.enable_syslog = 0;
+  log_conf.syslog_level = LOG_LEVEL_DEBUG;
+
+  names = list_create();
+  names->auto_free = 1;
+  values = list_create();
+  values->auto_free = 1;
+  g_snprintf(filename, 255, "%s/sesman.ini", XRDP_CFG_PATH);
+  if (file_by_name_read_section(filename, CHAN_CFG_LOGGING, names, values) == 0)
+  {
+    for (index = 0; index < names->count; index++)
+    {
+      name = (char*)list_get_item(names, index);
+      value = (char*)list_get_item(values, index);
+      if (0 == g_strcasecmp(name, CHAN_CFG_LOG_FILE))
+      {
+        log_conf.log_file = g_strdup(value);
+      }
+      if (0 == g_strcasecmp(name, CHAN_CFG_LOG_LEVEL))
+      {
+        log_conf.log_level = log_text2level(value);
+      }
+      if (0 == g_strcasecmp(name, CHAN_CFG_LOG_ENABLE_SYSLOG))
+      {
+        log_conf.enable_syslog = log_text2bool(value);
+      }
+      if (0 == g_strcasecmp(name, CHAN_CFG_LOG_SYSLOG_LEVEL))
+      {
+        log_conf.syslog_level = log_text2level(value);
+      }
+    }
+  }
+  list_delete(names);
+  list_delete(values);
+  return 0;
+}
+
+
 /*****************************************************************************/
 int DEFAULT_CC
 main(int argc, char** argv)
@@ -627,9 +718,11 @@ main(int argc, char** argv)
   int pid;
   char text[256];
   char* display_text;
-
+  username = argv[1];
   g_init(); /* os_calls */
   read_ini();
+  read_logging_conf();
+  log_start(&log_conf);
   pid = g_getpid();
   LOG(1, ("main: app started pid %d(0x%8.8x)", pid, pid));
   g_signal_kill(term_signal_handler); /* SIGKILL */
@@ -672,3 +765,75 @@ main(int argc, char** argv)
   LOG(1, ("main: app exiting pid %d(0x%8.8x)", pid, pid));
   return 0;
 }
+
+
+
+
+/*****************************************************************************/
+int APP_CC
+in_unistr(struct stream* s, char *string, int str_size, int in_len)
+{
+#ifdef HAVE_ICONV
+  size_t ibl = in_len, obl = str_size - 1;
+  char *pin = (char *) s->p, *pout = string;
+  static iconv_t iconv_h = (iconv_t) - 1;
+
+  if (g_iconv_works)
+  {
+    if (iconv_h == (iconv_t) - 1)
+    {
+      if ((iconv_h = iconv_open(g_codepage, WINDOWS_CODEPAGE)) == (iconv_t) - 1)
+      {
+        log_message(&log_conf, LOG_LEVEL_WARNING, "rdpdr channel[rdp_in_unistr]: iconv_open[%s -> %s] fail %p",
+					WINDOWS_CODEPAGE, g_codepage, iconv_h);
+        g_iconv_works = False;
+        return rdp_in_unistr(s, string, str_size, in_len);
+      }
+    }
+
+    if (iconv(iconv_h, (ICONV_CONST char **) &pin, &ibl, &pout, &obl) == (size_t) - 1)
+    {
+      if (errno == E2BIG)
+      {
+        log_message(&log_conf, LOG_LEVEL_WARNING, "rdpdr channel[rdp_in_unistr]: server sent an unexpectedly long string, truncating");
+      }
+      else
+      {
+        iconv_close(iconv_h);
+        iconv_h = (iconv_t) - 1;
+        log_message(&log_conf, LOG_LEVEL_WARNING, "rdpdr channel[rdp_in_unistr]: iconv fail, errno %d\n", errno);
+        g_iconv_works = False;
+        return rdp_in_unistr(s, string, str_size, in_len);
+      }
+    }
+
+    /* we must update the location of the current STREAM for future reads of s->p */
+    s->p += in_len;
+    *pout = 0;
+    return pout - string;
+  }
+  else
+#endif
+  {
+    int i = 0;
+    int len = in_len / 2;
+    int rem = 0;
+
+    if (len > str_size - 1)
+    {
+      log_message(&log_conf, LOG_LEVEL_WARNING, "rdpdr channel[rdp_in_unistr]: server sent an unexpectedly long string, truncating\n");
+      len = str_size - 1;
+      rem = in_len - 2 * len;
+    }
+    while (i < len)
+    {
+      in_uint8a(s, &string[i++], 1);
+      in_uint8s(s, 1);
+    }
+    in_uint8s(s, rem);
+    string[len] = 0;
+    return len;
+  }
+}
+
+

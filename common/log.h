@@ -25,7 +25,7 @@
 #include "arch.h"
 
 /* logging buffer size */
-#define LOG_BUFFER_SIZE      1024
+#define LOG_BUFFER_SIZE      2048
 
 /* logging levels */
 #define LOG_LEVEL_ALWAYS        0
@@ -63,16 +63,12 @@ struct log_config
   pthread_mutexattr_t log_lock_attr;
 };
 
-/**
- *
- * @brief Logs a message. Optionally logs the same message on syslog
- * @param lvl The level of the logged message
- * @param msg The message to be logged
- * @return
- *
- */
+void DEFAULT_CC
+log_hexdump(struct log_config* l_cfg, const unsigned int lvl, unsigned char *p, unsigned int len);
+
 int DEFAULT_CC
 log_message(struct log_config* l_cfg, const unsigned int lvl, const char* msg, ...);
+
 
 /**
  *
@@ -102,6 +98,9 @@ log_end(struct log_config* l_cfg);
  */
 int DEFAULT_CC
 log_text2level(char* s);
+
+int DEFAULT_CC
+log_text2bool(char *s);
 
 #endif
 

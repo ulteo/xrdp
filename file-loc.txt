@@ -31,6 +31,9 @@ default build will install the following
   xrdp.ini
   xrdp.sh
 
+/etc/init.d/
+  xrdp.sh
+
 /etc/pam.d/
   xrdp-sesman
 

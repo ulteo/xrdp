@@ -11,7 +11,9 @@ INCLUDES = \
 lib_LTLIBRARIES = \
   libvnc.la
 
-libvnc_la_SOURCES = vnc.c
+libvnc_la_SOURCES = \
+  vnc.c \
+  vnc.h
 
 libvnc_la_LIBADD = \
-  $(top_srcdir)/common/libcommon.la
+  $(top_builddir)/common/libcommon.la

@@ -12,7 +12,7 @@ lib_LTLIBRARIES = \
   libxrdp.la
 
 libxrdp_la_SOURCES = \
-  libxrdp.c \
+  libxrdp.c libxrdp.h libxrdpinc.h \
   xrdp_channel.c \
   xrdp_iso.c \
   xrdp_mcs.c \
@@ -23,4 +23,4 @@ libxrdp_la_SOURCES = \
   xrdp_bitmap_compress.c
 
 libxrdp_la_LIBADD = \
-  $(top_srcdir)/common/libcommon.la
+  $(top_builddir)/common/libcommon.la

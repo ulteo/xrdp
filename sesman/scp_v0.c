@@ -41,11 +41,12 @@ scp_v0_process(struct SCP_CONNECTION* c, struct SCP_SESSION* s)
 
   if (data)
   {
-    s_item = session_get_bydata(s->username, s->width, s->height, s->bpp, s->type);
+    s_item = session_get_bydata(s->username, s->width, s->height, s->bpp);
     if (s_item != 0)
     {
       display = s_item->display;
       auth_end(data);
+      session_update_status_by_user(s->username, SESMAN_SESSION_STATUS_ACTIVE);
       /* don't set data to null here */
     }
     else
@@ -59,14 +60,14 @@ scp_v0_process(struct SCP_CONNECTION* c, struct SCP_SESSION* s)
           log_message(&(g_cfg->log), LOG_LEVEL_INFO, "starting Xvnc session...");
           display = session_start(s->width, s->height, s->bpp, s->username,
                                   s->password, data, SESMAN_SESSION_TYPE_XVNC,
-                                  s->domain, s->program, s->directory);
+                                  s->domain, s->program, s->directory, s->keylayout);
         }
         else
         {
           log_message(&(g_cfg->log), LOG_LEVEL_INFO, "starting X11rdp session...");
           display = session_start(s->width, s->height, s->bpp, s->username,
                                   s->password, data, SESMAN_SESSION_TYPE_XRDP,
-                                  s->domain, s->program, s->directory);
+                                  s->domain, s->program, s->directory, s->keylayout);
         }
       }
       else

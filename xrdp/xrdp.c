@@ -468,7 +468,7 @@ main(int argc, char** argv)
       g_writeln("");
       g_writeln("Usage: xrdp [options]");
       g_writeln("   -h: show help");
-      g_writeln("   -nodaemon: don't fork into background");
+      g_writeln("   --nodaemon: don't fork into background");
       g_writeln("   -kill: shut down xrdp");
       g_writeln("");
       g_exit(0);

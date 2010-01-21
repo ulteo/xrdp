@@ -27,6 +27,12 @@
 
 #include "arch.h"
 
+struct token
+{
+  char str[128];
+  struct token* next;
+};
+
 void APP_CC
 g_init(void);
 void APP_CC
@@ -37,7 +43,7 @@ void APP_CC
 g_free(void* ptr);
 void DEFAULT_CC
 g_printf(const char *format, ...);
-void DEFAULT_CC
+int DEFAULT_CC
 g_sprintf(char* dest, const char* format, ...);
 void DEFAULT_CC
 g_snprintf(char* dest, int len, const char* format, ...);
@@ -57,6 +63,10 @@ int APP_CC
 g_tcp_set_no_delay(int sck);
 int APP_CC
 g_tcp_socket(void);
+int APP_CC
+g_wait_connection(int server_socket);
+int APP_CC
+g_create_unix_socket(const char *socket_name);
 int APP_CC
 g_tcp_local_socket(void);
 void APP_CC
@@ -180,6 +190,8 @@ int APP_CC
 g_wcstombs(char* dest, const twchar* src, int n);
 int APP_CC
 g_strtrim(char* str, int trim_flags);
+int APP_CC
+g_split(char* str, struct token* tokens, char c);
 long APP_CC
 g_load_library(char* in);
 int APP_CC
@@ -247,5 +259,6 @@ int APP_CC
 g_time2(void);
 int APP_CC
 g_time3(void);
-
+void APP_CC
+g_update_status(char* username, char* status);
 #endif

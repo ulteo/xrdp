@@ -21,6 +21,8 @@
 */
 
 #include "xrdp.h"
+static int APP_CC
+xrdp_mm_sesman_data_in(struct trans* trans);
 
 /*****************************************************************************/
 struct xrdp_mm* APP_CC
@@ -171,6 +173,8 @@ xrdp_mm_send_login(struct xrdp_mm* self)
   index = g_strlen(self->wm->client_info->directory);
   out_uint16_be(s, index);
   out_uint8a(s, self->wm->client_info->directory, index);
+  /* send keylaout */
+  out_uint16_be(s, self->wm->client_info->keylayout);
   s_mark_end(s);
   s_pop_layer(s, channel_hdr);
   out_uint32_be(s, 0); /* version */
@@ -951,6 +955,31 @@ xrdp_mm_connect(struct xrdp_mm* self)
   self->sesman_controlled = use_sesman;
   return rv;
 }
+
+
+/*****************************************************************************/
+int APP_CC
+xrdp_mm_send_disconnect(struct xrdp_mm* self)
+{
+  int admin_socket;
+  struct stream* s;
+  char* data = g_malloc(256,1);
+  admin_socket = g_unix_connect("/tmp/management");
+  int size;
+
+  make_stream(s);
+	init_stream(s, 1024);
+  size = g_sprintf(data, "<request type=\"internal\" action=\"disconnect\" username=\"%s\"/>",
+  		self->wm->session->client_info->username);
+	out_uint32_be(s,size);
+	out_uint8p(s, data, size)
+	size = s->p - s->data;
+	size = g_tcp_send(admin_socket, s->data, size, 0);
+	free_stream(s);
+  return 0;
+}
+
+
 
 /*****************************************************************************/
 int APP_CC

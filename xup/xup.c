@@ -141,7 +141,7 @@ lib_mod_connect(struct mod* mod)
   mod->server_end_update(mod);
   mod->server_msg(mod, "started connecting", 0);
   /* only support 8 and 16 bpp connections from rdp client */
-  if (mod->bpp != 8 && mod->bpp != 16)
+  if (mod->bpp != 8 && mod->bpp != 16 && mod->bpp != 24)
   {
     mod->server_msg(mod,
       "error - only supporting 8 and 16 bpp rdp connections", 0);
@@ -438,6 +438,11 @@ lib_mod_set_param(struct mod* mod, char* name, char* value)
   {
     g_strncpy(mod->port, value, 255);
   }
+  else if (g_strcasecmp(name, "keylayout") == 0)
+  {
+    mod->keylayout = atoi(value);
+  }
+
   return 0;
 }
 

@@ -7,3 +7,7 @@ xrdp_genkeymap_SOURCES = genkeymap.c
 xrdp_genkeymap_LDADD = \
   -L/usr/X11R6/lib \
   -lX11
+
+EXTRA_DISTS = \
+  dump-keymaps.sh \
+  readme.txt

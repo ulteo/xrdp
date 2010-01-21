@@ -12,7 +12,7 @@ lib_LTLIBRARIES = \
   librdp.la
 
 librdp_la_SOURCES = \
-  rdp.c \
+  rdp.c rdp.h \
   rdp_bitmap.c \
   rdp_iso.c \
   rdp_lic.c \
@@ -23,4 +23,4 @@ librdp_la_SOURCES = \
   rdp_tcp.c
 
 librdp_la_LIBADD = \
-  $(top_srcdir)/common/libcommon.la
+  $(top_builddir)/common/libcommon.la

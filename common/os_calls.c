@@ -71,6 +71,9 @@
 extern char** environ;
 #endif
 
+#define SESSIONS_DIR 	"/var/spool/sessions"
+
+
 /* for solaris */
 #if !defined(PF_LOCAL)
 #define PF_LOCAL AF_UNIX
@@ -144,14 +147,15 @@ g_printf(const char* format, ...)
 }
 
 /*****************************************************************************/
-void DEFAULT_CC
+int DEFAULT_CC
 g_sprintf(char* dest, const char* format, ...)
 {
   va_list ap;
-
+  int size;
   va_start(ap, format);
-  vsprintf(dest, format, ap);
+  size = vsprintf(dest, format, ap);
   va_end(ap);
+  return size;
 }
 
 /*****************************************************************************/
@@ -590,6 +594,93 @@ g_tcp_can_recv(int sck, int millis)
     }
   }
   return 0;
+}
+
+/*****************************************************************************/
+/* create a unix socket */
+int APP_CC
+g_create_unix_socket(const char *socket_name)
+{
+  int sock;
+  struct sockaddr_un addr;
+
+  /* Create socket */
+  if ((sock = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
+  {
+    return 1;
+  }
+  g_memset(&addr, 0, sizeof(struct sockaddr_un));
+  addr.sun_family = AF_UNIX;
+  g_strncpy(addr.sun_path, socket_name, sizeof(addr.sun_path));
+  unlink(socket_name);
+  if (bind(sock, (struct sockaddr *) &addr, sizeof(struct sockaddr_un)) < 0)
+  {
+    return 1;
+  }
+  /* Listen on the socket */
+  if (listen(sock, 5) < 0)
+  {
+    return 1;
+  }
+  return sock;
+}
+
+/*****************************************************************************/
+/* connect to a socket unix */
+int g_unix_connect(const char* socket_filename){
+  int sock, len;
+  struct sockaddr_un saun;
+
+  /* Create socket */
+  if ((sock = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
+  {
+    return 0;
+  }
+  /* Connect to server */
+  saun.sun_family = AF_UNIX;
+  strcpy(saun.sun_path, socket_filename);
+  len = sizeof(saun.sun_family) + strlen(saun.sun_path);
+  if (connect(sock, (struct sockaddr *) &saun, len) < 0)
+  {
+  close(sock);
+  return 0;
+  }
+  return sock;
+}
+
+
+/*****************************************************************************/
+/* wait a connection on a unix socket*/
+int APP_CC
+g_wait_connection(int server_socket)
+{
+  fd_set rfds;
+  int slaves, client;
+  struct sockaddr_un fsaun;
+  socklen_t fromlen;
+  FD_ZERO(&rfds);
+  FD_SET(server_socket, &rfds);
+
+  /* See if any slaves are trying to connect. */
+  slaves = select(server_socket + 1, &rfds, NULL, NULL, NULL);
+  if (slaves == -1)
+  {
+    return 1;
+  }
+  /* Return if no waiting slaves */
+  else if (slaves == 0)
+  {
+    return 0;
+  }
+  /* Accept connection */
+  fromlen = sizeof(fsaun);
+  client = accept(server_socket, (struct sockaddr *) &fsaun, &fromlen);
+  if (client <= 0 )
+  {
+    //close(server_socket);
+    return 1;
+  }
+  return client;
 }
 
 /*****************************************************************************/
@@ -1517,6 +1608,46 @@ g_wcstombs(char* dest, const twchar* src, int n)
 }
 
 /*****************************************************************************/
+int APP_CC
+g_split(char* str, struct token* tokens, char c)
+{
+  int count = 0;
+  int size = 0;
+  char* p = 0;
+  if (strlen(str)==0)
+  {
+    return 0;
+  }
+  char* str_cpy = str;
+  p = strchr(str_cpy,c);
+  while(p != NULL)
+  {
+	//printf("the charactere : %c\n",*p);
+	size = p-str_cpy;
+	//printf("size : %i\n",size);
+	if (size > 0 )
+	{
+      strncpy(tokens[count].str, str_cpy, size);
+      tokens[count].str[size] = 0;
+      //printf("token : %s\n",tokens[count].str);
+      tokens[count].next = &tokens[count+1];
+      count++;
+	}
+	str_cpy += size+1;
+    p = strchr(str_cpy,c);
+  }
+  if (strlen (str_cpy)>0)
+  {
+	//printf("toto : %s\n",str_cpy);
+    strncpy(tokens[count].str, str_cpy, strlen(str_cpy));
+    count++;
+  }
+  //printf("Token count : %i\n",count);
+  tokens[count].next = 0;
+  return count;
+}
+
+/*****************************************************************************/
 /* returns error */
 /* trim spaces and tabs, anything <= space */
 /* trim_flags 1 trim left, 2 trim right, 3 trim both, 4 trim through */
@@ -2123,3 +2254,4 @@ g_time3(void)
   return (tp.tv_sec * 1000) + (tp.tv_usec / 1000);
 #endif
 }
+

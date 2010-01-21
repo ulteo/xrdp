@@ -16,7 +16,7 @@ xrdp_SOURCES = \
   funcs.c \
   lang.c \
   xrdp_bitmap.c \
-  xrdp.c \
+  xrdp.c xrdp.h xrdp_types.h \
   xrdp_cache.c \
   xrdp_font.c \
   xrdp_listen.c \
@@ -28,8 +28,8 @@ xrdp_SOURCES = \
   xrdp_wm.c
 
 xrdp_LDADD = \
-  $(top_srcdir)/common/libcommon.la \
-  $(top_srcdir)/libxrdp/libxrdp.la
+  $(top_builddir)/common/libcommon.la \
+  $(top_builddir)/libxrdp/libxrdp.la
 
 xrdpsysconfdir=$(sysconfdir)/xrdp
 
@@ -51,3 +51,7 @@ xrdppkgdata_DATA = \
 # must be tab below
 install-data-hook:
 	chmod 600 $(DESTDIR)$(sysconfdir)/xrdp/rsakeys.ini
+
+EXTRA_DIST = \
+  $(xrdppkgdata_DATA) \
+  $(xrdpsysconf_DATA)

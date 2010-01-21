@@ -48,6 +48,5 @@ enum SCP_SERVER_STATES_E scp_vXs_accept(struct SCP_CONNECTION* c, struct SCP_SES
   {
     return scp_v1s_accept(c, s, 1);
   }
-
   return SCP_SERVER_STATE_VERSION_ERR;
 }

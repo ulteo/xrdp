@@ -26,12 +26,17 @@
  */
 
 #include "sesman.h"
+#include "thread_calls.h"
+#include <libxml/parser.h>
+#include <libxml/xpath.h>
+
 
 int g_sck;
 int g_pid;
 unsigned char g_fixedkey[8] = { 23, 82, 107, 6, 35, 78, 88, 7 };
 struct config_sesman* g_cfg; /* defined in config.h */
 
+#define XML_HEADER "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
 tbus g_term_event = 0;
 tbus g_sync_event = 0;
 
@@ -124,6 +129,365 @@ sesman_main_loop(void)
                 g_get_errno(), g_get_strerror());
   }
   g_tcp_close(g_sck);
+}
+
+
+
+/************************************************************************/
+int DEFAULT_CC
+xml_get_xpath(xmlDocPtr doc, char* xpath, char* value)
+{
+  xmlXPathObjectPtr xpathObj;
+	xmlXPathContextPtr context;
+	xmlNodeSetPtr nodeset;
+	xmlChar *keyword;
+
+	context = xmlXPathNewContext(doc);
+	if (context == NULL)
+	{
+		printf("Error in xmlXPathNewContext\n");
+		return 1;
+	}
+	xpathObj = xmlXPathEvalExpression((xmlChar*) xpath, context);
+	xmlXPathFreeContext(context);
+	nodeset = xpathObj->nodesetval;
+	if(xmlXPathNodeSetIsEmpty(nodeset))
+	{
+		xmlXPathFreeObject(xpathObj);
+    printf("No result\n");
+		return 1;
+	}
+	keyword = xmlNodeListGetString(doc, nodeset->nodeTab[0]->xmlChildrenNode, 1);
+	if( g_strlen(keyword) == 0)
+	{
+		printf("enable to get keyword\n");
+		return 1;
+	}
+	g_strcpy(value,keyword);
+	xmlFree(keyword);
+	return 0;
+}
+
+/************************************************************************/
+int DEFAULT_CC
+xml_send_info(int client, xmlDocPtr doc)
+{
+	xmlChar* xmlbuff;
+	int buff_size, size;
+	struct stream* s;
+
+	xmlDocDumpFormatMemory(doc, &xmlbuff, &buff_size, 1);
+	printf("data send : %s\n",xmlbuff);
+	make_stream(s);
+	init_stream(s, 1024);
+	out_uint32_be(s,buff_size);
+	out_uint8p(s, xmlbuff, buff_size)
+	size = s->p - s->data;
+	buff_size = g_tcp_send(client, s->data, size, 0);
+	free_stream(s);
+	xmlFree(xmlbuff);
+	return buff_size;
+}
+
+/************************************************************************/
+int DEFAULT_CC
+xml_send_error(int client, const char* message)
+{
+	xmlChar* xmlbuff;
+	xmlDocPtr doc;
+	xmlNodePtr node;
+	struct stream* s;
+	int buff_size, size;
+
+	doc = xmlNewDoc("1.0");
+	if (doc == NULL)
+	{
+		printf("enable to create the document\n");
+		return 0;
+	}
+	doc->encoding = xmlCharStrdup("UTF-8");
+	node = xmlNewNode(NULL, "error");
+	xmlNodeSetContent(node, message);
+	xmlDocSetRootElement(doc, node);
+
+
+	xmlDocDumpFormatMemory(doc, &xmlbuff, &buff_size, 1);
+	printf("data send : %s\n",xmlbuff);
+
+	make_stream(s);
+	init_stream(s, 1024);
+	out_uint32_be(s,buff_size);
+	out_uint8p(s, xmlbuff, buff_size)
+	size = s->p - s->data;
+	buff_size = g_tcp_send(client, s->data, size, 0);
+	free_stream(s);
+	xmlFree(xmlbuff);
+	return buff_size;
+}
+
+/************************************************************************/
+int DEFAULT_CC
+xml_receive_message(int client, xmlDocPtr* doc)
+{
+  struct stream* s;
+  int data_length;
+  int size;
+
+  make_stream(s);
+	init_stream(s, 1024);
+	g_tcp_recv(client, s->data, sizeof(int), 0);
+	in_uint32_be(s,data_length);
+  printf("data_length : %i\n", data_length);
+  g_tcp_recv(client, s->data, data_length, 0);
+  printf("data : %s\n",s->data);
+  *doc = xmlReadMemory(s->data, data_length, "noname.xml", NULL, 0);
+  free_stream(s);
+  return data_length;
+}
+
+
+/************************************************************************/
+int DEFAULT_CC
+send_sessions(int client)
+{
+  struct session_item* sess;
+  xmlNodePtr node, node2, node3;
+  xmlDocPtr doc;
+  xmlAttrPtr attr;
+  xmlChar *xmlbuff;
+  int buffersize, count, i;
+
+	printf("request of sessions list\n");
+	sess = (struct session_item*)session_list_session(&count);
+	printf("%i count sessions\n",count);
+	doc = xmlNewDoc("1.0");
+	if (doc ==NULL)
+	{
+		printf("enable to create the document\n");
+		return 1;
+	}
+	doc->encoding = xmlCharStrdup("UTF-8");
+	node = xmlNewNode(NULL, "response");
+	node2 = xmlNewNode(NULL, "sessions");
+	xmlAddChild(node,node2);
+	char prop[128];
+	for ( i=0 ; i<count ; i++)
+	{
+		sprintf(prop, "%i", sess[i].pid);
+		node3 = xmlNewNode(NULL, "session");
+		xmlSetProp(node3, "id", prop );
+		xmlSetProp(node3, "username", sess[i].name );
+		xmlSetProp(node3, "status", session_get_status_string(sess[i].status) );
+		xmlAddChild(node2, node3);
+	}
+	xmlAddChild(node, node2);
+	xmlDocSetRootElement(doc, node);
+	xml_send_info(client, doc);
+	xmlFreeDoc(doc);
+	return 0;
+}
+
+/************************************************************************/
+int DEFAULT_CC
+send_session(int client, int session_id)
+{
+  struct session_item* sess = 0;
+  xmlNodePtr node, node2;
+  xmlDocPtr doc;
+  xmlAttrPtr attr;
+  xmlChar *xmlbuff;
+  int buffersize, count, i;
+
+	printf("request of sessions list\n");
+	sess = session_get_bypid(session_id);
+  if( sess == NULL)
+  {
+    printf("The session %i did not exist\n",session_id);
+    xml_send_error(client, "the session id of the request did not exist");
+    close(client);
+    pthread_exit( (void*) 1);
+  }
+	doc = xmlNewDoc("1.0");
+	if (doc ==NULL)
+	{
+		printf("enable to create the document\n");
+		return 1;
+	}
+	doc->encoding = xmlCharStrdup("UTF-8");
+	node = xmlNewNode(NULL, "response");
+	xmlAddChild(node,node2);
+	char prop[128];
+	sprintf(prop, "%i", sess[0].pid);
+	node2 = xmlNewNode(NULL, "session");
+	xmlSetProp(node2, "id", prop );
+	xmlSetProp(node2, "username", sess[0].name );
+	xmlSetProp(node2, "status", session_get_status_string(sess[0].status) );
+	xmlAddChild(node, node2);
+	xmlDocSetRootElement(doc, node);
+	xml_send_info(client, doc);
+	xmlFreeDoc(doc);
+	return 0;
+}
+
+
+/************************************************************************/
+int DEFAULT_CC
+send_logoff(int client, int session_id)
+{
+  struct session_item* sess = 0;
+  xmlNodePtr node, node2;
+  xmlDocPtr doc;
+  xmlAttrPtr attr;
+  xmlChar *xmlbuff;
+  int buffersize, count, i;
+
+	printf("request of sessions list\n");
+	sess = session_get_bypid(session_id);
+  if( sess == NULL)
+  {
+    printf("The session %i did not exist\n",session_id);
+    xml_send_error(client, "the session id of the request did not exist");
+    close(client);
+    pthread_exit( (void*) 1);
+  }
+  session_kill(sess->pid);
+  session_destroy(sess->name);
+	doc = xmlNewDoc("1.0");
+	if (doc ==NULL)
+	{
+		printf("enable to create the document\n");
+		return 1;
+	}
+	doc->encoding = xmlCharStrdup("UTF-8");
+	node = xmlNewNode(NULL, "response");
+	node2 = xmlNewNode(NULL, "session");
+	char prop[128];
+	sprintf(prop, "%i", sess[0].pid);
+	node2 = xmlNewNode(NULL, "session");
+	xmlSetProp(node2, "id", prop );
+	xmlSetProp(node2, "username", sess[0].name );
+	xmlSetProp(node2, "status", "CLOSED" );
+	xmlAddChild(node, node2);
+	xmlDocSetRootElement(doc, node);
+	xml_send_info(client, doc);
+	xmlFreeDoc(doc);
+	return 0;
+}
+
+
+/************************************************************************/
+THREAD_RV THREAD_CC
+process_request(int client)
+{
+  int size, session_id;
+  int data_length;
+  char request_type[128];
+  char request_action[128];
+  char session_id_string[12];
+  xmlDocPtr doc;
+
+  xmlInitParser();
+  xml_receive_message(client, &doc);
+  if (xml_get_xpath(doc, "/request/@type", request_type) == 1)
+  {
+  	printf("Enable to get the request type\n");
+  	xml_send_error(client, "Enable to get the request type");
+  	pthread_exit((void*) 1);
+  }
+  if (xml_get_xpath(doc, "/request/@action", request_action) == 1)
+  {
+  	printf("Enable to get the request action\n");
+  	xml_send_error(client, "Enable to get the request type");
+  	pthread_exit((void*) 1);
+  }
+  printf("request_type : '%s' \n",request_type);
+  printf("request_action : '%s' \n",request_action);
+
+  if( g_strcmp(request_type, "sessions") == 0)
+  {
+    if( g_strcmp(request_action, "list") != 0)
+    {
+    	xml_send_error(client, "For session request type only"
+    			"the list action is supported");
+    	close(client);
+    	pthread_exit((void*) 1);
+    }
+    send_sessions(client);
+    xmlFreeDoc(doc);
+  	printf("fin\n");
+    close(client);
+  	pthread_exit((void*) 0);
+  }
+  if( g_strcmp(request_type, "session") == 0)
+  {
+    if (xml_get_xpath(doc, "/request/@id", (char**)&session_id_string) == 1)
+    {
+    	printf("Enable to get the request session id\n");
+    	xml_send_error(client, "Enable to get the request session id");
+      close(client);
+    	pthread_exit((void*) 1);
+    }
+    session_id = g_atoi(session_id_string);
+    if(session_id == 0)
+    {
+      printf("%i is not a numeric value\n", session_id);
+      xml_send_error(client, "enable to convert the session id");
+      close(client);
+      pthread_exit((void*) 1);
+    }
+    if( g_strcmp(request_action, "status") == 0)
+    {
+    	send_session(client, session_id);
+    	close(client);
+    	pthread_exit((void*) 0);
+    }
+    if( g_strcmp(request_action, "logoff") == 0)
+    {
+    	send_logoff(client, session_id);
+    	close(client);
+    	pthread_exit((void*) 0);
+    }
+  	xml_send_error(client, "Unknown message for session");
+  	close(client);
+  	pthread_exit((void*) 1);
+  }
+  if( g_strcmp(request_type, "internal") == 0)
+  {
+  	char username[256];
+  	if( g_strcmp(request_action, "disconnect") == 0)
+  	{
+      if (xml_get_xpath(doc, "/request/@username", (char**)&username) == 1)
+      {
+      	printf("Enable to get the username\n");
+      	xml_send_error(client, "Enable to get the username");
+        close(client);
+      	pthread_exit((void*) 1);
+      }
+  		session_update_status_by_user(username, SESMAN_SESSION_STATUS_DISCONNECTED);
+    	close(client);
+    	pthread_exit((void*) 0);
+  	}
+  	xml_send_error(client, "Unknown message for internal");
+  	close(client);
+  	pthread_exit((void*) 1);
+  }
+	xml_send_error(client, "Unknown message");
+	close(client);
+	pthread_exit((void*) 1);
+}
+
+
+THREAD_RV THREAD_CC
+admin_thread(void* param)
+{
+  int client;
+  int server = g_create_unix_socket("/tmp/management");
+  while(1)
+  {
+    printf("wait connection\n");
+    int client = g_wait_connection(server);
+    tc_thread_create((void*)process_request, (void*)client);
+  }
 }
 
 /******************************************************************************/
@@ -331,6 +695,7 @@ main(int argc, char** argv)
   g_snprintf(text, 255, "xrdp_sesman_%8.8x_main_sync", g_pid);
   g_sync_event = g_create_wait_obj(text);
 
+  tc_thread_create(admin_thread, 0);
   sesman_main_loop();
 
   /* clean up PID file on exit */

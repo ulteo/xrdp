@@ -9,15 +9,18 @@ lib_LTLIBRARIES = \
   libcommon.la
 
 libcommon_la_SOURCES = \
-  d3des.c \
-  file.c \
-  list.c \
-  log.c \
-  os_calls.c \
-  ssl_calls.c \
-  thread_calls.c \
-  trans.c
+  xrdp_constants.h \
+  arch.h defines.h parse.h \
+  d3des.c d3des.h \
+  file.c file.h file_loc.h \
+  list.c list.h \
+  log.c log.h \
+  os_calls.c os_calls.h \
+  ssl_calls.c ssl_calls.h \
+  thread_calls.c thread_calls.h \
+  trans.c trans.h
 
 libcommon_la_LIBADD = \
   -lcrypto \
-  -lpthread
+  -lpthread \
+  -ldl

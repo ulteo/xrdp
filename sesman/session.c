@@ -27,9 +27,10 @@
 
 #include "sesman.h"
 #include "libscp_types.h"
-
+#include <pwd.h>
 #include <errno.h>
 //#include <time.h>
+
 
 extern tbus g_sync_event;
 extern unsigned char g_fixedkey[8];
@@ -39,6 +40,7 @@ int g_session_count;
 
 static int g_sync_width;
 static int g_sync_height;
+static int g_sync_keylayout;
 static int g_sync_bpp;
 static char* g_sync_username;
 static char* g_sync_password;
@@ -51,7 +53,7 @@ static int g_sync_result;
 
 /******************************************************************************/
 struct session_item* DEFAULT_CC
-session_get_bydata(char* name, int width, int height, int bpp, int type)
+session_get_bydata(char* name, int width, int height, int bpp)
 {
   struct session_chain* tmp;
 
@@ -65,8 +67,7 @@ session_get_bydata(char* name, int width, int height, int bpp, int type)
     if (g_strncmp(name, tmp->item->name, 255) == 0 &&
         tmp->item->width == width &&
         tmp->item->height == height &&
-        tmp->item->bpp == bpp &&
-        tmp->item->type == type)
+        tmp->item->bpp == bpp )
     {
       /*THREAD-FIX release chain lock */
       lock_chain_release();
@@ -177,6 +178,7 @@ session_start_sessvc(int xpid, int wmpid, long data)
   list_add_item(sessvc_params, (long)g_strdup(exe_path));
   list_add_item(sessvc_params, (long)g_strdup(xpid_str));
   list_add_item(sessvc_params, (long)g_strdup(wmpid_str));
+  list_add_item(sessvc_params, (long)g_strdup(g_sync_username));
   list_add_item(sessvc_params, 0); /* mandatory */
 
   /* executing sessvc */
@@ -256,6 +258,36 @@ session_get_aval_display_from_chain(void)
   return 0;
 }
 
+
+/******************************************************************************/
+char* APP_CC
+get_kbcode(int keylayout)
+{
+  switch(keylayout){
+  case 0x40c:
+	  return "fr";
+	  break;
+  case 0x0409:
+	  return "us";
+	  break;
+  case 0x0407:
+	  return "de";
+	  break;
+  case 0x0410:
+	  return "it";
+	  break;
+  case 0x0419:
+	  return "ru";
+	  break;
+  case 0x041d:
+	  return "se";
+	  break;
+  default:
+	  log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "the keylayout %04x is unknowned", keylayout);
+  }
+}
+
+
 /******************************************************************************/
 static int APP_CC
 wait_for_xserver(int display)
@@ -285,7 +317,7 @@ wait_for_xserver(int display)
 static int APP_CC
 session_start_fork(int width, int height, int bpp, char* username,
                    char* password, tbus data, tui8 type, char* domain,
-                   char* program, char* directory)
+                   char* program, char* directory, int keylayout)
 {
   int display;
   int pid;
@@ -302,6 +334,9 @@ session_start_fork(int width, int height, int bpp, char* username,
   struct list* xserver_params=0;
   time_t ltime;
   struct tm stime;
+  char xrdp_username_path[256];
+  int fd;
+  char* kb_util = "/usr/bin/setxkbmap";
 
   /* check to limit concurrent sessions */
   if (g_session_count >= g_cfg->sess.max_sessions)
@@ -333,6 +368,16 @@ session_start_fork(int width, int height, int bpp, char* username,
     g_free(temp);
     return 0;
   }
+
+  g_sprintf(xrdp_username_path,"/tmp/xrdp_user_%i",display);
+  if(g_file_exist((const char*)xrdp_username_path))
+  {
+    g_file_delete((const char*)xrdp_username_path);
+  }
+  fd = g_file_open((const char*)xrdp_username_path);
+  g_file_write(fd,username,g_strlen(username));
+  g_file_close(fd);
+
   wmpid = 0;
   pid = g_fork();
   if (pid == -1)
@@ -354,7 +399,15 @@ session_start_fork(int width, int height, int bpp, char* username,
       env_set_user(username, 0, display);
       if (x_server_running(display))
       {
+    	  int pid2 = g_fork();
+    	  if(pid2 == 0){
+    		  g_execlp3(kb_util, kb_util, get_kbcode(keylayout));
+    		  g_exit(0);
+    	  }
+
         auth_set_env(data);
+        printf("ACTIVE\n");
+
         if (directory != 0)
         {
           if (directory[0] != 0)
@@ -436,6 +489,7 @@ session_start_fork(int width, int height, int bpp, char* username,
       {
         env_set_user(username, passwd_file, display);
         env_check_password_file(passwd_file, password);
+        printf("session type : %i\n",type);
         if (type == SESMAN_SESSION_TYPE_XVNC)
         {
           xserver_params = list_create();
@@ -457,6 +511,7 @@ session_start_fork(int width, int height, int bpp, char* username,
 
           /* make sure it ends with a zero */
           list_add_item(xserver_params, 0);
+          list_dump_items(xserver_params);
           pp1 = (char**)xserver_params->items;
           g_execvp("Xvnc", pp1);
         }
@@ -549,15 +604,20 @@ session_start_fork(int width, int height, int bpp, char* username,
   return display;
 }
 
+
 /******************************************************************************/
 /* called by a worker thread, ask the main thread to call session_sync_start
    and wait till done */
 int DEFAULT_CC
 session_start(int width, int height, int bpp, char* username, char* password,
               long data, tui8 type, char* domain, char* program,
-              char* directory)
+              char* directory, int keylayout)
 {
   int display;
+  int uid = 1;
+  char* shell;
+  char* dir;
+  char* gecos;
 
   /* lock mutex */
   lock_sync_acquire();
@@ -572,6 +632,7 @@ session_start(int width, int height, int bpp, char* username, char* password,
   g_sync_directory = directory;
   g_sync_data = data;
   g_sync_type = type;
+  g_sync_keylayout = keylayout;
   /* set event for main thread to see */
   g_set_wait_obj(g_sync_event);
   /* wait for main thread to get done */
@@ -591,9 +652,25 @@ session_sync_start(void)
   g_sync_result = session_start_fork(g_sync_width, g_sync_height, g_sync_bpp,
                                      g_sync_username, g_sync_password,
                                      g_sync_data, g_sync_type, g_sync_domain,
-                                     g_sync_program, g_sync_directory);
+                                     g_sync_program, g_sync_directory, g_sync_keylayout);
   lock_sync_sem_release();
   return 0;
+}
+
+
+/******************************************************************************/
+int DEFAULT_CC
+session_destroy(char* username)
+{
+  int pid = g_fork();
+  if( pid == 0 )
+  {
+#warning TODO realize a logoff without script
+  	g_execlp3("/usr/bin/logoff", "/usr/bin/logoff", username);
+    g_exit(0);
+  }
+  g_waitpid(pid);
+  return SESMAN_SESSION_KILL_OK;
 }
 
 /******************************************************************************/
@@ -741,6 +818,46 @@ session_get_bypid(int pid)
   return 0;
 }
 
+
+/******************************************************************************/
+int
+session_get_user_display(char* username)
+{
+  struct session_chain* tmp;
+  struct session_item* dummy;
+
+
+  /*THREAD-FIX require chain lock */
+  lock_chain_acquire();
+
+  tmp = g_sessions;
+  while (tmp != 0)
+  {
+    if (tmp->item == 0)
+    {
+      log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "session descriptor for "
+                  "pid %s is null!", username);
+      /*THREAD-FIX release chain lock */
+      lock_chain_release();
+      return 0;
+    }
+
+    if (strcmp(username, tmp->item->name)==0)
+    {
+      return tmp->item->display;
+    }
+
+    /* go on */
+    tmp=tmp->next;
+  }
+
+  /*THREAD-FIX release chain lock */
+  lock_chain_release();
+  return 0;
+}
+
+
+
 /******************************************************************************/
 struct SCP_DISCONNECTED_SESSION*
 session_get_byuser(char* user, int* cnt, unsigned char flags)
@@ -830,7 +947,7 @@ session_get_byuser(char* user, int* cnt, unsigned char flags)
         (sess[index]).idle_days = tmp->item->idle_time.day;
         (sess[index]).idle_hours = tmp->item->idle_time.hour;
         (sess[index]).idle_minutes = tmp->item->idle_time.minute;
-
+        (sess[index]).status = tmp->item->status;
         index++;
       }
     }
@@ -844,3 +961,90 @@ session_get_byuser(char* user, int* cnt, unsigned char flags)
   (*cnt)=count;
   return sess;
 }
+
+
+
+/******************************************************************************/
+void
+session_update_status_by_user(char* user, int status)
+{
+  struct session_chain* tmp;
+  struct session_item* dummy;
+
+  /*THREAD-FIX require chain lock */
+  lock_chain_acquire();
+  tmp = g_sessions;
+  while (tmp != 0)
+  {
+    if (tmp->item == 0)
+    {
+      log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "session descriptor for "
+                  "user %s is null!", user);
+      /*THREAD-FIX release chain lock */
+      lock_chain_release();
+      return ;
+    }
+
+    if (g_strcmp(user, tmp->item->name) == 0)
+    {
+      /*THREAD-FIX release chain lock */
+    	char* str2 = session_get_status_string(tmp->item->status);
+      tmp->item->status = status;
+      lock_chain_release();
+      /*return tmp->item;*/
+      return ;
+    }
+
+    /* go on */
+    tmp=tmp->next;
+  }
+
+  /*THREAD-FIX release chain lock */
+  lock_chain_release();
+  return;
+}
+
+
+
+/* list sessions  */
+/******************************************************************************/
+struct session_item*
+session_list_session(int* count)
+{
+  struct session_chain* tmp;
+  struct session_item* sess = g_malloc(sizeof(struct session_item)*15,0);
+  int index;
+  *count = 0;
+  /*THREAD-FIX require chain lock */
+  lock_chain_acquire();
+  tmp = g_sessions;
+  while (tmp != 0)
+  {
+	  sess[*count].pid = tmp->item->pid;
+	  printf("name : %s\n",tmp->item->name);
+	  g_strncpy(sess[*count].name, tmp->item->name, strlen(tmp->item->name));
+	  sess[*count].status = tmp->item->status;
+	  tmp=tmp->next;
+	  *count += 1;
+  }
+
+  /*THREAD-FIX release chain lock */
+  lock_chain_release();
+  return sess;
+}
+
+
+char*
+session_get_status_string(int i)
+{
+  switch(i)
+  {
+  case SESMAN_SESSION_STATUS_ACTIVE:
+	  return "ACTIVE";
+  case SESMAN_SESSION_STATUS_DISCONNECTED:
+	  return "DISCONNECT";
+  default:
+	  return "UNKNOWN";
+  }
+}
+

@@ -265,6 +265,12 @@ scp_v0s_accept(struct SCP_CONNECTION* c, struct SCP_SESSION** s, int skipVchk)
         scp_session_set_directory(session, buf);
       }
     }
+    if (s_check_rem(c->in_s, 2))
+    {
+      /* keylayout */
+        in_uint16_be(c->in_s, sz);
+        scp_session_set_keylayout(session, sz);
+    }
   }
   else
   {

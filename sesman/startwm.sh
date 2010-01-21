@@ -2,8 +2,8 @@
 
 # change the order in line below to run to run whatever window manager you
 # want, default to kde
-
-SESSIONS="startkde gnome-session startxfce4 xterm"
+export XRDP_PROCESS=1
+SESSIONS="startxfce4 startkde gnome-session xterm"
 
 # change PATH to be what your environment needs usually what is in
 # /etc/environment
@@ -23,6 +23,7 @@ SESSIONS="startkde gnome-session startxfce4 xterm"
 
 #. /etc/profile
 
+xsetroot -solid white
 for WindowManager in $SESSIONS
 do
   which $WindowManager

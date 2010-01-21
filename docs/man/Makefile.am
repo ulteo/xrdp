@@ -11,3 +11,7 @@ xrdpman8_DATA = \
   xrdp.8 \
   xrdp-sesman.8 \
   xrdp-sesrun.8
+
+EXTRA_DIST = \
+  $(xrdpman5_DATA) \
+  $(xrdpman8_DATA)

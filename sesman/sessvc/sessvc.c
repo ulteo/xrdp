@@ -30,6 +30,7 @@
 #endif
 #include "file_loc.h"
 #include "os_calls.h"
+#include "thread_calls.h"
 #include "arch.h"
 
 static int g_term = 0;
@@ -69,6 +70,8 @@ chansrv_cleanup(int pid)
   return 0;
 }
 
+
+
 /******************************************************************************/
 int DEFAULT_CC
 main(int argc, char** argv)
@@ -79,8 +82,9 @@ main(int argc, char** argv)
   int x_pid;
   int lerror;
   char exe_path[262];
+  char *username;
 
-  if (argc < 3)
+  if (argc < 4)
   {
     g_writeln("xrdp-sessvc: exiting, not enough params");
     return 1;
@@ -91,6 +95,8 @@ main(int argc, char** argv)
   g_signal_pipe(nil_signal_handler); /* SIGPIPE */
   x_pid = g_atoi(argv[1]);
   wm_pid = g_atoi(argv[2]);
+  username = argv[3];
+
   g_writeln("xrdp-sessvc: waiting for X (pid %d) and WM (pid %d)",
              x_pid, wm_pid);
   /* run xrdp-chansrv as a seperate process */
@@ -104,7 +110,7 @@ main(int argc, char** argv)
   {
     g_set_current_dir(XRDP_SBIN_PATH);
     g_snprintf(exe_path, 261, "%s/xrdp-chansrv", XRDP_SBIN_PATH);
-    g_execlp3(exe_path, "xrdp-chansrv", 0);
+    g_execlp3(exe_path, "xrdp-chansrv", username);
     /* should not get here */
     g_writeln("xrdp-sessvc: g_execvp failed");
     return 1;

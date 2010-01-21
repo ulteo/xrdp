@@ -1,0 +1,8 @@
+#!/bin/bash
+
+if [ -n "$1" ]; then
+  killall -w -u $1
+else
+  killall -u $USER
+fi
+

@@ -17,7 +17,7 @@ bin_PROGRAMS = \
 
 xrdp_sesrun_SOURCES = \
   sesrun.c \
-  tcp.c \
+  tcp.c tcp.h \
   config.c
 
 xrdp_sestest_SOURCES = \
@@ -27,13 +27,13 @@ xrdp_sesadmin_SOURCES = \
   sesadmin.c
 
 xrdp_sesrun_LDADD = \
-  $(top_srcdir)/common/libcommon.la
+  $(top_builddir)/common/libcommon.la
 
 xrdp_sestest_LDADD = \
-  $(top_srcdir)/common/libcommon.la \
-  $(top_srcdir)/sesman/libscp/libscp.la
+  $(top_builddir)/common/libcommon.la \
+  $(top_builddir)/sesman/libscp/libscp.la
 
 xrdp_sesadmin_LDADD = \
-  $(top_srcdir)/common/libcommon.la \
-  $(top_srcdir)/sesman/libscp/libscp.la
+  $(top_builddir)/common/libcommon.la \
+  $(top_builddir)/sesman/libscp/libscp.la
 
