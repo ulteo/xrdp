@@ -1,6 +1,6 @@
 #!/bin/sh
 
-BZR_VERSION=`bzr version-info |grep revno|sed "s/revno: //g"`
+SVN_VERSION=`LC_ALL=C svn info . | awk '/^Revision: / {printf "%05d\n", $2}'`
 
 which autoconf
 if ! test $? -eq 0
@@ -29,6 +29,6 @@ touch AUTHORS
 touch README
 touch ChangeLog
 ln -s ../config.c $PWD/sesman/tools/config.c
-sed -e "s/0.5.0/0.5.$BZR_VERSION/g" < configure.ac.in > configure.ac
+sed -e "s/0.5.0/0.5.$SVN_VERSION/g" < configure.ac.in > configure.ac
 autoreconf -fvi 
 
