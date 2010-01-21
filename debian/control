@@ -1,7 +1,7 @@
 Source: xrdp
 Section: x11
 Priority: extra
-Maintainer: Gauvain Pocentek <gauvain@ulteo.com>
+Maintainer: Jeremy Desvages <jeremy@ulteo.com>
 Build-Depends: debhelper (>= 5), cdbs, libx11-dev, libxfixes-dev, libssl-dev, libpam0g-dev, libssl-dev, quilt
 Standards-Version: 3.8.3
 
@@ -13,3 +13,9 @@ Description: RDP server for linux
  many other features such as:
   * seamless display
   * printer and local device mapping
+
+Package: python-xrdp
+Architecture: all
+Depends: python2.5, xrdp (>= 0.5.0-0ulteo0.2)
+Description: Python-XRDP API
+ Python-XRDP API
