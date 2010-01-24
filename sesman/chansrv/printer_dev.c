@@ -23,11 +23,14 @@
 //#include <cups/i18n.h> /* hardy problems */
 #include <errno.h>
 #include <zlib.h>
+#include <sys/inotify.h>
+#include <dirent.h>
 
 extern struct log_config log_conf;
 extern char* username;
 static struct printer_device printer_devices[128];
 static printer_devices_count = 0;
+static char user_spool_dir[256];
 
 /************************************************************************/
 int				/* O - 0 if name is no good, 1 if name is good */
@@ -178,6 +181,7 @@ printer_dev_set_ppd(http_t *http, char* lp_name, char* ppd_file)
   gzFile	*gz;			/* GZIP'd file */
   char		buffer[8192];		/* Copy buffer */
   int		bytes;			/* Bytes in buffer */
+  int size;
 
 
   printf("set_printer_file(%p, \"%s\", \"%s\")\n", http, lp_name, ppd_file);
@@ -208,7 +212,9 @@ printer_dev_set_ppd(http_t *http, char* lp_name, char* ppd_file)
     }
 
     while ((bytes = gzread(gz, buffer, sizeof(buffer))) > 0)
-      write(fd, buffer, bytes);
+    {
+      size = write(fd, buffer, bytes);
+    }
 
     close(fd);
     gzclose(gz);
@@ -454,7 +460,7 @@ printer_dev_add(struct stream* s, int device_data_length,
 	printer_dev_server_disconnect(http);
 	printer_devices[printer_devices_count].device_id = device_id;
 	g_strcpy(printer_devices[printer_devices_count].printer_name, printer_name);
-  return 0;
+  return g_time1();
 }
 
 /************************************************************************/
@@ -489,4 +495,76 @@ printer_dev_del(int device_id)
 	/* remove user of list */
 	/* update */
 	/* remove it if on user exist */
+}
+
+
+int DEFAULT_CC
+printer_dev_get_next_job(char* jobs, int *device_id)
+{
+	struct dirent *dir_entry;
+	DIR *dir;
+	dir = opendir(user_spool_dir );
+	if( dir == NULL)
+	{
+		log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[printer_dev_get_next_job]:"
+				"enable to open directory '%s' : %s\n",user_spool_dir, strerror(errno));
+		return 1;
+	}
+	while((dir_entry = readdir(dir)) != NULL)
+	{
+		if( g_strcmp(dir_entry->d_name, ".") !=0 && g_strcmp(dir_entry->d_name, ".."))
+		{
+			g_sprintf(jobs, "%s/%s",user_spool_dir,dir_entry->d_name);
+			log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_get_next_job]:"
+					"new job : %s\n",jobs);
+			closedir(dir);
+			return 0;
+		}
+	}
+	log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[printer_dev_get_next_job]:"
+				"no new jobs in '%s'\n", user_spool_dir);
+	closedir(dir);
+	/* printer id to change */
+	*device_id = printer_devices[0].device_id;
+	return 1;
+}
+
+int DEFAULT_CC
+printer_dev_delete_job(user_spool_dir, buffer)
+{
+	return 0;
+}
+
+
+/*****************************************************************************/
+int APP_CC
+printer_dev_init_printer_socket()
+{
+	int printer_sock;
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_init_printer_socket]:"
+  		" init printer_socket");
+	if ((printer_sock = inotify_init()) < 0)
+	{
+		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[dev_redir_init_printer_socket]:"
+				"Enable to setup inotify");
+		return 0;
+	}
+	g_sprintf(user_spool_dir, "%s%s",SPOOL_DIR, username);
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[dev_redir_init_printer_socket]:"
+			"Adding watch to %s\n", user_spool_dir);
+  if (inotify_add_watch(printer_sock, user_spool_dir, IN_MOVE) < 0)
+  {
+  	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[dev_redir_init_printer_socket]:"
+  			"Unable to add inotify watch (%s)\n", strerror(errno));
+      return 0;
+  }
+  g_tcp_set_non_blocking(printer_sock);
+  return printer_sock;
+}
+
+/*****************************************************************************/
+int APP_CC
+pinter_dev_deinit_printer_socket()
+{
+	return 0;
 }

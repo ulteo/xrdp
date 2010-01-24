@@ -24,11 +24,12 @@
 #include "chansrv.h"
 #include "devredir.h"
 #include "printer_dev.h"
+#include "xrdp_constants.h"
 
 extern int g_rdpdr_chan_id; /* in chansrv.c */
 extern struct log_config log_conf;
 static int g_devredir_up = 0;
-static tbus g_x_wait_obj = 0;
+static tbus printer_sock = 0;
 static char hostname[256];
 static int deviceId;
 static int use_unicode;
@@ -41,6 +42,11 @@ int device_count = 0;
 static int is_fragmented_packet = 0;
 static int fragment_size;
 static struct stream* splitted_packet;
+static int printer_socket=0;
+static int file_id=1;
+static Action actions[128];
+static int action_index=1;
+
 
 /*****************************************************************************/
 int APP_CC
@@ -75,11 +81,194 @@ convert_to_unix_filename(char *filename)
 }
 */
 
+/*****************************************************************************/
+int
+dev_redir_begin_io_request(char* job,int device)
+{
+	struct stream* s;
+	make_stream(s);
+	init_stream(s,1024);
+
+	actions[action_index].device = device;
+	actions[action_index].file_id = action_index;
+	actions[action_index].last_req = IRP_MJ_CREATE;
+	actions[action_index].message_id = 0;
+	strcpy(actions[action_index].path, job);
+
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[dev_redir_send_file]:"
+  		"process job[%s]",job);
+	out_uint16_le(s, RDPDR_CTYP_CORE);
+	out_uint16_le(s, PAKID_CORE_DEVICE_IOREQUEST);
+	out_uint32_le(s, actions[action_index].device);
+	out_uint32_le(s, actions[action_index].file_id);
+	out_uint32_le(s, actions[action_index].file_id);
+	out_uint32_le(s, IRP_MJ_CREATE);   	/* major version */
+	out_uint32_le(s, 0);								/* minor version */
+	switch (device_list[device].device_type) {
+		case RDPDR_DTYP_PRINT:
+			out_uint32_le(s, 0);								/* desired access(unused) */
+			out_uint64_le(s, 0);								/* size (unused) */
+			out_uint32_le(s, 0);								/* file attribute (unused) */
+			out_uint32_le(s, 0);								/* shared access (unused) */
+			out_uint32_le(s, 0);								/* disposition (unused) */
+			out_uint32_le(s, 0);								/* create option (unused) */
+			out_uint32_le(s, 0);								/* path length (unused) */
+			break;
+		default:
+			log_message(&log_conf, LOG_LEVEL_ERROR, "chansrv[dev_redir_send_file: "
+					"the device type %04x is not yet supported",device);
+			free_stream(s);
+			return 0;
+			break;
+	}
+	s_mark_end(s);
+	dev_redir_send(s);
+	free_stream(s);
+  return 0;
+}
 
 
+/*****************************************************************************/
+int APP_CC
+dev_redir_process_write_io_request(int completion_id, int offset)
+{
+	struct stream* s;
+	int fd;
+	char buffer[1024];
+	int size;
 
+	make_stream(s);
+	init_stream(s,1100);
+	actions[completion_id].last_req = IRP_MJ_WRITE;
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[dev_redir_process_write_io_request]:"
+  		"process next io request[%s]",actions[completion_id].path);
+	out_uint16_le(s, RDPDR_CTYP_CORE);
+  out_uint16_le(s, PAKID_CORE_DEVICE_IOREQUEST);
+	out_uint32_le(s, actions[completion_id].device);
+	out_uint32_le(s, actions[completion_id].file_id);
+	out_uint32_le(s, completion_id);
+	out_uint32_le(s, IRP_MJ_WRITE);   	/* major version */
+	out_uint32_le(s, 0);								/* minor version */
+	if(g_file_exist(actions[completion_id].path)){
+		fd = g_file_open(actions[completion_id].path);
+		g_file_seek(fd, offset);
+		size = g_file_read(fd, buffer, 1024);
+		out_uint32_le(s,size);
+		out_uint32_le(s,offset);
+		out_uint8s(s,20);
+		out_uint8p(s,buffer,size);
+		s_mark_end(s);
+		dev_redir_send(s);
+		actions[completion_id].message_id++;
+		free_stream(s);
+		return 0;
+	}
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[dev_redir_process_write_io_request]:"
+  		"the file %s did not exists",actions[completion_id].path);
+	free_stream(s);
+}
 
+/*****************************************************************************/
+int APP_CC
+dev_redir_process_close_io_request(int completion_id)
+{
+	struct stream* s;
+	int fd;
+	char buffer[1024];
+	int size;
 
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[dev_redir_process_close_io_request]:"
+	  		"close file : %s",actions[completion_id].path);
+	make_stream(s);
+	init_stream(s,1100);
+	actions[completion_id].last_req = IRP_MJ_CLOSE;
+	out_uint16_le(s, RDPDR_CTYP_CORE);
+	out_uint16_le(s, PAKID_CORE_DEVICE_IOREQUEST);
+	out_uint32_le(s, actions[completion_id].device);
+	out_uint32_le(s, actions[completion_id].file_id);
+	out_uint32_le(s, completion_id);
+	out_uint32_le(s, IRP_MJ_CLOSE);   	/* major version */
+	out_uint32_le(s, 0);								/* minor version */
+	out_uint8s(s,32);
+	s_mark_end(s);
+	dev_redir_send(s);
+	actions[completion_id].message_id++;
+	free_stream(s);
+	return 0;
+	free_stream(s);
+}
+
+/*****************************************************************************/
+int APP_CC
+dev_redir_iocompletion(struct stream* s)
+{
+	int device;
+	int completion_id;
+	int io_status;
+	int result;
+	int rv;
+	int offset;
+	int fd;
+	int size;
+
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_iocompletion]: "
+			"device reply");
+	in_uint32_le(s, device);
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_iocompletion]: "
+			"device : %i",device);
+	in_uint32_le(s, completion_id);
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_iocompletion]: "
+			"completion id : %i", completion_id);
+	in_uint32_le(s, io_status);
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_iocompletion]: "
+			"io_statio : %08x", io_status);
+	if( io_status != STATUS_SUCCESS)
+	{
+		log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_iocompletion]: "
+  			"the action failed with the status : %08x",io_status);
+  	result = -1;
+	}
+
+	switch(actions[completion_id].last_req)
+	{
+	case IRP_MJ_CREATE:
+		in_uint32_le(s, actions[completion_id].file_id);
+		log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_iocompletion]: "
+				"file %s created",actions[completion_id].last_req);
+		size = g_file_size(actions[completion_id].path);
+		offset = 0;
+		log_message(&log_conf, LOG_LEVEL_ERROR, "chansrv[dev_redir_next_io]: "
+				"the file size to transfert: %i",size);
+		result = dev_redir_process_write_io_request(completion_id, offset);
+		break;
+
+	case IRP_MJ_WRITE:
+		in_uint32_le(s, size);
+		log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_iocompletion]: "
+				"%i octect written for the jobs %s",size, actions[completion_id].path);
+		offset = 1024* actions[completion_id].message_id;
+		size = g_file_size(actions[completion_id].path);
+		if(offset > size)
+		{
+			result = dev_redir_process_close_io_request(completion_id);
+			break;
+		}
+		result = dev_redir_process_write_io_request(completion_id, offset);
+		break;
+
+	case IRP_MJ_CLOSE:
+		log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_iocompletion]: "
+				"file %s closed",actions[completion_id].last_req);
+		break;
+	default:
+		log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_iocompletion]: "
+				"last request %08x is invalid",actions[completion_id].last_req);
+		result=-1;
+		break;
+
+	}
+	return result;
+}
 
 
 /*****************************************************************************/
@@ -128,6 +317,7 @@ dev_redir_deinit(void)
   return 0;
 }
 
+
 /*****************************************************************************/
 int APP_CC
 dev_redir_data_in(struct stream* s, int chan_id, int chan_flags, int length,
@@ -158,7 +348,6 @@ dev_redir_data_in(struct stream* s, int chan_id, int chan_flags, int length,
   	{
   		g_memcpy(splitted_packet->p+fragment_size, s->p, length );
   		fragment_size += length;
-  		printf("total length : %i, length = %i, fragment_size : %i\n",total_length, length, fragment_size);
   		if (fragment_size == total_length )
   		{
     		log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_data_in]: "
@@ -201,9 +390,12 @@ dev_redir_data_in(struct stream* s, int chan_id, int chan_flags, int length,
     case PAKID_CORE_DEVICELIST_ANNOUNCE:
     	result = dev_redir_devicelist_announce(packet);
       break;
-
+    case PAKID_CORE_DEVICE_IOCOMPLETION:
+    	result = dev_redir_iocompletion(packet);
+    	break;
     default:
-      log_message(&log_conf, LOG_LEVEL_WARNING, "rdpdr channel[dev_redir_data_in]: unknown message");
+      log_message(&log_conf, LOG_LEVEL_WARNING, "rdpdr channel[dev_redir_data_in]: "
+      		"unknown message %02x",packetId);
       result = 1;
     }
     if(is_fragmented_packet == 1)
@@ -222,13 +414,12 @@ int APP_CC
 dev_redir_get_wait_objs(tbus* objs, int* count, int* timeout)
 {
   int lcount;
-
   if ((!g_devredir_up) || (objs == 0) || (count == 0))
   {
     return 0;
   }
   lcount = *count;
-  objs[lcount] = g_x_wait_obj;
+  objs[lcount] = printer_sock;
   lcount++;
   *count = lcount;
   return 0;
@@ -238,11 +429,30 @@ dev_redir_get_wait_objs(tbus* objs, int* count, int* timeout)
 int APP_CC
 dev_redir_check_wait_objs(void)
 {
+	char buffer[1024];
+	int len;
+	int fd;
+	log_message(&log_conf, LOG_LEVEL_INFO, "rdpdr channel[dev_redir_check_wait_objs]: check wait object");
+	int device_id;
+
   if (!g_devredir_up)
   {
     return 0;
   }
-  log_message(&log_conf, LOG_LEVEL_INFO, "rdpdr channel[dev_redir_check_wait_objs]: check wait object");
+  if(printer_sock !=0)
+  {
+  	len = read (printer_sock, buffer, 1024);
+  	if( len != -1 )
+  	{
+  		/* check change */
+  		if( printer_dev_get_next_job(buffer, &device_id) == 0)
+  		{
+
+  			dev_redir_begin_io_request(buffer, device_id);
+  		}
+
+  	}
+  }
   return 0;
 }
 
@@ -394,6 +604,7 @@ dev_redir_devicelist_announce(struct stream* s)
   int i, j;
   char dos_name[9] = {0};
   char* data;
+  int handle;
 
   log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_data_in]: new message: PAKID_CORE_DEVICELIST_ANNOUNCE");
   in_uint32_le(s, device_count);	/* DeviceCount */
@@ -421,11 +632,20 @@ dev_redir_devicelist_announce(struct stream* s)
     case RDPDR_DTYP_PRINT :
       log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_client_capability]: "
       		  "Add printer device");
-      if (printer_dev_add(s, device_data_length, device_id, dos_name) == 1)
+      handle = printer_dev_add(s, device_data_length, device_id, dos_name);
+      if (handle != 1)
       {
-      	device_list[device_count].device_id = device_id;
-      	device_list[device_count].device_type = PRINTER_DEVICE;
+      	device_list[device_id].device_id = device_id;
+      	device_list[device_id].device_type = RDPDR_DTYP_PRINT;
       	device_count++;
+      	dev_redir_device_list_reply(handle);
+        if ( printer_sock != 0 )
+        {
+      		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[dev_redir_init_printer_socket]:"
+      				"the inotify socket is already initied");
+      		break;
+        }
+        printer_sock = printer_dev_init_printer_socket();
       	break;
       }
       log_message(&log_conf, LOG_LEVEL_ERROR, "rdpdr channel[dev_redir_client_capability]: "
@@ -440,6 +660,28 @@ dev_redir_devicelist_announce(struct stream* s)
     }
   }
   return 0;
+}
+
+
+/*****************************************************************************/
+int APP_CC
+dev_redir_device_list_reply(int handle)
+{
+  struct stream* s;
+  log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_device_list_reply]:"
+  		" reply to the device add");
+  make_stream(s);
+  init_stream(s, 256);
+  out_uint16_le(s, RDPDR_CTYP_CORE);
+  out_uint16_le(s, PAKID_CORE_DEVICE_REPLY);
+  out_uint16_le(s, 0x1);  							/* major version */
+  out_uint16_le(s, RDP5);							/* minor version */
+  out_uint32_le(s, client_id);							/* client ID */
+  s_mark_end(s);
+  dev_redir_send(s);
+  free_stream(s);
+  return 0;
+
 }
 
 /*****************************************************************************/
@@ -460,8 +702,4 @@ dev_redir_confirm_clientID_request()
   free_stream(s);
   return 0;
 }
-
-
-
-
 

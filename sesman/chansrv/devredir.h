@@ -81,13 +81,42 @@
 #define RDPDR_DTYP_FILESYSTEM			0x00000008
 #define RDPDR_DTYP_SMARTCARD			0x00000020
 
+
 /* device type */
 #define PRINTER_DEVICE		1
+
+/* io operation */
+#define IRP_MJ_CREATE											0x00000000
+#define IRP_MJ_CLOSE											0x00000002
+#define IRP_MJ_READ												0x00000003
+#define IRP_MJ_WRITE											0x00000004
+#define IRP_MJ_DEVICE_CONTROL							0x0000000E
+#define IRP_MJ_QUERY_VOLUME_INFORMATION		0x0000000A
+#define IRP_MJ_SET_VOLUME_INFORMATION			0x0000000B
+#define IRP_MJ_QUERY_INFORMATION					0x00000005
+#define	IRP_MJ_SET_INFORMATION						0x00000006
+#define IRP_MJ_DIRECTORY_CONTROL					0x0000000C
+#define IRP_MJ_LOCK_CONTROL								0x00000011
+
+
+
 struct device
 {
 	int device_id;
 	int device_type;
 };
+
+
+typedef struct {
+	int device;
+	char path[256];
+	int last_req;
+	int file_id ;
+	int message_id;
+} Action;
+
+
+
 
 
 int APP_CC

@@ -28,9 +28,14 @@
 
 #define PPD_FILE 		"/usr/share/ppd/PostscriptColor.ppd"
 #define DEVICE_URI	"cups2all:"
+#define SPOOL_DIR		"/var/spool/cups2all/"
 
 int DEFAULT_CC
 printer_dev_add(struct stream* s, int device_data_length, int device_id, char* dos_name);
+
+int DEFAULT_CC
+printer_dev_get_next_job();
+
 
 #define RDPDR_PRINTER_ANNOUNCE_FLAG_ASCII				0x00000001
 #define RDPDR_PRINTER_ANNOUNCE_FLAG_DEFAULTPRINTER		0x00000002

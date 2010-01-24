@@ -516,6 +516,7 @@ channel_thread_loop(void* in_val)
           }
         }
       }
+      printf("gogogo\n");
       clipboard_check_wait_objs();
       sound_check_wait_objs();
       dev_redir_check_wait_objs();

@@ -1174,6 +1174,16 @@ g_file_seek(int fd, int offset)
 }
 
 /*****************************************************************************/
+/* get the file size */
+int APP_CC
+g_file_size(char* filename)
+{
+	struct stat filestatus;
+	stat( filename, &filestatus );
+	return filestatus.st_size;
+}
+
+/*****************************************************************************/
 /* do a write lock on a file */
 /* return boolean */
 int APP_CC
