@@ -34,6 +34,16 @@ extern int g_pid;
 extern struct config_sesman* g_cfg; /* in sesman.c */
 extern tbus g_term_event;
 
+
+
+/******************************************************************************/
+void DEFAULT_CC
+sig_sesman_cleanup()
+{
+	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[sig_sesman_cleanup]: ");
+	g_remove_dirs(XRDP_TEMP_DIR);
+}
+
 /******************************************************************************/
 void DEFAULT_CC
 sig_sesman_shutdown(int sig)
@@ -55,7 +65,7 @@ sig_sesman_shutdown(int sig)
   g_tcp_close(g_sck);
 
   session_sigkill_all();
-
+  sig_sesman_cleanup();
   g_snprintf(pid_file, 255, "%s/xrdp-sesman.pid", XRDP_PID_PATH);
   g_file_delete(pid_file);
 }

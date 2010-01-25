@@ -5,6 +5,8 @@
 export XRDP_PROCESS=1
 SESSIONS="startxfce4 startkde gnome-session xterm"
 
+DefaultShell=$1
+
 # change PATH to be what your environment needs usually what is in
 # /etc/environment
 #PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games"
@@ -24,6 +26,14 @@ SESSIONS="startxfce4 startkde gnome-session xterm"
 #. /etc/profile
 
 xsetroot -solid white
+which $DefaultShell
+if test $? -eq 0
+then
+  echo "Starting $DefaultShell"
+  $DefaultShell
+  exit 0
+fi
+
 for WindowManager in $SESSIONS
 do
   which $WindowManager

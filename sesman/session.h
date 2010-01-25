@@ -46,6 +46,9 @@
 #define SESMAN_SESSION_KILL_NULLITEM  1
 #define SESMAN_SESSION_KILL_NOTFOUND  2
 
+#define XRDP_USER_PREF_DIRECTORY		"/var/cache/xrdp/user_pref"
+#define XRDP_TEMP_DIR								"/var/cache/xrdp"
+
 struct session_date
 {
   tui16 year;
@@ -157,6 +160,12 @@ session_get_byuser(char* user, int* cnt, unsigned char flags);
 
 char*
 session_get_status_string(int i);
+
+int DEFAULT_CC
+session_set_user_pref(char* username, char* key, char* value);
+
+int DEFAULT_CC
+session_get_user_pref(char* username, char* key, char* value);
 
 #endif
 

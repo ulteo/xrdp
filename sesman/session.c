@@ -313,6 +313,58 @@ wait_for_xserver(int display)
 }
 
 /******************************************************************************/
+int APP_CC
+user_can_launch_program(char* username)
+{
+	char buffer[1024];
+	int fd;
+	g_snprintf(buffer,sizeof(buffer), "%s/%s/%s", XRDP_USER_PREF_DIRECTORY,
+			username, "AuthorizeAlternateShell");
+	if(g_file_exist(buffer) != 0)
+	{
+		return 1;
+	}
+	fd = g_file_open(buffer);
+	if ( fd < 0)
+	{
+		return 1;
+	}
+	g_file_read(fd, buffer, 1024);
+	if(g_strcmp(buffer, "True") == 0)
+	{
+		g_file_close(fd);
+		return 0;
+	}
+	g_file_close(fd);
+	return 1;
+}
+
+/******************************************************************************/
+int APP_CC
+get_user_shell(char* username, char* shell)
+{
+	char buffer[1024];
+	int fd;
+	int size;
+	g_snprintf(buffer,sizeof(buffer), "%s/%s/%s", XRDP_USER_PREF_DIRECTORY, username, "DefaultShell");
+	fd = g_file_open(buffer);
+	if ( fd < 0)
+	{
+		return 1;
+	}
+	size = g_file_read(fd, shell, 1024);
+	if (size > 0)
+	{
+		shell[size] = 0;
+		g_file_close(fd);
+		return 0;
+	}
+	g_file_close(fd);
+	return 1;
+}
+
+
+/******************************************************************************/
 /* called with the main thread */
 static int APP_CC
 session_start_fork(int width, int height, int bpp, char* username,
@@ -337,6 +389,7 @@ session_start_fork(int width, int height, int bpp, char* username,
   char xrdp_username_path[256];
   int fd;
   char* kb_util = "/usr/bin/setxkbmap";
+  char default_shell[256];
 
   /* check to limit concurrent sessions */
   if (g_session_count >= g_cfg->sess.max_sessions)
@@ -378,6 +431,18 @@ session_start_fork(int width, int height, int bpp, char* username,
   g_file_write(fd,username,g_strlen(username));
   g_file_close(fd);
 
+
+  if(get_user_shell(username, default_shell) != 0)
+  {
+		log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "sesman[session_start_fork]: "
+					"enable to get the default shell\n");
+  	default_shell[0] = 0;
+  }
+  if( user_can_launch_program(username) == 1)
+  {
+  	program = 0;
+  }
+
   wmpid = 0;
   pid = g_fork();
   if (pid == -1)
@@ -406,7 +471,6 @@ session_start_fork(int width, int height, int bpp, char* username,
     	  }
 
         auth_set_env(data);
-        printf("ACTIVE\n");
 
         if (directory != 0)
         {
@@ -415,66 +479,29 @@ session_start_fork(int width, int height, int bpp, char* username,
             g_set_current_dir(directory);
           }
         }
-        if (program != 0)
-        {
-          if (program[0] != 0)
-          {
-            g_execlp3(program, program, 0);
-            log_message(&(g_cfg->log), LOG_LEVEL_ALWAYS,
-                        "error starting program %s for user %s - pid %d",
-                        program, username, g_getpid());
-          }
-        }
         /* try to execute user window manager if enabled */
-        if (g_cfg->enable_user_wm)
-        {
-          g_sprintf(text,"%s/%s", g_getenv("HOME"), g_cfg->user_wm);
-          if (g_file_exist(text))
-          {
-            g_execlp3(text, g_cfg->user_wm, 0);
-            log_message(&(g_cfg->log), LOG_LEVEL_ALWAYS,"error starting user "
-                        "wm for user %s - pid %d", username, g_getpid());
-            /* logging parameters */
-            log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "errno: %d, "
-                        "description: %s", errno, g_get_strerror());
-            log_message(&(g_cfg->log), LOG_LEVEL_DEBUG,"execlp3 parameter "
-                        "list:");
-            log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "        argv[0] = %s",
-                        text);
-            log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "        argv[1] = %s",
-                        g_cfg->user_wm);
-          }
-        }
-        /* if we're here something happened to g_execlp3
-           so we try running the default window manager */
         g_sprintf(text, "%s/%s", XRDP_CFG_PATH, g_cfg->default_wm);
-        g_execlp3(text, g_cfg->default_wm, 0);
-
-        log_message(&(g_cfg->log), LOG_LEVEL_ALWAYS,"error starting default "
-                    "wm for user %s - pid %d", username, g_getpid());
-        /* logging parameters */
-        log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "errno: %d, description: "
-                    "%s", errno, g_get_strerror());
-        log_message(&(g_cfg->log), LOG_LEVEL_DEBUG,"execlp3 parameter list:");
+        if (program !=0)
+        {
+        	if(program[0] != 0)
+        	{
+        		g_strcpy(default_shell, program);
+        	}
+        }
+        log_message(&(g_cfg->log), LOG_LEVEL_INFO,"sesman[session_start_fork]: "
+							"default shell : '%s'",default_shell);
+				g_execlp3(text, g_cfg->default_wm, default_shell);
+				log_message(&(g_cfg->log), LOG_LEVEL_ALWAYS,"error starting user "
+            		"wm for user %s - pid %d", username, g_getpid());
+            /* logging parameters */
+        log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "errno: %d, "
+								"description: %s", errno, g_get_strerror());
+        log_message(&(g_cfg->log), LOG_LEVEL_DEBUG,"execlp3 parameter "
+								"list:");
         log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "        argv[0] = %s",
-                    text);
+								text);
         log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "        argv[1] = %s",
-                    g_cfg->default_wm);
-
-        /* still a problem starting window manager just start xterm */
-        g_execlp3("xterm", "xterm", 0);
-
-        /* should not get here */
-        log_message(&(g_cfg->log), LOG_LEVEL_ALWAYS,"error starting xterm "
-                    "for user %s - pid %d", username, g_getpid());
-        /* logging parameters */
-        log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "errno: %d, description: "
-                    "%s", errno, g_get_strerror());
-      }
-      else
-      {
-        log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "another Xserver is "
-                    "already active on display %d", display);
+								g_cfg->user_wm);
       }
       log_message(&(g_cfg->log), LOG_LEVEL_DEBUG,"aborting connection...");
       g_exit(0);
@@ -489,7 +516,6 @@ session_start_fork(int width, int height, int bpp, char* username,
       {
         env_set_user(username, passwd_file, display);
         env_check_password_file(passwd_file, password);
-        printf("session type : %i\n",type);
         if (type == SESMAN_SESSION_TYPE_XVNC)
         {
           xserver_params = list_create();
@@ -679,6 +705,7 @@ session_kill(int pid)
 {
   struct session_chain* tmp;
   struct session_chain* prev;
+  char user_config_path[256];
 
   /*THREAD-FIX require chain lock */
   lock_chain_acquire();
@@ -692,6 +719,9 @@ session_kill(int pid)
     {
       log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "session descriptor for "
                   "pid %d is null!", pid);
+      sprintf(user_config_path, "%s/%s",XRDP_USER_PREF_DIRECTORY,tmp->item->name);
+      printf("user config path : %s\n",user_config_path);
+      g_remove_dirs(user_config_path);
       if (prev == 0)
       {
         /* prev does no exist, so it's the first element - so we set
@@ -842,7 +872,7 @@ session_get_user_display(char* username)
       return 0;
     }
 
-    if (strcmp(username, tmp->item->name)==0)
+    if (g_strcmp(username, tmp->item->name)==0)
     {
       return tmp->item->display;
     }
@@ -1021,8 +1051,9 @@ session_list_session(int* count)
   while (tmp != 0)
   {
 	  sess[*count].pid = tmp->item->pid;
-	  printf("name : %s\n",tmp->item->name);
-	  g_strncpy(sess[*count].name, tmp->item->name, strlen(tmp->item->name));
+	  log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "sesman[session_list_session]: "
+					"name : %s",tmp->item->name);
+	  g_strncpy(sess[*count].name, tmp->item->name, g_strlen(tmp->item->name));
 	  sess[*count].status = tmp->item->status;
 	  tmp=tmp->next;
 	  *count += 1;
@@ -1033,8 +1064,8 @@ session_list_session(int* count)
   return sess;
 }
 
-
-char*
+/******************************************************************************/
+char* DEFAULT_CC
 session_get_status_string(int i)
 {
   switch(i)
@@ -1048,3 +1079,98 @@ session_get_status_string(int i)
   }
 }
 
+
+/******************************************************************************/
+int DEFAULT_CC
+session_set_user_pref(char* username, char* key, char* value)
+{
+	char pref_dir[1024];
+	char pref_key_file[1024];
+	int fd;
+
+	if (!g_directory_exist(XRDP_TEMP_DIR))
+	{
+		if (!g_create_dir(XRDP_TEMP_DIR))
+		{
+			log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "sesman[session_set_user_pref]: "
+						"enable to create %s",XRDP_TEMP_DIR);
+			return 1;
+		}
+	}
+	if (!g_directory_exist(XRDP_USER_PREF_DIRECTORY))
+	{
+		if (!g_create_dir(XRDP_USER_PREF_DIRECTORY))
+		{
+			log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "sesman[session_set_user_pref]: "
+						"enable to create %s",XRDP_USER_PREF_DIRECTORY);
+			return 1;
+		}
+	}
+
+	g_sprintf(pref_dir, "%s/%s",XRDP_USER_PREF_DIRECTORY, username);
+	if (!g_directory_exist(pref_dir))
+	{
+		if (!g_create_dir(pref_dir))
+		{
+			log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "sesman[session_set_user_pref]: "
+						"enable to create %s", pref_dir);
+			return 1;
+		}
+	}
+	g_sprintf(pref_key_file, "%s/%s/%s",XRDP_USER_PREF_DIRECTORY, username,key);
+	/* set value */
+	g_file_delete(pref_key_file);
+	fd = g_file_open(pref_key_file);
+	if( fd < 0)
+	{
+		log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "sesman[session_set_user_pref]: "
+					"enable to create %s", pref_key_file);
+		return 1;
+	}
+	g_file_write(fd, value, g_strlen(value));
+	g_file_close(fd);
+	return 0;
+}
+
+/******************************************************************************/
+int DEFAULT_CC
+session_get_user_pref(char* username, char* key, char* value)
+{
+	char pref_dir[1024];
+	char pref_key_file[1024];
+	int fd;
+
+	if (!g_directory_exist(XRDP_TEMP_DIR))
+	{
+		log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "sesman[session_get_user_pref]: "
+					"enable to access %s", XRDP_TEMP_DIR);
+		return 1;
+	}
+
+	g_sprintf(pref_dir, "%s/%s",XRDP_USER_PREF_DIRECTORY, username);
+	if (!g_directory_exist(XRDP_USER_PREF_DIRECTORY))
+	{
+		log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "sesman[session_get_user_pref]: "
+					"enable to access %s", XRDP_USER_PREF_DIRECTORY);
+		return 1;
+	}
+	if (!g_directory_exist(pref_dir))
+	{
+		log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "sesman[session_get_user_pref]: "
+					"enable to access %s", pref_dir);
+		return 1;
+	}
+	g_sprintf(pref_key_file, "%s/%s/%s",XRDP_USER_PREF_DIRECTORY, username, key);
+	/* set value */
+	fd = g_file_open(pref_key_file);
+	if( fd < 0)
+	{
+		log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "sesman[session_get_user_pref]: "
+						"enable to open file %s", pref_key_file);
+		return 1;
+	}
+	int size;
+	size = g_file_read(fd, value, 1024);
+	g_file_close(fd);
+	return 0;
+}

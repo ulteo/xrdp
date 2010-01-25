@@ -512,16 +512,17 @@ printer_dev_get_next_job(char* jobs, int *device_id)
 	}
 	while((dir_entry = readdir(dir)) != NULL)
 	{
-		if( g_strcmp(dir_entry->d_name, ".") !=0 && g_strcmp(dir_entry->d_name, ".."))
+		if( g_strcmp(dir_entry->d_name, ".") ==0 || g_strcmp(dir_entry->d_name, "..") == 0)
 		{
-			g_sprintf(jobs, "%s/%s",user_spool_dir,dir_entry->d_name);
-			log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_get_next_job]:"
-					"new job : %s\n",jobs);
-			/* printer id to change */
-			*device_id = printer_devices[0].device_id;
-			closedir(dir);
-			return 0;
+			continue;
 		}
+		g_sprintf(jobs, "%s/%s",user_spool_dir,dir_entry->d_name);
+		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_get_next_job]:"
+				"new job : %s\n",jobs);
+		/* printer id to change */
+		*device_id = printer_devices[0].device_id;
+		closedir(dir);
+		return 0;
 	}
 	log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[printer_dev_get_next_job]:"
 				"no new jobs in '%s'\n", user_spool_dir);

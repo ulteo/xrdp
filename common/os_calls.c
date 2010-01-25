@@ -54,6 +54,7 @@
 #include <pwd.h>
 #include <time.h>
 #include <grp.h>
+#include <dirent.h>
 #endif
 
 #include <stdlib.h>
@@ -1339,6 +1340,40 @@ g_remove_dir(const char* dirname)
 #else
   return rmdir(dirname) == 0;
 #endif
+}
+
+/*****************************************************************************/
+/* returns boolean */
+int APP_CC
+g_remove_dirs(const char* dir_path)
+{
+	char path[256];
+	struct dirent *dir_entry;
+	DIR *dir;
+	dir = opendir(dir_path );
+	if( dir == NULL)
+	{
+		return 1;
+	}
+	while((dir_entry = readdir(dir)) != NULL)
+	{
+		if( g_strcmp(dir_entry->d_name, ".") == 0 || g_strcmp(dir_entry->d_name, "..") == 0)
+		{
+			continue;
+		}
+		g_sprintf(path, "%s/%s", dir_path, dir_entry->d_name);
+		if(dir_entry->d_type & DT_DIR)
+		{
+			g_remove_dirs(path);
+		}
+		else
+		{
+			g_file_delete(path);
+		}
+	}
+	g_remove_dir(dir_path);
+	closedir(dir);
+	return 1;
 }
 
 /*****************************************************************************/

@@ -157,6 +157,8 @@ g_create_dir(const char* dirname);
 int APP_CC
 g_remove_dir(const char* dirname);
 int APP_CC
+g_remove_dirs(const char* dir_path);
+int APP_CC
 g_file_delete(const char* filename);
 int APP_CC
 g_file_get_size(const char* filename);
