@@ -517,6 +517,8 @@ printer_dev_get_next_job(char* jobs, int *device_id)
 			g_sprintf(jobs, "%s/%s",user_spool_dir,dir_entry->d_name);
 			log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_get_next_job]:"
 					"new job : %s\n",jobs);
+			/* printer id to change */
+			*device_id = printer_devices[0].device_id;
 			closedir(dir);
 			return 0;
 		}
@@ -524,8 +526,6 @@ printer_dev_get_next_job(char* jobs, int *device_id)
 	log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[printer_dev_get_next_job]:"
 				"no new jobs in '%s'\n", user_spool_dir);
 	closedir(dir);
-	/* printer id to change */
-	*device_id = printer_devices[0].device_id;
 	return 1;
 }
 
