@@ -315,7 +315,6 @@ send_session(int client, int session_id)
 	}
 	doc->encoding = xmlCharStrdup("UTF-8");
 	node = xmlNewNode(NULL, "response");
-	xmlAddChild(node,node2);
 	char prop[128];
 	sprintf(prop, "%i", sess[0].pid);
 	node2 = xmlNewNode(NULL, "session");
