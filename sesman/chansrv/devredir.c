@@ -95,9 +95,8 @@ dev_redir_begin_io_request(char* job,int device)
 	actions[action_index].message_id = 0;
 	strcpy(actions[action_index].path, job);
 
-	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[dev_redir_begin_io_request]:"
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[dev_redir_send_file]:"
   		"process job[%s]",job);
-	printf("device : %i\n",device);
 	out_uint16_le(s, RDPDR_CTYP_CORE);
 	out_uint16_le(s, PAKID_CORE_DEVICE_IOREQUEST);
 	out_uint32_le(s, actions[action_index].device);
@@ -105,29 +104,23 @@ dev_redir_begin_io_request(char* job,int device)
 	out_uint32_le(s, actions[action_index].file_id);
 	out_uint32_le(s, IRP_MJ_CREATE);   	/* major version */
 	out_uint32_le(s, 0);								/* minor version */
-	printf("on y passe %i \n",device_list[device].device_type);
-
 	switch (device_list[device].device_type) {
 		case RDPDR_DTYP_PRINT:
 			out_uint32_le(s, 0);								/* desired access(unused) */
-			printf("titit1\n");
 			out_uint64_le(s, 0);								/* size (unused) */
-			printf("titit2\n");
 			out_uint32_le(s, 0);								/* file attribute (unused) */
 			out_uint32_le(s, 0);								/* shared access (unused) */
 			out_uint32_le(s, 0);								/* disposition (unused) */
 			out_uint32_le(s, 0);								/* create option (unused) */
 			out_uint32_le(s, 0);								/* path length (unused) */
-			printf("titit\n");
 			break;
 		default:
 			log_message(&log_conf, LOG_LEVEL_ERROR, "chansrv[dev_redir_send_file: "
 					"the device type %04x is not yet supported",device);
 			free_stream(s);
 			return 0;
+			break;
 	}
-	printf("on y passe\n");
-
 	s_mark_end(s);
 	dev_redir_send(s);
 	free_stream(s);
@@ -454,8 +447,10 @@ dev_redir_check_wait_objs(void)
   		/* check change */
   		if( printer_dev_get_next_job(buffer, &device_id) == 0)
   		{
+
   			dev_redir_begin_io_request(buffer, device_id);
   		}
+
   	}
   }
   return 0;
