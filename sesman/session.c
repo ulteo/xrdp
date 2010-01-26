@@ -683,20 +683,46 @@ session_sync_start(void)
   return 0;
 }
 
+/*
+int DEFAULT_CC
+g_kill_user_pid(int uid)
+{
+	int pid;
+	char path[1024];
+	struct dirent *dir_entry;
+	struct stat st;
+	int size;
+	DIR *dir;
+	dir = opendir("/proc" );
+	if( dir == NULL)
+	{
+		return 0;
+	}
+	while ((dir_entry = readdir(dir)) != NULL)
+	{
+		if( 	 g_strcmp(dir_entry->d_name, ".") == 0
+				|| g_strcmp(dir_entry->d_name, "..") == 0
+			  || dir_entry->d_type & DT_DIR == 0
+			  || stat(dir_entry->d_name, &st) == -1)
+		{
+    	continue;
+    }
+    if(st->st_uid == uid)
+		pid = g_atoi(dir_entry->d_name);
+		if (pid != 0 )
+		{
+			kill(pid, SIGTERM);
+		}
+	}
+}
+*/
 
 /******************************************************************************/
 int DEFAULT_CC
 session_destroy(char* username)
 {
-  int pid = g_fork();
-  if( pid == 0 )
-  {
-#warning TODO realize a logoff without script
-  	g_execlp3("/usr/bin/logoff", "/usr/bin/logoff", username);
-    g_exit(0);
-  }
-  g_waitpid(pid);
-  return SESMAN_SESSION_KILL_OK;
+
+	return SESMAN_SESSION_KILL_OK;
 }
 
 /******************************************************************************/
