@@ -603,7 +603,7 @@ process_request(int client)
   		}
   		else
   		{
-  			xml_send_error(client, "unable to set value");
+  			xml_send_error(client, "unable to set preference");
   		}
     	close(client);
     	pthread_exit((void*) 0);
@@ -617,7 +617,7 @@ process_request(int client)
   		}
   		else
   		{
-  			xml_send_error(client, "unable to set value");
+  			xml_send_error(client, "unable to get preference");
   		}
     	close(client);
     	pthread_exit((void*) 0);

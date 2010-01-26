@@ -705,7 +705,6 @@ session_kill(int pid)
 {
   struct session_chain* tmp;
   struct session_chain* prev;
-  char user_config_path[256];
 
   /*THREAD-FIX require chain lock */
   lock_chain_acquire();
@@ -719,9 +718,6 @@ session_kill(int pid)
     {
       log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "session descriptor for "
                   "pid %d is null!", pid);
-      sprintf(user_config_path, "%s/%s",XRDP_USER_PREF_DIRECTORY,tmp->item->name);
-      printf("user config path : %s\n",user_config_path);
-      g_remove_dirs(user_config_path);
       if (prev == 0)
       {
         /* prev does no exist, so it's the first element - so we set
@@ -1171,6 +1167,7 @@ session_get_user_pref(char* username, char* key, char* value)
 	}
 	int size;
 	size = g_file_read(fd, value, 1024);
+	value[size] = 0;
 	g_file_close(fd);
 	return 0;
 }
