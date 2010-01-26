@@ -322,21 +322,21 @@ user_can_launch_program(char* username)
 			username, "AuthorizeAlternateShell");
 	if(g_file_exist(buffer) != 0)
 	{
-		return 1;
+		return 0;
 	}
 	fd = g_file_open(buffer);
 	if ( fd < 0)
 	{
-		return 1;
+		return 0;
 	}
 	g_file_read(fd, buffer, 1024);
 	if(g_strcmp(buffer, "True") == 0)
 	{
 		g_file_close(fd);
-		return 0;
+		return 1;
 	}
 	g_file_close(fd);
-	return 1;
+	return 0;
 }
 
 /******************************************************************************/
