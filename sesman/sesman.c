@@ -316,10 +316,10 @@ xml_receive_message(int client, xmlDocPtr* doc)
 	init_stream(s, 1024);
 	g_tcp_recv(client, s->data, sizeof(int), 0);
 	in_uint32_be(s,data_length);
-	log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[xml_received_message]: "
+	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[xml_received_message]: "
 			"data_length : %i", data_length);
   g_tcp_recv(client, s->data, data_length, 0);
-  log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[xml_received_message]: "
+  log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[xml_received_message]: "
 			"data : %s",s->data);
   *doc = xmlReadMemory(s->data, data_length, "noname.xml", NULL, 0);
   free_stream(s);

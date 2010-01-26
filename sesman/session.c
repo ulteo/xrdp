@@ -29,6 +29,9 @@
 #include "libscp_types.h"
 #include <pwd.h>
 #include <errno.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <signal.h>
 //#include <time.h>
 
 
@@ -683,11 +686,12 @@ session_sync_start(void)
   return 0;
 }
 
-/*
+/******************************************************************************/
 int DEFAULT_CC
-g_kill_user_pid(int uid)
+session_destroy(char* username)
 {
 	int pid;
+	int uid;
 	char path[1024];
 	struct dirent *dir_entry;
 	struct stat st;
@@ -702,27 +706,23 @@ g_kill_user_pid(int uid)
 	{
 		if( 	 g_strcmp(dir_entry->d_name, ".") == 0
 				|| g_strcmp(dir_entry->d_name, "..") == 0
-			  || dir_entry->d_type & DT_DIR == 0
-			  || stat(dir_entry->d_name, &st) == -1)
+				|| dir_entry->d_type & DT_DIR == 0)
 		{
     	continue;
-    }
-    if(st->st_uid == uid)
+		}
+		g_sprintf(path, "%s/%s", "/proc", dir_entry->d_name);
+		if( stat(path, &st) == -1 )
+		{
+    	continue;
+	  }
+		g_getuser_info(username, 0, &uid, 0, 0, 0);
+    if(st.st_uid == uid)
 		pid = g_atoi(dir_entry->d_name);
 		if (pid != 0 )
 		{
 			kill(pid, SIGTERM);
 		}
 	}
-}
-*/
-
-/******************************************************************************/
-int DEFAULT_CC
-session_destroy(char* username)
-{
-
-	return SESMAN_SESSION_KILL_OK;
 }
 
 /******************************************************************************/
@@ -777,6 +777,7 @@ session_kill(int pid)
       }
       g_free(tmp);
       g_session_count--;
+      session_destroy(tmp->item->name);
       /*THREAD-FIX release chain lock */
       lock_chain_release();
       return SESMAN_SESSION_KILL_OK;
@@ -1073,7 +1074,7 @@ session_list_session(int* count)
   while (tmp != 0)
   {
 	  sess[*count].pid = tmp->item->pid;
-	  log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "sesman[session_list_session]: "
+	  log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[session_list_session]: "
 					"name : %s",tmp->item->name);
 	  g_strncpy(sess[*count].name, tmp->item->name, g_strlen(tmp->item->name));
 	  sess[*count].status = tmp->item->status;
