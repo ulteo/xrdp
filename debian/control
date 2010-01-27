@@ -7,7 +7,7 @@ Standards-Version: 3.8.3
 
 Package: xrdp
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, cups2all
 Description: RDP server for linux
  Xrdp is a RDP server for linux. It provides remote display of a desktop and
  many other features such as:
