@@ -38,6 +38,7 @@ xrdp_start()
 xrdp_stop()
 {
   echo -n "Stopping: xrdp and sesman . . "
+  logoff all
   $SBINDIR/xrdp-sesman --kill >> $LOG
   $SBINDIR/xrdp --kill >> $LOG
   echo "."

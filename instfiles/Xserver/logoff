@@ -32,7 +32,7 @@ import pwd
 import signal
 
 
-def findPIDForRoot(tag, pid_exception):
+def findPIDForRoot(tag, pid_exception, user=None):
   files = glob.glob("/proc/[0-9]*")
   for f in files:
     if not os.path.isdir(f):
