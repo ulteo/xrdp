@@ -26,7 +26,7 @@ def _VchannelGetSocket():
 	if not os.environ.has_key("DISPLAY"):
 		return None
 	
-	path = "/tmp/channel_socket%s"%(os.environ["DISPLAY"])
+	path = "/var/spool/xrdp_user_channel_socket%s"%(os.environ["DISPLAY"])
 	if not os.path.exists(path):
 		return None
 	

@@ -57,7 +57,7 @@ Protocol:
 """
 
 def _SessionGetSocket():
-	filename = "/tmp/management"
+	filename = "/var/spool/xrdp_management"
 	
 	if not os.path.exists(filename):
 		return None

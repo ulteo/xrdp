@@ -52,6 +52,7 @@ int g_cliprdr_chan_id = -1; /* cliprdr */
 int g_rdpsnd_chan_id = -1; /* rdpsnd */
 int g_rdpdr_chan_id = -1; /* rdpdr */
 int g_seamrdp_chan_id = -1; /* seamrdp */
+extern char* user_channel_socket_name;
 
 /*****************************************************************************/
 /* returns error */
@@ -440,7 +441,7 @@ setup_listen(void)
   if (g_use_unix_socket)
   {
     g_lis_trans = trans_create(2, 8192, 8192);
-    g_snprintf(port, 255, "/tmp/xrdp_chansrv_socket_%d", 7200 + g_display_num);
+    g_snprintf(port, 255, "/var/spool/xrdp_chansrv_socket_%d", 7200 + g_display_num);
   }
   else
   {
@@ -625,6 +626,8 @@ main_cleanup(void)
   g_delete_wait_obj(g_term_event);
   g_delete_wait_obj(g_thread_done_event);
   g_deinit(); /* os_calls */
+  printf("CLEANUP\n");
+  user_channel_cleanup();
   return 0;
 }
 

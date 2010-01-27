@@ -425,16 +425,6 @@ session_start_fork(int width, int height, int bpp, char* username,
     return 0;
   }
 
-  g_sprintf(xrdp_username_path,"/tmp/xrdp_user_%i",display);
-  if(g_file_exist((const char*)xrdp_username_path))
-  {
-    g_file_delete((const char*)xrdp_username_path);
-  }
-  fd = g_file_open((const char*)xrdp_username_path);
-  g_file_write(fd,username,g_strlen(username));
-  g_file_close(fd);
-
-
   if(get_user_shell(username, default_shell) != 0)
   {
 		log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "sesman[session_start_fork]: "

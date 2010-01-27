@@ -636,7 +636,8 @@ THREAD_RV THREAD_CC
 admin_thread(void* param)
 {
   int client;
-  int server = g_create_unix_socket("/tmp/management");
+  int server = g_create_unix_socket("/var/spool/xrdp_management");
+	g_chmod_hex("/var/spool/xrdp_management", 0xFFFF);
   while(1)
   {
   	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[admin_thread]: "

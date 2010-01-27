@@ -756,16 +756,16 @@ g_create_wait_obj(char* name)
   if ((name == 0) || (strlen(name) == 0))
   {
     g_random((char*)&i, sizeof(i));
-    sprintf(sa.sun_path, "/tmp/auto%8.8x", i);
+    sprintf(sa.sun_path, "/var/spool/auto%8.8x", i);
     while (g_file_exist(sa.sun_path))
     {
       g_random((char*)&i, sizeof(i));
-      sprintf(sa.sun_path, "/tmp/auto%8.8x", i);
+      sprintf(sa.sun_path, "/var/spool/auto%8.8x", i);
     }
   }
   else
   {
-    sprintf(sa.sun_path, "/tmp/%s", name);
+    sprintf(sa.sun_path, "/var/spool/%s", name);
   }
   unlink(sa.sun_path);
   len = sizeof(sa);

@@ -28,7 +28,7 @@ static int user_channel_socket = 0;
 extern struct log_config log_conf;
 static struct user_channel user_channels[15];
 static int channel_count = 0;
-static char socket_name[256];
+static char user_channel_socket_name[256] = {0};
 
 
 /*****************************************************************************/
@@ -41,6 +41,17 @@ user_channel_send( int chan_id, char* mess, int size){
   		"message sended: %s", mess);
   return rv;
 }
+
+/*****************************************************************************/
+int APP_CC
+user_channel_cleanup(){
+	if(user_channel_socket_name != 0)
+	{
+		g_file_delete(user_channel_socket_name);
+	}
+	return 0;
+}
+
 
 /*****************************************************************************/
 int APP_CC
@@ -71,9 +82,9 @@ user_channel_transmit(int socket, char* mess, int size )
 int APP_CC
 user_channel_do_up()
 {
-	g_sprintf(socket_name, "/tmp/channel_socket%s",getenv("DISPLAY"));
-	user_channel_socket = g_create_unix_socket(socket_name);
-	g_chmod_hex(socket_name, 0xFFFF);
+	g_sprintf(user_channel_socket_name, "/var/spool/xrdp_user_channel_socket%s",getenv("DISPLAY"));
+	user_channel_socket = g_create_unix_socket(user_channel_socket_name);
+	g_chmod_hex(user_channel_socket_name, 0xFFFF);
 	g_user_channel_up = 1;
 	return 0;
 }

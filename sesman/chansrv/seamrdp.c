@@ -35,7 +35,6 @@ static int g_last_seamrdp_size = 0;
 static int seamrdp_mess_id = 0;
 static int connected = 0;
 static char* g_last_seamrdp_data = 0;
-static char username[256];
 static tbus g_x_wait_obj = 0;
 static Display* g_display = 0;
 static Window_list window_list;
@@ -44,6 +43,7 @@ static char* display_name;
 
 extern int g_seamrdp_chan_id; /* in chansrv.c */
 extern struct log_config log_conf;
+extern char* username;
 
 /*****************************************************************************/
 int DEFAULT_CC
@@ -133,18 +133,8 @@ seamrdp_init(void)
   if(g_strlen(display_name) == 0)
   {
     log_message(&log_conf, LOG_LEVEL_ALWAYS, "xrdp-chansrv: failed to get environement variable XRDP_SESSVC_DISPLAY");
-	rv = 3;
+    rv = 3;
   }
-  g_sprintf(xrdp_username_path,"/tmp/xrdp_user_%s",display_name);
-  fd = g_file_open(xrdp_username_path);
-  if(fd == 0)
-  {
-    log_message(&log_conf, LOG_LEVEL_ALWAYS, "xrdp-chansrv: failed to get environement variable XRDP_SESSVC_DISPLAY");
-	rv = 4;
-  }
-  size = g_file_read(fd,username,255);
-  g_file_close(fd);
-  username[size]='\0';
 
   if(connected == 0)
   {

@@ -42,6 +42,7 @@ sig_sesman_cleanup()
 {
 	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[sig_sesman_cleanup]: ");
 	g_remove_dirs(XRDP_TEMP_DIR);
+	g_file_delete("/var/spool/xrdp_management");
 }
 
 /******************************************************************************/
