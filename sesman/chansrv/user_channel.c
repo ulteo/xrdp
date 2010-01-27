@@ -119,7 +119,7 @@ user_channel_init(char* channel_name, int channel_id)
 int APP_CC
 user_channel_deinit(void)
 {
-	/* delete channel */
+
 	return 0;
 }
 

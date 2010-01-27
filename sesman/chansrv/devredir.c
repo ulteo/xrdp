@@ -154,7 +154,7 @@ dev_redir_process_write_io_request(int completion_id, int offset)
 		g_file_seek(fd, offset);
 		size = g_file_read(fd, buffer, 1024);
 		out_uint32_le(s,size);
-		out_uint32_le(s,offset);
+		out_uint64_le(s,offset);
 		out_uint8s(s,20);
 		out_uint8p(s,buffer,size);
 		s_mark_end(s);

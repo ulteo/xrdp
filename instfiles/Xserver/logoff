@@ -110,7 +110,6 @@ while pid != None :
   os.kill(pid, signal.SIGKILL)
   time.sleep(0.2)
   if os.path.exists("/proc/%i"%(pid)) :
-    print "the has not exists"
     os.kill(pid, signal.SIGTERM)
   pid = func("XRDP_PROCESS", my_pid, user)
 
