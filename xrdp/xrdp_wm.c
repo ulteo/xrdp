@@ -1436,13 +1436,14 @@ xrdp_wm_log_wnd_notify(struct xrdp_bitmap* wnd,
 int APP_CC
 xrdp_wm_log_msg(struct xrdp_wm* self, char* msg)
 {
+	/* TODO do an advance logging  */
   struct xrdp_bitmap* but;
   int w;
   int h;
   int xoffset;
   int yoffset;
 
-  list_add_item(self->log, (long)g_strdup(msg));
+  /*list_add_item(self->log, (long)g_strdup(msg));
   if (self->log_wnd == 0)
   {
     w = 400;
@@ -1459,7 +1460,7 @@ xrdp_wm_log_msg(struct xrdp_wm* self, char* msg)
       h = self->screen->height - 4;
       yoffset = 2;
     }
-    /* log window */
+    // log window
     self->log_wnd = xrdp_bitmap_create(w, h, self->screen->bpp,
                                        WND_TYPE_WND, self);
     list_add_item(self->screen->child_list, (long)self->log_wnd);
@@ -1469,7 +1470,7 @@ xrdp_wm_log_msg(struct xrdp_wm* self, char* msg)
     self->log_wnd->left = xoffset;
     self->log_wnd->top = yoffset;
     set_string(&(self->log_wnd->caption1), "Connection Log");
-    /* ok button */
+    // ok button
     but = xrdp_bitmap_create(60, 25, self->screen->bpp, WND_TYPE_BUTTON, self);
     list_insert_item(self->log_wnd->child_list, 0, (long)but);
     but->parent = self->log_wnd;
@@ -1480,9 +1481,9 @@ xrdp_wm_log_msg(struct xrdp_wm* self, char* msg)
     but->tab_stop = 1;
     set_string(&but->caption1, "OK");
     self->log_wnd->focused_control = but;
-    /* set notify function */
+     //set notify function
     self->log_wnd->notify = xrdp_wm_log_wnd_notify;
-  }
+  }*/
   xrdp_wm_set_focused(self, self->log_wnd);
   xrdp_bitmap_invalidate(self->log_wnd, 0);
   g_sleep(100);
