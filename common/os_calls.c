@@ -1527,6 +1527,26 @@ g_strncasecmp(const char* c1, const char* c2, int len)
 
 /*****************************************************************************/
 int APP_CC
+g_str_replace_first(char * buffer, char * s, char * by)
+{
+	char * p = strstr(buffer, s);
+	if (p != NULL)
+	{
+		size_t len_p = strlen(p);
+		size_t len_s = strlen(s);
+		size_t len_by = strlen(by);
+		if (len_s != len_by)
+		{
+			memmove(p + len_by, p + len_s, len_p);
+		}
+		strncpy(p, by, len_by);
+		return 0;
+	}
+	return 1;
+}
+
+/*****************************************************************************/
+int APP_CC
 g_atoi(char* str)
 {
   if (str == 0)

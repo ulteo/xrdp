@@ -73,14 +73,13 @@ printer_dev_server_connect(http_t **http )
 
 /************************************************************************/
 int
-printer_dev_server_disconnect(http_t **http )
+printer_dev_server_disconnect(http_t *http )
 {
-	if (! *http)
+	if (! http)
 	{
-		httpClose(*http);
+		httpClose(http);
 	}
 	return 0;
-
 }
 
 /************************************************************************/
@@ -91,7 +90,7 @@ printer_dev_add_printer(http_t* http, char* lp_name, char* device_uri)
 					*response =NULL;		/* IPP Response */
   char		uri[HTTP_MAX_URI] = {0};	/* URI for printer/class */
 
-  log_message(&log_conf, LOG_LEVEL_DEBUG, "printer_dev[printer_add]: "
+  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_add_printer]: "
   		"add_printer %s of type %s ", lp_name,device_uri);
   request = ippNewRequest(CUPS_ADD_MODIFY_PRINTER);
 
@@ -112,14 +111,14 @@ printer_dev_add_printer(http_t* http, char* lp_name, char* device_uri)
 
   if ((response = cupsDoRequest(http, request, "/admin/")) == NULL)
   {
-    log_message(&log_conf, LOG_LEVEL_ERROR, "printer_dev[printer_add]:"
-    		" %s\n", cupsLastErrorString());
+    log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[printer_dev_add_printer]: "
+    		" %s", cupsLastErrorString());
     return 1;
   }
   else if (response->request.status.status_code > IPP_OK_CONFLICT)
   {
-    log_message(&log_conf, LOG_LEVEL_ERROR, "printer_dev[printer_add]:"
-    		" %s\n", cupsLastErrorString());
+    log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[printer_dev_add_printer]: "
+    		" %s", cupsLastErrorString());
     ippDelete(response);
     return 1;
   }
@@ -139,8 +138,8 @@ printer_dev_del_printer(http_t* http, char* lp_name)
 					*response;		/* IPP Response */
 	char		uri[HTTP_MAX_URI];	/* URI for printer/class */
 
-	log_message(&log_conf, LOG_LEVEL_DEBUG, "printer_dev[printer_del] : "
-			"delete_printer %s\n", lp_name);
+  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_del_printer]: "
+			"delete_printer %s", lp_name);
 	request = ippNewRequest(CUPS_DELETE_PRINTER);
 	httpAssembleURIf(HTTP_URI_CODING_ALL, uri, sizeof(uri), "ipp", NULL,
                  "localhost", 0, "/printers/%s", lp_name);
@@ -149,14 +148,14 @@ printer_dev_del_printer(http_t* http, char* lp_name)
 
 	if ((response = cupsDoRequest(http, request, "/admin/")) == NULL)
 	{
-    log_message(&log_conf, LOG_LEVEL_ERROR, "printer_dev[printer_add]:"
-    		" %s\n", cupsLastErrorString());
+	  log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[printer_dev_del_printer]: "
+    		" %s", cupsLastErrorString());
 		return 1;
 	}
 	else if (response->request.status.status_code > IPP_OK_CONFLICT)
 	{
-    log_message(&log_conf, LOG_LEVEL_ERROR, "printer_dev[printer_add]:"
-    		" %s\n", cupsLastErrorString());
+	  log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[printer_dev_del_printer]: "
+    		" %s", cupsLastErrorString());
     ippDelete(response);
     return 1;
 	}
@@ -184,7 +183,8 @@ printer_dev_set_ppd(http_t *http, char* lp_name, char* ppd_file)
   int size;
 
 
-  printf("set_printer_file(%p, \"%s\", \"%s\")\n", http, lp_name, ppd_file);
+  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_set_ppd]: "
+  		"set ppd file %s",ppd_file);
 
  /*
   * See if the file is gzip'd; if so, unzip it to a temporary file and
@@ -199,13 +199,15 @@ printer_dev_set_ppd(http_t *http, char* lp_name, char* ppd_file)
 
     if ((fd = cupsTempFd(tempfile, sizeof(tempfile))) < 0)
     {
-      printf("ERROR: Unable to create temporary file");
+      log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[printer_dev_set_ppd]: "
+      		"unable to create temporary file");
       return (1);
     }
 
     if ((gz = gzopen(ppd_file, "rb")) == NULL)
     {
-      printf("lpadmin: Unable to open file \"%s\": %s\n",ppd_file, strerror(errno));
+      log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[printer_dev_set_ppd]: "
+      		"unable to open file \"%s\": %s",ppd_file, strerror(errno));
       close(fd);
       unlink(tempfile);
       return (1);
@@ -254,7 +256,8 @@ printer_dev_set_ppd(http_t *http, char* lp_name, char* ppd_file)
 
   if (cupsLastError() > IPP_OK_CONFLICT)
   {
-    printf( "lpadmin: %s\n", cupsLastErrorString());
+    log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[printer_dev_set_ppd]: "
+					"%s", cupsLastErrorString());
 
     return (1);
   }
@@ -270,7 +273,8 @@ printer_dev_do_operation(http_t * http, int operation, char* lp_name)
 	char		uri[HTTP_MAX_URI];	/* URI for printer/class */
 	char* reason = NULL;
 
-	printf("Do operation (%i => %p, \"%s\")\n", operation, http, lp_name);
+  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_do_operation]: "
+				"do operation (%i => %p, \"%s\")", operation, http, lp_name);
   request = ippNewRequest(operation);
 
   httpAssembleURIf(HTTP_URI_CODING_ALL, uri, sizeof(uri), "ipp", NULL,
@@ -289,7 +293,8 @@ printer_dev_do_operation(http_t * http, int operation, char* lp_name)
 
   if (cupsLastError() > IPP_OK_CONFLICT)
   {
-  	printf("Operation failed: %s\n", ippErrorString(cupsLastError()));
+    log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[printer_dev_do_operation]: "
+					"operation failed: %s", ippErrorString(cupsLastError()));
   	return 1;
   }
 
@@ -302,7 +307,8 @@ printer_dev_do_operation(http_t * http, int operation, char* lp_name)
 
   if (cupsLastError() > IPP_OK_CONFLICT)
 	{
-  	printf("%s\n", cupsLastErrorString());
+    log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[printer_dev_do_operation]: "
+    		"%s", cupsLastErrorString());
   	return 1;
 	}
   return 0;
@@ -310,7 +316,7 @@ printer_dev_do_operation(http_t * http, int operation, char* lp_name)
 
 /************************************************************************/
 int
-printer_dev_get_restricted_user(http_t* http, char* lp_name, char* user_list)
+printer_dev_get_restricted_user_list(http_t* http, char* lp_name, char* user_list)
 {
   ipp_t	*request;		/* IPP Request */
 	ipp_t	*response;
@@ -323,19 +329,19 @@ printer_dev_get_restricted_user(http_t* http, char* lp_name, char* user_list)
   httpAssembleURIf(HTTP_URI_CODING_ALL, uri, sizeof(uri), "ipp", NULL,
                    "localhost", 0, "/printers/%s", lp_name);
   request = ippNewRequest(IPP_GET_PRINTER_ATTRIBUTES);
-  printf("toto\n");
   ippAddString(request, IPP_TAG_OPERATION, IPP_TAG_URI, "printer-uri", NULL, uri);
-  printf("toto\n");
-  ippDelete(cupsDoRequest(http, request, "/admin/"));
+  response = cupsDoRequest(http, request, "/admin/");
   if (cupsLastError() > IPP_OK_CONFLICT)
   {
-  	printf("Operation failed: %s\n", ippErrorString(cupsLastError()));
+    log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[printer_dev_get_restricted_user_list]: "
+					"operation failed: %s", ippErrorString(cupsLastError()));
+  	ippDelete(response);
   	return 1;
   }
-  printf("toto\n");
   attr = ippFindAttribute(response, "requesting-user-name-allowed", IPP_TAG_NAME);
   if (attr == 0 || attr->num_values == 0)
   {
+  	ippDelete(response);
   	return 0;
   }
   for(i=0 ; i < attr->num_values ; i++)
@@ -343,13 +349,15 @@ printer_dev_get_restricted_user(http_t* http, char* lp_name, char* user_list)
   	size = sprintf(user_p, "%s,",attr->values[i].string.text);
   	user_p+= size;
   }
-  printf("requesting-user-name-allowed : %s\n", user_list);
+  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_get_restricted_user_list]: "
+				"requesting-user-name-allowed : %s", user_list);
+  ippDelete(response);
   return attr->num_values;
 }
 
 /************************************************************************/
 int
-printer_dev_restrict_user(http_t* http, char* lp_name, char* user)
+printer_dev_set_restrict_user_list(http_t* http, char* lp_name, char* user_list)
 {
 	int num_options = 0;
   cups_option_t	*options;
@@ -366,25 +374,17 @@ printer_dev_restrict_user(http_t* http, char* lp_name, char* user)
 
   request = ippNewRequest(CUPS_ADD_MODIFY_PRINTER);
   ippAddString(request, IPP_TAG_OPERATION, IPP_TAG_URI, "printer-uri", NULL, uri);
-
-  if( printer_dev_get_restricted_user(http, lp_name, user_buffer) == 0)
-  {
-  	sprintf(user_buffer, "%s", user);
-  }
-  else
-  {
-  	sprintf(user_buffer, "%s%s", user_buffer, user);
-  }
   num_options = cupsAddOption("requesting-user-name-denied",
 	                          "all", num_options, &options);
   num_options = cupsAddOption("requesting-user-name-allowed",
-                          user_buffer, num_options,&options);
+                          user_list, num_options,&options);
   cupsEncodeOptions2(request, num_options, options, IPP_TAG_PRINTER);
   ippDelete(cupsDoRequest(http, request, "/admin/"));
 
   if (cupsLastError() > IPP_OK_CONFLICT)
   {
-    printf("lpadmin: %s\n", cupsLastErrorString());
+    log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[printer_dev_set_restrict_user_list]: "
+						"%s", cupsLastErrorString());
     return 1;
   }
   else
@@ -392,7 +392,6 @@ printer_dev_restrict_user(http_t* http, char* lp_name, char* user)
     return 0;
   }
 }
-
 
 /************************************************************************/
 int APP_CC
@@ -408,45 +407,48 @@ printer_dev_add(struct stream* s, int device_data_length,
   char pnp_name[256] = {0};			/* ignored */
   char driver_name[256] = {0};
   char printer_name[256] = {0};
+  char user_list[1024] = {0};
 	http_t *http = NULL;
 
   in_uint32_le(s, flags);
-  log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[printer_dev_add]: "
+  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_add]: "
 		  "flags = %i", flags);
   in_uint32_le(s, ignored);
   in_uint32_le(s, pnp_name_len);
-  log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[printer_dev_add]: "
+  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_add]: "
 		  "pnp_name_len = %i", pnp_name_len);
   in_uint32_le(s, driver_name_len);
-  log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[printer_dev_add]: "
+  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_add]: "
 		  "driver_name_len = %i", driver_name_len);
   in_uint32_le(s, printer_name_len);
-  log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[printer_dev_add]: "
+  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_add]: "
 		  "print_name_len = %i", printer_name_len);
   in_uint32_le(s, cached_field_name);
   if(pnp_name_len != 0)
   {
     in_unistr(s, pnp_name, sizeof(pnp_name), pnp_name_len);
-    log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[printer_dev_add]: "
+    log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_add]: "
   		  "pnp_name = %s", pnp_name);
   }
   if(driver_name_len != 0)
   {
     in_unistr(s, driver_name, sizeof(driver_name), driver_name_len);
-    log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[printer_dev_add]: "
+    log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_add]: "
 		  "driver_name = %s", driver_name);
   }
   if(printer_name_len != 0)
   {
     in_unistr(s, printer_name, sizeof(printer_name), printer_name_len);
-    log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[printer_dev_add]: "
+    log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_add]: "
 		  "printer name = %s", printer_name);
   }
 
-  log_message(&log_conf, LOG_LEVEL_DEBUG, "try to connect to cups server");
+  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_add]: "
+				"try to connect to cups server");
 	if (printer_dev_server_connect(&http) == 1)
 	{
-		log_message(&log_conf, LOG_LEVEL_ERROR, "enable to connect to printer server\n");
+	  log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[printer_dev_add]: "
+					"enable to connect to printer server\n");
 		return 1;
 	}
 	if( printer_dev_add_printer(http, printer_name, DEVICE_URI) !=0)
@@ -464,8 +466,16 @@ printer_dev_add(struct stream* s, int device_data_length,
 	log_message(&log_conf, LOG_LEVEL_DEBUG, "Succed to add printer\n");
 	printer_dev_do_operation(http, IPP_RESUME_PRINTER, printer_name);
 	printer_dev_do_operation(http, CUPS_ACCEPT_JOBS, printer_name);
-	printer_dev_restrict_user(http, printer_name, username);
-	printer_dev_server_disconnect(&http);
+	if( printer_dev_get_restricted_user_list(http, printer_name, user_list) == 0)
+	{
+		g_strncpy(user_list, username, sizeof(username));
+	}
+	else
+	{
+		sprintf(user_list, "%s%s", user_list, username);
+	}
+	printer_dev_set_restrict_user_list(http, printer_name, user_list);
+	printer_dev_server_disconnect(http);
 	printer_devices[printer_devices_count].device_id = device_id;
 	g_strcpy(printer_devices[printer_devices_count].printer_name, printer_name);
 	printer_devices_count++;
@@ -494,6 +504,7 @@ printer_dev_del(int device_id)
 	int printer_index;
 	char user_list[1024] = {0};
 	char* lp_name;
+	char* user_list_p;
 	http_t *http = NULL;
 
 	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_del]:"
@@ -515,15 +526,38 @@ printer_dev_del(int device_id)
 				"enable to connect to printer server\n");
 		return 1;
 	}
-	printf("1\n");
-	printer_dev_get_restricted_user(http, lp_name, user_list);
 
-	printf("2\n");
-	printf("user list : %s\n", user_list);
-
-	/* remove user of list */
-	/* update */
-	/* remove it if on user exist */
+	printer_dev_get_restricted_user_list(http, lp_name, user_list);
+	user_list_p = &user_list;
+	if (g_str_replace_first(user_list, username, "") == 1)
+	{
+		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_del]:"
+				"enable to delete user restriction\n");
+	}
+	else
+	{
+		/* cleanning */
+		g_str_replace_first(user_list, ",,", "");
+		if( user_list[0] == ',' )
+		{
+			user_list_p++;
+		}
+	}
+	if( g_strlen(user_list_p) == 0 )
+	{
+		if (printer_dev_del_printer(http, lp_name) == 1 )
+		{
+			return 1;
+		}
+	}
+	else
+	{
+		if ( printer_dev_set_restrict_user_list(http, lp_name, user_list_p) == 1 )
+		{
+			return 1;
+		}
+	}
+	return 0;
 }
 
 
@@ -560,8 +594,13 @@ printer_dev_get_next_job(char* jobs, int *device_id)
 }
 
 int DEFAULT_CC
-printer_dev_delete_job(user_spool_dir, buffer)
+printer_dev_delete_job(char* jobs)
 {
+	if(g_file_delete(jobs) == 1)
+	{
+		log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[printer_dev_delete_job]:"
+					"enable to delete job '%s'", user_spool_dir);
+	}
 	return 0;
 }
 

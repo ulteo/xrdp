@@ -259,6 +259,7 @@ dev_redir_iocompletion(struct stream* s)
 	case IRP_MJ_CLOSE:
 		log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_iocompletion]: "
 				"file %s closed",actions[completion_id].path);
+		result = printer_dev_delete_job();
 		break;
 	default:
 		log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_iocompletion]: "
@@ -298,6 +299,10 @@ int APP_CC
 dev_redir_deinit(void)
 {
 	int i;
+	if (g_devredir_up == 0)
+	{
+		return 0;
+	}
 	log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_deinit]:"
 			" deinit all active channels ");
   for(i=0 ; i<device_count ; i++)
@@ -316,6 +321,7 @@ dev_redir_deinit(void)
 				break;
   	}
   }
+  g_devredir_up = 0;
   return 0;
 }
 
