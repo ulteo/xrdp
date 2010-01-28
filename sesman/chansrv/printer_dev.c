@@ -596,10 +596,12 @@ printer_dev_get_next_job(char* jobs, int *device_id)
 int DEFAULT_CC
 printer_dev_delete_job(char* jobs)
 {
-	if(g_file_delete(jobs) == 1)
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_delete_job]:"
+				"delete job '%s'", jobs);
+	if(g_file_delete(jobs))
 	{
 		log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[printer_dev_delete_job]:"
-					"enable to delete job '%s'", user_spool_dir);
+					"enable to delete job '%s'", jobs);
 	}
 	return 0;
 }

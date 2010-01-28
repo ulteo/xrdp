@@ -259,7 +259,7 @@ dev_redir_iocompletion(struct stream* s)
 	case IRP_MJ_CLOSE:
 		log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_iocompletion]: "
 				"file %s closed",actions[completion_id].path);
-		result = printer_dev_delete_job();
+		result = printer_dev_delete_job(actions[completion_id].path);
 		break;
 	default:
 		log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_iocompletion]: "
