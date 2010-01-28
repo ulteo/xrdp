@@ -82,8 +82,6 @@
 #define RDPDR_DTYP_SMARTCARD			0x00000020
 
 
-/* device type */
-#define PRINTER_DEVICE		1
 
 /* io operation */
 #define IRP_MJ_CREATE											0x00000000

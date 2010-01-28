@@ -298,13 +298,15 @@ int APP_CC
 dev_redir_deinit(void)
 {
 	int i;
-  log_message(&log_conf, LOG_LEVEL_DEBUG, "deinit");
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_deinit]:"
+			" deinit all active channels ");
   for(i=0 ; i<device_count ; i++)
   {
+  	printf("device type : %i\n",device_list[i].device_type);
   	switch(device_list[i].device_type)
   	{
-			case PRINTER_DEVICE:
-				log_message(&log_conf, LOG_LEVEL_WARNING, "rdpdr channel[dev_redir_deinit]:"
+			case RDPDR_DTYP_PRINT:
+				log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_deinit]:"
 						" remove printer with the id %i", device_list[i].device_type);
 				printer_dev_del(device_list[i].device_id);
 
@@ -600,37 +602,38 @@ dev_redir_client_capability(struct stream* s)
 int APP_CC
 dev_redir_devicelist_announce(struct stream* s)
 {
-  int device_count, device_id, device_type, device_data_length;
+  int device_list_count, device_id, device_type, device_data_length;
   int i, j;
   char dos_name[9] = {0};
   char* data;
   int handle;
 
-  log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_data_in]: new message: PAKID_CORE_DEVICELIST_ANNOUNCE");
-  in_uint32_le(s, device_count);	/* DeviceCount */
-  log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_client_capability]: "
-		  "%i device(s) declared", device_count);
+  log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_devicelist_announce]: "
+  		"	new message: PAKID_CORE_DEVICELIST_ANNOUNCE");
+  in_uint32_le(s, device_list_count);	/* DeviceCount */
+  log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_devicelist_announce]: "
+		  "%i device(s) declared", device_list_count);
   /* device list */
-  for( i=0 ; i<device_count ; i++)
+  for( i=0 ; i<device_list_count ; i++)
   {
     in_uint32_le(s, device_type);
-    log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_client_capability]: "
-  		  "device type: %i", device_type);
+    log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_devicelist_announce]: "
+    		"device type: %i", device_type);
     in_uint32_le(s, device_id);
-    log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_client_capability]: "
+    log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_devicelist_announce]: "
   		  "device id: %i", device_id);
 
     in_uint8a(s,dos_name,8)
-    log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_client_capability]: "
+    log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_devicelist_announce]: "
   		  "dos name: '%s'", dos_name);
     in_uint32_le(s, device_data_length);
-    log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_client_capability]: "
+    log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_devicelist_announce]: "
   		  "data length: %i", device_data_length);
 
     switch(device_type)
     {
     case RDPDR_DTYP_PRINT :
-      log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_client_capability]: "
+      log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_devicelist_announce]: "
       		  "Add printer device");
       handle = printer_dev_add(s, device_data_length, device_id, dos_name);
       if (handle != 1)
@@ -641,22 +644,21 @@ dev_redir_devicelist_announce(struct stream* s)
       	dev_redir_device_list_reply(handle);
         if ( printer_sock != 0 )
         {
-      		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[dev_redir_init_printer_socket]:"
+          log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_devicelist_announce]: "
       				"the inotify socket is already initied");
       		break;
         }
         printer_sock = printer_dev_init_printer_socket();
       	break;
       }
-      log_message(&log_conf, LOG_LEVEL_ERROR, "rdpdr channel[dev_redir_client_capability]: "
+      log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_devicelist_announce]: "
       		  "Enable to add printer device");
       break;
 
     case RDPDR_DTYP_FILESYSTEM :
-      log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_client_capability]: "
+      log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_devicelist_announce]: "
         	  "Add filesystem device");
       break;
-
     }
   }
   return 0;

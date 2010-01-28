@@ -73,11 +73,11 @@ printer_dev_server_connect(http_t **http )
 
 /************************************************************************/
 int
-printer_dev_server_disconnect(http_t *http )
+printer_dev_server_disconnect(http_t **http )
 {
-	if (!http)
+	if (! *http)
 	{
-		httpClose(http);
+		httpClose(*http);
 	}
 	return 0;
 
@@ -322,11 +322,17 @@ printer_dev_get_restricted_user(http_t* http, char* lp_name, char* user_list)
 
   httpAssembleURIf(HTTP_URI_CODING_ALL, uri, sizeof(uri), "ipp", NULL,
                    "localhost", 0, "/printers/%s", lp_name);
-
   request = ippNewRequest(IPP_GET_PRINTER_ATTRIBUTES);
-
+  printf("toto\n");
   ippAddString(request, IPP_TAG_OPERATION, IPP_TAG_URI, "printer-uri", NULL, uri);
-  response = cupsDoRequest(http, request, "/admin/");
+  printf("toto\n");
+  ippDelete(cupsDoRequest(http, request, "/admin/"));
+  if (cupsLastError() > IPP_OK_CONFLICT)
+  {
+  	printf("Operation failed: %s\n", ippErrorString(cupsLastError()));
+  	return 1;
+  }
+  printf("toto\n");
   attr = ippFindAttribute(response, "requesting-user-name-allowed", IPP_TAG_NAME);
   if (attr == 0 || attr->num_values == 0)
   {
@@ -387,6 +393,8 @@ printer_dev_restrict_user(http_t* http, char* lp_name, char* user)
   }
 }
 
+
+/************************************************************************/
 int APP_CC
 printer_dev_add(struct stream* s, int device_data_length,
 								int device_id, char* dos_name)
@@ -457,9 +465,10 @@ printer_dev_add(struct stream* s, int device_data_length,
 	printer_dev_do_operation(http, IPP_RESUME_PRINTER, printer_name);
 	printer_dev_do_operation(http, CUPS_ACCEPT_JOBS, printer_name);
 	printer_dev_restrict_user(http, printer_name, username);
-	printer_dev_server_disconnect(http);
+	printer_dev_server_disconnect(&http);
 	printer_devices[printer_devices_count].device_id = device_id;
 	g_strcpy(printer_devices[printer_devices_count].printer_name, printer_name);
+	printer_devices_count++;
   return g_time1();
 }
 
@@ -477,21 +486,41 @@ printer_dev_get_printer(int device_id)
 	}
 	return -1;
 }
+
 /************************************************************************/
 int APP_CC
 printer_dev_del(int device_id)
 {
 	int printer_index;
+	char user_list[1024] = {0};
+	char* lp_name;
+	http_t *http = NULL;
+
 	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_del]:"
-			"printer remove : %i\n",device_id);
+			"printer remove : %i",device_id);
 	printer_index = printer_dev_get_printer(device_id);
 	if (printer_index == -1)
 	{
 		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_del]:"
-				"the printer %i did not exist\n",device_id);
+				"the printer %i did not exist",device_id);
 		return 1;
 	}
-	/* get user of printer */
+	lp_name = printer_devices[printer_index].printer_name;
+
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_del]:"
+				"try to connect to cups server");
+	if (printer_dev_server_connect(&http) == 1)
+	{
+		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_del]:"
+				"enable to connect to printer server\n");
+		return 1;
+	}
+	printf("1\n");
+	printer_dev_get_restricted_user(http, lp_name, user_list);
+
+	printf("2\n");
+	printf("user list : %s\n", user_list);
+
 	/* remove user of list */
 	/* update */
 	/* remove it if on user exist */
