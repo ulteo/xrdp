@@ -1443,7 +1443,7 @@ xrdp_wm_log_msg(struct xrdp_wm* self, char* msg)
   int xoffset;
   int yoffset;
 
-  /*list_add_item(self->log, (long)g_strdup(msg));
+  list_add_item(self->log, (long)g_strdup(msg));
   if (self->log_wnd == 0)
   {
     w = 400;
@@ -1483,7 +1483,7 @@ xrdp_wm_log_msg(struct xrdp_wm* self, char* msg)
     self->log_wnd->focused_control = but;
      //set notify function
     self->log_wnd->notify = xrdp_wm_log_wnd_notify;
-  }*/
+  }
   xrdp_wm_set_focused(self, self->log_wnd);
   xrdp_bitmap_invalidate(self->log_wnd, 0);
   g_sleep(100);
