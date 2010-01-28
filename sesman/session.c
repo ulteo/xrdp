@@ -321,25 +321,25 @@ user_can_launch_program(char* username)
 {
 	char buffer[1024];
 	int fd;
+	int size;
 	g_snprintf(buffer,sizeof(buffer), "%s/%s/%s", XRDP_USER_PREF_DIRECTORY,
 			username, "AuthorizeAlternateShell");
-	if(g_file_exist(buffer) != 0)
-	{
-		return 0;
-	}
 	fd = g_file_open(buffer);
 	if ( fd < 0)
 	{
+		/* By default, the user can override his shell */
 		return 0;
 	}
-	g_file_read(fd, buffer, 1024);
-	if(g_strcmp(buffer, "True") == 0)
+	size = g_file_read(fd, buffer, 1024);
+	buffer[size] = 0;
+	printf("info comp : %s\n",buffer);
+	if(g_strncmp(buffer, "True", g_strlen("True")) == 0)
 	{
 		g_file_close(fd);
-		return 1;
+		return 0;
 	}
 	g_file_close(fd);
-	return 0;
+	return 1;
 }
 
 /******************************************************************************/
@@ -427,12 +427,21 @@ session_start_fork(int width, int height, int bpp, char* username,
 
   if(get_user_shell(username, default_shell) != 0)
   {
-		log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "sesman[session_start_fork]: "
-					"enable to get the default shell\n");
+		log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[session_start_fork]: "
+					"enable to an alternative shell");
   	default_shell[0] = 0;
+  }
+  else
+  {
+		log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[session_start_fork]: "
+					"alternative shell : %s",default_shell);
+		program = 0;
   }
   if( user_can_launch_program(username) == 1)
   {
+		log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[session_start_fork]: "
+					"user can not override his shell");
+  	default_shell[0] = 0;
   	program = 0;
   }
 
@@ -476,10 +485,7 @@ session_start_fork(int width, int height, int bpp, char* username,
         g_sprintf(text, "%s/%s", XRDP_CFG_PATH, g_cfg->default_wm);
         if (program !=0)
         {
-        	if(program[0] != 0)
-        	{
-        		g_strcpy(default_shell, program);
-        	}
+        	g_strcpy(default_shell, program);
         }
         log_message(&(g_cfg->log), LOG_LEVEL_INFO,"sesman[session_start_fork]: "
 							"default shell : '%s'",default_shell);
@@ -1162,7 +1168,8 @@ session_get_user_pref(char* username, char* key, char* value)
 	{
 		log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "sesman[session_get_user_pref]: "
 					"enable to access %s", XRDP_TEMP_DIR);
-		return 1;
+		g_strcpy(value, "");
+		return 0;
 	}
 
 	g_sprintf(pref_dir, "%s/%s",XRDP_USER_PREF_DIRECTORY, username);
@@ -1170,22 +1177,25 @@ session_get_user_pref(char* username, char* key, char* value)
 	{
 		log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "sesman[session_get_user_pref]: "
 					"enable to access %s", XRDP_USER_PREF_DIRECTORY);
-		return 1;
+		g_strcpy(value, "");
+		return 0;
 	}
 	if (!g_directory_exist(pref_dir))
 	{
 		log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "sesman[session_get_user_pref]: "
 					"enable to access %s", pref_dir);
-		return 1;
+		g_strcpy(value, "");
+		return 0;
 	}
 	g_sprintf(pref_key_file, "%s/%s/%s",XRDP_USER_PREF_DIRECTORY, username, key);
-	/* set value */
+	/* get value */
 	fd = g_file_open(pref_key_file);
 	if( fd < 0)
 	{
 		log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "sesman[session_get_user_pref]: "
 						"enable to open file %s", pref_key_file);
-		return 1;
+		g_strcpy(value, "");
+		return 0;
 	}
 	int size;
 	size = g_file_read(fd, value, 1024);

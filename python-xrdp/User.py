@@ -82,6 +82,6 @@ def UserAllowUserShellOverride(username, auth):
 
 def UserIsAllowUserShellOverride(username):
 	rep = UserGetUserPref(username, "AuthorizeAlternateShell")
-	return rep == "True"
+	return rep == "True" or rep == ""
 
 

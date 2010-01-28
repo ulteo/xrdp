@@ -163,7 +163,7 @@ xml_get_xpath(xmlDocPtr doc, char* xpath, char* value)
 		return 1;
 	}
 	keyword = xmlNodeListGetString(doc, nodeset->nodeTab[0]->xmlChildrenNode, 1);
-	if( g_strlen(keyword) == 0)
+	if( keyword == 0)
 	{
 		log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[xml_get_xpath]: "
 				"enable to get keyword");
