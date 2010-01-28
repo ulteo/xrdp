@@ -593,6 +593,7 @@ printer_dev_get_next_job(char* jobs, int *device_id)
 	return 1;
 }
 
+/*****************************************************************************/
 int DEFAULT_CC
 printer_dev_delete_job(char* jobs)
 {

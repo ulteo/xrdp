@@ -685,6 +685,7 @@ session_destroy(char* username)
 	char path[1024];
 	struct dirent *dir_entry;
 	struct stat st;
+	int i;
 	int size;
 	DIR *dir;
 	dir = opendir("/proc" );
@@ -692,26 +693,30 @@ session_destroy(char* username)
 	{
 		return 0;
 	}
-	while ((dir_entry = readdir(dir)) != NULL)
+	for(i=0 ; i<2 ; i++)
 	{
-		if( 	 g_strcmp(dir_entry->d_name, ".") == 0
-				|| g_strcmp(dir_entry->d_name, "..") == 0
-				|| dir_entry->d_type & DT_DIR == 0)
+		while ((dir_entry = readdir(dir)) != NULL)
 		{
-    	continue;
+			if( 	 g_strcmp(dir_entry->d_name, ".") == 0
+					|| g_strcmp(dir_entry->d_name, "..") == 0
+					|| dir_entry->d_type & DT_DIR == 0)
+			{
+				continue;
+			}
+			g_sprintf(path, "%s/%s", "/proc", dir_entry->d_name);
+			if( stat(path, &st) == -1 )
+			{
+				continue;
+			}
+			g_getuser_info(username, 0, &uid, 0, 0, 0);
+			if(st.st_uid == uid)
+			pid = g_atoi(dir_entry->d_name);
+			if (pid != 0 )
+			{
+				kill(pid, i==0 ? SIGTERM : SIGKILL);
+			}
 		}
-		g_sprintf(path, "%s/%s", "/proc", dir_entry->d_name);
-		if( stat(path, &st) == -1 )
-		{
-    	continue;
-	  }
-		g_getuser_info(username, 0, &uid, 0, 0, 0);
-    if(st.st_uid == uid)
-		pid = g_atoi(dir_entry->d_name);
-		if (pid != 0 )
-		{
-			kill(pid, SIGTERM);
-		}
+		g_sleep(30);
 	}
 }
 
