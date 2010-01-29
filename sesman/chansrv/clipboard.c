@@ -33,6 +33,7 @@
 static Display* g_display = 0;
 
 extern int g_cliprdr_chan_id; /* in chansrv.c */
+extern struct log_config log_conf;
 
 /*****************************************************************************/
 int DEFAULT_CC
@@ -41,7 +42,8 @@ clipboard_error_handler(Display* dis, XErrorEvent* xer)
   char text[256];
 
   XGetErrorText(dis, xer->error_code, text, 255);
-  LOG(1, ("error [%s]", text));
+  log_message(&log_conf, LOG_LEVEL_ERROR, "chansrv[clipboard_error_handler]:"
+  		"error : %s ",text);
   return 0;
 }
 
@@ -52,9 +54,9 @@ clipboard_error_handler(Display* dis, XErrorEvent* xer)
 int DEFAULT_CC
 clipboard_fatal_handler(Display* dis)
 {
-  LOG(1, ("fatal error, exiting"));
-  main_cleanup();
-  return 0;
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[clipboard_fatal_handler]:"
+			"fatal error");
+	return 0;
 }
 
 
@@ -63,6 +65,8 @@ clipboard_fatal_handler(Display* dis)
 int APP_CC
 clipboard_init(void)
 {
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[clipboard_init]:"
+			"clipboard init");
   return 0;
 }
 
@@ -70,6 +74,8 @@ clipboard_init(void)
 int APP_CC
 clipboard_deinit(void)
 {
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "clipboard_init:"
+			"clipboard deinit");
   return 0;
 }
 
@@ -79,6 +85,9 @@ int APP_CC
 clipboard_data_in(struct stream* s, int chan_id, int chan_flags, int length,
                   int total_length)
 {
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[clipboard_data_in]:"
+			"clipboard init");
+	return 0;
 }
 
 /*****************************************************************************/
@@ -88,12 +97,16 @@ clipboard_data_in(struct stream* s, int chan_id, int chan_flags, int length,
 int APP_CC
 clipboard_get_wait_objs(tbus* objs, int* count, int* timeout)
 {
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[clipboard_get_wait_objs]:"
+			"clipboard_get_wait_objs");
+	return 0;
 }
 
 /*****************************************************************************/
 int APP_CC
 clipboard_check_wait_objs(void)
 {
-
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[clipboard_check_wait_objs]:"
+			"clipboard_check_wait_objs");
   return 0;
 }

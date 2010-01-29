@@ -505,7 +505,7 @@ channel_thread_loop(void* in_val)
       {
         if (trans_check_wait_objs(g_con_trans) != 0)
         {
-        	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[channel_thread_loop]: "
+        	log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[channel_thread_loop]: "
                   "trans_check_wait_objs error resetting");
           clipboard_deinit();
           sound_deinit();

@@ -57,6 +57,30 @@ printer_dev_validate_name(const char *name)		/* I - Name to check */
 
 
 /************************************************************************/
+int				/* O - 0 if name is no good, 1 if name is good */
+printer_dev_convert_name(char *name)		/* I - Name to check */
+{
+  char	*ptr;			/* Pointer into name */
+  for (ptr = name; *ptr; ptr ++)
+  {
+    if (*ptr == '@')
+    {
+      *ptr = '_';
+    }
+    else
+    {
+    	if ((*ptr >= 0 && *ptr <= ' ') || *ptr == 127 ||
+    			*ptr == '/' || *ptr == '#')
+    	{
+    		*ptr = '_';
+    	}
+    }
+  }
+  return 0;
+}
+
+
+/************************************************************************/
 int
 printer_dev_server_connect(http_t **http )
 {
@@ -442,6 +466,7 @@ printer_dev_add(struct stream* s, int device_data_length,
     log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_add]: "
 		  "printer name = %s", printer_name);
   }
+  printer_dev_convert_name(printer_name);
 
   log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_add]: "
 				"try to connect to cups server");
