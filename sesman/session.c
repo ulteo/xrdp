@@ -428,7 +428,7 @@ session_start_fork(int width, int height, int bpp, char* username,
   if(get_user_shell(username, default_shell) != 0)
   {
 		log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[session_start_fork]: "
-					"enable to an alternative shell");
+					"no alternative shell declared");
   	default_shell[0] = 0;
   }
   else
