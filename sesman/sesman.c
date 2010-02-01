@@ -432,16 +432,11 @@ send_logoff(int client, int session_id)
 	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[send_logoff]: "
 			"request session %i logoff",session_id);
 	sess = session_get_bypid(session_id);
-  if( sess == NULL)
+  if( sess != NULL)
   {
-  	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[send_logoff]: "
-				"The session %i did not exist",session_id);
-    xml_send_error(client, "the session id of the request did not exist");
-    close(client);
-    pthread_exit( (void*) 1);
+  	session_kill(sess->pid);
+  	session_destroy(sess->name);
   }
-  session_kill(sess->pid);
-  session_destroy(sess->name);
 	doc = xmlNewDoc("1.0");
 	if (doc ==NULL)
 	{

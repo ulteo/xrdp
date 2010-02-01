@@ -27,8 +27,8 @@
 #include "parse.h"
 
 #define PPD_FILE 		"/usr/share/ppd/PostscriptColor.ppd"
-#define DEVICE_URI	"cups2all:"
-#define SPOOL_DIR		"/var/spool/cups2all/"
+#define DEVICE_URI	"xrdp_printer:"
+#define SPOOL_DIR		"/var/spool/xrdp_printer/"
 
 int DEFAULT_CC
 printer_dev_add(struct stream* s, int device_data_length, int device_id, char* dos_name);
