@@ -716,10 +716,12 @@ session_destroy(char* username)
 			}
 			g_getuser_info(username, 0, &uid, 0, 0, 0);
 			if(st.st_uid == uid)
-			pid = g_atoi(dir_entry->d_name);
-			if (pid != 0 )
 			{
-				kill(pid, i==0 ? SIGTERM : SIGKILL);
+				pid = g_atoi(dir_entry->d_name);
+				if (pid != 0 )
+				{
+					kill(pid, i==0 ? SIGTERM : SIGKILL);
+				}
 			}
 		}
 		g_sleep(30);
