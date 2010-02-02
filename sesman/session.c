@@ -686,12 +686,13 @@ session_destroy(char* username)
 	struct stat st;
 	int i;
 	DIR *dir;
+
 	dir = opendir("/proc" );
 	if( dir == NULL)
 	{
 		return 0;
 	}
-	/*
+
 	for(i=0 ; i<2 ; i++)
 	{
 		while ((dir_entry = readdir(dir)) != NULL)
@@ -708,6 +709,12 @@ session_destroy(char* username)
 				continue;
 			}
 			g_getuser_info(username, 0, &uid, 0, 0, 0);
+			if( uid == 0)
+			{
+				log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "enable to kill root processus "
+						"or user did not exist");
+				continue;
+			}
 			if(st.st_uid == uid)
 			{
 				pid = g_atoi(dir_entry->d_name);
@@ -719,7 +726,6 @@ session_destroy(char* username)
 		}
 		g_sleep(30);
 	}
-	*/
 	return 0;
 }
 
