@@ -26,7 +26,7 @@ DefaultShell=$1
 #. /etc/profile
 
 xsetroot -solid black
-which $DefaultShell
+which "$DefaultShell"
 if test $? -eq 0
 then
   echo "Starting $DefaultShell"

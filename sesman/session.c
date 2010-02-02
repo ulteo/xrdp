@@ -676,6 +676,43 @@ session_sync_start(void)
 }
 
 /******************************************************************************/
+int APP_CC
+session_get_line(char* buffer, char* p)
+{
+
+}
+
+/******************************************************************************/
+int APP_CC
+session_is_tagged(int pid)
+{
+	char environ_filename[1024];
+	char* buffer;
+	char* p;
+	int fp;
+	int size;
+	buffer = g_malloc(2048,0);
+
+	sprintf(environ_filename, "/proc/%i/environ",pid);
+	fp = g_file_open(environ_filename);
+
+	while ((size = g_file_read(fp, buffer, 2048)) == -1)
+	{
+		if ((p=strstr(buffer, "XRDP_PROCESS" )) != NULL)
+		{
+			return 0;
+		}
+
+	}
+	printf("size : %i\n",size);
+	log_hexdump(&(g_cfg->log), LOG_LEVEL_INFO,buffer,size);
+	printf("tutut\n");
+	g_exit(0);
+
+}
+
+
+/******************************************************************************/
 int DEFAULT_CC
 session_destroy(char* username)
 {
@@ -718,6 +755,7 @@ session_destroy(char* username)
 			if(st.st_uid == uid)
 			{
 				pid = g_atoi(dir_entry->d_name);
+				//&& session_is_tagged(pid) == 0
 				if (pid != 0 )
 				{
 					kill(pid, i==0 ? SIGTERM : SIGKILL);
