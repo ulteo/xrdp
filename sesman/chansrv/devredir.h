@@ -128,5 +128,20 @@ int APP_CC
 dev_redir_get_wait_objs(tbus* objs, int* count, int* timeout);
 int APP_CC
 dev_redir_check_wait_objs(void);
+int APP_CC
+dev_redir_clientID_confirm(struct stream* s);
+int APP_CC
+dev_redir_client_name(struct stream* s);
+int APP_CC
+dev_redir_client_capability(struct stream* s);
+int APP_CC
+dev_redir_devicelist_announce(struct stream* s);
+int APP_CC
+dev_redir_confirm_clientID_request();
+int APP_CC
+in_unistr(struct stream* s, char *string, int str_size, int in_len);
+int APP_CC
+dev_redir_device_list_reply(int handle);
+
 
 #endif

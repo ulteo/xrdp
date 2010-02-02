@@ -29,7 +29,7 @@
 extern struct log_config log_conf;
 extern char* username;
 static struct printer_device printer_devices[128];
-static printer_devices_count = 0;
+static int printer_devices_count = 0;
 static char user_spool_dir[256];
 
 /************************************************************************/
@@ -387,7 +387,6 @@ printer_dev_set_restrict_user_list(http_t* http, char* lp_name, char* user_list)
   cups_option_t	*options;
   ipp_t	*request;		/* IPP Request */
   char uri[HTTP_MAX_URI];	/* URI for printer/class */
-  char user_buffer[1024] = {0};
 
   /*
   * Add the options...

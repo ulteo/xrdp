@@ -31,19 +31,16 @@ extern struct log_config log_conf;
 static int g_devredir_up = 0;
 static tbus printer_sock = 0;
 static char hostname[256];
-static int deviceId;
 static int use_unicode;
 static int vers_major;
 static int vers_minor;
 static int client_id;
 static int supported_operation[6] = {0};
-struct device device_list[128] = {0};
+struct device device_list[128];
 int device_count = 0;
 static int is_fragmented_packet = 0;
 static int fragment_size;
 static struct stream* splitted_packet;
-static int printer_socket=0;
-static int file_id=1;
 static Action actions[128];
 static int action_index=1;
 
@@ -60,7 +57,7 @@ dev_redir_send(struct stream* s){
     log_message(&log_conf, LOG_LEVEL_ERROR, "rdpdr channel: enable to send message");
   }
   rv = log_message(&log_conf, LOG_LEVEL_DEBUG, "xrdp-devredir: send message: ");
-  log_hexdump(&log_conf, LOG_LEVEL_DEBUG, s->data, size );
+  log_hexdump(&log_conf, LOG_LEVEL_DEBUG, (unsigned char*)s->data, size );
 
   return rv;
 }
@@ -93,7 +90,7 @@ dev_redir_begin_io_request(char* job,int device)
 	actions[action_index].file_id = action_index;
 	actions[action_index].last_req = IRP_MJ_CREATE;
 	actions[action_index].message_id = 0;
-	strcpy(actions[action_index].path, job);
+	g_strcpy(actions[action_index].path, job);
 
 	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[dev_redir_send_file]:"
   		"process job[%s]",job);
@@ -166,6 +163,7 @@ dev_redir_process_write_io_request(int completion_id, int offset)
 	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[dev_redir_process_write_io_request]:"
   		"the file %s did not exists",actions[completion_id].path);
 	free_stream(s);
+	return 1;
 }
 
 /*****************************************************************************/
@@ -173,9 +171,6 @@ int APP_CC
 dev_redir_process_close_io_request(int completion_id)
 {
 	struct stream* s;
-	int fd;
-	char buffer[1024];
-	int size;
 
 	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[dev_redir_process_close_io_request]:"
 	  		"close file : %s",actions[completion_id].path);
@@ -206,9 +201,7 @@ dev_redir_iocompletion(struct stream* s)
 	int completion_id;
 	int io_status;
 	int result;
-	int rv;
 	int offset;
-	int fd;
 	int size;
 
 	log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_iocompletion]: "
@@ -307,7 +300,8 @@ dev_redir_deinit(void)
 			" deinit all active channels ");
   for(i=0 ; i<device_count ; i++)
   {
-  	printf("device type : %i\n",device_list[i].device_type);
+  	log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_deinit]:"
+  			"device type : %i\n",device_list[i].device_type);
   	switch(device_list[i].device_type)
   	{
 			case RDPDR_DTYP_PRINT:
@@ -349,7 +343,7 @@ dev_redir_data_in(struct stream* s, int chan_id, int chan_flags, int length,
   		make_stream(splitted_packet);
   		init_stream(splitted_packet, total_length);
   		g_memcpy(splitted_packet->p,s->p, length );
-  		log_hexdump(&log_conf, LOG_LEVEL_DEBUG, s->p, length);
+  		log_hexdump(&log_conf, LOG_LEVEL_DEBUG, (unsigned char*)s->p, length);
   		return 0;
   	}
   	else
@@ -375,7 +369,7 @@ dev_redir_data_in(struct stream* s, int chan_id, int chan_flags, int length,
   	packet = s;
   }
   log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_data_in]: data received:");
-  log_hexdump(&log_conf, LOG_LEVEL_DEBUG, packet->p, total_length);
+  log_hexdump(&log_conf, LOG_LEVEL_DEBUG, (unsigned char*)packet->p, total_length);
   in_uint16_le(packet, component);
   in_uint16_le(packet, packetId);
   log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_data_in]: component=0x%04x packetId=0x%04x", component, packetId);
@@ -439,7 +433,6 @@ dev_redir_check_wait_objs(void)
 {
 	char buffer[1024];
 	int len;
-	int fd;
 	log_message(&log_conf, LOG_LEVEL_INFO, "rdpdr channel[dev_redir_check_wait_objs]: check wait object");
 	int device_id;
 
@@ -449,7 +442,7 @@ dev_redir_check_wait_objs(void)
   }
   if(printer_sock !=0)
   {
-  	len = read (printer_sock, buffer, 1024);
+  	len = g_tcp_recv(printer_sock, buffer, 1024, 0);
   	if( len != -1 )
   	{
   		/* check change */
@@ -609,9 +602,8 @@ int APP_CC
 dev_redir_devicelist_announce(struct stream* s)
 {
   int device_list_count, device_id, device_type, device_data_length;
-  int i, j;
+  int i;
   char dos_name[9] = {0};
-  char* data;
   int handle;
 
   log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_devicelist_announce]: "

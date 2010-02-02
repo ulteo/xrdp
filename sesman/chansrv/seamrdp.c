@@ -45,6 +45,25 @@ extern int g_seamrdp_chan_id; /* in chansrv.c */
 extern struct log_config log_conf;
 extern char* username;
 
+Window
+get_in_window(Display* display,  Window w);
+int
+get_property( Display* display, Window w, const char* property,
+		unsigned long *nitems, unsigned char** data);
+int
+is_good_window(Display* display,  Window w);
+int
+get_window_name(Display* display, Window w, unsigned char** name);
+int
+get_window_type(Display* display, Window w, Atom* atom);
+int
+get_window_pid(Display* display, Window w, int* pid);
+int
+get_parent_window(Display* display, Window w, Window* parent);
+int
+hex2int(const char* hexa_string);
+
+
 /*****************************************************************************/
 int DEFAULT_CC
 seamrdp_error_handler(Display* dis, XErrorEvent* xer)
@@ -92,10 +111,8 @@ int APP_CC
 seamrdp_init(void)
 {
   char buf[1025];
-  char xrdp_username_path[256];
   int size;
   int rv;
-  int fd;
 
   log_message(&log_conf, LOG_LEVEL_INFO, "xrdp-chansrv: in seamrdp_init");
   if (g_seamrdp_up)
@@ -240,7 +257,6 @@ seamrdp_move_window(Window w, int x, int y, int width, int height)
 int DEFAULT_CC
 seamrdp_spawn_app(char* application)
 {
-  char* path = g_malloc(256,0);
   struct list* app_param;
   int i;
   int pid;
@@ -252,7 +268,7 @@ seamrdp_spawn_app(char* application)
     }
   }
   log_message(&log_conf, LOG_LEVEL_DEBUG, "xrdp-chansrv: execute application '%s' for the user '%s'", application, username);
-  pid = fork ();
+  pid = g_fork ();
 
   if( pid < 0 )
   {
@@ -263,7 +279,6 @@ seamrdp_spawn_app(char* application)
   {
     return 0;
   }
-  int status;
 
   app_param = list_create();
   app_param->auto_free = 1;
@@ -274,8 +289,9 @@ seamrdp_spawn_app(char* application)
   list_add_item(app_param, (long)g_strdup(display_name));
   list_add_item(app_param, 0);
   g_execvp("/bin/bash", ((char**)app_param->items));
-  wait(&status);
+  //g_waitpid();
   g_exit(0);
+  return 0;
 }
 
 
@@ -286,7 +302,7 @@ seamrdp_exec_app(char* application, char* window_id)
   struct list* app_param;
   char* path = g_malloc(256,0);
   char* buf;
-  int pid = fork ();
+  int pid = g_fork ();
   int i;
   int size;
 
@@ -310,7 +326,6 @@ seamrdp_exec_app(char* application, char* window_id)
     g_free(path);
     return 0;
   }
-  int status;
   app_param = list_create();
   app_param->auto_free = 1;
   list_add_item(app_param, (long)g_strdup("/bin/bash"));
@@ -320,9 +335,10 @@ seamrdp_exec_app(char* application, char* window_id)
   list_add_item(app_param, (long)g_strdup(display_name));
   list_add_item(app_param, 0);
   g_execvp("/bin/bash", ((char**)app_param->items));
-  wait(&status);
+  //wait(&status);
   g_free(path);
   g_exit(0);
+  return 0;
 }
 
 /*****************************************************************************/
@@ -446,10 +462,6 @@ seamrdp_create_window(Window win_out)
 {
   char* window_id = g_malloc(11,0);
   char* buffer = g_malloc(1024,0);
-  int x;
-  int y;
-  unsigned int width,height,border,depth;
-  Window root;
   XWindowAttributes attributes;
   Window_item* witem;
   Window parent_id;
@@ -470,7 +482,7 @@ seamrdp_create_window(Window win_out)
     g_free(buffer);
     log_message(&log_conf, LOG_LEVEL_DEBUG, "xrdp-chansrv: the window %i already exist", win_out);
     g_free(window_id);
-    return;
+    return 0;
   }
   win_in = get_in_window(g_display, win_out);
 
@@ -489,7 +501,7 @@ seamrdp_create_window(Window win_out)
       log_message(&log_conf, LOG_LEVEL_DEBUG, "xrdp-chansrv: no good window");
       g_free(window_id);
       g_free(buffer);
-      return;
+      return 1;
     }
   }
   log_message(&log_conf, LOG_LEVEL_DEBUG, "xrdp-chansrv: %i is a good window", proper_win);
@@ -499,7 +511,7 @@ seamrdp_create_window(Window win_out)
     log_message(&log_conf, LOG_LEVEL_DEBUG, "xrdp-chansrv: window %i has not the right attributes", proper_win);
     g_free(window_id);
     g_free(buffer);
-    return;
+    return 1;
   }
 
   get_window_name(g_display, proper_win, &name);
@@ -547,6 +559,7 @@ seamrdp_create_window(Window win_out)
   log_message(&log_conf, LOG_LEVEL_DEBUG, "xrdp-chansrv: add window [%i] to the window list", win_out);
   Window_add(win_out);
   Window_dump();
+  return 0;
 }
 
 
@@ -613,7 +626,6 @@ get_state(Window w)
   int i;
   int status;
   Window_item* witem;
-  Window real_window = w;
   int state = SEAMLESSRDP_NORMAL;
   Window_get(w,witem);
   if(w == 0)
@@ -873,7 +885,6 @@ seamrdp_data_in(struct stream* s, int chan_id, int chan_flags, int length,
   int rv,size;
   char buffer[1024] ;
   char buf[1024];
-  struct stream* ls;
   char* token1, *token2, *token3, *token4, *token5, *token6, *token7 ;
   char* temp;
   XEvent ev;
@@ -929,10 +940,10 @@ seamrdp_data_in(struct stream* s, int chan_id, int chan_flags, int length,
 
   if(strcmp("POSITION", token1)==0 ){
 	ev.xconfigure.window = (Window) hex2int(token3);
-	ev.xconfigure.x = atoi(token4);
-	ev.xconfigure.y = atoi(token5);
-	ev.xconfigure.width = atoi(token6);
-	ev.xconfigure.height = atoi(token7);
+	ev.xconfigure.x = g_atoi(token4);
+	ev.xconfigure.y = g_atoi(token5);
+	ev.xconfigure.width = g_atoi(token6);
+	ev.xconfigure.height = g_atoi(token7);
 	move_window2(&ev);
 
 

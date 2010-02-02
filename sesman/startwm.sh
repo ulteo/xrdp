@@ -32,6 +32,8 @@ then
   echo "Starting $DefaultShell"
   $DefaultShell
   exit 0
+else
+  echo "$DefaultShell did not exist"
 fi
 
 for WindowManager in $SESSIONS

@@ -19,7 +19,8 @@ send_channel_data(int chan_id, char* data, int size);
 int APP_CC
 main_cleanup(void);
 
-
+int APP_CC
+in_unistr(struct stream* s, char *string, int str_size, int in_len);
 
 #define CHAN_CFG_LOGGING			"Logging"
 #define CHAN_CFG_LOG_FILE			"LogFile"

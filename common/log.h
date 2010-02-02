@@ -33,6 +33,7 @@
 #define LOG_LEVEL_WARNING       2
 #define LOG_LEVEL_INFO          3
 #define LOG_LEVEL_DEBUG         4
+#define LOG_LEVEL_DEBUG_PLUS    5
 
 /* startup return values */
 #define LOG_STARTUP_OK          0

@@ -51,4 +51,8 @@
 
 #include "libscp.h"
 
+
+int DEFAULT_CC
+session_destroy(char* username);
+
 #endif

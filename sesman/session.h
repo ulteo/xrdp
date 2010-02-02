@@ -167,5 +167,9 @@ session_set_user_pref(char* username, char* key, char* value);
 int DEFAULT_CC
 session_get_user_pref(char* username, char* key, char* value);
 
+struct session_item*
+session_list_session(int* count);
+void
+session_update_status_by_user(char* user, int status);
 #endif
 

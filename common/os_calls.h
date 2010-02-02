@@ -137,6 +137,8 @@ g_file_read(int fd, char* ptr, int len);
 int APP_CC
 g_file_write(int fd, char* ptr, int len);
 int APP_CC
+g_file_size(char* filename);
+int APP_CC
 g_file_seek(int fd, int offset);
 int APP_CC
 g_file_lock(int fd, int start, int len);

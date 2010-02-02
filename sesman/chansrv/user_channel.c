@@ -82,7 +82,7 @@ user_channel_transmit(int socket, char* mess, int size )
 int APP_CC
 user_channel_do_up()
 {
-	g_sprintf(user_channel_socket_name, "/var/spool/xrdp_user_channel_socket%s",getenv("DISPLAY"));
+	g_sprintf(user_channel_socket_name, "/var/spool/xrdp_user_channel_socket%s",g_getenv("DISPLAY"));
 	user_channel_socket = g_create_unix_socket(user_channel_socket_name);
 	g_chmod_hex(user_channel_socket_name, 0xFFFF);
 	g_user_channel_up = 1;
@@ -97,7 +97,7 @@ user_channel_init(char* channel_name, int channel_id)
 	int i;
 	for( i=0 ; i<channel_count; i++)
 	{
-		if(strcmp(user_channels[i].channel_name, channel_name) == 0)
+		if(g_strcmp(user_channels[i].channel_name, channel_name) == 0)
 		{
 			log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
 					"new connection for channel %s with id= %i", user_channels[i].channel_name, channel_id);
@@ -140,7 +140,7 @@ user_channel_data_in(struct stream* s, int chan_id, int chan_flags, int length,
 			g_strncpy(buf, (char*)s->p, size+1);
 		  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_data_in]: "
 		  		"new client message for channel %s ",user_channels[i].channel_name);
-			log_hexdump(&log_conf, LOG_LEVEL_DEBUG, buf, size);
+			log_hexdump(&log_conf, LOG_LEVEL_DEBUG, (unsigned char*)buf, size);
 			if(user_channels[i].channel_socket == 0 )
 			{
 			  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_data_in]: "
@@ -193,7 +193,6 @@ user_channel_receive_message(int client, char* data)
 {
   struct stream* s;
   int data_length;
-  int size;
 
   make_stream(s);
 	init_stream(s, 1024);
@@ -213,7 +212,7 @@ user_channel_process_channel_opening(int client)
 	struct stream* s;
   int data_length;
   int size;
-  int i;
+  int i = 0;
 
 	make_stream(s);
 	init_stream(s, 1024);
@@ -232,19 +231,20 @@ user_channel_process_channel_opening(int client)
 	else
 	{
 		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
-				"channel %s closed : \n",user_channels[i].channel_name);
+				"enable to get information on the opening channel");
 		g_tcp_close(client);
 		free_stream(s);
 		return 0;
 	}
 	for( i=0 ; i<channel_count; i++)
 	{
-		if(strcmp(user_channels[i].channel_name, s->data) == 0)
+		if(g_strcmp(user_channels[i].channel_name, s->data) == 0)
 		{
 			log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
 					"new server connection for channel %s ", user_channels[i].channel_name);
 			user_channels[i].channel_socket = client;
-			printf("socket : %i\n",user_channels[i].channel_id);
+			log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
+					"socket : %i\n",user_channels[i].channel_id);
 			return 0;
 		}
 	}
@@ -265,7 +265,6 @@ user_channel_process_channel_opening(int client)
 int APP_CC
 user_channel_check_wait_objs(void)
 {
-	char data[1024];
   struct stream* s;
   int data_length;
 	int size;

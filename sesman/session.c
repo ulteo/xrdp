@@ -143,7 +143,6 @@ x_server_running(int display)
 {
   char text[256];
   int x_running;
-  int sck;
 
   g_sprintf(text, "/tmp/.X11-unix/X%d", display);
   x_running = g_file_exist(text);
@@ -287,6 +286,7 @@ get_kbcode(int keylayout)
 	  break;
   default:
 	  log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "the keylayout %04x is unknowned", keylayout);
+	  return "us";
   }
 }
 
@@ -332,7 +332,6 @@ user_can_launch_program(char* username)
 	}
 	size = g_file_read(fd, buffer, 1024);
 	buffer[size] = 0;
-	printf("info comp : %s\n",buffer);
 	if(g_strncmp(buffer, "True", g_strlen("True")) == 0)
 	{
 		g_file_close(fd);
@@ -389,8 +388,6 @@ session_start_fork(int width, int height, int bpp, char* username,
   struct list* xserver_params=0;
   time_t ltime;
   struct tm stime;
-  char xrdp_username_path[256];
-  int fd;
   char* kb_util = "/usr/bin/setxkbmap";
   char default_shell[256];
 
@@ -639,10 +636,6 @@ session_start(int width, int height, int bpp, char* username, char* password,
               char* directory, int keylayout)
 {
   int display;
-  int uid = 1;
-  char* shell;
-  char* dir;
-  char* gecos;
 
   /* lock mutex */
   lock_sync_acquire();
@@ -692,20 +685,20 @@ session_destroy(char* username)
 	struct dirent *dir_entry;
 	struct stat st;
 	int i;
-	int size;
 	DIR *dir;
 	dir = opendir("/proc" );
 	if( dir == NULL)
 	{
 		return 0;
 	}
+	/*
 	for(i=0 ; i<2 ; i++)
 	{
 		while ((dir_entry = readdir(dir)) != NULL)
 		{
-			if( 	 g_strcmp(dir_entry->d_name, ".") == 0
-					|| g_strcmp(dir_entry->d_name, "..") == 0
-					|| dir_entry->d_type & DT_DIR == 0)
+			if( 	 (g_strcmp(dir_entry->d_name, ".") == 0)
+					|| (g_strcmp(dir_entry->d_name, "..") == 0)
+					|| ((dir_entry->d_type & DT_DIR) == 0))
 			{
 				continue;
 			}
@@ -726,6 +719,8 @@ session_destroy(char* username)
 		}
 		g_sleep(30);
 	}
+	*/
+	return 0;
 }
 
 /******************************************************************************/
@@ -864,7 +859,6 @@ session_get_bypid(int pid)
       /*return tmp->item;*/
       return dummy;
     }
-
     /* go on */
     tmp=tmp->next;
   }
@@ -880,8 +874,6 @@ int
 session_get_user_display(char* username)
 {
   struct session_chain* tmp;
-  struct session_item* dummy;
-
 
   /*THREAD-FIX require chain lock */
   lock_chain_acquire();
@@ -1025,7 +1017,6 @@ void
 session_update_status_by_user(char* user, int status)
 {
   struct session_chain* tmp;
-  struct session_item* dummy;
 
   /*THREAD-FIX require chain lock */
   lock_chain_acquire();
@@ -1044,7 +1035,7 @@ session_update_status_by_user(char* user, int status)
     if (g_strcmp(user, tmp->item->name) == 0)
     {
       /*THREAD-FIX release chain lock */
-    	char* str2 = session_get_status_string(tmp->item->status);
+    	//char* str2 = session_get_status_string(tmp->item->status);
       tmp->item->status = status;
       lock_chain_release();
       /*return tmp->item;*/
@@ -1069,7 +1060,6 @@ session_list_session(int* count)
 {
   struct session_chain* tmp;
   struct session_item* sess = g_malloc(sizeof(struct session_item)*15,0);
-  int index;
   *count = 0;
   /*THREAD-FIX require chain lock */
   lock_chain_acquire();

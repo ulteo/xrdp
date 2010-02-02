@@ -94,9 +94,10 @@ log_lvl2str(int lvl, char* str)
     case LOG_LEVEL_INFO:
       snprintf(str, 9, "%s", "[INFO ] ");
       break;
-    /* case LOG_LEVEL_DEBUG: */
-    default:
+    case LOG_LEVEL_DEBUG:
       snprintf(str, 9, "%s", "[DEBUG] ");
+    default:
+      snprintf(str, 9, "%s", "[DEBUG++] ");
       break;
   }
 }
@@ -301,7 +302,12 @@ log_text2level(char* buf)
   {
     return LOG_LEVEL_INFO;
   }
-  return LOG_LEVEL_DEBUG;
+  else if (0 == g_strcasecmp(buf, "4") ||
+           0 == g_strcasecmp(buf, "debug"))
+  {
+    return LOG_LEVEL_INFO;
+  }
+  return LOG_LEVEL_DEBUG_PLUS;
 }
 
 /*****************************************************************************/

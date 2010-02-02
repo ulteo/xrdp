@@ -79,7 +79,8 @@ int get_property( Display* display, Window w, const char* property, unsigned lon
 }
 
 
-Window get_in_window(Display* display,  Window w)
+Window
+get_in_window(Display* display,  Window w)
 {
   Window root;
   Window parent;
@@ -166,10 +167,7 @@ int get_window_type(Display* display, Window w, Atom* atom)
 
 int get_window_pid(Display* display, Window w, int* pid){
   unsigned char* data;
-  Atom     actual_type;
-  int      actual_format;
   unsigned long     nitems;
-  unsigned long     bytes;
   int status;
 
   status = get_property(display, w, "_NET_WM_PID", &nitems, &data);
