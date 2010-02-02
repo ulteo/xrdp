@@ -677,9 +677,20 @@ session_sync_start(void)
 
 /******************************************************************************/
 int APP_CC
-session_get_line(char* buffer, char* p)
+session_test_line(int fp, int *file_pos)
 {
-
+	int size;
+	char* buffer = g_malloc(1024,0);
+	size = g_file_read(fp, buffer, 2048);
+	if( strstr(buffer, "XRDP_PROCESS" ) != NULL)
+	{
+		return 0;
+	}
+	else
+	{
+		*file_pos += strlen(buffer);
+	}
+	return 1;
 }
 
 /******************************************************************************/
@@ -690,20 +701,20 @@ session_is_tagged(int pid)
 	char* buffer;
 	char* p;
 	int fp;
+	int file_pos = 0;
 	int size;
-	buffer = g_malloc(2048,0);
 
 	sprintf(environ_filename, "/proc/%i/environ",pid);
 	fp = g_file_open(environ_filename);
 
-	while ((size = g_file_read(fp, buffer, 2048)) == -1)
-	{
-		if ((p=strstr(buffer, "XRDP_PROCESS" )) != NULL)
+	//while (() == -1)
+	//{
+		if ((p = strstr(buffer, "XRDP_PROCESS" )) != NULL)
 		{
 			return 0;
 		}
 
-	}
+	//}
 	printf("size : %i\n",size);
 	log_hexdump(&(g_cfg->log), LOG_LEVEL_INFO,buffer,size);
 	printf("tutut\n");
