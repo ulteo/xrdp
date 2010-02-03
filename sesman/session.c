@@ -677,19 +677,28 @@ session_sync_start(void)
 
 /******************************************************************************/
 int APP_CC
-session_test_line(int fp, int *file_pos)
+session_test_line(int fd, int *file_pos)
 {
 	int size;
-	char* buffer = g_malloc(1024,0);
-	size = g_file_read(fp, buffer, 2048);
-	if( strstr(buffer, "XRDP_PROCESS" ) != NULL)
+	char buffer[1024];
+	char* p;
+	size = g_file_read(fd, buffer, 1024);
+	if( size == 0)
 	{
+		g_free(buffer);
+		return -1;
+	}
+	buffer[size] = 0;
+	if( g_strstr(buffer, "XRDP_PROCESS" ) != NULL)
+	{
+		g_free(buffer);
 		return 0;
 	}
 	else
 	{
-		*file_pos += strlen(buffer);
+		*file_pos += g_strlen(buffer)+1;
 	}
+	g_free(buffer);
 	return 1;
 }
 
@@ -700,25 +709,30 @@ session_is_tagged(int pid)
 	char environ_filename[1024];
 	char* buffer;
 	char* p;
-	int fp;
+	int fd;
 	int file_pos = 0;
+	int res;
 	int size;
+	static int i=3;
 
-	sprintf(environ_filename, "/proc/%i/environ",pid);
-	fp = g_file_open(environ_filename);
-
-	//while (() == -1)
-	//{
-		if ((p = strstr(buffer, "XRDP_PROCESS" )) != NULL)
+	size = g_sprintf(environ_filename, "/proc/%i/environ",pid);
+	environ_filename[size] = 0;
+	fd = g_file_open(environ_filename);
+	if( fd == 0)
+	{
+		return 1;
+	}
+	while ((res = session_test_line(fd, &file_pos)) != -1)
+	{
+		if(res == 0)
 		{
+			g_file_close(fd);
 			return 0;
 		}
-
-	//}
-	printf("size : %i\n",size);
-	log_hexdump(&(g_cfg->log), LOG_LEVEL_INFO,buffer,size);
-	printf("tutut\n");
-	g_exit(0);
+		g_file_seek(fd, file_pos);
+	}
+	g_file_close(fd);
+	return 1;
 
 }
 
@@ -766,8 +780,7 @@ session_destroy(char* username)
 			if(st.st_uid == uid)
 			{
 				pid = g_atoi(dir_entry->d_name);
-				//&& session_is_tagged(pid) == 0
-				if (pid != 0 )
+				if (pid != 0 && session_is_tagged(pid) == 0)
 				{
 					kill(pid, i==0 ? SIGTERM : SIGKILL);
 				}

@@ -1490,6 +1490,13 @@ g_strdup(const char* in)
 }
 
 /*****************************************************************************/
+char* APP_CC
+g_strstr(const char* c1, const char* c2)
+{
+	return strstr(c1,c2);
+}
+
+/*****************************************************************************/
 int APP_CC
 g_strcmp(const char* c1, const char* c2)
 {
