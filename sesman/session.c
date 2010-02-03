@@ -915,7 +915,6 @@ session_get_bypid(int pid)
       lock_chain_release();
       return 0;
     }
-
     if (tmp->item->pid == pid)
     {
       /*THREAD-FIX release chain lock */
@@ -927,7 +926,6 @@ session_get_bypid(int pid)
     /* go on */
     tmp=tmp->next;
   }
-
   /*THREAD-FIX release chain lock */
   lock_chain_release();
   return 0;
