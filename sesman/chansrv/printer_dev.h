@@ -27,7 +27,7 @@
 #include "parse.h"
 
 #define PPD_FILE 		"/usr/share/ppd/PostscriptColor.ppd"
-#define DEVICE_URI	"xrdp_printer:"
+#define DEVICE_URI	"xrdpprinter:"
 #define SPOOL_DIR		"/var/spool/xrdp_printer/"
 
 int DEFAULT_CC
