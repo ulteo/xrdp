@@ -28,7 +28,7 @@ import shutil
 import time
 from syslog import LOG_DEBUG, LOG_ERR, LOG_INFO, LOG_WARNING
 
-debug_mode=False
+debug_mode=True
 
 if debug_mode:
     buf = file("/tmp/xrdp_printer.out.log","a")
@@ -50,8 +50,7 @@ CONF = {"ghostscript" : "/usr/bin/gs",
         "group" : grp.getgrgid(os.getgid())[0],
         "umask"   : "077",
         "type"    : "ps",
-        "ps2pdf_ver" : "2.4",
-        "ps2pdf_cmd" : '%(ghostscript)s -q -dCompatibilityLevel=%(ps2pdf_ver)s -dNOPAUSE -dBATCH -dSAFER -sDEVICE=pdfwrite -sOutputFile="%(tmp_file)s" -dAutoRotatePages=/PageByPage -dAutoFilterColorImages=false -dColorImageFilter=/FlateEncode -dPDFSETTINGS=/prepress -c .setpdfwrite -f "%(spool_file)s"'
+	"printer" : "default"
         }
 
 FILEKEYS = {"User" : "user",
@@ -61,7 +60,7 @@ FILEKEYS = {"User" : "user",
             "OutFile" : "out_file",
             "Type" : "type"}
 
-CONFIGFILE = "/etc/xrdp/xrdp_printer.conf"
+CONFIGFILE = "/etc/cups/xrdp_printer.conf"
 
 class Transform:
     def __init__(self, psFile):
@@ -179,7 +178,7 @@ def main():
     CONF["job"] = sys.argv[1]
     CONF["jobuser"] = sys.argv[2]
     CONF["title"] = sys.argv[3]
-    CONF["title"] = os.getenv("PRINTER")
+    CONF["printer"] = os.getenv("PRINTER")
       
     try:
         info = pwd.getpwnam(CONF["user"])
@@ -216,11 +215,7 @@ def main():
     CONF["tmp_file"] = "%s.%s"%(CONF["spool_file"], CONF["type"])
 
     t = Transform(CONF["spool_file"])
-    if CONF["type"] == "ps":
-         t.ps2ps(CONF)
-    else:
-        log(LOG_ERR, "Unknown type %s"%(CONF["type"]))
-        return end(0)
+    t.ps2ps(CONF)
 
     system("chmod %d %s"%(777-int(CONF["umask"]), CONF["tmp_file"]))
     system("chgrp %s %s"%(CONF["group"],CONF["tmp_file"]))

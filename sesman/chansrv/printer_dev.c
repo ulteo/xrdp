@@ -31,6 +31,7 @@ extern char* username;
 static struct printer_device printer_devices[128];
 static int printer_devices_count = 0;
 static char user_spool_dir[256];
+static int printer_sock;
 
 /************************************************************************/
 int				/* O - 0 if name is no good, 1 if name is good */
@@ -500,6 +501,7 @@ printer_dev_add(struct stream* s, int device_data_length,
 	}
 	printer_dev_set_restrict_user_list(http, printer_name, user_list);
 	printer_dev_server_disconnect(http);
+	printer_dev_init_printer_socket(printer_name);
 	printer_devices[printer_devices_count].device_id = device_id;
 	g_strcpy(printer_devices[printer_devices_count].printer_name, printer_name);
 	printer_devices_count++;
@@ -588,32 +590,28 @@ printer_dev_del(int device_id)
 int DEFAULT_CC
 printer_dev_get_next_job(char* jobs, int *device_id)
 {
-	struct dirent *dir_entry;
-	DIR *dir;
-	dir = opendir(user_spool_dir );
-	if( dir == NULL)
+  struct inotify_event *event;
+	char buffer[9000];
+	int len;
+	printf("printer sock : %i\n",printer_sock);
+	len = read(printer_sock, buffer, 9000);
+	printf("len : %i\n", len);
+	if( len < 0 )
 	{
-		log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[printer_dev_get_next_job]:"
-				"enable to open directory '%s' : %s\n",user_spool_dir, strerror(errno));
+		perror("error");
 		return 1;
 	}
-	while((dir_entry = readdir(dir)) != NULL)
-	{
-		if( g_strcmp(dir_entry->d_name, ".") ==0 || g_strcmp(dir_entry->d_name, "..") == 0)
-		{
-			continue;
-		}
-		g_sprintf(jobs, "%s/%s",user_spool_dir,dir_entry->d_name);
-		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_get_next_job]:"
-				"new job : %s\n",jobs);
+//	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_get_next_job]:"
+//			"new job : %s\n",jobs);
+  event = (struct inotify_event *) buffer;
+  if (event->len)
+  {
+  	printf("\tObjet : %s", event->name);
+  }
 		/* printer id to change */
-		*device_id = printer_devices[0].device_id;
-		closedir(dir);
-		return 0;
-	}
-	log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[printer_dev_get_next_job]:"
-				"no new jobs in '%s'\n", user_spool_dir);
-	closedir(dir);
+		//*device_id = printer_devices[0].device_id;
+//	log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[printer_dev_get_next_job]:"
+//				"no new jobs in '%s'\n", user_spool_dir);
 	return 1;
 }
 
@@ -634,33 +632,69 @@ printer_dev_delete_job(char* jobs)
 
 /*****************************************************************************/
 int APP_CC
-printer_dev_init_printer_socket()
+printer_dev_init_printer_socket( char* printer_name)
 {
-	int printer_sock;
+	char printer_spool_dir[1024];
 	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_init_printer_socket]:"
-  		" init printer_socket");
+  		" Init printer_socket");
+	g_sprintf(user_spool_dir, "%s%s",SPOOL_DIR, username);
+	g_mkdir(user_spool_dir);
+	if( g_directory_exist(user_spool_dir) < 0)
+	{
+		log_message(&log_conf, LOG_LEVEL_ERROR, "chansrv[printer_dev_init_printer_socket]:"
+	  		" Enable to create user spool directory : %s",user_spool_dir);
+		return 1;
+	}
+	if( g_chown(user_spool_dir, "lp"))
+	{
+		log_message(&log_conf, LOG_LEVEL_ERROR, "chansrv[printer_dev_init_printer_socket]:"
+	  		" Enable to change spool directory owner : %s",user_spool_dir);
+		return 1;
+	}
+	g_sprintf(printer_spool_dir, "%s/%s",user_spool_dir, printer_name );
+	g_mkdir(printer_spool_dir);
+	if( g_directory_exist(printer_spool_dir) < 0)
+	{
+		log_message(&log_conf, LOG_LEVEL_ERROR, "chansrv[printer_dev_init_printer_socket]:"
+	  		" Enable to create printer spool directory : %s",user_spool_dir);
+		return 1;
+	}
+	if( g_chown(printer_spool_dir, "lp"))
+	{
+		log_message(&log_conf, LOG_LEVEL_ERROR, "chansrv[printer_dev_init_printer_socket]:"
+	  		" Enable to change printer directory owner : %s",user_spool_dir);
+		return 1;
+	}
 	if ((printer_sock = inotify_init()) < 0)
 	{
 		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[dev_redir_init_printer_socket]:"
 				"Enable to setup inotify");
 		return 0;
 	}
-	g_sprintf(user_spool_dir, "%s%s",SPOOL_DIR, username);
 	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[dev_redir_init_printer_socket]:"
-			"Adding watch to %s\n", user_spool_dir);
-  if (inotify_add_watch(printer_sock, user_spool_dir, IN_MOVE) < 0)
+			"Adding watch to %s\n", printer_spool_dir);
+  if (inotify_add_watch(printer_sock, printer_spool_dir, IN_MOVE) < 0)
   {
   	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[dev_redir_init_printer_socket]:"
   			"Unable to add inotify watch (%s)\n", strerror(errno));
       return 0;
   }
   g_tcp_set_non_blocking(printer_sock);
+  g_tcp_set_no_delay(printer_sock);
   return printer_sock;
 }
 
 /*****************************************************************************/
 int APP_CC
-pinter_dev_deinit_printer_socket()
+printer_dev_get_printer_socket()
+{
+	return printer_sock;
+}
+
+
+/*****************************************************************************/
+int APP_CC
+printer_dev_deinit_printer_socket()
 {
 	return 0;
 }

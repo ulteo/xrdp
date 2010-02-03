@@ -1234,8 +1234,50 @@ g_chmod_hex(const char* filename, int flags)
 #endif
 }
 
+int APP_CC
+g_chown(const char* filename, const char* user)
+{
+	int uid;
+	if (g_getuser_info(user, 0, &uid, 0, 0, 0) == 1)
+	{
+		return -1;
+	}
+	return chown(filename, uid, -1) ;
+}
+
+
 /*****************************************************************************/
 /* returns error, always zero */
+int APP_CC
+g_mkdirs(const char* dirname)
+{
+	char *pos;
+	char* dirname_copy;
+	struct stat st;
+	dirname_copy = malloc(strlen(dirname)+1);
+	sprintf(dirname_copy,"%s/", dirname);
+	/* first / */
+	pos = strchr(dirname_copy,'/');
+	if (pos == NULL)
+	{
+		return 1;
+	}
+	/* first usable position */
+	pos = strchr(pos+1,'/');
+	while (pos != NULL)
+	{
+		*pos = 0;
+		mkdir(dirname_copy, S_IRWXU);
+		if ( stat(dirname_copy, &st) == -1)
+		{
+		  return 1;
+		}
+		*pos = '/';
+		pos = strchr(pos+1,'/');
+	}
+	return 0;
+}
+
 int APP_CC
 g_mkdir(const char* dirname)
 {
@@ -1246,6 +1288,7 @@ g_mkdir(const char* dirname)
   return 0;
 #endif
 }
+
 
 /*****************************************************************************/
 /* gets the current working directory and puts up to maxlen chars in
@@ -1283,6 +1326,7 @@ g_set_current_dir(char* dirname)
   return chdir(dirname);
 #endif
 }
+
 
 /*****************************************************************************/
 /* returns boolean, non zero if the file exists */

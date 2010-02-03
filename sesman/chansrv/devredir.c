@@ -29,7 +29,6 @@
 extern int g_rdpdr_chan_id; /* in chansrv.c */
 extern struct log_config log_conf;
 static int g_devredir_up = 0;
-static tbus printer_sock = 0;
 static char hostname[256];
 static int use_unicode;
 static int vers_major;
@@ -421,7 +420,7 @@ dev_redir_get_wait_objs(tbus* objs, int* count, int* timeout)
     return 0;
   }
   lcount = *count;
-  objs[lcount] = printer_sock;
+  objs[lcount] = printer_dev_get_printer_socket();
   lcount++;
   *count = lcount;
   return 0;
@@ -433,27 +432,18 @@ dev_redir_check_wait_objs(void)
 {
 	char buffer[1024];
 	int len;
-	log_message(&log_conf, LOG_LEVEL_INFO, "rdpdr channel[dev_redir_check_wait_objs]: check wait object");
 	int device_id;
 
   if (!g_devredir_up)
   {
     return 0;
   }
-  if(printer_sock !=0)
-  {
-  	len = g_tcp_recv(printer_sock, buffer, 1024, 0);
-  	if( len != -1 )
-  	{
-  		/* check change */
-  		if( printer_dev_get_next_job(buffer, &device_id) == 0)
-  		{
-
-  			dev_redir_begin_io_request(buffer, device_id);
-  		}
-
-  	}
-  }
+	log_message(&log_conf, LOG_LEVEL_INFO, "rdpdr channel[dev_redir_check_wait_objs]: check wait object");
+	/* check change */
+	if( printer_dev_get_next_job(buffer, &device_id) == 0)
+	{
+		dev_redir_begin_io_request(buffer, device_id);
+	}
   return 0;
 }
 
@@ -640,13 +630,6 @@ dev_redir_devicelist_announce(struct stream* s)
       	device_list[device_id].device_type = RDPDR_DTYP_PRINT;
       	device_count++;
       	dev_redir_device_list_reply(handle);
-        if ( printer_sock != 0 )
-        {
-          log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_devicelist_announce]: "
-      				"the inotify socket is already initied");
-      		break;
-        }
-        printer_sock = printer_dev_init_printer_socket();
       	break;
       }
       log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_devicelist_announce]: "
