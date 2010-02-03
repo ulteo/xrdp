@@ -685,20 +685,17 @@ session_test_line(int fd, int *file_pos)
 	size = g_file_read(fd, buffer, 1024);
 	if( size == 0)
 	{
-		g_free(buffer);
 		return -1;
 	}
 	buffer[size] = 0;
 	if( g_strstr(buffer, "XRDP_PROCESS" ) != NULL)
 	{
-		g_free(buffer);
 		return 0;
 	}
 	else
 	{
 		*file_pos += g_strlen(buffer)+1;
 	}
-	g_free(buffer);
 	return 1;
 }
 
