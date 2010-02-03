@@ -96,8 +96,9 @@ log_lvl2str(int lvl, char* str)
       break;
     case LOG_LEVEL_DEBUG:
       snprintf(str, 9, "%s", "[DEBUG] ");
+      break;
     default:
-      snprintf(str, 9, "%s", "[DEBUG++] ");
+      snprintf(str, 9, "%s", "[DEBUG+]");
       break;
   }
 }
@@ -106,6 +107,7 @@ log_lvl2str(int lvl, char* str)
 int DEFAULT_CC
 log_message(struct log_config* l_cfg, const unsigned int lvl, const char* msg, ...)
 {
+	printf("tutu\n");
   if (l_cfg->enable_syslog  && (lvl > l_cfg->syslog_level))
   {
     return 0;
@@ -114,7 +116,6 @@ log_message(struct log_config* l_cfg, const unsigned int lvl, const char* msg, .
   {
     return 0;
   }
-
   char buff[LOG_BUFFER_SIZE + 31]; /* 19 (datetime) 4 (space+cr+lf+\0) */
   va_list ap;
   int len = 0;
@@ -305,7 +306,7 @@ log_text2level(char* buf)
   else if (0 == g_strcasecmp(buf, "4") ||
            0 == g_strcasecmp(buf, "debug"))
   {
-    return LOG_LEVEL_INFO;
+    return LOG_LEVEL_DEBUG;
   }
   return LOG_LEVEL_DEBUG_PLUS;
 }
