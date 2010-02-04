@@ -46,13 +46,14 @@ in_unistr(struct stream* s, char *string, int str_size, int in_len);
 #define RDPDR_PRINTER_ANNOUNCE_FLAG_XPSFORMAT					0x00000010
 
 #define EVENT_SIZE  (sizeof (struct inotify_event))
-#define BUF_LEN     (1024 * (EVENT_SIZE + 16)
+#define BUF_LEN     (1024 * (EVENT_SIZE + 16))
 
 
 struct printer_device
 {
 	int device_id;
 	char printer_name[256];
+	int watch;
 };
 
 
