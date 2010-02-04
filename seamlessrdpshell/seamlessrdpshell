@@ -1,0 +1,11 @@
+#!/bin/bash
+
+#process tag
+export XRDP_PROCESS=1
+
+xsetroot -solid white
+XHook&
+xfwm4
+
+
+
