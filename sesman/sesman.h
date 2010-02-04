@@ -51,6 +51,7 @@
 
 #include "libscp.h"
 
+#define MANAGEMENT_SOCKET_NAME  "/var/spool/xrdp/xrdp_management"
 
 int DEFAULT_CC
 session_destroy(char* username);

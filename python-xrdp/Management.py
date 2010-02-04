@@ -53,7 +53,7 @@ Protocol:
 """
 
 def _ManagementGetSocket():
-	filename = "/var/spool/xrdp_management"
+	filename = "/var/spool/xrdp/xrdp_management"
 	
 	if not os.path.exists(filename):
 		raise XrdpException("Xrdp not available")

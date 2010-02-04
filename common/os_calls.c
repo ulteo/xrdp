@@ -73,6 +73,7 @@ extern char** environ;
 #endif
 
 #define SESSIONS_DIR 	"/var/spool/sessions"
+#define XRDP_DIR 	"/var/spool/xrdp"
 
 
 /* for solaris */
@@ -746,6 +747,11 @@ g_create_wait_obj(char* name)
   int sck;
   int i;
 
+  if( g_directory_exist(XRDP_DIR) < 0)
+  {
+  	g_mkdir(XRDP_DIR);
+  	g_chmod_hex(XRDP_DIR, 0xffff);
+  }
   sck = socket(PF_UNIX, SOCK_DGRAM, 0);
   if (sck < 0)
   {
@@ -756,16 +762,16 @@ g_create_wait_obj(char* name)
   if ((name == 0) || (strlen(name) == 0))
   {
     g_random((char*)&i, sizeof(i));
-    sprintf(sa.sun_path, "/var/spool/auto%8.8x", i);
+    sprintf(sa.sun_path, "%s/auto%8.8x", XRDP_DIR, i);
     while (g_file_exist(sa.sun_path))
     {
       g_random((char*)&i, sizeof(i));
-      sprintf(sa.sun_path, "/var/spool/auto%8.8x", i);
+      sprintf(sa.sun_path, "%s/auto%8.8x", XRDP_DIR, i);
     }
   }
   else
   {
-    sprintf(sa.sun_path, "/var/spool/%s", name);
+    sprintf(sa.sun_path, "%s/%s", XRDP_DIR, name);
   }
   unlink(sa.sun_path);
   len = sizeof(sa);

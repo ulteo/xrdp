@@ -82,7 +82,7 @@ user_channel_transmit(int socket, char* mess, int size )
 int APP_CC
 user_channel_do_up()
 {
-	g_sprintf(user_channel_socket_name, "/var/spool/xrdp_user_channel_socket%s",g_getenv("DISPLAY"));
+	g_sprintf(user_channel_socket_name, "/var/spool/xrdp/xrdp_user_channel_socket%s",g_getenv("DISPLAY"));
 	user_channel_socket = g_create_unix_socket(user_channel_socket_name);
 	g_chmod_hex(user_channel_socket_name, 0xFFFF);
 	g_user_channel_up = 1;
