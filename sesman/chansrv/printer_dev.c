@@ -574,7 +574,7 @@ printer_dev_del(int device_id)
 	user_list_p = &user_list;
 	if (g_str_replace_first(user_list, username, "") == 1)
 	{
-		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_del]:"
+		log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[printer_dev_del]:"
 				"enable to delete user restriction\n");
 	}
 	else
@@ -590,6 +590,8 @@ printer_dev_del(int device_id)
 	{
 		if (printer_dev_del_printer(http, lp_name) == 1 )
 		{
+			log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[printer_dev_del]:"
+					"enable to delete printer");
 			return 1;
 		}
 	}
@@ -597,9 +599,22 @@ printer_dev_del(int device_id)
 	{
 		if ( printer_dev_set_restrict_user_list(http, lp_name, user_list_p) == 1 )
 		{
+			log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[printer_dev_del]:"
+					"enable to restrict user");
 			return 1;
 		}
 	}
+	if(g_directory_exist(user_spool_dir))
+	{
+		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_del]:"
+				"remove user spool directory : %s",user_spool_dir);
+		if(g_remove_dirs(user_spool_dir))
+		{
+			log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[printer_dev_del]:"
+							"enable to remove user spool directory : %s",user_spool_dir);
+		}
+	}
+
 	return 0;
 }
 

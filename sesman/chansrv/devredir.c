@@ -79,9 +79,27 @@ convert_to_unix_filename(char *filename)
 
 /*****************************************************************************/
 int
+dev_redir_get_device_index(int device_id)
+{
+	int i;
+	for (i=0 ; i< device_count ; i++)
+	{
+		if(device_list[i].device_id == device_id)
+		{
+			return i;
+		}
+	}
+	return -1;
+}
+
+
+
+/*****************************************************************************/
+int
 dev_redir_begin_io_request(char* job,int device)
 {
 	struct stream* s;
+	int index;
 	make_stream(s);
 	init_stream(s,1024);
 
@@ -100,7 +118,8 @@ dev_redir_begin_io_request(char* job,int device)
 	out_uint32_le(s, actions[action_index].file_id);
 	out_uint32_le(s, IRP_MJ_CREATE);   	/* major version */
 	out_uint32_le(s, 0);								/* minor version */
-	switch (device_list[device].device_type) {
+	index = dev_redir_get_device_index(device);
+	switch (device_list[index].device_type) {
 		case RDPDR_DTYP_PRINT:
 			out_uint32_le(s, 0);								/* desired access(unused) */
 			out_uint64_le(s, 0);								/* size (unused) */
@@ -307,7 +326,7 @@ dev_redir_deinit(void)
 				log_message(&log_conf, LOG_LEVEL_DEBUG, "rdpdr channel[dev_redir_deinit]:"
 						" remove printer with the id %i", device_list[i].device_type);
 				printer_dev_del(device_list[i].device_id);
-
+				break;
 			default:
 				log_message(&log_conf, LOG_LEVEL_WARNING, "rdpdr channel[dev_redir_deinit]:"
 						" unknow device type: %i", device_list[i].device_type);
@@ -626,8 +645,8 @@ dev_redir_devicelist_announce(struct stream* s)
       handle = printer_dev_add(s, device_data_length, device_id, dos_name);
       if (handle != 1)
       {
-      	device_list[device_id].device_id = device_id;
-      	device_list[device_id].device_type = RDPDR_DTYP_PRINT;
+      	device_list[device_count].device_id = device_id;
+      	device_list[device_count].device_type = RDPDR_DTYP_PRINT;
       	device_count++;
       	dev_redir_device_list_reply(handle);
       	break;

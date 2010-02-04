@@ -1415,9 +1415,8 @@ g_remove_dirs(const char* dir_path)
 			g_file_delete(path);
 		}
 	}
-	g_remove_dir(dir_path);
 	closedir(dir);
-	return 1;
+	return g_remove_dir(dir_path);
 }
 
 /*****************************************************************************/
