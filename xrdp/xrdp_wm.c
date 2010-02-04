@@ -1486,7 +1486,7 @@ xrdp_wm_log_msg(struct xrdp_wm* self, char* msg)
   }
   xrdp_wm_set_focused(self, self->log_wnd);
   xrdp_bitmap_invalidate(self->log_wnd, 0);
-  //g_sleep(100);
+  g_sleep(100);
   return 0;
 }
 
