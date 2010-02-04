@@ -182,5 +182,5 @@ sig_handler_thread(void* arg)
     }
   } while (1);
 
-  return 0;
+  g_exit(0);
 }

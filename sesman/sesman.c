@@ -833,6 +833,12 @@ main(int argc, char** argv)
     g_chmod_hex("/tmp/.X11-unix", 0x1777);
   }
 
+  if (!g_directory_exist(XRDP_SOCKET_PATH))
+  {
+    g_create_dir(XRDP_SOCKET_PATH);
+    g_chmod_hex(XRDP_SOCKET_PATH, 0x1777);
+  }
+
   g_snprintf(text, 255, "xrdp_sesman_%8.8x_main_term", g_pid);
   g_term_event = g_create_wait_obj(text);
   g_snprintf(text, 255, "xrdp_sesman_%8.8x_main_sync", g_pid);
