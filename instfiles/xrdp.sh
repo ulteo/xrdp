@@ -29,7 +29,6 @@ xrdp_start()
 {
   echo -n "Starting: xrdp and sesman . . "
   logoff all
-  mkdir /var/spool/xrdp 2>/dev/null
   $SBINDIR/xrdp >> $LOG
   $SBINDIR/xrdp-sesman >> $LOG
   echo "."
@@ -44,7 +43,6 @@ xrdp_stop()
   $SBINDIR/xrdp-sesman --kill >> $LOG
   $SBINDIR/xrdp --kill >> $LOG
   echo "."
-  rm -fr /var/spool/xrdp 2>/dev/null
   return 0;
 }
 
