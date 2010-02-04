@@ -594,7 +594,7 @@ printer_dev_get_next_job(char* jobs, int *device_id)
 	char buffer[9000];
 	int len;
 	printf("printer sock : %i\n",printer_sock);
-	len = read(printer_sock, buffer, 9000);
+	len = g_tcp_recv(printer_sock, buffer, 9000,0);
 	printf("len : %i\n", len);
 	if( len < 0 )
 	{
