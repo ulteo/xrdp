@@ -438,9 +438,11 @@ xrdp_wm_login_fill_in_combo(struct xrdp_wm* self, struct xrdp_bitmap* b)
     }
   }
   g_file_close(fd);
+
   list_delete(sections);
   list_delete(section_names);
   list_delete(section_values);
+
   return 0;
 }
 

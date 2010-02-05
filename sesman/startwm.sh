@@ -25,7 +25,7 @@ DefaultShell=$1
 
 #. /etc/profile
 
-xsetroot -solid black
+xsetroot -solid white
 which "$DefaultShell"
 if test $? -eq 0
 then

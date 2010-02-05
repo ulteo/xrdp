@@ -381,7 +381,11 @@ xrdp_wm_init(struct xrdp_wm* self)
 
   xrdp_wm_load_static_colors(self);
   xrdp_wm_load_static_pointers(self);
+#ifdef OLD_LOG_VERSION
   self->screen->bg_color = self->black;
+#else
+  self->screen->bg_color = self->white;
+#endif
   if (self->session->client_info->rdp_autologin)
   {
     g_snprintf(cfg_file, 255, "%s/xrdp.ini", XRDP_CFG_PATH);
@@ -455,6 +459,9 @@ xrdp_wm_init(struct xrdp_wm* self)
   {
     xrdp_login_wnd_create(self);
     /* clear screen */
+#ifndef OLD_LOG_VERSION
+    self->screen->bg_color = self->white;
+#endif
     xrdp_bitmap_invalidate(self->screen, 0);
     xrdp_wm_set_focused(self, self->login_window);
     xrdp_wm_set_login_mode(self, 1);
@@ -1488,6 +1495,69 @@ xrdp_wm_log_msg(struct xrdp_wm* self, char* msg)
   xrdp_bitmap_invalidate(self->log_wnd, 0);
   g_sleep(100);
   return 0;
+}
+
+/*****************************************************************************/
+int APP_CC
+xrdp_wm_log_error(struct xrdp_wm* self, char* msg)
+{
+	/* TODO do an advance logging  */
+  struct xrdp_bitmap* but;
+  int w;
+  int h;
+  int xoffset;
+  int yoffset;
+  char* p;
+  char* msg_copy = msg;
+
+  self->screen->bg_color = self->white;
+  list_add_item(self->log, (long)g_strdup(msg_copy));
+  if (self->log_wnd == 0)
+  {
+    w = 200;
+    h = 120;
+    xoffset = (self->screen->width - w) /2;
+    yoffset = (self->screen->height - h) /2;
+    if (self->screen->width < w)
+    {
+      w = self->screen->width - 4;
+      xoffset = 2;
+    }
+    if (self->screen->height < h)
+    {
+      h = self->screen->height - 4;
+      yoffset = 2;
+    }
+    // log window
+    self->log_wnd = xrdp_bitmap_create(w, h, self->screen->bpp,
+                                       WND_TYPE_WND, self);
+    list_add_item(self->screen->child_list, (long)self->log_wnd);
+    self->log_wnd->parent = self->screen;
+    self->log_wnd->owner = self->screen;
+    self->log_wnd->bg_color = self->grey;
+    self->log_wnd->left = xoffset;
+    self->log_wnd->top = yoffset;
+    set_string(&(self->log_wnd->caption1), "Connection Log");
+    // ok button
+    but = xrdp_bitmap_create(60, 25, self->screen->bpp, WND_TYPE_BUTTON, self);
+    list_insert_item(self->log_wnd->child_list, 0, (long)but);
+    but->parent = self->log_wnd;
+    but->owner = self->log_wnd;
+    but->left = (200 - 60) / 2;
+    but->top = 80;
+    but->id = 1;
+    but->tab_stop = 1;
+    set_string(&but->caption1, "OK");
+    self->log_wnd->focused_control = but;
+     //set notify function
+    self->log_wnd->notify = xrdp_wm_log_wnd_notify;
+  }
+  xrdp_wm_set_focused(self, self->log_wnd);
+  xrdp_bitmap_invalidate(self->screen, 0);
+  g_sleep(100);
+
+  return 0;
+
 }
 
 /*****************************************************************************/

@@ -117,7 +117,9 @@ xrdp_mm_send_login(struct xrdp_mm* self)
   char* name;
   char* value;
 
+#ifdef OLD_LOG_VERSION
   xrdp_wm_log_msg(self->wm, "sending login info to sesman");
+#endif
   username = 0;
   password = 0;
   self->code = 0;
@@ -145,7 +147,12 @@ xrdp_mm_send_login(struct xrdp_mm* self)
   }
   if ((username == 0) || (password == 0))
   {
+#ifdef OLD_LOG_VERSION
     xrdp_wm_log_msg(self->wm, "error finding username and password");
+#else
+    xrdp_wm_log_error(self->wm, "Username or password");
+    xrdp_wm_log_error(self->wm, "are empty");
+#endif
     return 1;
   }
   s = trans_get_out_s(self->sesman_trans, 8192);
@@ -183,7 +190,12 @@ xrdp_mm_send_login(struct xrdp_mm* self)
   rv = trans_force_write(self->sesman_trans);
   if (rv != 0)
   {
+#ifdef OLD_LOG_VERSION
     xrdp_wm_log_msg(self->wm, "xrdp_mm_send_login: xrdp_mm_send failed");
+#else
+  	xrdp_wm_log_error(self->wm, "Enable to send");
+  	xrdp_wm_log_error(self->wm, "logon informations");
+#endif
   }
   return rv;
 }
@@ -238,16 +250,27 @@ xrdp_mm_setup_mod1(struct xrdp_mm* self)
   lib[0] = 0;
   if (xrdp_mm_get_value(self, "lib", lib, 255) != 0)
   {
-    g_snprintf(text, 255, "no library name specified in xrdp.ini, please add "
+#ifdef OLD_LOG_VERSION
+  	g_snprintf(text, 255, "no library name specified in xrdp.ini, please add "
                "lib=libxrdp-vnc.so or similar");
     xrdp_wm_log_msg(self->wm, text);
+#else
+    xrdp_wm_log_error(self->wm, "no library name specified in xrdp.ini");
+    xrdp_wm_log_error(self->wm, "please add lib=libxrdp-vnc.so");
+#endif
     return 1;
   }
   if (lib[0] == 0)
   {
-    g_snprintf(text, 255, "empty library name specified in xrdp.ini, please "
+#ifdef OLD_LOG_VERSION
+    g_snprintf(text, 255, "empty library name specified in xrdp.ini,\n please "
                "add lib=libxrdp-vnc.so or similar");
     xrdp_wm_log_msg(self->wm, text);
+#else
+    xrdp_wm_log_error(self->wm, "empty library name specified in xrdp.ini");
+    xrdp_wm_log_error(self->wm, "please add lib=libxrdp-vnc.so");
+#endif
+
     return 1;
   }
   if (self->mod_handle == 0)
@@ -262,9 +285,15 @@ xrdp_mm_setup_mod1(struct xrdp_mm* self)
       }
       if (func == 0)
       {
-        g_snprintf(text, 255, "error finding proc mod_init in %s, not a valid "
+#ifdef OLD_LOG_VERSION
+        g_snprintf(text, 255, "error finding proc mod_init in %s,\n not a valid "
                    "xrdp backend", lib);
         xrdp_wm_log_msg(self->wm, text);
+#else
+        g_snprintf(text, 255, "%s,\n not a valid xrdp backend", lib);
+    xrdp_wm_log_error(self->wm, "error finding proc mod_init in");
+    xrdp_wm_log_error(self->wm, text);
+#endif
       }
       self->mod_init = (struct xrdp_mod* (*)(void))func;
       func = g_get_proc_address(self->mod_handle, "mod_exit");
@@ -274,9 +303,16 @@ xrdp_mm_setup_mod1(struct xrdp_mm* self)
       }
       if (func == 0)
       {
-        g_snprintf(text, 255, "error finding proc mod_exit in %s, not a valid "
+#ifdef OLD_LOG_VERSION
+      	g_snprintf(text, 255, "error finding proc mod_exit in %s,\n not a valid "
                    "xrdp backend", lib);
         xrdp_wm_log_msg(self->wm, text);
+#else
+        g_snprintf(text, 255, "%s,\n not a valid xrdp backend", lib);
+    xrdp_wm_log_error(self->wm, "error finding proc mod_init in");
+    xrdp_wm_log_error(self->wm, text);
+#endif
+
       }
       self->mod_exit = (int (*)(struct xrdp_mod*))func;
       if ((self->mod_init != 0) && (self->mod_exit != 0))
@@ -291,9 +327,17 @@ xrdp_mm_setup_mod1(struct xrdp_mm* self)
     }
     else
     {
-      g_snprintf(text, 255, "error loading %s specified in xrdp.ini, please "
-                 "add a valid entry like lib=libxrdp-vnc.so or similar", lib);
+#ifdef OLD_LOG_VERSION
+      g_snprintf(text, 255, "error loading %s specified in xrdp.ini,\n please "
+                 "add a valid entry like \nlib=libxrdp-vnc.so or similar", lib);
       xrdp_wm_log_msg(self->wm, text);
+#else
+      g_snprintf(text, 255, "error loading %s specified in xrdp.ini,", lib);
+      xrdp_wm_log_error(self->wm, text);
+      xrdp_wm_log_error(self->wm, "please add a valid entry like");
+      xrdp_wm_log_error(self->wm, "lib=libxrdp-vnc.so or similar");
+#endif
+
     }
     if (self->mod != 0)
     {
@@ -650,9 +694,11 @@ xrdp_mm_process_login_response(struct xrdp_mm* self, struct stream* s)
   if (ok)
   {
     self->display = display;
+#ifdef OLD_LOG_VERSION
     g_snprintf(text, 255, "xrdp_mm_process_login_response: login successful "
                "for display %d", display);
     xrdp_wm_log_msg(self->wm, text);
+#endif
     if (xrdp_mm_setup_mod1(self) == 0)
     {
       if (xrdp_mm_setup_mod2(self) == 0)
@@ -706,7 +752,13 @@ xrdp_mm_process_login_response(struct xrdp_mm* self, struct stream* s)
   }
   else
   {
-    xrdp_wm_log_msg(self->wm, "xrdp_mm_process_login_response: login failed");
+#ifdef OLD_LOG_VERSION
+    xrdp_wm_log_msg(self->wm, "Failed to open session, verify the username and the password");
+#else
+    xrdp_wm_log_error(self->wm, "Failed to open session");
+    xrdp_wm_log_error(self->wm, "verify the username");
+    xrdp_wm_log_error(self->wm, "and the password");
+#endif
   }
   self->delete_sesman_trans = 1;
   self->connected_state = 0;
@@ -879,6 +931,7 @@ xrdp_mm_connect(struct xrdp_mm* self)
   names = self->login_names;
   values = self->login_values;
   count = names->count;
+
   for (index = 0; index < count; index++)
   {
     name = (char*)list_get_item(names, index);
@@ -902,8 +955,10 @@ xrdp_mm_connect(struct xrdp_mm* self)
     trans_delete(self->sesman_trans);
     self->sesman_trans = trans_create(1, 8192, 8192);
     xrdp_mm_get_sesman_port(port, sizeof(port));
+#ifdef OLD_LOG_VERSION
     g_snprintf(text, 255, "connecting to sesman ip %s port %s", ip, port);
     xrdp_wm_log_msg(self->wm, text);
+#endif
 
     self->sesman_trans->trans_data_in = xrdp_mm_sesman_data_in;
     self->sesman_trans->header_size = 8;
@@ -924,13 +979,20 @@ xrdp_mm_connect(struct xrdp_mm* self)
     if (ok)
     {
       /* fully connect */
+#ifdef OLD_LOG_VERSION
       xrdp_wm_log_msg(self->wm, "sesman connect ok");
+#endif
       self->connected_state = 1;
       rv = xrdp_mm_send_login(self);
     }
     else
     {
-      xrdp_wm_log_msg(self->wm, errstr);
+#ifdef OLD_LOG_VERSION
+    	xrdp_wm_log_msg(self->wm, errstr);
+#else
+    	xrdp_wm_log_error(self->wm, "Connection failed verify:");
+    	xrdp_wm_log_error(self->wm, "sesman is not accessible");
+#endif
       trans_delete(self->sesman_trans);
       self->sesman_trans = 0;
       self->sesman_trans_up = 0;

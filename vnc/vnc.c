@@ -606,9 +606,15 @@ lib_framebuffer_update(struct vnc* v)
       }
       else
       {
+#ifdef OLD_LOG_VERSION
         g_sprintf(text, "error in lib_framebuffer_update encoding = %8.8x",
                   encoding);
         v->server_msg(v, text, 1);
+#else
+        g_sprintf(text, "encoding = %8.8x", encoding);
+        v->server_msg(v, "error in lib_framebuffer_update", 1);
+        v->server_msg(v, text, 1);
+#endif
       }
     }
   }
@@ -809,14 +815,20 @@ lib_mod_connect(struct vnc* v)
   int i;
   int check_sec_result;
 
+#ifdef OLD_LOG_VERSION
   v->server_msg(v, "started connecting", 0);
+#endif
   check_sec_result = 1;
   /* only support 8 and 16 bpp connections from rdp client */
   if ((v->server_bpp != 8) && (v->server_bpp != 15) &&
       (v->server_bpp != 16) && (v->server_bpp != 24))
   {
-    v->server_msg(v, "error - only supporting 8, 15, 16 and 24 bpp rdp \
-connections", 0);
+#ifdef OLD_LOG_VERSION
+    v->server_msg(v, "error - only supporting 8, 15, 16 ", 0);
+    v->server_msg(v, "and 24 bpp rdp connections", 0);
+#else
+    v->server_msg(v, "error - only supporting 8, 15, 16 and 24 bpp rdp connections", 0);
+#endif
     return 1;
   }
   if (g_strcmp(v->ip, "") == 0)
@@ -830,12 +842,16 @@ connections", 0);
   v->sck = g_tcp_socket();
   v->sck_obj = g_create_wait_obj_from_socket(v->sck, 0);
   v->sck_closed = 0;
+#ifdef OLD_LOG_VERSION
   g_sprintf(text, "connecting to %s %s", v->ip, con_port);
   v->server_msg(v, text, 0);
+#endif
   error = g_tcp_connect(v->sck, v->ip, con_port);
   if (error == 0)
   {
-    v->server_msg(v, "tcp connected", 0);
+#ifdef OLD_LOG_VERSION
+  	v->server_msg(v, "tcp connected", 0);
+#endif
     g_tcp_set_non_blocking(v->sck);
     g_tcp_set_no_delay(v->sck);
     /* protocal version */
@@ -854,8 +870,11 @@ connections", 0);
     if (error == 0)
     {
       in_uint32_be(s, i);
+
+#ifdef OLD_LOG_VERSION
       g_sprintf(text, "security level is %d (1 = none, 2 = standard)", i);
       v->server_msg(v, text, 0);
+#endif
       if (i == 1) /* none */
       {
         check_sec_result = 0;
@@ -889,22 +908,28 @@ connections", 0);
         v->server_msg(v, "password failed", 0);
         error = 2;
       }
+#ifdef OLD_LOG_VERSION
       else
       {
         v->server_msg(v, "password ok", 0);
       }
+#endif
     }
   }
   if (error == 0)
   {
+#ifdef OLD_LOG_VERSION
     v->server_msg(v, "sending share flag", 0);
+#endif
     init_stream(s, 8192);
     s->data[0] = 1;
     error = lib_send(v, s->data, 1); /* share flag */
   }
   if (error == 0)
   {
+#ifdef OLD_LOG_VERSION
     v->server_msg(v, "receiving server init", 0);
+#endif
     error = lib_recv(v, s->data, 4); /* server init */
   }
   if (error == 0)
@@ -912,14 +937,18 @@ connections", 0);
     in_uint16_be(s, v->mod_width);
     in_uint16_be(s, v->mod_height);
     init_stream(pixel_format, 8192);
+#ifdef OLD_LOG_VERSION
     v->server_msg(v, "receiving pixel format", 0);
+#endif
     error = lib_recv(v, pixel_format->data, 16);
   }
   if (error == 0)
   {
     v->mod_bpp = v->server_bpp;
     init_stream(s, 8192);
+#ifdef OLD_LOG_VERSION
     v->server_msg(v, "receiving name length", 0);
+#endif
     error = lib_recv(v, s->data, 4); /* name len */
   }
   if (error == 0)
@@ -931,7 +960,9 @@ connections", 0);
     }
     else
     {
-      v->server_msg(v, "receiving name", 0);
+#ifdef OLD_LOG_VERSION
+    	v->server_msg(v, "receiving name", 0);
+#endif
       error = lib_recv(v, v->mod_name, i);
       v->mod_name[i] = 0;
     }
@@ -1019,7 +1050,9 @@ connections", 0);
       out_uint8s(pixel_format, 3); /* pad */
     }
     out_uint8a(s, pixel_format->data, 16);
+#ifdef OLD_LOG_VERSION
     v->server_msg(v, "sending pixel format", 0);
+#endif
     error = lib_send(v, s->data, 20);
   }
   if (error == 0)
@@ -1032,7 +1065,9 @@ connections", 0);
     out_uint32_be(s, 0); /* raw */
     out_uint32_be(s, 1); /* copy rect */
     out_uint32_be(s, 0xffffff11); /* cursor */
+#ifdef OLD_LOG_VERSION
     v->server_msg(v, "sending encodings", 0);
+#endif
     error = lib_send(v, s->data, 4 + 3 * 4);
   }
   if (error == 0)
@@ -1049,7 +1084,9 @@ connections", 0);
     out_uint16_be(s, 0);
     out_uint16_be(s, v->mod_width);
     out_uint16_be(s, v->mod_height);
+#ifdef OLD_LOG_VERSION
     v->server_msg(v, "sending framebuffer update request", 0);
+#endif
     error = lib_send(v, s->data, 10);
   }
   if (error == 0)
@@ -1068,14 +1105,18 @@ connections", 0);
     g_memset(cursor_data + (32 * (32 * 3) - 2 * 32 * 3), 0xff, 9);
     g_memset(cursor_data + (32 * (32 * 3) - 3 * 32 * 3), 0xff, 9);
     g_memset(cursor_mask, 0xff, 32 * (32 / 8));
+#ifdef OLD_LOG_VERSION
     v->server_msg(v, "sending cursor", 0);
+#endif
     error = v->server_set_cursor(v, 3, 3, cursor_data, cursor_mask);
   }
   free_stream(s);
   free_stream(pixel_format);
   if (error == 0)
   {
-    v->server_msg(v, "connection complete, connected ok", 0);
+#ifdef OLD_LOG_VERSION
+  	v->server_msg(v, "connection complete, connected ok", 0);
+#endif
     lib_open_clip_channel(v);
   }
   else

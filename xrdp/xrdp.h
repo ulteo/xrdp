@@ -38,6 +38,9 @@
 #include "file_loc.h"
 #include "trans.h"
 
+
+//#define OLD_LOG_VERSION		1
+
 /* xrdp.c */
 long APP_CC
 g_xrdp_sync(long (*sync_func)(long param1, long param2), long sync_param1,
@@ -126,6 +129,8 @@ int APP_CC
 xrdp_wm_delete_all_childs(struct xrdp_wm* self);
 int APP_CC
 xrdp_wm_log_msg(struct xrdp_wm* self, char* msg);
+int APP_CC
+xrdp_wm_log_error(struct xrdp_wm* self, char* msg);
 int APP_CC
 xrdp_wm_get_wait_objs(struct xrdp_wm* self, tbus* robjs, int* rc,
                       tbus* wobjs, int* wc, int* timeout);

@@ -28,6 +28,7 @@
 #include "defines.h"
 
 #define CURRENT_MOD_VER 1
+//#define OLD_LOG_VERSION		1
 
 struct vnc
 {
