@@ -1235,7 +1235,11 @@ server_msg(struct xrdp_mod* mod, char* msg, int code)
     return 0;
   }
   wm = (struct xrdp_wm*)(mod->wm);
+#ifdef OLD_LOG_VERSION
   return xrdp_wm_log_msg(wm, msg);
+#else
+  return xrdp_wm_log_error(wm, msg);
+#endif
 }
 
 /*****************************************************************************/
