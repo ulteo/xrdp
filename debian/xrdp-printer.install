@@ -1,0 +1,3 @@
+xrdp_printer/xrdpprinter            usr/lib/cups/backend/
+xrdp_printer/PostscriptColor.ppd.gz usr/share/cups/model/
+xrdp_printer/xrdp_printer.conf      etc/cups/

@@ -1,16 +1,29 @@
-xrdp (0.5.0-0ulteo0.2) polaris-2-0-staging; urgency=low
+xrdp (99.99~trunk00058-0ulteo0) 2-0-staging; urgency=low
+
+  * Adding the first implementation of xrdp-printer packaging
+ 
+ -- Samuel Bovée <samuel@ulteo.com>  Thu, 04 Feb 2010 16:12:09 +0100
+
+xrdp (99.99~trunk00051-0ulteo0) 2-0-staging; urgency=low
+
+  * Adding the first implementation of python-xrdp packaging
+  * Improve xrdp packaging
+ 
+ -- Samuel Bovée <samuel@ulteo.com>  Thu, 04 Feb 2010 15:12:09 +0100
+
+xrdp (99.99~trunk-0ulteo0) 2-0-staging; urgency=low
 
   * Adding user v-channel
 
  -- Jeremy Desvages <jeremy@ulteo.com>  Thu, 21 Jan 2010 10:12:09 +0100
 
-xrdp (0.5.0-0ulteo0.1) polaris-2-0-staging; urgency=low
+xrdp (99.99~trunk-0ulteo0) 2-0-staging; urgency=low
 
   * Adding session management
 
  -- Jeremy Desvages <jeremy@ulteo.com>  Fri, 15 Jan 2010 15:58:00 +0100
 
-xrdp (0.5.0-0ulteo0) polaris-2-0-staging; urgency=low
+xrdp (99.99~trunk-0ulteo0) 2-0-staging; urgency=low
 
   * Initial release
 

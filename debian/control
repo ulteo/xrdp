@@ -1,15 +1,28 @@
 Source: xrdp
 Section: x11
 Priority: extra
-Maintainer: Jeremy Desvages <jeremy@ulteo.com>
+Maintainer: Jeremy Desvages <jeremy@ulteo.com>, Samuel Bovée <samuel@ulteo.com>
 Build-Depends: debhelper (>= 5), cdbs, libx11-dev, libxfixes-dev, libssl-dev, libpam0g-dev, libssl-dev, quilt
 Standards-Version: 3.8.3
 
 Package: xrdp
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, cups2all
-Description: RDP server for linux
- Xrdp is a RDP server for linux. It provides remote display of a desktop and
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>= 2.5)
+Description: RDP server for Linux
+ Xrdp is a RDP server for Linux. It provides remote display of a desktop and
  many other features such as:
   * seamless display
   * printer and local device mapping
+
+Package: python-xrdp
+Section: python
+Architecture: all
+Depends: python (>= 2.5), xrdp
+Description: Python API for XRDP
+ Python-XRDP is a Python wrapper for XRDP, the RDP server for Linux
+
+Package: xrdp-printer
+Architecture: all
+Depends: python (>= 2.5), xrdp, ghostscript, cupsys
+Description: cups file converter to ps format
+ Xrdpi-Printer convert a ps file from cups in ps

@@ -11,4 +11,6 @@ SUBDIRS = \
   keygen \
   docs \
   instfiles \
-  genkeymap
+  genkeymap \
+  python-xrdp \
+  xrdp_printer
