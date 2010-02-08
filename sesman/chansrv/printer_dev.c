@@ -71,7 +71,7 @@ printer_dev_convert_name(char *name)		/* I - Name to check */
     else
     {
     	if ((*ptr >= 0 && *ptr <= ' ') || *ptr == 127 ||
-    			*ptr == '/' || *ptr == '#')
+    			*ptr == '/' || *ptr == '#' || *ptr == '!')
     	{
     		*ptr = '_';
     	}
@@ -467,7 +467,7 @@ printer_dev_add(struct stream* s, int device_data_length,
     log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_add]: "
 		  "printer name = %s", printer_name);
   }
-  printer_dev_convert_name(driver_name);
+  printer_dev_convert_name(printer_name);
 
   log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[printer_dev_add]: "
 				"try to connect to cups server");
@@ -477,22 +477,22 @@ printer_dev_add(struct stream* s, int device_data_length,
 					"enable to connect to printer server\n");
 		return 1;
 	}
-	if( printer_dev_add_printer(http, driver_name, DEVICE_URI) !=0)
+	if( printer_dev_add_printer(http, printer_name, DEVICE_URI) !=0)
 	{
 		log_message(&log_conf, LOG_LEVEL_ERROR, "failed to add printer\n");
 		printer_dev_server_disconnect(http);
 		return 1;
 	}
-	if(printer_dev_set_ppd(http, driver_name, PPD_FILE) !=0)
+	if(printer_dev_set_ppd(http, printer_name, PPD_FILE) !=0)
 	{
 		log_message(&log_conf, LOG_LEVEL_ERROR, "failed to set ppd file\n");
 		printer_dev_server_disconnect(http);
 		return 1;
 	}
 	log_message(&log_conf, LOG_LEVEL_DEBUG, "Succed to add printer\n");
-	printer_dev_do_operation(http, IPP_RESUME_PRINTER, driver_name);
-	printer_dev_do_operation(http, CUPS_ACCEPT_JOBS, driver_name);
-	if( printer_dev_get_restricted_user_list(http, driver_name, user_list) == 0)
+	printer_dev_do_operation(http, IPP_RESUME_PRINTER, printer_name);
+	printer_dev_do_operation(http, CUPS_ACCEPT_JOBS, printer_name);
+	if( printer_dev_get_restricted_user_list(http, printer_name, user_list) == 0)
 	{
 		g_strncpy(user_list, username, sizeof(username));
 	}
@@ -500,12 +500,12 @@ printer_dev_add(struct stream* s, int device_data_length,
 	{
 		sprintf(user_list, "%s%s", user_list, username);
 	}
-	printer_dev_set_restrict_user_list(http, driver_name, user_list);
+	printer_dev_set_restrict_user_list(http, printer_name, user_list);
 	printer_dev_server_disconnect(http);
-	watch = printer_dev_init_printer_socket(driver_name);
+	watch = printer_dev_init_printer_socket(printer_name);
 	printer_devices[printer_devices_count].watch = watch;
 	printer_devices[printer_devices_count].device_id = device_id;
-	g_strcpy(printer_devices[printer_devices_count].printer_name, driver_name);
+	g_strcpy(printer_devices[printer_devices_count].printer_name, printer_name);
 	printer_devices_count++;
   return g_time1();
 }
