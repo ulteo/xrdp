@@ -14,3 +14,5 @@ SUBDIRS = \
   genkeymap \
   python-xrdp \
   xrdp_printer
+
+EXTRA_DIST = setup.py
