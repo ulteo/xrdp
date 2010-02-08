@@ -80,6 +80,14 @@ typedef signed short tsi16;
 typedef int ti32;
 typedef unsigned int tui32;
 typedef signed int tsi32;
+
+typedef unsigned char uint8;
+typedef signed char sint8;
+typedef unsigned short uint16;
+typedef signed short sint16;
+typedef unsigned int uint32;
+typedef signed int sint32;
+
 #if defined(_WIN64)
 /* Microsoft's VC++ compiler uses the more backwards-compatible LLP64 model.
    Most other 64 bit compilers(Solaris, AIX, HP, Linux, Mac OS X) use
