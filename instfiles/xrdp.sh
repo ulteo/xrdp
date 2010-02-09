@@ -1,4 +1,14 @@
 #!/bin/sh
+### BEGIN INIT INFO
+# Provides:          xrdp
+# Required-Start:    $remote_fs $syslog $local_fs
+# Required-Stop:     $remote_fs $syslog $local_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start xrdp daemon
+# Description:       Provide rdp support.
+### END INIT INFO
+
 # xrdp control script
 # Written : 1-13-2006 - Mark Balliet - posicat@pobox.com
 # maintaned by Jay Sorg
