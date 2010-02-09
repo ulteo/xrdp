@@ -8,5 +8,6 @@ setup(name='xrdp',
       author='Samuel Bovee',
       author_email='samuel@ulteo.com',
       url='http://www.ulteo.com',
-      packages=['python-xrdp']
+      packages=['xrdp'],
+      package_dir={'xrdp': 'python-xrdp'}
      )
