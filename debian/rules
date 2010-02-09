@@ -8,7 +8,7 @@ include /usr/share/cdbs/1/class/python-distutils.mk
 include /usr/share/cdbs/1/rules/patchsys-quilt.mk
 
 DEB_PYTHON_INSTALL_ARGS_ALL := --root=$(CURDIR)/debian/python-xrdp
-DEB_MAKE_INSTALL_TARGET := install DESTDIR=$(CURDIR)/debian/xrdp
+DEB_MAKE_INSTALL_TARGET     := install DESTDIR=$(CURDIR)/debian/xrdp
 DEB_DH_MAKESHLIBS_ARGS_xrdp := --noscripts
 
 binary-install/xrdp:: DEB_DH_INSTALLINIT_ARGS := --onlyscripts
