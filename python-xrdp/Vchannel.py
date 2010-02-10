@@ -3,6 +3,7 @@
 # Copyright (C) 2010 Ulteo SAS
 # http://www.ulteo.com
 # Author Julien LANGLOIS <julien@ulteo.com> 2010
+# Author David LECHEVALIER <david@ulteo.com> 2010
 #
 # This program is free software; you can redistribute it and/or 
 # modify it under the terms of the GNU General Public License
@@ -21,14 +22,15 @@
 import os
 import socket
 import struct
+from VchannelException import VchannelException
 
 def _VchannelGetSocket():
 	if not os.environ.has_key("DISPLAY"):
-		return None
+		raise VchannelException("Unable to get environment variable $DISPLAY")
 	
 	path = "/var/spool/xrdp/xrdp_user_channel_socket%s"%(os.environ["DISPLAY"])
 	if not os.path.exists(path):
-		return None
+		raise VchannelException("The socket did not exist")
 	
 	# todo if not read/write access ...
 	
@@ -38,33 +40,49 @@ def _VchannelGetSocket():
 def VchannelOpen(name):
 	path = _VchannelGetSocket()
 	if path is None:
-		return False
-	
-	s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-	s.connect(path)
-	
+		raise VchannelException("Internal error")
+
+	try:
+                s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                s.connect(path)
+	except socket.error:
+		raise VchannelException("Unable to open Vchannel : %s"%(name))	
+
 	VchannelWrite(s, name)
 	return s
+
 
 def VchannelClose(s):
 	return s.close()
 
 
 def VchannelRead(s):
-	data = s.recv(4)
+	try:
+		data = s.recv(4)
+	except socket.error:
+		raise VchannelException("Unable read data from channel")
+
 	if len(data) == 0:
-		return None
+		raise VchannelException("Data size is invalid")
 	
 	size = struct.unpack('>I',data)[0]
 	if size == 0:
 		return None
-	
-	data = s.recv(size)
+	try:
+		data = s.recv(size)
+	except socket.error:
+		raise VchannelException("Unable read data from channel")
+
 	return data
 
+
 def VchannelWrite(s, data):
-	
-	buf = struct.pack('>I', len(data))
-	
-	s.send(buf)
-	s.send(data)
+	data_len = struct.pack('>I', len(data))
+	try:
+		s.sendall(data_len)
+		s.sendall(data)
+	except socket.error:
+		raise VchannelException("Unable write data on the channel")
+
+	return True
+
