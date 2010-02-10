@@ -4,8 +4,11 @@
 export XRDP_PROCESS=1
 
 xsetroot -solid white
+xfwm4&
+WM_PID=$!
+sleep 1
 XHook&
-xfwm4
+wait $(WM_PID)
 
 
 

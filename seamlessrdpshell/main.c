@@ -1,7 +1,7 @@
 /**
- * Copyright (C) 2009 Ulteo SAS
+ * Copyright (C) 2008 Ulteo SAS
  * http://www.ulteo.com
- * Author David LECHEVALIER <david@ulteo.com>
+ * Author David LECHEVALIER <david@ulteo.com> 2009 2010
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -18,6 +18,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  **/
 
+#include <log.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -29,26 +30,40 @@
 #include <errno.h>
 #include <sys/wait.h>
 
-#include "user_channel.h"
+#include <vchannel.h>
 #include "seamlessrdpshell.h"
 #include "xutils.h"
 
 /* external function declaration */
 extern char** environ;
+
 static pthread_mutex_t mutex;
-static int message_count;
+static int message_id;
 static int sock;
 static Display* display;
 static Window_list window_list;
-
+struct log_conf *l_config;
 /*****************************************************************************/
 int
 error_handler(Display* display, XErrorEvent* error)
 {
   char text[256];
   XGetErrorText(display, error->error_code, text, 255);
-  printf("seamlessrdpshell[error_handler]: xrdp-chansrv: error [%s]", text);
+  printf("seamlessrdpshell[error_handler]: xrdp-chansrv: error [%s]\n", text);
   return 0;
+}
+
+/*****************************************************************************/
+int
+send_message(char* data, int data_len)
+{
+	if(user_channel_send(sock, data, data_len)<0)
+	{
+		perror("Error");
+		return 1;
+	}
+	message_id++;
+	return 0;
 }
 
 /*****************************************************************************/
@@ -87,13 +102,7 @@ spawn_app(char* application)
        /* l'application est crée */
 		printf("je suis le pere\n");
 		printf("pid de l'application : %i\n", pid);
-/*
-    	sprintf(buffer, "APP_ID,%i,%s,%i\n", message_count, window_id, pid );
-    	printf("%s",buffer);
-    	if(seamless_send(process, CHANNEL_MSG, chanId, strlen(buffer), buffer )<0)
-    		perror("Error");
-*/
-    	free(buffer);
+		free(buffer);
 		return 0;
 	}
 	int status;
@@ -182,33 +191,24 @@ void synchronize(){
 		window_id = malloc(11);
 
 		sprintf(window_id, "0x%08x",(int)witem->window_id);
-		sprintf(buffer, "CREATE,%i,%s,%i,0x%08x,0x%08x\n", message_count,window_id,pid,(int)parent_id,flags );
-
+		sprintf(buffer, "CREATE,%i,%s,%i,0x%08x,0x%08x\n", message_id,window_id,pid,(int)parent_id,flags );
 		printf("%s",buffer);
-		if(user_channel_send(sock, buffer, strlen(buffer))<0)
-		{
-			perror("Error");
-		}
+		send_message(buffer, strlen(buffer));
+
 		printf("app.title : %s\n", name);
+		sprintf(buffer, "TITLE,%i,%s,%s,0x%08x\n", message_id,window_id,name,0 );
+		printf("%s",buffer);
+		send_message(buffer, strlen(buffer));
 
-		sprintf(buffer, "TITLE,%i,%s,%s,0x%08x\n", message_count,window_id,name,0 );
+		sprintf(buffer, "POSITION,%i,%s,%i,%i,%i,%i,0x%08x\n", message_id,window_id, x,y,width,height,0 );
 		printf("%s",buffer);
-		if(user_channel_send(sock, buffer, strlen(buffer))<0)
-		{
-			perror("Error");
-		}
-		sprintf(buffer, "POSITION,%i,%s,%i,%i,%i,%i,0x%08x\n", message_count,window_id, x,y,width,height,0 );
+		send_message(buffer, strlen(buffer));
+
+		sprintf(buffer, "STATE,%i,%s,0x%08x,0x%08x\n", message_id,window_id,0,0 );
 		printf("%s",buffer);
-		if(user_channel_send(sock, buffer, strlen(buffer))<0)
-		{
-			perror("Error");
-		}
-		sprintf(buffer, "STATE,%i,%s,0x%08x,0x%08x\n", message_count,window_id,0,0 );
-		printf("%s",buffer);
-		if(user_channel_send(sock, buffer, strlen(buffer))<0)
-		{
-			perror("Error");
-		}		free(buffer);
+		send_message(buffer, strlen(buffer));
+
+		free(buffer);
 		free(window_id);
 	}
 }
@@ -242,12 +242,10 @@ int exec_app(char* application, char* window_id){
 		printf("je suis le pere\n");
 		printf("pid de l'application : %i\n", pid);
 
-    	sprintf(buffer, "APP_ID,%i,%s,%i\n", message_count, window_id, pid );
-    	printf("%s",buffer);
-    	if(user_channel_send(sock, buffer, strlen(buffer) )<0)
-    		perror("Error");
-
-    	free(buffer);
+		sprintf(buffer, "APP_ID,%i,%s,%i\n", message_id, window_id, pid );
+		printf("%s",buffer);
+		send_message(buffer, strlen(buffer));
+		free(buffer);
 		return 0;
 	}
 	int status;
@@ -285,60 +283,50 @@ int get_next_token(char** message, char** token){
 
 /*****************************************************************************/
 int move_window2(XEvent* ev){
-	Window_item *witem;
-	Window_get(window_list, ev->xconfigure.window , witem);
-	Window win_in = get_in_window(display, witem->window_id);
-	Status status;
-	Window root;
-	int x,y;
-	unsigned int width,height,border,depth;
-	char* temp = malloc(1024);
-	printf("toto\n");
-
-	if(witem == 0 || win_in == 0){
-		printf("unknow window\n");
-		return 0;
-	}
-
-	if(witem->state == SEAMLESSRDP_MINIMIZED){
-		printf("enable to move a minized window\n");
-		return 1;
-	}
-
-	XGetGeometry(display,witem->window_id,&root,&x,&y,&width, &height,&border,&depth );
-	printf("BEFORE GEOM MOVE: [%i] %i,%i,%i,%i,%i,%i\n",(int)witem->window_id,x,y,width,height,border,depth);
-	printf("fn geom_move\n");
-
-
-	if(x !=ev->xconfigure.x || y != ev->xconfigure.y){
-		int x_decal,y_decal;
-		unsigned int width2,height2,border2,depth2;
-		XGetGeometry(display,win_in,&root,&x_decal,&y_decal,&width2, &height2,&border2,&depth2 );
-		printf("WIN_IN DIMENSION: [%i] %i,%i,%i,%i,%i,%i\n",(int)win_in,x_decal,y_decal,width2,height2,border2,depth2);
-
-		status = XMoveWindow(display, witem->window_id , ev->xconfigure.x-x_decal,ev->xconfigure.y-y_decal);
-		printf("toto\n");
-	}
-	else{
-		printf("can't move the window at the same position\n");
-	}
-
-	if(width !=ev->xconfigure.width || height != ev->xconfigure.height){
-		XResizeWindow(display, witem->window_id , ev->xconfigure.width,ev->xconfigure.height);
-	}
-	else{
-		printf("can't resize at the same dimension\n");
-	}
-
-	printf("window move : %i\n",(int)witem->window_id);
-	printf("X move : %i\n",ev->xconfigure.x);
-	printf("Y move : %i\n",ev->xconfigure.y);
-
-	free(temp);
-	XGetGeometry(display,witem->window_id,&root,&witem->normal_x,&witem->normal_y,&witem->normal_width, &witem->normal_height,&border,&depth );
-	printf("AFTER GEOM MOVE: [%i] %i,%i,%i,%i,%i,%i\n",(int)ev->xconfigure.window,x,y,width,height,border,depth);
-	printf("tutu\n");
-	return 1;
+  Window_item *witem;
+  Window win_in;
+  Status status;
+  Window root;
+  int x;
+  int y;
+  unsigned int width,height,border,depth;
+	Window_get(window_list, ev->xconfigure.window, witem);
+  if(witem == 0)
+  {
+    printf("xrdp-chansrv: window (%i) remove during the operation", (int)ev->xconfigure.window);
+    return 0;
+  }
+  win_in = get_in_window(display, witem->window_id);
+  if(win_in == 0)
+  {
+    printf( "xrdp-chansrv: unknow window : %i", (int)witem->window_id);
+    return 0;
+  }
+  if(witem->state == SEAMLESSRDP_MINIMIZED)
+  {
+    printf( "xrdp-chansrv: the window %i is minimized", (int)witem->window_id);
+    return 1;
+  }
+  XGetGeometry(display,witem->window_id,&root,&x,&y,&width, &height,&border,&depth );
+  if(x !=ev->xconfigure.x || y != ev->xconfigure.y)
+  {
+    int x_decal,y_decal;
+    unsigned int width2,height2,border2,depth2;
+    XGetGeometry(display,win_in,&root,&x_decal,&y_decal,&width2, &height2,&border2,&depth2 );
+    status = XMoveWindow(display, witem->window_id , ev->xconfigure.x-x_decal,ev->xconfigure.y-y_decal);
+  }
+  else
+  {
+    printf( "xrdp-chansrv: cannot move window at the same position");
+  }
+  if(width !=ev->xconfigure.width || height != ev->xconfigure.height){
+    XResizeWindow(display, witem->window_id , ev->xconfigure.width,ev->xconfigure.height);
+  }
+  else
+  {
+    printf( "xrdp-chansrv: cannot resize the window at the same dimension");
+  }
+  return 1;
 }
 
 
@@ -408,8 +396,6 @@ void process_message(char* buffer){
 		/*printf("\t %s token7 = %s\n", temp, token7);*/
 	}
 
-
-
 	/* message process */
 	if(strcmp("START_APP", token1)==0 && strlen(token4)>0){
 		exec_app(token4, token3);
@@ -432,8 +418,9 @@ void process_message(char* buffer){
 		printf("state : %i for the window %i\n",state, (int)w);
 		change_state(w, state);
 
-		sprintf(buffer2, "ACK,%i,%s\n", message_count, token2);
-		user_channel_send(sock, buffer2, strlen(buffer2));
+		sprintf(buffer2, "ACK,%i,%s\n", message_id, token2);
+		send_message(buffer2, strlen(buffer2));
+
 		free(buffer2);
 		return;
 	}
@@ -449,27 +436,27 @@ void process_message(char* buffer){
 		move_window2( &ev);
 		pthread_mutex_unlock(&mutex);
 
-		sprintf(buffer2, "ACK,%i,%s\n", message_count, token2);
+		sprintf(buffer2, "ACK,%i,%s\n", message_id, token2);
 
-		user_channel_send(sock, buffer2, strlen(buffer2));
+		send_message(buffer2, strlen(buffer2));
 
 		free(buffer2);
 		return;
 		}
 
 	if(strcmp("FOCUS", token1)==0 ){
-		sprintf(buffer2, "ACK,%i,%s\n", message_count, token2);
+		sprintf(buffer2, "ACK,%i,%s\n", message_id, token2);
 
-		user_channel_send(sock, buffer2, strlen(buffer2));
+		send_message(buffer2, strlen(buffer2));
 
 		free(buffer2);
 		return;
 	}
 	if(strcmp("ZCHANGE", token1)==0 ){
 
-		sprintf(buffer2, "ACK,%i,%s\n", message_count, token2);
+		sprintf(buffer2, "ACK,%i,%s\n", message_id, token2);
 
-		user_channel_send(sock, buffer2, strlen(buffer2));
+		send_message(buffer2, strlen(buffer2));
 
 		free(buffer2);
 		return;
@@ -604,21 +591,7 @@ int is_modal_window(Window w, Atom* atom){
     	data+=sizeof(Atom);
     }
     return False;
-
-
-
-
-
 }
-
-
-
-
-
-
-
-
-
 
 Window get_real_window(Window w){
 	unsigned char* data;
@@ -631,8 +604,6 @@ Window get_real_window(Window w){
 	unsigned long     nitems;
 	unsigned long     bytes;
 	int status;
-
-
 
     status = XGetWindowProperty(
     		display,
@@ -693,10 +664,6 @@ int get_icon(Window win_in, Window win_out ){
 	char* buffer_pos = buffer;
 	char* window_id = malloc(11);
 
-
-
-
-
 	if(get_property(display, win_in, "_NET_WM_ICON", &nitems, (unsigned char**)&data) != Success){
 		printf("No icon for the application %i\n",(int)win_out);
 		return 1;
@@ -723,7 +690,7 @@ int get_icon(Window win_in, Window win_out ){
 		printf("new Icon : %i X %i\n",width, height);
 
 		buffer_pos = buffer;
-		count = sprintf(buffer, "SETICON,%i,%s,%i,%s,%i,%i,", message_count,window_id,message_id,"RGBA",width,height );
+		count = sprintf(buffer, "SETICON,%i,%s,%i,%s,%i,%i,", message_id,window_id,message_id,"RGBA",width,height );
 
 		buffer_pos += count;
 		message_length += count;
@@ -743,32 +710,23 @@ int get_icon(Window win_in, Window win_out ){
 
 			if(message_length >1000 || i == width * height -1){
 				sprintf(buffer_pos,"\n");
-				if(user_channel_send(sock, buffer, strlen(buffer))<0)
-				{
-					perror("Error");
-				}
+				send_message(buffer, strlen(buffer));
 				printf("%s",buffer);
 
 				message_id++;
 				buffer_pos = buffer;
 				message_length = 0;
-				count = sprintf(buffer, "SETICON,%i,%s,%i,%s,%i,%i,", message_count,window_id,message_id,"RGBA",width,height );
+				count = sprintf(buffer, "SETICON,%i,%s,%i,%s,%i,%i,", message_id,window_id,message_id,"RGBA",width,height );
 				buffer_pos += count;
 				message_length += count;
 
 			}
 		}
-		printf("bibi : %i\n",i);
 		k+= height*width;
 	}
 	return 0;
 
 }
-
-
-
-
-
 
 void create_window(Window win_out){
 	char* window_id = malloc(11);;
@@ -793,12 +751,9 @@ void create_window(Window win_out){
 	Window_get(window_list, win_out, witem);
 	if(witem != 0){
 		sprintf(window_id, "0x%08x",(int)win_out);
-		sprintf(buffer, "STATE,%i,%s,0x%08x,0x%08x\n", message_count,window_id,0,0 );
+		sprintf(buffer, "STATE,%i,%s,0x%08x,0x%08x\n", message_id,window_id,0,0 );
 		printf("%s",buffer);
-		if(user_channel_send(sock, buffer, strlen(buffer))<0)
-		{
-			perror("Error");
-		}
+		send_message(buffer, strlen(buffer));
 		printf("%i already exist\n",(int)win_out);
 		free(window_id);
 		free(buffer);
@@ -872,36 +827,23 @@ void create_window(Window win_out){
 	printf("class : %i\n",attributes.class);
 
 	sprintf(window_id, "0x%08x",(int)win_out);
-	sprintf(buffer, "CREATE,%i,%s,%i,0x%08x,0x%08x\n", message_count,window_id,pid,(int)parent_id,flags );
+	sprintf(buffer, "CREATE,%i,%s,%i,0x%08x,0x%08x\n", message_id,window_id,pid,(int)parent_id,flags );
 
 	printf("%s",buffer);
-	if(user_channel_send(sock, buffer, strlen(buffer))<0)
-	{
-		perror("Error");
-	}
+	send_message(buffer, strlen(buffer));
 	printf("app.title : %s\n", name);
 
-	sprintf(buffer, "TITLE,%i,%s,%s,0x%08x\n", message_count,window_id,name,0 );
+	sprintf(buffer, "TITLE,%i,%s,%s,0x%08x\n", message_id,window_id,name,0 );
 	printf("%s",buffer);
-	if(user_channel_send(sock, buffer, strlen(buffer))<0)
-	{
-		perror("Error");
-	}
+	send_message(buffer, strlen(buffer));
 	get_icon( win_in, win_out);
 
-	sprintf(buffer, "POSITION,%i,%s,%i,%i,%i,%i,0x%08x\n", message_count,window_id, attributes.x,attributes.y,attributes.width,attributes.height,0 );
+	sprintf(buffer, "POSITION,%i,%s,%i,%i,%i,%i,0x%08x\n", message_id,window_id, attributes.x,attributes.y,attributes.width,attributes.height,0 );
 	printf("%s",buffer);
-	if(user_channel_send(sock, buffer, strlen(buffer))<0)
-	{
-		perror("Error");
-	}
-	sprintf(buffer, "STATE,%i,%s,0x%08x,0x%08x\n", message_count,window_id,0,0 );
+	send_message(buffer, strlen(buffer));
+	sprintf(buffer, "STATE,%i,%s,0x%08x,0x%08x\n", message_id,window_id,0,0 );
 	printf("%s",buffer);
-	if(user_channel_send(sock, buffer, strlen(buffer))<0)
-	{
-		perror("Error");
-	}
-
+	send_message(buffer, strlen(buffer));
 	free(window_id);
 	free(buffer);
 	Window_add(window_list,win_out);
@@ -1003,12 +945,9 @@ void destroy_window(Window w){
 
 	printf("Seamlessrdpshell :: destruction d'une fenetre : %i\n",(int)w);
 	sprintf(window_id, "0x%08x",(int)w);
-	sprintf(buffer, "DESTROY,%i,%s,%08x\n", message_count,window_id,0 );
+	sprintf(buffer, "DESTROY,%i,%s,%08x\n", message_id,window_id,0 );
 	printf("\t %s\n",buffer);
-	if(user_channel_send(sock, buffer,strlen(buffer))<0)
-	{
-		perror("Error");
-	}
+	send_message(buffer, strlen(buffer));
 	Window_del(window_list, w);
 	free(window_id);
 	free(buffer);
@@ -1040,20 +979,17 @@ void move_window(Window w, int x, int y, int width, int height){
 		printf("move_window : state = maximized\n");
 		printf("windows id : %i\n",(int)witem->window_id);
 		sprintf(window_id, "0x%08x",(int)witem->window_id);
-	    sprintf(buffer, "POSITION,%i,%s,%i,%i,%i,%i,0x%08x\n", message_count,window_id, -4, -4, width, height, 0 );
+	    sprintf(buffer, "POSITION,%i,%s,%i,%i,%i,%i,0x%08x\n", message_id,window_id, -4, -4, width, height, 0 );
 	    printf("%s",buffer);
 	}
 	else{
 
 		printf("windows id : %i\n",(int)witem->window_id);
 		sprintf(window_id, "0x%08x",(int)witem->window_id);
-		sprintf(buffer, "POSITION,%i,%s,%i,%i,%i,%i,0x%08x\n", message_count,window_id, x, y, width, height, 0 );
+		sprintf(buffer, "POSITION,%i,%s,%i,%i,%i,%i,0x%08x\n", message_id,window_id, x, y, width, height, 0 );
 		printf("%s",buffer);
 	}
-	if(user_channel_send(sock, buffer,strlen(buffer))<0)
-	{
-		perror("Error");
-	}
+	send_message(buffer, strlen(buffer));
 	free(window_id);
 	free(buffer);
 
@@ -1103,13 +1039,10 @@ void check_window_state(){
 			buffer = malloc(1024);
 
 			sprintf(window_id, "0x%08x",(int)win);
-			sprintf(buffer, "STATE,%i,%s,0x%08x,0x%08x\n", message_count,window_id,state,0 );
+			sprintf(buffer, "STATE,%i,%s,0x%08x,0x%08x\n", message_id,window_id,state,0 );
 			printf("%s",buffer);
 
-			if(user_channel_send(sock, buffer,strlen(buffer))<0)
-			{
-				perror("Error");
-			}
+			send_message(buffer, strlen(buffer));
 			free(window_id);
 			free(buffer);
 		}
@@ -1206,10 +1139,7 @@ void *thread_vchannel_process (void * arg)
 	signal(SIGCHLD, handler);
 	printf("sending HELLO to %i\n",sock);
 	sprintf(buffer, "HELLO,%i,0x%08x\n", 0, 0);
-	if(user_channel_send(sock, buffer,strlen(buffer))<0)
-	{
-		perror("Error");
-	}
+	send_message(buffer, strlen(buffer));
 	while(1){
 		if(user_channel_receive(sock, buffer ) == ERROR){
 			perror("Error while receiving data\n");
@@ -1226,13 +1156,15 @@ void *thread_vchannel_process (void * arg)
 
 int main(int argc, char** argv, char** environ)
 {
+	vchannel_read_logging_conf(&l_config);
+	log_start(&l_config);
 	Window_list_init(window_list);
 	pthread_t Xevent_thread, Vchannel_thread;
 	void *ret;
 	int count = 12;
 
 	pthread_mutex_init(&mutex, NULL);
-	message_count = 0;
+	message_id = 0;
 
 	printf("seamlessrdpshell[main]: socket creation\n");
 
