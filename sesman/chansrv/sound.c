@@ -35,9 +35,8 @@ int APP_CC
 sound_send(struct stream* s){
   int rv;
   int size = (int)(s->end - s->data);
-  printf("size : %i\n", size);
   /* set the body size */
-  *(s->data+2) = (uint16)size-3;
+  *(s->data+2) = (uint16)size-4;
 
   rv = send_channel_data(g_rdpsnd_chan_id, s->data, size);
   if (rv != 0)
@@ -67,6 +66,8 @@ sound_init(void)
 int APP_CC
 sound_deinit(void)
 {
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[sound_deinit]: "
+			"deinit sound channel");
   return 0;
 }
 
@@ -127,12 +128,21 @@ sound_data_in(struct stream* s, int chan_id, int chan_flags, int length,
 
 	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[sound_data_in]: "
   		"msg_type=0x%01x", msg_type);
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[sound_data_in]: "
+	  		"msg_size=%i", msg_size);
+
 	switch (msg_type)
 	{
 	case SNDC_FORMATS:
 		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[sound_data_in]: "
-	  		"SND_FORMATS message");
-		result = process_client_format(s);
+	  		"SNDC_FORMATS message");
+		result = sound_process_client_format(s);
+		break;
+
+	case SNDC_TRAINING:
+		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[sound_data_in]: "
+	  		"SNDC_TRANING message");
+		result = sound_process_training_message(s);
 		break;
 
 	default:
@@ -165,18 +175,10 @@ sound_check_wait_objs(void)
 
 /*****************************************************************************/
 int APP_CC
-sound_process_client_format()
-{
-
-	return 1;
-}
-
-
-/*****************************************************************************/
-int APP_CC
 sound_send_format_and_version(void)
 {
-
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[sound_send_format_and_version]: "
+			"send available server format and version");
 	struct stream* s;
 	make_stream(s);
 	init_stream(s, 1024);
@@ -184,6 +186,7 @@ sound_send_format_and_version(void)
 	out_uint8(s, SNDC_FORMATS);
 	out_uint8(s, 0);												/* unused */
 	out_uint16_le(s, 0);										/* data size: unused */
+	/* Body */
 	out_uint32_le(s, 0); 										/* dwFlags: unused */
 	out_uint32_le(s, 0); 										/* dwVolume: unused */
 	out_uint32_le(s, 0); 										/* dwPitch: unused */
@@ -208,10 +211,60 @@ sound_send_format_and_version(void)
 }
 
 
+
+
 /*****************************************************************************/
 int APP_CC
-process_client_format(struct stream* s)
+sound_send_training()
 {
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[sound_send_training]: "
+			"send sound training");
+	struct stream* s;
+	make_stream(s);
+	init_stream(s, 1024);
+	/* RDPSND PDU Header */
+	out_uint8(s, SNDC_TRAINING);
+	out_uint8(s, 0);												/* unused */
+	out_uint16_le(s, 0);										/* data size: unused */
+	/* Body */
+	out_uint16_le(s, TRAINING_VALUE);				/* wTimeStamp: arbitrary */
+	out_uint16_le(s, 0); 										/* wPackSize */
+	s_mark_end(s);
+	sound_send(s);
+	free_stream(s);
+}
+
+/*****************************************************************************/
+int APP_CC
+sound_send_wave_info()
+{
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[sound_send_wave_info]: "
+			"send wave information");
+	char data="data";
+	struct stream* s;
+	make_stream(s);
+	init_stream(s, 1024);
+	/* RDPSND PDU Header */
+	out_uint8(s, SNDC_WAVE);
+	out_uint8(s, 0);												/* unused */
+	out_uint16_le(s, 0);										/* data size: unused */
+	/* Body */
+	out_uint16_le(s, 0);										/* wTimeStamp */
+	out_uint16_le(s, 0); 										/* wFormatNo */
+	out_uint8(s, 0);												/* cBlockNo */
+	out_uint8s(s,3);		 										/* bPad */
+	out_uint8a(s,data,4); 									/* first 4 data bytes */
+	s_mark_end(s);
+	sound_send(s);
+	free_stream(s);
+}
+
+/*****************************************************************************/
+int APP_CC
+sound_process_client_format(struct stream* s)
+{
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[sound_process_client_format]: "
+			"register client format");
 	RD_WAVEFORMATEX *format;
 	int dwFlags;
 	int dwVolume;
@@ -234,26 +287,21 @@ process_client_format(struct stream* s)
 
 	if (dwFlags & TSSNDCAPS_ALIVE == 0)
 	{
-		log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[process_client_format]: "
+		log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[sound_process_client_format]: "
 				"the client did not to use audio channel");
 	}
 	if (dwFlags & TSSNDCAPS_VOLUME == 0)
 	{
-		log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[process_client_format]: "
+		log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[sound_process_client_format]: "
 				"the client can not control volume");
 		dwVolume = 0;
 	}
 	if (dwFlags & TSSNDCAPS_PITCH == 0)
 	{
-		log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[process_client_format]: "
+		log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[sound_process_client_format]: "
 				"the client can not control pitch");
 		/* TODO interprete the pitch value */
 		dwPitch = 0;
-	}
-	if( wDGramPort == 0)
-	{
-		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[process_client_format]: "
-				"client do not use UDP transport layer");
 	}
 	/* sound format list */
 	for ( i=0; i<format_number_announced ; i++)
@@ -271,5 +319,35 @@ process_client_format(struct stream* s)
 			out_uint8p(s, format->cb, format->cbSize);
 		}
 	}
+	if( wDGramPort == 0)
+	{
+		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[sound_process_client_format]: "
+				"client do not use UDP transport layer");
+		sound_send_training();
+
+	}
+	else
+	{
+		/* if datagram is present, add Quality Mode PDU */
+		log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[sound_process_client_format]: "
+				"UDP transfert is not supported");
+	}
 	return 0;
 }
+
+/*****************************************************************************/
+int APP_CC
+sound_process_training_message(struct stream* s)
+{
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[sound_process_training_message]:");
+	int training_value;
+	in_uint16_le(s, training_value);
+
+	if (training_value != TRAINING_VALUE)
+	{
+		log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[sound_process_training_message]: "
+				"the training value returned is invalid : %02x",training_value);
+	}
+	return 0;
+}
+

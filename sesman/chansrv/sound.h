@@ -38,7 +38,7 @@
 
 
 
-
+#define TRAINING_VALUE		0x99
 
 
 
