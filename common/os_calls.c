@@ -2069,6 +2069,73 @@ g_fork(void)
 /*****************************************************************************/
 /* does not work in win32 */
 int APP_CC
+g_daemonize(char* pid_file)
+{
+#if defined(_WIN32)
+  return 0;
+#else
+  pid_t pid;
+  int fd;
+  char buffer[10];
+
+  /* make sure we can write to pid file */
+  fd = g_file_open(pid_file); /* xrdp.pid */
+  if (fd == -1)
+  {
+  	g_writeln("running in daemon mode with no access to pid files, quitting");
+  	g_exit(0);
+  }
+  if (g_file_write(fd, "0", 1) == -1)
+  {
+  	g_writeln("running in daemon mode with no access to pid files, quitting");
+  	g_exit(0);
+  }
+  g_file_close(fd);
+  g_file_delete(pid_file);
+
+  /* fork */
+  pid = g_fork();
+  /* error */
+	if(pid < 0)
+	{
+		return 0;
+	}
+	/* parent process */
+	if( pid == 0 )
+	{
+		if(chdir("/") < 0)
+		{
+			return 0;
+		}
+		if(setsid() < 0)
+		{
+			return 0;
+		}
+		umask(0);
+		 /* Redirect standard files to /dev/null */
+		if( freopen( "/dev/null", "r", stdin)
+				&& freopen( "/dev/null", "w", stdout)
+				&& freopen( "/dev/null", "w", stderr))
+		{
+			return 1;
+		}
+		else
+		{
+			return 0;
+		}
+	}
+	/* save pid number to pid file */
+	g_sprintf(buffer, "%i", pid);
+	fd = g_file_open(pid_file);
+	g_file_write(fd, buffer, strlen(buffer));
+	g_file_close(fd);
+	g_exit(0);
+#endif
+}
+
+/*****************************************************************************/
+/* does not work in win32 */
+int APP_CC
 g_setgid(int pid)
 {
 #if defined(_WIN32)

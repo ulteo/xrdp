@@ -507,61 +507,12 @@ main(int argc, char** argv)
   }
   if (!no_daemon)
   {
-    /* make sure we can write to pid file */
-    fd = g_file_open(pid_file); /* xrdp.pid */
-    if (fd == -1)
-    {
-      g_writeln("running in daemon mode with no access to pid files, quitting");
-      g_exit(0);
-    }
-    if (g_file_write(fd, "0", 1) == -1)
-    {
-      g_writeln("running in daemon mode with no access to pid files, quitting");
-      g_exit(0);
-    }
-    g_file_close(fd);
-    g_file_delete(pid_file);
-  }
-  if (!no_daemon)
-  {
     /* start of daemonizing code */
-    pid = g_fork();
-    if (pid == -1)
+
+    if (g_daemonize(pid_file) == 0)
     {
-      g_writeln("problem forking");
+      g_writeln("problem daemonize");
       g_exit(1);
-    }
-    if (0 != pid)
-    {
-      g_writeln("process %d started ok", pid);
-      /* exit, this is the main process */
-      g_exit(0);
-    }
-    g_sleep(1000);
-    g_file_close(0);
-    g_file_close(1);
-    g_file_close(2);
-    g_file_open("/dev/null");
-    g_file_open("/dev/null");
-    g_file_open("/dev/null");
-    /* end of daemonizing code */
-  }
-  if (!no_daemon)
-  {
-    /* write the pid to file */
-    pid = g_getpid();
-    fd = g_file_open(pid_file); /* xrdp.pid */
-    if (fd == -1)
-    {
-      g_writeln("trying to write process id to xrdp.pid");
-      g_writeln("problem opening xrdp.pid");
-      g_writeln("maybe no rights");
-    }
-    else
-    {
-      g_sprintf(text, "%d", pid);
-      g_file_write(fd, text, g_strlen(text));
-      g_file_close(fd);
     }
   }
 #endif

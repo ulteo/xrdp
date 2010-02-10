@@ -769,20 +769,11 @@ main(int argc, char** argv)
   if (daemon)
   {
     /* start of daemonizing code */
-    g_pid = g_fork();
-
-    if (0 != g_pid)
+    if (g_daemonize(pid_file) == 0)
     {
-      g_exit(0);
+      g_writeln("problem daemonize");
+      g_exit(1);
     }
-
-    g_file_close(0);
-    g_file_close(1);
-    g_file_close(2);
-
-    g_file_open("/dev/null");
-    g_file_open("/dev/null");
-    g_file_open("/dev/null");
   }
 
   /* initializing locks */
@@ -805,22 +796,6 @@ main(int argc, char** argv)
 #if 0
   thread_sighandler_start();
 #endif
-  if (daemon)
-  {
-    /* writing pid file */
-    fd = g_file_open(pid_file);
-    if (-1 == fd)
-    {
-      log_message(&(g_cfg->log), LOG_LEVEL_ERROR,
-                  "error opening pid file[%s]: %s",
-                  pid_file, g_get_strerror());
-      log_end(&(g_cfg->log));
-      g_exit(1);
-    }
-    g_sprintf(pid_s, "%d", g_pid);
-    g_file_write(fd, pid_s, g_strlen(pid_s));
-    g_file_close(fd);
-  }
 
   /* start program main loop */
   log_message(&(g_cfg->log), LOG_LEVEL_ALWAYS,

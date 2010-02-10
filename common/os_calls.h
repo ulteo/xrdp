@@ -235,6 +235,8 @@ g_signal_pipe(void (*func)(int));
 int APP_CC
 g_fork(void);
 int APP_CC
+daemonize(char pid_file);
+int APP_CC
 g_setgid(int pid);
 int APP_CC
 g_initgroups(const char* user, int gid);
