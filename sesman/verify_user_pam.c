@@ -117,6 +117,8 @@ auth_userpass(char* user, char* pass)
     g_free(auth_info);
     return 0;
   }
+  g_printf("pam information -> user : %s\n", auth_info->user_pass.user);
+  g_printf("pam information -> pass : %s\n", auth_info->user_pass.pass);
   error = pam_authenticate(auth_info->ph, 0);
   if (error != PAM_SUCCESS)
   {
