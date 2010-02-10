@@ -39,8 +39,8 @@ xrdp_start()
 {
   echo -n "Starting: xrdp and sesman . . "
   logoff all
-  $SBINDIR/xrdp 
-  $SBINDIR/xrdp-sesman 
+  $SBINDIR/xrdp >>$LOG
+  $SBINDIR/xrdp-sesman >>$LOG 
   echo "."
   sleep 1
   return 0;
@@ -50,8 +50,8 @@ xrdp_stop()
 {
   echo -n "Stopping: xrdp and sesman . . "
   logoff all
-  $SBINDIR/xrdp-sesman --kill 
-  $SBINDIR/xrdp --kill 
+  $SBINDIR/xrdp-sesman --kill >>$LOG 
+  $SBINDIR/xrdp --kill >>$LOG
   echo "."
   return 0;
 }
