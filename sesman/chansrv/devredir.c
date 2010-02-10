@@ -248,7 +248,7 @@ dev_redir_iocompletion(struct stream* s)
 				"file %s created",actions[completion_id].last_req);
 		size = g_file_size(actions[completion_id].path);
 		offset = 0;
-		log_message(&log_conf, LOG_LEVEL_ERROR, "chansrv[dev_redir_next_io]: "
+		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[dev_redir_next_io]: "
 				"the file size to transfert: %i",size);
 		result = dev_redir_process_write_io_request(completion_id, offset);
 		break;
