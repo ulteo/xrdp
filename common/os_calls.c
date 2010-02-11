@@ -644,8 +644,8 @@ int g_unix_connect(const char* socket_filename){
   len = sizeof(saun.sun_family) + strlen(saun.sun_path);
   if (connect(sock, (struct sockaddr *) &saun, len) < 0)
   {
-  close(sock);
-  return 0;
+  	close(sock);
+  	return 0;
   }
   return sock;
 }
