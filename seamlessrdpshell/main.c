@@ -314,7 +314,7 @@ int change_state(Window w, int state ){
 
 	if(witem == 0){
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[change_state]: "
-				"unknow window");
+				"Unknow window");
 		return 0;
 	}
 
@@ -421,10 +421,18 @@ void process_message(char* buffer){
 int
 get_icon(Window win_in, Window win_out )
 {
+#if __WORDSIZE==64
+	return 0;
+#endif
+
+#if __WORDSIZE==64
+	long int *data = NULL;
+#else
+	int *data = NULL;
+#endif
 	int i, k, message_id, height, width, count, message_length, pixel;
 	char a,r,g,b;
 	unsigned long nitems;
-	int *data = NULL;
 	char* buffer = g_malloc(1024, 1);
 	char* buffer_pos = buffer;
 	char* window_id = g_malloc(11, 1);
@@ -574,33 +582,25 @@ void create_window(Window win_out){
 	get_window_pid(display, proper_win, &pid);
 	get_parent_window(display, proper_win, &parent_id);
 
+  if(parent_id != 0)
+  {
+    parent_id = -1;
+  }
+  if(type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_POPUP_MENU",False))
+  {
+    parent_id = -1;
+  }
+  if(parent_id == 0 && type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_NORMAL", False))
+  {
+    flags = SEAMLESSRDP_NORMAL;
+  }
+  if(win_in == 0)
+  {
+    win_in = win_out;
+  }
 
-	if(type == XInternAtom(display, "_NET_WM_STATE_MODAL", False))
-	{
-		flags = SEAMLESSRDP_CREATE_MODAL;
-		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[create_window]: "
-					"%i is a modal", (int)proper_win);
-	}
-	if(type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_DROPDOWN_MENU", False))
-	{
-		flags = SEAMLESSRDP_CREATE_TOPMOST;
-	}
-
-	if(parent_id == 0 && type != XInternAtom(display, "_NET_WM_WINDOW_TYPE_NORMAL", False))
-	{
-		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[create_window]: "
-					"Enable to create the window");
-			flags = SEAMLESSRDP_CREATE_TOPMOST;
-			parent_id = -1;
-	}
-
-	if(win_in == 0)
-	{
-		win_in = win_out;
-	}
-
-	sprintf(window_id, "0x%08x",(int)win_out);
-	sprintf(buffer, "CREATE,%i,%s,%i,0x%08x,0x%08x\n", message_id,window_id,pid,(int)parent_id,flags );
+  sprintf(window_id, "0x%08x",(int)win_out);
+  sprintf(buffer, "CREATE,%i,%s,%i,0x%08x,0x%08x\n", message_id, window_id,pid,(int)parent_id,flags );
 	send_message(buffer, strlen(buffer));
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[create_window]: "
 			"Application title : %s", name);
@@ -833,7 +833,7 @@ void *thread_Xvent_process (void * arg)
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
 				"Windows root ID : %i", (int)root_windows);
 
-	XSelectInput(display, root_windows, SubstructureNotifyMask|PropertyChangeMask);
+	XSelectInput(display, root_windows, SubstructureNotifyMask);
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
 				"Begin the event loop ");
 
@@ -929,7 +929,6 @@ int main(int argc, char** argv, char** environ)
 	log_start(l_config);
 	seam_chan.log_conf = l_config;
 	g_strncpy(seam_chan.name, "seamrdp", 9);
-printf("toto : %s\n",seam_chan.name);
 	Window_list_init(window_list);
 	pthread_t Xevent_thread, Vchannel_thread;
 	void *ret;
