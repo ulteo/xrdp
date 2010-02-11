@@ -303,7 +303,7 @@ wait_for_xserver(int display)
   while (!x_server_running(display))
   {
     i++;
-    if (i > 40)
+    if (i > 200)
     {
       log_message(&(g_cfg->log), LOG_LEVEL_ERROR,
                   "X server for display %d startup timeout",
