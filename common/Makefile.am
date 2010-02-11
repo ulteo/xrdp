@@ -18,7 +18,6 @@ libcommon_la_SOURCES = \
   os_calls.c os_calls.h \
   ssl_calls.c ssl_calls.h \
   thread_calls.c thread_calls.h \
-  vchannel.c vchannel.h \
   trans.c trans.h
 
 libcommon_la_LIBADD = \
