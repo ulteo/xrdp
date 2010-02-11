@@ -650,7 +650,7 @@ read_ini(void)
   values = list_create();
   values->auto_free = 1;
   g_use_unix_socket = 0;
-  g_snprintf(filename, 255, "%s/sesman.ini", XRDP_CFG_PATH);
+  g_snprintf(filename, 255, "%s/vchannel.ini", XRDP_CFG_PATH);
   if (file_by_name_read_section(filename, "Globals", names, values) == 0)
   {
     for (index = 0; index < names->count; index++)
@@ -694,7 +694,7 @@ read_logging_conf(void)
   names->auto_free = 1;
   values = list_create();
   values->auto_free = 1;
-  g_snprintf(filename, 255, "%s/sesman.ini", XRDP_CFG_PATH);
+  g_snprintf(filename, 255, "%s/vchannel.ini", XRDP_CFG_PATH);
   if (file_by_name_read_section(filename, CHAN_CFG_LOGGING, names, values) == 0)
   {
     for (index = 0; index < names->count; index++)

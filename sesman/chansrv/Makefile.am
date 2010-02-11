@@ -29,3 +29,11 @@ xrdp_chansrv_LDADD = \
   -L/usr/X11R6/lib \
   $(top_builddir)/common/libcommon.la \
   -lX11 -lXfixes 
+
+chansrvsysconfdir=$(sysconfdir)/xrdp
+
+chansrvsysconf_DATA = \
+  vchannel.ini 
+
+EXTRA_DIST = \
+  $(vchannelsysconf_DATA)
