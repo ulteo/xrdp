@@ -136,7 +136,8 @@ user_channel_data_in(struct stream* s, int chan_id, int chan_flags, int length,
 	{
 		if( user_channels[i].channel_id == chan_id )
 		{
-			size = s->end - s->p;
+			size = s->end - s->data;
+			printf("size : %i\n", size);
 			g_strncpy(buf, (char*)s->p, size+1);
 		  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_data_in]: "
 		  		"new client message for channel %s ",user_channels[i].channel_name);

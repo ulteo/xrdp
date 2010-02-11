@@ -27,7 +27,7 @@
 #include "sound.h"
 #include "clipboard.h"
 #include "devredir.h"
-#include "seamrdp.h"
+//#include "seamrdp.h"
 #include "user_channel.h"
 #include "list.h"
 #include "file.h"
@@ -40,7 +40,7 @@ static int g_num_chan_items = 0;
 static int g_cliprdr_index = -1;
 static int g_rdpsnd_index = -1;
 static int g_rdpdr_index = -1;
-static int g_seamrdp_index = -1;
+//static int g_seamrdp_index = -1;
 
 static tbus g_term_event = 0;
 static tbus g_thread_done_event = 0;
@@ -225,11 +225,12 @@ process_message_channel_setup(struct stream* s)
       g_rdpdr_index = g_num_chan_items;
       g_rdpdr_chan_id = ci->id;
     }
-    else if (g_strcasecmp(ci->name, "seamrdp") == 0)
+/*    else if (g_strcasecmp(ci->name, "seamrdp") == 0)
     {
       g_seamrdp_index = g_num_chan_items;
       g_seamrdp_chan_id = ci->id;
     }
+*/
     else
     {
     	user_channel_init(ci->name, ci->id);
@@ -249,10 +250,11 @@ process_message_channel_setup(struct stream* s)
   {
     dev_redir_init();
   }
-  if (g_seamrdp_index >= 0)
+/*  if (g_seamrdp_index >= 0)
   {
     seamrdp_init();
   }
+*/
   return rv;
 }
 
@@ -288,10 +290,11 @@ process_message_channel_data(struct stream* s)
     {
       rv = dev_redir_data_in(s, chan_id, chan_flags, length, total_length);
     }
-    else if (chan_id == g_seamrdp_chan_id)
+/*    else if (chan_id == g_seamrdp_chan_id)
     {
       rv = seamrdp_data_in(s, chan_id, chan_flags, length, total_length);
     }
+*/
     else
     {
       rv = user_channel_data_in(s, chan_id, chan_flags, length, total_length);
@@ -488,7 +491,7 @@ channel_thread_loop(void* in_val)
         clipboard_deinit();
         sound_deinit();
         dev_redir_deinit();
-        seamrdp_deinit();
+        //seamrdp_deinit();
         break;
       }
       if (g_lis_trans != 0)
@@ -510,7 +513,7 @@ channel_thread_loop(void* in_val)
           clipboard_deinit();
           sound_deinit();
           dev_redir_deinit();
-          seamrdp_deinit();
+          //seamrdp_deinit();
 
           trans_delete(g_con_trans);
           g_con_trans = 0;
@@ -524,7 +527,7 @@ channel_thread_loop(void* in_val)
       clipboard_check_wait_objs();
       sound_check_wait_objs();
       dev_redir_check_wait_objs();
-      seamrdp_check_wait_objs();
+      //seamrdp_check_wait_objs();
       user_channel_check_wait_objs();
       timeout = 0;
       num_objs = 0;
@@ -535,7 +538,7 @@ channel_thread_loop(void* in_val)
       clipboard_get_wait_objs(objs, &num_objs, &timeout);
       sound_get_wait_objs(objs, &num_objs, &timeout);
       dev_redir_get_wait_objs(objs, &num_objs, &timeout);
-      seamrdp_get_wait_objs(objs, &num_objs, &timeout);
+      //seamrdp_get_wait_objs(objs, &num_objs, &timeout);
       user_channel_get_wait_objs(objs, &num_objs, &timeout);
 
     }

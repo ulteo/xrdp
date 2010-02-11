@@ -13,6 +13,8 @@ SUBDIRS = \
   instfiles \
   genkeymap \
   python-xrdp \
-  xrdp_printer
+  xrdp_printer \
+  vchannel \
+  seamlessrdpshell
 
 EXTRA_DIST = setup.py
