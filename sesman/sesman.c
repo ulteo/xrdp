@@ -351,7 +351,7 @@ send_sessions(int client)
 	char prop[128];
 	for ( i=0 ; i<count ; i++)
 	{
-		g_sprintf(prop, "%i", sess[i].pid);
+		g_sprintf(prop, "%i", sess[i].display);
 		node3 = xmlNewNode(NULL, xmlCharStrdup("session"));
 		xmlSetProp(node3, xmlCharStrdup("id"), xmlCharStrdup(prop) );
 		xmlSetProp(node3, xmlCharStrdup("username"), xmlCharStrdup(sess[i].name) );
@@ -375,7 +375,7 @@ send_session(int client, int session_id)
 
   log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[send_session]: "
 			"request for session\n");
-	sess = session_get_bypid(session_id);
+	sess = session_get_by_display(session_id);
   if( sess == NULL)
   {
   	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[send_session]: "
@@ -418,7 +418,7 @@ send_logoff(int client, int session_id)
 
 	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[send_logoff]: "
 			"request session %i logoff",session_id);
-	sess = session_get_bypid(session_id);
+	sess = session_get_by_display(session_id);
   if( sess == NULL)
   {
   	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[send_session]: "
@@ -427,7 +427,7 @@ send_logoff(int client, int session_id)
     g_tcp_close(client);
     pthread_exit( (void*) 1);
   }
-	session_kill(sess->pid);
+	session_kill_by_display(sess->display);
 	session_destroy(sess->name);
 	doc = xmlNewDoc(xmlCharStrdup("1.0"));
 	if (doc ==NULL)
@@ -439,7 +439,7 @@ send_logoff(int client, int session_id)
 	doc->encoding = xmlCharStrdup("UTF-8");
 	node = xmlNewNode(NULL, xmlCharStrdup("response"));
 	node2 = xmlNewNode(NULL, xmlCharStrdup("session"));
-	sprintf(prop, "%i", sess[0].pid);
+	sprintf(prop, "%i", sess[0].display);
 	node2 = xmlNewNode(NULL, xmlCharStrdup("session"));
 	xmlSetProp(node2, xmlCharStrdup("id"), xmlCharStrdup(prop) );
 	xmlSetProp(node2, xmlCharStrdup("username"), xmlCharStrdup(sess[0].name) );

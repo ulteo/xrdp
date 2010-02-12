@@ -857,6 +857,74 @@ session_kill(int pid)
 }
 
 /******************************************************************************/
+int DEFAULT_CC
+session_kill_by_display(int display)
+{
+  struct session_chain* tmp;
+  struct session_chain* prev;
+
+  /*THREAD-FIX require chain lock */
+  lock_chain_acquire();
+
+  tmp=g_sessions;
+  prev=0;
+
+  while (tmp != 0)
+  {
+    if (tmp->item == 0)
+    {
+      log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "session descriptor for "
+                  "display %d is null!", display);
+      if (prev == 0)
+      {
+        /* prev does no exist, so it's the first element - so we set
+           g_sessions */
+        g_sessions = tmp->next;
+      }
+      else
+      {
+        prev->next = tmp->next;
+      }
+      /*THREAD-FIX release chain lock */
+      lock_chain_release();
+      return SESMAN_SESSION_KILL_NULLITEM;
+    }
+
+    if (tmp->item->display == display)
+    {
+      /* deleting the session */
+      log_message(&(g_cfg->log), LOG_LEVEL_INFO, "session %d - user %s - "
+                  "terminated", tmp->item->display, tmp->item->name);
+      g_free(tmp->item);
+      if (prev == 0)
+      {
+        /* prev does no exist, so it's the first element - so we set
+           g_sessions */
+        g_sessions = tmp->next;
+      }
+      else
+      {
+        prev->next = tmp->next;
+      }
+      g_free(tmp);
+      g_session_count--;
+      session_destroy(tmp->item->name);
+      /*THREAD-FIX release chain lock */
+      lock_chain_release();
+      return SESMAN_SESSION_KILL_OK;
+    }
+
+    /* go on */
+    prev = tmp;
+    tmp=tmp->next;
+  }
+
+  /*THREAD-FIX release chain lock */
+  lock_chain_release();
+  return SESMAN_SESSION_KILL_NOTFOUND;
+}
+
+/******************************************************************************/
 void DEFAULT_CC
 session_sigkill_all()
 {
@@ -931,6 +999,49 @@ session_get_bypid(int pid)
   return 0;
 }
 
+/******************************************************************************/
+struct session_item* DEFAULT_CC
+session_get_by_display(int display)
+{
+  struct session_chain* tmp;
+  struct session_item* dummy;
+
+  dummy = g_malloc(sizeof(struct session_item), 1);
+  if (0 == dummy)
+  {
+    log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "internal error", display);
+    return 0;
+  }
+
+  /*THREAD-FIX require chain lock */
+  lock_chain_acquire();
+
+  tmp = g_sessions;
+  while (tmp != 0)
+  {
+    if (tmp->item == 0)
+    {
+      log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "session descriptor for "
+                  "display %d is null!", display);
+      /*THREAD-FIX release chain lock */
+      lock_chain_release();
+      return 0;
+    }
+    if (tmp->item->display == display)
+    {
+      /*THREAD-FIX release chain lock */
+      g_memcpy(dummy, tmp->item, sizeof(struct session_item));
+      lock_chain_release();
+      /*return tmp->item;*/
+      return dummy;
+    }
+    /* go on */
+    tmp=tmp->next;
+  }
+  /*THREAD-FIX release chain lock */
+  lock_chain_release();
+  return 0;
+}
 
 /******************************************************************************/
 int
@@ -1129,7 +1240,7 @@ session_list_session(int* count)
   tmp = g_sessions;
   while (tmp != 0)
   {
-	  sess[*count].pid = tmp->item->pid;
+	  sess[*count].display = tmp->item->display;
 	  log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[session_list_session]: "
 					"name : %s",tmp->item->name);
 	  g_strncpy(sess[*count].name, tmp->item->name, g_strlen(tmp->item->name));
