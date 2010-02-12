@@ -1,0 +1,5 @@
+#!/bin/sh
+
+groupdel tsusers
+
+#DEBHELPER#

@@ -16,3 +16,5 @@ binary-install/xrdp:: DEB_DH_INSTALLINIT_ARGS := --onlyscripts
 install/xrdp:: 
 	chmod +x debian/xrdp/etc/xrdp/xrdp.sh
 	mv debian/xrdp/etc/init.d/xrdp.sh debian/xrdp/etc/init.d/xrdp
+	sed '/^SESSION/c\SESSION="x-session-manager"' debian/xrdp/etc/xrdp/startwm.sh > ed_file.tmp
+	mv ed_file.tmp debian/xrdp/etc/xrdp/startwm.sh
