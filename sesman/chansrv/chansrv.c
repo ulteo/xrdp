@@ -724,6 +724,41 @@ read_logging_conf(void)
   return 0;
 }
 
+/*****************************************************************************/
+int DEFAULT_CC
+chan_init()
+{
+  char* display_text;
+  char log_file[256];
+  display_text = g_getenv("DISPLAY");
+  get_display_num_from_display(display_text);
+  if (g_display_num == 0)
+  {
+  	g_printf("chansrv[chan_init]: Error, display is zero\n");
+    g_exit(1);
+  }
+  g_mkdir(log_conf.log_file);
+  if (g_directory_exist(log_conf.log_file) == 0)
+  {
+  	g_printf("chansrv[chan_init]: Unable to create %s\n", log_conf.log_file);
+  	g_exit(1);
+  }
+  sprintf(log_file, "%s/%i", log_conf.log_file, g_display_num);
+  if (g_remove_dirs(log_file) == 0)
+  {
+  	g_printf("chansrv[chan_init]: Error, enable to remove %s\n",log_file);
+  	g_exit(1);
+  }
+  g_mkdir(log_file);
+  if (g_directory_exist(log_file) == 0)
+  {
+  	g_printf("chansrv[chan_init]: Unable to create %s\n", log_file);
+  	g_exit(1);
+  }
+  sprintf(log_file, "%s/%s", log_file, "chansrv.log");
+  log_conf.log_file = (char*)g_strdup(log_file);
+  g_chown(log_conf.log_file, username);
+}
 
 /*****************************************************************************/
 int DEFAULT_CC
@@ -731,11 +766,16 @@ main(int argc, char** argv)
 {
   int pid;
   char text[256];
-  char* display_text;
+  if (argc != 2)
+  {
+  	g_printf("Usage : xrdp-chansrv 'username'\n");
+  	g_exit(1);
+  }
   username = argv[1];
   g_init(); /* os_calls */
   read_ini();
   read_logging_conf();
+  chan_init();
   log_start(&log_conf);
   pid = g_getpid();
   log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[main]: "
@@ -744,18 +784,6 @@ main(int argc, char** argv)
   g_signal_terminate(term_signal_handler); /* SIGTERM */
   g_signal_user_interrupt(term_signal_handler); /* SIGINT */
   g_signal_pipe(nil_signal_handler); /* SIGPIPE */
-  display_text = g_getenv("DISPLAY");
-  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[main]: "
-  		"DISPLAY env var set to %s", display_text);
-  get_display_num_from_display(display_text);
-  if (g_display_num == 0)
-  {
-  	log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[main]: "
-  			"error, display is zero");
-    return 1;
-  }
-  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[main]: "
-				"using DISPLAY %d", g_display_num);
   g_snprintf(text, 255, "xrdp_chansrv_%8.8x_main_term", pid);
   g_term_event = g_create_wait_obj(text);
   g_snprintf(text, 255, "xrdp_chansrv_%8.8x_thread_done", pid);

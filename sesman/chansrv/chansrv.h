@@ -23,7 +23,7 @@ int APP_CC
 in_unistr(struct stream* s, char *string, int str_size, int in_len);
 
 #define CHAN_CFG_LOGGING			"Logging"
-#define CHAN_CFG_LOG_FILE			"LogFile"
+#define CHAN_CFG_LOG_FILE			"LogDir"
 #define CHAN_CFG_LOG_LEVEL			"LogLevel"
 #define CHAN_CFG_LOG_ENABLE_SYSLOG	"EnableSyslog"
 #define CHAN_CFG_LOG_SYSLOG_LEVEL	"SyslogLevel"
