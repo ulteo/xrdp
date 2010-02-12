@@ -109,5 +109,7 @@ AC_CONFIG_FILES([Makefile
                  xrdp_printer/Makefile
 		 seamlessrdpshell/Makefile
 		 vchannel/Makefile
+		 sesman/chansrv/rdpdr/Makefile
+		 sesman/chansrv/rdpdr/printer/Makefile
 ])
 AC_OUTPUT

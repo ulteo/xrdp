@@ -20,10 +20,8 @@ xrdp_chansrv_SOURCES = \
   sound.c sound.h \
   clipboard.c clipboard.h \
   devredir.c devredir.h \
-  seamrdp.c seamrdp.h \
   printer_dev.c printer_dev.h \
-  user_channel.h user_channel.c \
-  xutils.c
+  user_channel.h user_channel.c 
 
 xrdp_chansrv_LDADD = \
   -L/usr/X11R6/lib \
@@ -34,6 +32,9 @@ chansrvsysconfdir=$(sysconfdir)/xrdp
 
 chansrvsysconf_DATA = \
   vchannel.ini 
+
+SUBDIRS = \
+  rdpdr 
 
 EXTRA_DIST = \
   $(chansrvsysconf_DATA)
