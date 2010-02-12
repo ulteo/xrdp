@@ -29,7 +29,8 @@ struct user_channel
 {
 	int channel_id;
 	char channel_name[9];
-	int channel_socket;
+	int client_channel_socket;
+	int server_channel_socket;
 };
 
 int APP_CC

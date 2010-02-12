@@ -601,7 +601,7 @@ g_tcp_can_recv(int sck, int millis)
 /*****************************************************************************/
 /* create a unix socket */
 int APP_CC
-g_create_unix_socket(const char *socket_name)
+g_create_unix_socket(const char *socket_filename)
 {
   int sock;
   struct sockaddr_un addr;
@@ -613,8 +613,8 @@ g_create_unix_socket(const char *socket_name)
   }
   g_memset(&addr, 0, sizeof(struct sockaddr_un));
   addr.sun_family = AF_UNIX;
-  g_strncpy(addr.sun_path, socket_name, sizeof(addr.sun_path));
-  unlink(socket_name);
+  g_strncpy(addr.sun_path, socket_filename, sizeof(addr.sun_path));
+  unlink(socket_filename);
   if (bind(sock, (struct sockaddr *) &addr, sizeof(struct sockaddr_un)) < 0)
   {
     return 1;
@@ -1492,20 +1492,7 @@ g_strcpy(char* dest, const char* src)
 char* APP_CC
 g_strncpy(char* dest, const char* src, int len)
 {
-  char* rv;
-
-  if (src == 0 && dest != 0)
-  {
-    dest[0] = 0;
-    return dest;
-  }
-  if (dest == 0 || src == 0)
-  {
-    return 0;
-  }
-  rv = strncpy(dest, src, len);
-  dest[len] = 0;
-  return rv;
+  return strncpy(dest, src, len);
 }
 
 /*****************************************************************************/

@@ -28,6 +28,15 @@ vchannel_try_open(Vchannel* channel)
 	int len;
 	struct sockaddr_un saun;
 	char socket_filename[256];
+	int display_num;
+
+	display_num = g_get_display_num_from_display(getenv("DISPLAY"));
+	if(display_num == 0)
+	{
+		log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_try_open]"
+				" : Display must be different of 0");
+		return ERROR;
+	}
 
 	/* Create socket */
 	log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_try_open]"
@@ -38,10 +47,10 @@ vchannel_try_open(Vchannel* channel)
 				" : Unable to create socket: %s",strerror(errno));
 		return ERROR;
 	}
-	sprintf(socket_filename, "%s%s", VCHANNEL_SOCKET_PATH, (char*)getenv("DISPLAY"));
+
+	sprintf(socket_filename, "%s/%i/vchannel_%s", VCHANNEL_SOCKET_DIR, display_num, channel->name);
 	log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_try_open]"
 			" : Socket name : %s",socket_filename);
-
 	/* Connect to server */
 	saun.sun_family = AF_UNIX;
 	strcpy(saun.sun_path, socket_filename);
@@ -193,6 +202,7 @@ int APP_CC
 vchannel_read_logging_conf(struct log_config* log_conf, const char* chan_name)
 {
   char filename[256];
+  char log_filename[256];
   struct list* names;
   struct list* values;
   char* name;
@@ -235,10 +245,12 @@ vchannel_read_logging_conf(struct log_config* log_conf, const char* chan_name)
     }
     if( g_strlen(log_conf->log_file) > 1)
     {
-    	sprintf(log_conf->log_file, "%s/%i/vchannel_%s.log",
+
+    	sprintf(log_filename, "%s/%i/vchannel_%s.log",
     			log_conf->log_file,
     			g_get_display_num_from_display(getenv("DISPLAY")),
     			log_conf->program_name);
+    	log_conf->log_file = (char*)g_strdup(log_filename);
     }
   }
   else

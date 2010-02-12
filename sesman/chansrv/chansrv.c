@@ -52,7 +52,6 @@ int g_cliprdr_chan_id = -1; /* cliprdr */
 int g_rdpsnd_chan_id = -1; /* rdpsnd */
 int g_rdpdr_chan_id = -1; /* rdpdr */
 int g_seamrdp_chan_id = -1; /* seamrdp */
-extern char* user_channel_socket_name;
 
 /*****************************************************************************/
 /* returns error */
@@ -197,7 +196,6 @@ process_message_channel_setup(struct stream* s)
   g_rdpsnd_chan_id = -1;
   g_rdpdr_chan_id = -1;
   in_uint16_le(s, num_chans);
-  user_channel_do_up();
   log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[process_message_channel_setup]: "
   		"num_chans %d", num_chans);
   for (index = 0; index < num_chans; index++)
@@ -729,7 +727,7 @@ int DEFAULT_CC
 chan_init()
 {
   char* display_text;
-  char log_file[256];
+  char file_string[256];
   display_text = g_getenv("DISPLAY");
   get_display_num_from_display(display_text);
   if (g_display_num == 0)
@@ -737,28 +735,40 @@ chan_init()
   	g_printf("chansrv[chan_init]: Error, display is zero\n");
     g_exit(1);
   }
+  /* logging directory */
   g_mkdir(log_conf.log_file);
   if (g_directory_exist(log_conf.log_file) == 0)
   {
   	g_printf("chansrv[chan_init]: Unable to create %s\n", log_conf.log_file);
   	g_exit(1);
   }
-  sprintf(log_file, "%s/%i", log_conf.log_file, g_display_num);
-  if (g_remove_dirs(log_file) == 0)
+  g_sprintf(file_string, "%s/%i", log_conf.log_file, g_display_num);
+  if (g_remove_dirs(file_string) == 0)
   {
-  	g_printf("chansrv[chan_init]: Error, enable to remove %s\n",log_file);
+  	g_printf("chansrv[chan_init]: Error, enable to remove %s\n", file_string);
   	g_exit(1);
   }
-  g_mkdir(log_file);
-  if (g_directory_exist(log_file) == 0)
+  g_mkdir(file_string);
+  if (g_directory_exist(file_string) == 0)
   {
-  	g_printf("chansrv[chan_init]: Unable to create %s\n", log_file);
+  	g_printf("chansrv[chan_init]: Unable to create %s\n", file_string);
   	g_exit(1);
   }
-  g_chown(log_file, username);
+  g_chown(file_string, username);
   g_printf("username : %s\n",username);
-  sprintf(log_file, "%s/%s", log_file, "chansrv.log");
-  log_conf.log_file = (char*)g_strdup(log_file);
+  g_sprintf(file_string, "%s/%s", file_string, "chansrv.log");
+  log_conf.log_file = (char*)g_strdup(file_string);
+
+  /* spool directory */
+  g_sprintf(file_string, "%s/%i", CHAN_SPOOL_DIR, g_display_num);
+  g_mkdir(file_string);
+  g_chown(file_string, username);
+  if (g_directory_exist(file_string) == 0)
+  {
+  	g_printf("chansrv[chan_init]: Unable to create %s\n", file_string);
+  	g_exit(1);
+  }
+  return 0;
 }
 
 /*****************************************************************************/
@@ -811,7 +821,7 @@ main(int argc, char** argv)
   }
   /* cleanup */
   main_cleanup();
-  log_message(&log_conf, LOG_LEVEL_INFO, "chansrv[rdp_in_unistr]: "
+  log_message(&log_conf, LOG_LEVEL_INFO, "chansrv[main]: "
 				"main: app exiting pid %d(0x%8.8x)", pid, pid);
   return 0;
 }

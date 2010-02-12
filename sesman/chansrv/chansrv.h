@@ -28,6 +28,8 @@ in_unistr(struct stream* s, char *string, int str_size, int in_len);
 #define CHAN_CFG_LOG_ENABLE_SYSLOG	"EnableSyslog"
 #define CHAN_CFG_LOG_SYSLOG_LEVEL	"SyslogLevel"
 
+#define CHAN_SPOOL_DIR					"/var/spool/xrdp"
+
 
 #define LOG_LEVEL 5
 

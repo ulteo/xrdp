@@ -66,7 +66,7 @@ g_tcp_socket(void);
 int APP_CC
 g_wait_connection(int server_socket);
 int APP_CC
-g_create_unix_socket(const char *socket_name);
+g_create_unix_socket(const char *socket_filename);
 int APP_CC
 g_tcp_local_socket(void);
 void APP_CC

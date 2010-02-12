@@ -36,7 +36,7 @@
 #include "list.h"
 
 #define LOG_LEVEL LOG_LEVEL_DEBUG
-#define VCHANNEL_SOCKET_PATH	"/var/spool/xrdp/xrdp_user_channel_socket"
+#define VCHANNEL_SOCKET_DIR	"/var/spool/xrdp"
 #define ERROR		-1
 #define VCHANNEL_OPEN_RETRY_ATTEMPT		12
 
