@@ -68,7 +68,7 @@ vchannel_try_open(Vchannel* channel)
 	init_stream(s, 256);
 	out_uint8p(s, channel->name, strlen(channel->name));
 	s_mark_end(s);
-	if (vchannel_send(channel, s) == ERROR)
+	if (_vchannel_send(channel,CHANNEL_OPEN, s) == ERROR)
 	{
 		log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_try_open]"
 				" : Unable to send data on channel '%s'",channel->name);
@@ -108,11 +108,18 @@ vchannel_open(Vchannel *channel)
 	return ERROR;
 }
 
-/*****************************************************************************/
 int APP_CC
 vchannel_send(Vchannel* channel, struct stream *s)
 {
-	struct stream* size_msg;
+	return _vchannel_send(channel, DATA_MESSAGE, s);
+}
+
+
+/*****************************************************************************/
+int APP_CC
+_vchannel_send(Vchannel* channel, int type, struct stream *s)
+{
+	struct stream* header;
 	int size = s->end - s->data;
 	if(channel->sock < 0)
 	{
@@ -120,22 +127,23 @@ vchannel_send(Vchannel* channel, struct stream *s)
 				"The channel %s is not opened ", channel->name);
 		return ERROR;
 	}
-	make_stream(size_msg);
-	init_stream(size_msg, 4);
-	out_uint32_be(size_msg, size);
-	s_mark_end(size_msg);
+	make_stream(header);
+	init_stream(header, 5);
+	out_uint8(header, type);
+	out_uint32_be(header, size);
+	s_mark_end(header);
 	printf("size : %i\n", size);
 	log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_send]: "
 			"Message send to channel '%s': ", channel->name);
-	log_hexdump(channel->log_conf, LOG_LEVEL_DEBUG, size_msg->data, 4);
-	if(write(channel->sock, size_msg->data, 4) < 4)
+	log_hexdump(channel->log_conf, LOG_LEVEL_DEBUG, header->data, 4);
+	if(write(channel->sock, header->data, 5) < 5)
 	{
 		log_message(channel->log_conf, LOG_LEVEL_ERROR ,"vchannel[vchannel_send]: "
 				"Failed to send message size to channel %s [%s]", channel->name, strerror(errno));
-		free_stream(size_msg);
+		free_stream(header);
 		return ERROR;
 	}
-	free_stream(size_msg);
+	free_stream(header);
 	if(write(channel->sock, s->data, size) < size)
 	{
 		log_message(channel->log_conf, LOG_LEVEL_ERROR ,"vchannel[vchannel_send]: "
@@ -153,9 +161,10 @@ vchannel_send(Vchannel* channel, struct stream *s)
 int APP_CC
 vchannel_receive(Vchannel* channel, struct stream *s)
 {
-	struct stream* size_msg;
+	struct stream* header;
 	int nb_read = 0;
 	int size;
+	int type;
 
 	if(channel->sock < 0)
 	{
@@ -163,16 +172,17 @@ vchannel_receive(Vchannel* channel, struct stream *s)
 				"The channel %s is not opened ", channel->name);
 		return ERROR;
 	}
-	make_stream(size_msg);
-	init_stream(size_msg, 4);
-	nb_read = read(channel->sock, size_msg->data, 4);
+	make_stream(header);
+	init_stream(header, 5);
+	nb_read = read(channel->sock, header->data, 5);
 	if( nb_read != 4)
 	{
 		log_message(channel->log_conf, LOG_LEVEL_ERROR ,"vchannel[vchannel_receive]"
 				" : Error while receiving data lenght: %s",strerror(errno));
 		return ERROR;
 	}
-	in_uint32_be(size_msg, size);
+	in_uint8(s, type);
+	in_uint32_be(header, size);
 	log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_receive]"
 			"Size of message : %i", size);
 	init_stream(s, size);
@@ -185,6 +195,18 @@ vchannel_receive(Vchannel* channel, struct stream *s)
 	log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_receive]"
 			" : message received from channel %s: ", channel->name);
 	log_hexdump(channel->log_conf, LOG_LEVEL_DEBUG, s->data, size);
+	if( type == CHANNEL_OPEN)
+	{
+		log_message(channel->log_conf, LOG_LEVEL_ERROR ,"vchannel[vchannel_receive]"
+				" : Invalid message");
+		return ERROR;
+	}
+	if( type == SETUP_MESSAGE)
+	{
+		log_message(channel->log_conf, LOG_LEVEL_ERROR ,"vchannel[vchannel_receive]"
+				" : status message");
+		return (int)s->data[0];
+	}
 	return 0;
 }
 

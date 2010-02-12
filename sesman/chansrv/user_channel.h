@@ -25,6 +25,15 @@
 #include "parse.h"
 
 
+#define SETUP_MESSAGE			0x01
+#define DATA_MESSAGE			0x02
+#define CHANNEL_OPEN			0x03
+
+#define STATUS_DISCONNECTED			0x01
+#define STATUS_CONNECTED				0x02
+
+
+
 struct user_channel
 {
 	int channel_id;

@@ -51,12 +51,13 @@ user_channel_cleanup(){
 
 /*****************************************************************************/
 int APP_CC
-user_channel_transmit(int socket, char* mess, int size )
+user_channel_transmit(int socket, int type, char* mess, int size )
 {
   struct stream* s;
   int rv;
   make_stream(s);
   init_stream(s, 1024);
+  out_uint8(s, type);
   out_uint32_be(s, size);
   out_uint8p(s, mess, size);
   s_mark_end(s);
@@ -118,7 +119,16 @@ user_channel_init(char* channel_name, int channel_id)
 int APP_CC
 user_channel_deinit(void)
 {
+	char status[1];
+	int i;
+	int socket;
+	status[0] = STATUS_DISCONNECTED;
 
+	for (i=0 ; i<channel_count ; i++ )
+	{
+		socket = user_channels[i].client_channel_socket;
+		user_channel_transmit(socket, SETUP_MESSAGE, status, 1 );
+	}
 	return 0;
 }
 
@@ -148,7 +158,7 @@ user_channel_data_in(struct stream* s, int chan_id, int chan_flags, int length,
 			  s->p+=s->size+1;
 				return 0;
 			}
-			user_channel_transmit(user_channels[i].client_channel_socket, buf, size );
+			user_channel_transmit(user_channels[i].client_channel_socket, DATA_MESSAGE, buf, size );
 			return 0;
 		}
 	}
@@ -188,26 +198,6 @@ user_channel_get_wait_objs(tbus* objs, int* count, int* timeout)
   return 0;
 }
 
-
-
-/************************************************************************/
-int DEFAULT_CC
-user_channel_receive_message(int client, char* data)
-{
-  struct stream* s;
-  int data_length;
-
-  make_stream(s);
-	init_stream(s, 1024);
-	g_tcp_recv(client, s->data, sizeof(int), 0);
-	in_uint32_be(s,data_length);
-  g_tcp_recv(client, s->data, data_length, 0);
-
-  free_stream(s);
-  return data_length;
-}
-
-
 /************************************************************************/
 int DEFAULT_CC
 user_channel_process_channel_opening(int channel_index, int client)
@@ -215,22 +205,14 @@ user_channel_process_channel_opening(int channel_index, int client)
 	struct stream* s;
   int data_length;
   int size;
+  int type;
 
 	make_stream(s);
 	init_stream(s, 1024);
-	size = g_tcp_recv(client, s->data, sizeof(int), 0);
 
-	if ( size != 0)
-	{
-		in_uint32_be(s,data_length);
-		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_process_channel_opening]: "
-				"data_length : %i\n", data_length);
-		size = g_tcp_recv(client, s->data, data_length, 0);
-		s->data[data_length] = 0;
-		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_process_channel_opening]: "
-				"channel name : %s\n",s->data);
-	}
-	else
+	size = g_tcp_recv(client, s->data, sizeof(int)+1, 0);
+
+	if ( size < 1)
 	{
 		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_process_channel_opening]: "
 				"enable to get information on the opening channel");
@@ -238,13 +220,29 @@ user_channel_process_channel_opening(int channel_index, int client)
 		free_stream(s);
 		return 0;
 	}
+	in_uint8(s, type);
+	if(type != CHANNEL_OPEN)
+	{
+		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_process_channel_opening]: "
+				"Invalid operation type");
+		free_stream(s);
+		return 0;
+	}
+	in_uint32_be(s, data_length);
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_process_channel_opening]: "
+			"Data_length : %i\n", data_length);
+	size = g_tcp_recv(client, s->data, data_length, 0);
+	s->data[data_length] = 0;
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_process_channel_opening]: "
+			"Channel name : %s\n",s->data);
+
 	if(g_strcmp(user_channels[channel_index].channel_name, s->data) == 0)
 	{
 		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_process_channel_opening]: "
-				"new server connection for channel %s ", user_channels[channel_index].channel_name);
+				"New server connection for channel %s ", user_channels[channel_index].channel_name);
 		user_channels[channel_index].client_channel_socket = client;
 		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_process_channel_opening]: "
-				"socket : %i",user_channels[channel_index].channel_id);
+				"Socket : %i",user_channels[channel_index].channel_id);
 	}
 	else
 	{
@@ -267,6 +265,7 @@ user_channel_check_wait_objs(void)
 	int i;
 	int new_client;
 	int test;
+	int type;
 
 	for( i=0 ; i<channel_count; i++)
 	{
@@ -285,38 +284,44 @@ user_channel_check_wait_objs(void)
 		{
 		  make_stream(s);
 			init_stream(s, 1024);
-			size = g_tcp_recv(user_channels[i].client_channel_socket, s->data, sizeof(int), 0);
-
-  	  if ( size != 0)
-			{
-  			in_uint32_be(s,data_length);
-    	  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
-    	  		"data_length : %i\n", data_length);
-  		  size = g_tcp_recv(user_channels[i].client_channel_socket, s->data, data_length, 0);
-  		  s->data[data_length] = 0;
-    	  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
-    	  		"data : %s\n",s->data);
-				log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
-						"data received : %s",s->data);
-				if( user_channels[i].channel_id == -1)
-				{
-					log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
-					    	  		"client channel is not opened");
-					free_stream(s);
-					return 0 ;
-				}
-				user_channel_send(user_channels[i].channel_id, s->data, size);
-			}
-			else
+			size = g_tcp_recv(user_channels[i].client_channel_socket, s->data, sizeof(int)+1, 0);
+  	  if ( size < 1)
 			{
 	  	  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
 	  	  		"channel %s closed : \n",user_channels[i].channel_name);
 				g_tcp_close(user_channels[i].client_channel_socket);
 				user_channels[i].client_channel_socket = 0;
+				free_stream(s);
+				continue;
 			}
-		  free_stream(s);
+  		in_uint8(s, type);
+  		if(type != DATA_MESSAGE)
+  		{
+  			log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_process_channel_opening]: "
+  					"Invalid operation type");
+  			free_stream(s);
+  			return 0;
+  		}
+  	  in_uint32_be(s,data_length);
+  	  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
+  	  		"data_length : %i\n", data_length);
+  	  size = g_tcp_recv(user_channels[i].client_channel_socket, s->data, data_length, 0);
+  	  s->data[data_length] = 0;
+  	  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
+  	  		"data : %s\n",s->data);
+  	  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
+  	  		"data received : %s",s->data);
+  	  if( user_channels[i].channel_id == -1)
+  	  {
+  	  	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
+  	  			"client channel is not opened");
+  	  	free_stream(s);
+  	  	return 0 ;
+  	  }
+  	  user_channel_send(user_channels[i].channel_id, s->data, size);
 		}
+		free_stream(s);
   }
-  return 0;
+	return 0;
 }
 
