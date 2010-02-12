@@ -680,7 +680,7 @@ lib_clip_data(struct vnc* v)
     out_uint8s(out_s, 4);
     s_mark_end(out_s);
     size = (int)(out_s->end - out_s->data);
-    error = v->server_send_to_channel(v, v->clip_chanid, out_s->data, size, size, 3);
+    error = 0;//v->server_send_to_channel(v, v->clip_chanid, out_s->data, size, size, 3);
     free_stream(out_s);
   }
   free_stream(s);
@@ -758,7 +758,7 @@ lib_mod_signal(struct vnc* v)
     }
     else if (type == 3) /* clipboard */
     {
-      g_writeln("got clip data");
+      //g_writeln("got clip data");
       error = lib_clip_data(v);
     }
     else
