@@ -41,7 +41,7 @@
 #define VCHANNEL_OPEN_RETRY_ATTEMPT		12
 
 #define VCHAN_CFG_LOGGING						"Logging"
-#define VCHAN_CFG_LOG_FILE					"LogFile"
+#define VCHAN_CFG_LOG_FILE					"LogDir"
 #define VCHAN_CFG_LOG_LEVEL					"LogLevel"
 #define VCHAN_CFG_LOG_ENABLE_SYSLOG	"EnableSyslog"
 #define VCHAN_CFG_LOG_SYSLOG_LEVEL	"SyslogLevel"
@@ -62,6 +62,6 @@ vchannel_receive(Vchannel *channel, struct stream *s);
 int APP_CC
 vchannel_close(Vchannel *channel);
 int APP_CC
-vchannel_read_logging_conf();
+vchannel_read_logging_conf(struct log_config* log_conf, const char* chan_name);
 
 #endif /* VCHANNEL_H_ */

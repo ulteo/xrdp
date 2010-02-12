@@ -275,4 +275,6 @@ int APP_CC
 g_time3(void);
 void APP_CC
 g_update_status(char* username, char* status);
+int APP_CC
+g_get_display_num_from_display(char* display_text);
 #endif

@@ -755,9 +755,10 @@ chan_init()
   	g_printf("chansrv[chan_init]: Unable to create %s\n", log_file);
   	g_exit(1);
   }
+  g_chown(log_file, username);
+  g_printf("username : %s\n",username);
   sprintf(log_file, "%s/%s", log_file, "chansrv.log");
   log_conf.log_file = (char*)g_strdup(log_file);
-  g_chown(log_conf.log_file, username);
 }
 
 /*****************************************************************************/

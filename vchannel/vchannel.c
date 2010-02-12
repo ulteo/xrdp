@@ -190,7 +190,7 @@ vchannel_close(Vchannel* channel)
 
 /*****************************************************************************/
 int APP_CC
-vchannel_read_logging_conf(struct log_config* log_conf, const char* prog_name)
+vchannel_read_logging_conf(struct log_config* log_conf, const char* chan_name)
 {
   char filename[256];
   struct list* names;
@@ -198,7 +198,7 @@ vchannel_read_logging_conf(struct log_config* log_conf, const char* prog_name)
   char* name;
   char* value;
   int index;
-  log_conf->program_name = (char*)g_strdup(prog_name);
+  log_conf->program_name = (char*)g_strdup(chan_name);
   log_conf->log_file = 0;
   log_conf->fd = 0;
   log_conf->log_level = LOG_LEVEL_DEBUG;
@@ -232,6 +232,13 @@ vchannel_read_logging_conf(struct log_config* log_conf, const char* prog_name)
       {
         log_conf->syslog_level = log_text2level(value);
       }
+    }
+    if( g_strlen(log_conf->log_file) > 1)
+    {
+    	sprintf(log_conf->log_file, "%s/%i/vchannel_%s.log",
+    			log_conf->log_file,
+    			g_get_display_num_from_display(getenv("DISPLAY")),
+    			log_conf->program_name);
     }
   }
   else

@@ -18,6 +18,8 @@
 SBINDIR=/usr/local/sbin
 LOG=/dev/null
 CFGDIR=/etc/xrdp
+LOGDIR=/var/log/xrdp
+SPOOLDIR=/var/spool/xrdp
 
 if ! test -x $SBINDIR/xrdp
 then
@@ -38,9 +40,13 @@ fi
 xrdp_start()
 {
   echo -n "Starting: xrdp and sesman . . "
+  mkdir $LOGDIR 1>>$LOG 
+  chgrp tsusers $LOGDIR  1>>$LOG
+  mkdir $SPOOLDIR  1>>$LOG 2>&1
+  chgrp tsusers $SPOOLDIR 1>>$LOG 2>&1
   logoff all
-  $SBINDIR/xrdp >>$LOG
-  $SBINDIR/xrdp-sesman >>$LOG 
+  $SBINDIR/xrdp 1>>$LOG 2>&1
+  $SBINDIR/xrdp-sesman 1>>$LOG 2>&1
   echo "."
   sleep 1
   return 0;
@@ -50,8 +56,10 @@ xrdp_stop()
 {
   echo -n "Stopping: xrdp and sesman . . "
   logoff all
-  $SBINDIR/xrdp-sesman --kill >>$LOG 
-  $SBINDIR/xrdp --kill >>$LOG
+  $SBINDIR/xrdp-sesman --kill 1>>$LOG 
+  $SBINDIR/xrdp --kill 1>>$LOG
+  rm -fr $LOGDIR 1>>$LOG 2>&1
+  rm -fr $SPOOLDIR 1>>$LOG 2>&1
   echo "."
   return 0;
 }
