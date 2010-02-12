@@ -36,4 +36,4 @@ chansrvsysconf_DATA = \
   vchannel.ini 
 
 EXTRA_DIST = \
-  $(vchannelsysconf_DATA)
+  $(chansrvsysconf_DATA)
