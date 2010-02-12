@@ -8,7 +8,7 @@ xfwm4&
 WM_PID=$!
 sleep 1
 XHook&
-wait $(WM_PID)
+wait $WM_PID
 
 
 

@@ -132,7 +132,6 @@ _vchannel_send(Vchannel* channel, int type, struct stream *s)
 	out_uint8(header, type);
 	out_uint32_be(header, size);
 	s_mark_end(header);
-	printf("size : %i\n", size);
 	log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_send]: "
 			"Message send to channel '%s': ", channel->name);
 	log_hexdump(channel->log_conf, LOG_LEVEL_DEBUG, header->data, 4);
@@ -165,6 +164,7 @@ vchannel_receive(Vchannel* channel, struct stream *s)
 	int nb_read = 0;
 	int size;
 	int type;
+	int rv;
 
 	if(channel->sock < 0)
 	{
@@ -174,20 +174,48 @@ vchannel_receive(Vchannel* channel, struct stream *s)
 	}
 	make_stream(header);
 	init_stream(header, 5);
-	nb_read = read(channel->sock, header->data, 5);
-	if( nb_read != 4)
+	nb_read = g_tcp_recv(channel->sock, header->data, 5, 0);
+	if( nb_read != 5)
 	{
 		log_message(channel->log_conf, LOG_LEVEL_ERROR ,"vchannel[vchannel_receive]"
 				" : Error while receiving data lenght: %s",strerror(errno));
 		return ERROR;
 	}
-	in_uint8(s, type);
+	in_uint8(header, type);
+	switch(type)
+	{
+	case CHANNEL_OPEN:
+		log_message(channel->log_conf, LOG_LEVEL_WARNING ,"vchannel[vchannel_receive]"
+				" : CHANNEL OPEN message is invalid message");
+		rv = ERROR;
+		break;
+	case SETUP_MESSAGE:
+		log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_receive]"
+				" : status change message");
+		rv = 0;
+		break;
+	case DATA_MESSAGE:
+		log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_receive]"
+				" : data message");
+		rv = 0;
+		break;
+	default:
+		log_message(channel->log_conf, LOG_LEVEL_ERROR ,"vchannel[vchannel_receive]"
+				" : Invalid message '%02x'", type);
+		rv = ERROR;
+		break;
+	}
+	if( rv == ERROR)
+	{
+		return ERROR;
+	}
 	in_uint32_be(header, size);
 	log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_receive]"
 			"Size of message : %i", size);
 	init_stream(s, size);
-	nb_read = read( channel->sock, s->data, size);
-	if(nb_read != size){
+	nb_read = g_tcp_recv(channel->sock, s->data, size, 0);
+	if(nb_read != size)
+	{
 		log_message(channel->log_conf, LOG_LEVEL_ERROR ,"vchannel[vchannel_receive]"
 				" : Data length is invalid");
 		return ERROR;
@@ -195,17 +223,9 @@ vchannel_receive(Vchannel* channel, struct stream *s)
 	log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_receive]"
 			" : message received from channel %s: ", channel->name);
 	log_hexdump(channel->log_conf, LOG_LEVEL_DEBUG, s->data, size);
-	if( type == CHANNEL_OPEN)
+	if (type == SETUP_MESSAGE)
 	{
-		log_message(channel->log_conf, LOG_LEVEL_ERROR ,"vchannel[vchannel_receive]"
-				" : Invalid message");
-		return ERROR;
-	}
-	if( type == SETUP_MESSAGE)
-	{
-		log_message(channel->log_conf, LOG_LEVEL_ERROR ,"vchannel[vchannel_receive]"
-				" : status message");
-		return (int)s->data[0];
+		return s->data[0];
 	}
 	return 0;
 }
@@ -277,7 +297,7 @@ vchannel_read_logging_conf(struct log_config* log_conf, const char* chan_name)
   }
   else
   {
-  	printf("Invalid channel configuration file : %s\n",filename);
+  	g_printf("Invalid channel configuration file : %s\n",filename);
   }
   list_delete(names);
   list_delete(values);

@@ -19,6 +19,9 @@
  **/
 
 #include "xutils.h"
+#include <log.h>
+
+extern struct log_config* l_config;
 
 /*****************************************************************************/
 int
@@ -53,7 +56,8 @@ get_property( Display* display, Window w, const char* property, unsigned long *n
   unsigned long bytes;
   int status;
 
-  printf("seamlessrdpshell[get_property]: Get property : %s\n", property);
+  log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_property]: "
+				"Get property : %s", property);
   status = XGetWindowProperty(display,
                               w,
                               XInternAtom(display, property, True),
@@ -67,11 +71,12 @@ get_property( Display* display, Window w, const char* property, unsigned long *n
                               &bytes,
                               data);
 
-  if(status != Success || *nitems==0){
-  	printf("seamlessrdpshell[get_property]: Enable to get atom %s\n",property);
+  if(status != Success || *nitems==0)
+  {
+  	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_property]: "
+					"Unable to get atom %s",property);
 	return 1;
   }
-
   return 0;
 }
 
@@ -85,11 +90,13 @@ get_in_window(Display* display,  Window w)
   unsigned int nchildren;
 
   if (!XQueryTree(display, w, &root, &parent, &children, &nchildren) || nchildren == 0){
-  	printf("seamlessrdpshell[get_in_window]:  no child windows\n");
+  	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_in_window]: "
+  			"No child windows");
     return 0;
   }
 
-  printf("seamlessrdpshell[get_in_window]: in window : %i\n",(int)children[nchildren-1]);
+	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_in_window]: "
+				"In window : %i",(int)children[nchildren-1]);
   return children[nchildren-1];
 }
 
@@ -103,7 +110,8 @@ int is_good_window(Display* display,  Window w)
   status = get_property(display, w, "WM_HINTS", &nitems, &data);
   if((status != 0) || (data == 0))
   {
-  	printf("seamlessrdpshell[is_good_window]: %i did not contain the right information\n", (int)w);
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[is_good_window]: "
+					" %i did not contain the right information", (int)w);
   }
   return status;
 }
@@ -117,15 +125,18 @@ int get_window_name(Display* display, Window w, unsigned char** name)
   status = get_property(display, w, "WM_NAME", &nitems, name);
   if(status != 0)
   {
-  	printf("seamlessrdpshell[get_window_name]: enable to get atom WM_NAME\n");
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_name]: "
+				" enable to get atom WM_NAME");
     return False;
   }
   if(name == 0)
   {
-  	printf("seamlessrdpshell[get_window_name]: no windows name in atom WM_NAME\n");
+  	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_name]: "
+  			" no windows name in atom WM_NAME");
     return False;
   }
-  printf("seamlessrdpshell[get_window_name]: windows name : %s\n",*name);
+  log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_name]: "
+				" windows name : %s\n",*name);
   return True;
 }
 
@@ -140,12 +151,14 @@ int get_window_type(Display* display, Window w, Atom* atom)
   status = get_property(display, w, "_NET_WM_WINDOW_TYPE", &nitems, &data);
   if(status != 0)
   {
-  	printf("seamlessrdpshell[get_window_type]: xrdp-chansrv: enable to window type\n");
+  	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_type]: "
+  			"Unable to get window type");
     return 1;
   }
   if(data == 0)
   {
-  	printf("seamlessrdpshell[get_window_type]: no window type\n");
+  	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_name]: "
+				"No window type");
     return 0;
   }
 
@@ -157,7 +170,8 @@ int get_window_type(Display* display, Window w, Atom* atom)
    	      (*((unsigned char*) data+ 3) << 24) \
    	    );
 
-  printf("seamlessrdpshell[get_window_type]: window type : %s\n", XGetAtomName(display, *atom));
+  log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_name]: "
+				"Window type : %s", XGetAtomName(display, *atom));
   return 0;
 }
 
@@ -170,12 +184,14 @@ int get_window_pid(Display* display, Window w, int* pid){
   status = get_property(display, w, "_NET_WM_PID", &nitems, &data);
   if(status != 0)
   {
-  	printf("seamlessrdpshell[get_window_pid]: enable to get pid of window %i\n", (int)w);
+  	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_pid]: "
+					"Unable to get pid of window %i", (int)w);
     return False;
   }
   if(data == 0)
   {
-  	printf("seamlessrdpshell[get_window_pid]: no pid for window %i\n", (int)w);
+  	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_pid]: "
+					"No pid for window %i", (int)w);
     return False;
   }
   *pid = (int) \
@@ -184,8 +200,9 @@ int get_window_pid(Display* display, Window w, int* pid){
 		  (*((unsigned char*) data + 1) << 8) | \
 		  (*((unsigned char*) data+ 2) << 16) | \
 		  (*((unsigned char*) data+ 3) << 24) \
-		); \
-		printf("seamlessrdpshell[get_window_pid]: window pid: %i\n", *pid);
+		);
+  log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_pid]: "
+				"Window pid: %i", *pid);
   return True;
 }
 
@@ -199,13 +216,15 @@ int get_parent_window(Display* display, Window w, Window* parent){
   status = get_property(display, w, "WM_TRANSIENT_FOR", &nitems, &data);
   if(status != 0)
   {
-  	printf("seamlessrdpshell[get_parent_window]: Enable to get parent of window %i\n", (int)w);
+  	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_parent_window]: "
+  			"Unable to get parent of window %i", (int)w);
     *parent = 0;
     return False;
   }
   if(data == 0)
   {
-  	printf("seamlessrdpshell[get_parent_window]: no parent window for window %i\n", (int)w);
+  	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_parent_window]: "
+  			"No parent window for window %i", (int)w);
     *parent = 0;
     return False;
   }
@@ -217,7 +236,8 @@ int get_parent_window(Display* display, Window w, Window* parent){
 		  (*((unsigned char*) data + 1) << 8) | \
 		  (*((unsigned char*) data+ 2) << 16) | \
 		  (*((unsigned char*) data+ 3) << 24) \
-		); \
-		printf("seamlessrdpshell[get_parent_window]: parent window for window %i : %i\n", (int)w, (int)parent);
+		);
+  log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_parent_window]: "
+				"Parent window for window %i : %i\n", (int)w, (int)parent);
   return True;
 }

@@ -770,7 +770,7 @@ session_destroy(char* username)
 			g_getuser_info(username, 0, &uid, 0, 0, 0);
 			if( uid == 0)
 			{
-				log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "enable to kill root processus "
+				log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "Unable to kill root processus "
 						"or user did not exist");
 				continue;
 			}
@@ -1283,7 +1283,7 @@ session_set_user_pref(char* username, char* key, char* value)
 		if (!g_create_dir(XRDP_TEMP_DIR))
 		{
 			log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "sesman[session_set_user_pref]: "
-						"enable to create %s",XRDP_TEMP_DIR);
+						"Unable to create %s",XRDP_TEMP_DIR);
 			return 1;
 		}
 	}
@@ -1292,7 +1292,7 @@ session_set_user_pref(char* username, char* key, char* value)
 		if (!g_create_dir(XRDP_USER_PREF_DIRECTORY))
 		{
 			log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "sesman[session_set_user_pref]: "
-						"enable to create %s",XRDP_USER_PREF_DIRECTORY);
+						"Unable to create %s",XRDP_USER_PREF_DIRECTORY);
 			return 1;
 		}
 	}
@@ -1303,7 +1303,7 @@ session_set_user_pref(char* username, char* key, char* value)
 		if (!g_create_dir(pref_dir))
 		{
 			log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "sesman[session_set_user_pref]: "
-						"enable to create %s", pref_dir);
+						"Unable to create %s", pref_dir);
 			return 1;
 		}
 	}
@@ -1314,7 +1314,7 @@ session_set_user_pref(char* username, char* key, char* value)
 	if( fd < 0)
 	{
 		log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "sesman[session_set_user_pref]: "
-					"enable to create %s", pref_key_file);
+					"Unable to create %s", pref_key_file);
 		return 1;
 	}
 	g_file_write(fd, value, g_strlen(value));
@@ -1333,7 +1333,7 @@ session_get_user_pref(char* username, char* key, char* value)
 	if (!g_directory_exist(XRDP_TEMP_DIR))
 	{
 		log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "sesman[session_get_user_pref]: "
-					"enable to access %s", XRDP_TEMP_DIR);
+					"Unable to access %s", XRDP_TEMP_DIR);
 		g_strcpy(value, "");
 		return 0;
 	}
@@ -1342,14 +1342,14 @@ session_get_user_pref(char* username, char* key, char* value)
 	if (!g_directory_exist(XRDP_USER_PREF_DIRECTORY))
 	{
 		log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "sesman[session_get_user_pref]: "
-					"enable to access %s", XRDP_USER_PREF_DIRECTORY);
+					"Unable to access %s", XRDP_USER_PREF_DIRECTORY);
 		g_strcpy(value, "");
 		return 0;
 	}
 	if (!g_directory_exist(pref_dir))
 	{
 		log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "sesman[session_get_user_pref]: "
-					"enable to access %s", pref_dir);
+					"Unable to access %s", pref_dir);
 		g_strcpy(value, "");
 		return 0;
 	}
@@ -1359,7 +1359,7 @@ session_get_user_pref(char* username, char* key, char* value)
 	if( fd < 0)
 	{
 		log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "sesman[session_get_user_pref]: "
-						"enable to open file %s", pref_key_file);
+						"Unable to open file %s", pref_key_file);
 		g_strcpy(value, "");
 		return 0;
 	}

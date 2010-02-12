@@ -569,65 +569,13 @@ nil_signal_handler(int sig)
 }
 
 /*****************************************************************************/
-static int APP_CC
-get_display_num_from_display(char* display_text)
-{
-  int index;
-  int mode;
-  int host_index;
-  int disp_index;
-  int scre_index;
-  char host[256];
-  char disp[256];
-  char scre[256];
-
-  index = 0;
-  host_index = 0;
-  disp_index = 0;
-  scre_index = 0;
-  mode = 0;
-  while (display_text[index] != 0)
-  {
-    if (display_text[index] == ':')
-    {
-      mode = 1;
-    }
-    else if (display_text[index] == '.')
-    {
-      mode = 2;
-    }
-    else if (mode == 0)
-    {
-      host[host_index] = display_text[index];
-      host_index++;
-    }
-    else if (mode == 1)
-    {
-      disp[disp_index] = display_text[index];
-      disp_index++;
-    }
-    else if (mode == 2)
-    {
-      scre[scre_index] = display_text[index];
-      scre_index++;
-    }
-    index++;
-  }
-  host[host_index] = 0;
-  disp[disp_index] = 0;
-  scre[scre_index] = 0;
-  g_display_num = g_atoi(disp);
-  return 0;
-}
-
-/*****************************************************************************/
 int APP_CC
 main_cleanup(void)
 {
   g_delete_wait_obj(g_term_event);
   g_delete_wait_obj(g_thread_done_event);
   g_deinit(); /* os_calls */
-  printf("CLEANUP\n");
+  //printf("CLEANUP\n");
   user_channel_cleanup();
   return 0;
 }
@@ -729,7 +677,7 @@ chan_init()
   char* display_text;
   char file_string[256];
   display_text = g_getenv("DISPLAY");
-  get_display_num_from_display(display_text);
+  g_display_num = g_get_display_num_from_display(display_text);
   if (g_display_num == 0)
   {
   	g_printf("chansrv[chan_init]: Error, display is zero\n");

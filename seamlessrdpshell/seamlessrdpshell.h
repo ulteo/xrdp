@@ -68,7 +68,6 @@ typedef struct{
 }\
 
 #define Window_add(window_list, window){\
-	printf("windows add \n");\
 	int count = window_list.item_count;\
 	Window_item* temp;\
 	Window_get(window_list, window,temp);\
@@ -96,7 +95,6 @@ typedef struct{
 
 
 #define Window_del(window_list, window){\
-	printf("windows del \n");\
 	int count = window_list.item_count;\
 	Window_item* temp;\
 	Window_get(window_list, window,temp);\

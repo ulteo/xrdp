@@ -43,7 +43,7 @@ static int message_id;
 static Display* display;
 static Window_list window_list;
 Vchannel seam_chan;
-static struct log_config* l_config;
+struct log_config* l_config;
 
 /*****************************************************************************/
 int
@@ -51,7 +51,7 @@ error_handler(Display* display, XErrorEvent* error)
 {
   char text[256];
   XGetErrorText(display, error->error_code, text, 255);
-  log_message(l_config, LOG_LEVEL_ERROR, "XHook[error_handler]: "
+  log_message(l_config, LOG_LEVEL_DEBUG, "XHook[error_handler]: "
   		" Error [%s]", text);
   return 0;
 }
@@ -616,7 +616,7 @@ void create_window(Window win_out){
 	free(window_id);
 	free(buffer);
 	Window_add(window_list,win_out);
-	Window_dump(window_list);
+	//Window_dump(window_list);
 }
 
 /*****************************************************************************/
@@ -868,7 +868,7 @@ void *thread_Xvent_process (void * arg)
 			w = ev.xunmap.window;
 			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
 						"Unmap of the window: %i",(int)w);
-			Window_dump(window_list);
+			//Window_dump(window_list);
 
 			Window_get(window_list,w, witem);
 			if(witem == 0){
@@ -903,19 +903,36 @@ void *thread_vchannel_process (void * arg)
 {
 	char* buffer = malloc(1024);
 	struct stream* s = NULL;
-	make_stream(s);
+	int rv;
 
 	signal(SIGCHLD, handler);
 	sprintf(buffer, "HELLO,%i,0x%08x\n", 0, 0);
 	send_message(buffer, strlen(buffer));
 	while(1){
-		if(vchannel_receive(&seam_chan, s) == ERROR || s == NULL)
+		make_stream(s);
+		rv = vchannel_receive(&seam_chan, s);
+		if( rv == ERROR )
 		{
-			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_vchannel_process]: "
-					"Invalid message");
 			continue;
 		}
-		process_message(s->data);
+		switch(rv)
+		{
+		case ERROR:
+			log_message(l_config, LOG_LEVEL_ERROR, "XHook[thread_vchannel_process]: "
+					"Invalid message");
+			break;
+		case STATUS_CONNECTED:
+			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_vchannel_process]: "
+					"Status connected");
+			break;
+		case STATUS_DISCONNECTED:
+			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_vchannel_process]: "
+					"Status disconnected");
+			break;
+		default:
+			process_message(s->data);
+			break;
+		}
 		free_stream(s);
 	}
 	pthread_exit (0);

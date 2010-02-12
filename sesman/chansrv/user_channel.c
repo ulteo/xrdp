@@ -64,7 +64,7 @@ user_channel_transmit(int socket, int type, char* mess, int size )
   size = (int)(s->end - s->data);
   rv = g_tcp_send(socket, s->data, size, 0);
   log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_transmit]: "
-  		"message sended: %s", mess);
+  		"Message sended: %s", mess);
   if (rv != size)
   {
     log_message(&log_conf, LOG_LEVEL_ERROR, "chansrv[user_channel_transmit]: "
@@ -79,11 +79,15 @@ user_channel_transmit(int socket, int type, char* mess, int size )
 int APP_CC
 user_channel_do_up(char* chan_name)
 {
+  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_do_up]: "
+  		"Activate the channel '%s'", chan_name);
 	char socket_filename[256];
 	int sock = 0;
 	g_sprintf(socket_filename, "/var/spool/xrdp/%i/vchannel_%s", g_display_num, chan_name);
 	sock = g_create_unix_socket(socket_filename);
 	g_chown(socket_filename, username);
+  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_do_up]: "
+  		"Channel socket '%s' is created", socket_filename);
 	return sock;
 }
 
@@ -146,7 +150,6 @@ user_channel_data_in(struct stream* s, int chan_id, int chan_flags, int length,
 		if( user_channels[i].channel_id == chan_id )
 		{
 			size = s->end - s->data;
-			//g_printf("size : %i\n", size);
 			g_strncpy(buf, (char*)s->p, size+1);
 		  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_data_in]: "
 		  		"new client message for channel %s ",user_channels[i].channel_name);
@@ -272,6 +275,8 @@ user_channel_check_wait_objs(void)
 		test = g_is_wait_obj_set(user_channels[i].server_channel_socket);
 		if (test)
 	  {
+  	  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
+  	  		"New server side channel connection for channel %s : ",user_channels[i].channel_name);
 			new_client = g_wait_connection(user_channels[i].server_channel_socket);
 			user_channel_process_channel_opening(i, new_client);
 			return 0;
@@ -282,6 +287,8 @@ user_channel_check_wait_objs(void)
 		test = g_is_wait_obj_set(user_channels[i].client_channel_socket);
 		if (test)
 		{
+  	  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
+  	  		"New data from channel '%s'",user_channels[i].channel_name);
 		  make_stream(s);
 			init_stream(s, 1024);
 			size = g_tcp_recv(user_channels[i].client_channel_socket, s->data, sizeof(int)+1, 0);
@@ -319,8 +326,8 @@ user_channel_check_wait_objs(void)
   	  	return 0 ;
   	  }
   	  user_channel_send(user_channels[i].channel_id, s->data, size);
+  	  free_stream(s);
 		}
-		free_stream(s);
   }
 	return 0;
 }
