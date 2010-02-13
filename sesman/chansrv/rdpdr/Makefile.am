@@ -3,7 +3,8 @@ SUBDIRS = \
   printer
 
 INCLUDES = \
-  -I$(top_srcdir)/common
+  -I$(top_srcdir)/common \
+  -I$(top_srcdir)/vchannel
 
 sbin_PROGRAMS = \
   vchannel_rdpdr
@@ -12,7 +13,8 @@ vchannel_rdpdr_SOURCES = \
   main.c
 
 vchannel_rdpdr_LDADD = \
-  -L/usr/X11R6/lib \
+  -lpthread \
+  $(top_builddir)/vchannel/libvchannel.la \
   $(top_builddir)/common/libcommon.la 
 
 rdpdrsysconfdir=$(sysconfdir)/xrdp
