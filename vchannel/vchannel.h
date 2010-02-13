@@ -47,11 +47,13 @@
 #define VCHAN_CFG_LOG_SYSLOG_LEVEL	"SyslogLevel"
 
 
-
+/* message type */
 #define SETUP_MESSAGE			0x01
 #define DATA_MESSAGE			0x02
 #define CHANNEL_OPEN			0x03
 
+/* status flags */
+#define STATUS_NORMAL						0x00
 #define STATUS_DISCONNECTED			0x01
 #define STATUS_CONNECTED				0x02
 
@@ -65,9 +67,9 @@ typedef struct{
 int APP_CC
 vchannel_open(Vchannel *channel);
 int APP_CC
-vchannel_send(Vchannel *channel, struct stream *s);
+vchannel_send(Vchannel *channel, struct stream *s, int length);
 int APP_CC
-vchannel_receive(Vchannel *channel, struct stream *s);
+vchannel_receive(Vchannel* channel, struct stream *s, int* length, int* total_length);
 int APP_CC
 vchannel_close(Vchannel *channel);
 int APP_CC

@@ -68,7 +68,7 @@ vchannel_try_open(Vchannel* channel)
 	init_stream(s, 256);
 	out_uint8p(s, channel->name, strlen(channel->name));
 	s_mark_end(s);
-	if (_vchannel_send(channel,CHANNEL_OPEN, s) == ERROR)
+	if (_vchannel_send(channel,CHANNEL_OPEN, s, strlen(channel->name)) == ERROR)
 	{
 		log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_try_open]"
 				" : Unable to send data on channel '%s'",channel->name);
@@ -109,18 +109,17 @@ vchannel_open(Vchannel *channel)
 }
 
 int APP_CC
-vchannel_send(Vchannel* channel, struct stream *s)
+vchannel_send(Vchannel* channel, struct stream *s, int length)
 {
-	return _vchannel_send(channel, DATA_MESSAGE, s);
+	return _vchannel_send(channel, DATA_MESSAGE, s, length);
 }
 
 
 /*****************************************************************************/
 int APP_CC
-_vchannel_send(Vchannel* channel, int type, struct stream *s)
+_vchannel_send(Vchannel* channel, int type, struct stream *s, int length)
 {
 	struct stream* header;
-	int size = s->end - s->data;
 	if(channel->sock < 0)
 	{
 		log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_send]: "
@@ -130,7 +129,7 @@ _vchannel_send(Vchannel* channel, int type, struct stream *s)
 	make_stream(header);
 	init_stream(header, 5);
 	out_uint8(header, type);
-	out_uint32_be(header, size);
+	out_uint32_be(header, length);
 	s_mark_end(header);
 	log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_send]: "
 			"Message send to channel '%s': ", channel->name);
@@ -143,7 +142,7 @@ _vchannel_send(Vchannel* channel, int type, struct stream *s)
 		return ERROR;
 	}
 	free_stream(header);
-	if(write(channel->sock, s->data, size) < size)
+	if(write(channel->sock, s->data, length) < length)
 	{
 		log_message(channel->log_conf, LOG_LEVEL_ERROR ,"vchannel[vchannel_send]: "
 				"Failed to send message data to channel %s [%s]", channel->name, strerror(errno));
@@ -151,18 +150,17 @@ _vchannel_send(Vchannel* channel, int type, struct stream *s)
 	}
 	log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_send]: "
 			"Message send to channel '%s': ", channel->name);
-	log_hexdump(channel->log_conf, LOG_LEVEL_DEBUG, s->data, size);
+	log_hexdump(channel->log_conf, LOG_LEVEL_DEBUG, s->data, length);
 
 	return 0;
 }
 
 /*****************************************************************************/
 int APP_CC
-vchannel_receive(Vchannel* channel, struct stream *s)
+vchannel_receive(Vchannel* channel, struct stream *s, int* length, int* total_length)
 {
 	struct stream* header;
 	int nb_read = 0;
-	int size;
 	int type;
 	int rv;
 
@@ -173,15 +171,17 @@ vchannel_receive(Vchannel* channel, struct stream *s)
 		return ERROR;
 	}
 	make_stream(header);
-	init_stream(header, 5);
-	nb_read = g_tcp_recv(channel->sock, header->data, 5, 0);
-	if( nb_read != 5)
+	init_stream(header, 9);
+	nb_read = g_tcp_recv(channel->sock, header->data, 9, 0);
+	if( nb_read != 9)
 	{
 		log_message(channel->log_conf, LOG_LEVEL_ERROR ,"vchannel[vchannel_receive]"
 				" : Error while receiving data lenght: %s",strerror(errno));
 		return ERROR;
 	}
 	in_uint8(header, type);
+	in_uint32_be(header, *length);
+	in_uint32_be(header, *total_length);
 	switch(type)
 	{
 	case CHANNEL_OPEN:
@@ -209,12 +209,11 @@ vchannel_receive(Vchannel* channel, struct stream *s)
 	{
 		return ERROR;
 	}
-	in_uint32_be(header, size);
 	log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_receive]"
-			"Size of message : %i", size);
-	init_stream(s, size);
-	nb_read = g_tcp_recv(channel->sock, s->data, size, 0);
-	if(nb_read != size)
+			"Size of message : %i", *length);
+	init_stream(s, *length);
+	nb_read = g_tcp_recv(channel->sock, s->data, *length, 0);
+	if(nb_read != *length)
 	{
 		log_message(channel->log_conf, LOG_LEVEL_ERROR ,"vchannel[vchannel_receive]"
 				" : Data length is invalid");
@@ -222,7 +221,7 @@ vchannel_receive(Vchannel* channel, struct stream *s)
 	}
 	log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_receive]"
 			" : message received from channel %s: ", channel->name);
-	log_hexdump(channel->log_conf, LOG_LEVEL_DEBUG, s->data, size);
+	log_hexdump(channel->log_conf, LOG_LEVEL_DEBUG, s->data, *length);
 	if (type == SETUP_MESSAGE)
 	{
 		return s->data[0];
