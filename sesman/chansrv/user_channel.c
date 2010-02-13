@@ -51,26 +51,36 @@ user_channel_cleanup(){
 
 /*****************************************************************************/
 int APP_CC
-user_channel_transmit(int socket, int type, char* mess, int size )
+user_channel_transmit(int socket, int type, char* mess, int length, int total_length )
 {
-  struct stream* s;
+  struct stream* header;
   int rv;
-  make_stream(s);
-  init_stream(s, 1024);
-  out_uint8(s, type);
-  out_uint32_be(s, size);
-  out_uint8p(s, mess, size);
-  s_mark_end(s);
-  size = (int)(s->end - s->data);
-  rv = g_tcp_send(socket, s->data, size, 0);
+  make_stream(header);
+  init_stream(header, 9);
+  out_uint8(header, type);
+  out_uint32_be(header, length);
+  out_uint32_be(header, total_length);
+  s_mark_end(header);
+  rv = g_tcp_send(socket, header->data, 9, 0);
+  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_transmit]: "
+  		"Header sended: %s", mess);
+  log_hexdump(&log_conf, LOG_LEVEL_DEBUG, header->data, 9);
+  if (rv != 9)
+  {
+    log_message(&log_conf, LOG_LEVEL_ERROR, "chansrv[user_channel_transmit]: "
+    		"error while sending the header");
+    free_stream(header);
+    return rv;
+  }
+  free_stream(header);
+  rv = g_tcp_send(socket, mess, length, 0);
   log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_transmit]: "
   		"Message sended: %s", mess);
-  if (rv != size)
+  if (rv != length)
   {
     log_message(&log_conf, LOG_LEVEL_ERROR, "chansrv[user_channel_transmit]: "
     		"error while sending the message: %s", mess);
   }
-  free_stream(s);
 	return rv;
 }
 
@@ -131,7 +141,7 @@ user_channel_deinit(void)
 	for (i=0 ; i<channel_count ; i++ )
 	{
 		socket = user_channels[i].client_channel_socket;
-		user_channel_transmit(socket, SETUP_MESSAGE, status, 1 );
+		user_channel_transmit(socket, SETUP_MESSAGE, status, 1, 1 );
 	}
 	return 0;
 }
@@ -143,25 +153,22 @@ user_channel_data_in(struct stream* s, int chan_id, int chan_flags, int length,
 {
 	int i;
 	int size;
-  char buf[1024];
 
 	for(i=0; i<channel_count; i++)
 	{
 		if( user_channels[i].channel_id == chan_id )
 		{
-			size = s->end - s->data;
-			g_strncpy(buf, (char*)s->p, size+1);
 		  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_data_in]: "
 		  		"new client message for channel %s ",user_channels[i].channel_name);
-			log_hexdump(&log_conf, LOG_LEVEL_DEBUG, (unsigned char*)buf, size);
+			log_hexdump(&log_conf, LOG_LEVEL_DEBUG, (unsigned char*)s->p, length);
 			if(user_channels[i].client_channel_socket == 0 )
 			{
 			  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_data_in]: "
 			  		"server side channel is not opened");
-			  s->p+=s->size+1;
+			  s->p = s->end;
 				return 0;
 			}
-			user_channel_transmit(user_channels[i].client_channel_socket, DATA_MESSAGE, buf, size );
+			user_channel_transmit(user_channels[i].client_channel_socket, DATA_MESSAGE, s->p, length, total_length);
 			return 0;
 		}
 	}
