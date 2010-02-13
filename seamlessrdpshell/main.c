@@ -65,7 +65,7 @@ send_message(char* data, int data_len)
 	init_stream(s, data_len+1);
 	out_uint8p(s, data, data_len+1);
 	s_mark_end(s);
-	if(vchannel_send(&seam_chan, s) < 0)
+	if(vchannel_send(&seam_chan, s, data_len+1) < 0)
 	{
 		log_message(l_config, LOG_LEVEL_ERROR, "XHook[send_message]: "
 				"Unable to send message");
@@ -904,13 +904,15 @@ void *thread_vchannel_process (void * arg)
 	char* buffer = malloc(1024);
 	struct stream* s = NULL;
 	int rv;
+	int length;
+	int total_length;
 
 	signal(SIGCHLD, handler);
 	sprintf(buffer, "HELLO,%i,0x%08x\n", 0, 0);
 	send_message(buffer, strlen(buffer));
 	while(1){
 		make_stream(s);
-		rv = vchannel_receive(&seam_chan, s);
+		rv = vchannel_receive(&seam_chan, s, &length, &total_length);
 		if( rv == ERROR )
 		{
 			continue;
