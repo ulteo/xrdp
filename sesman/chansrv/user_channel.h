@@ -38,7 +38,8 @@ struct user_channel
 {
 	int channel_id;
 	char channel_name[9];
-	int client_channel_socket;
+	int client_channel_socket[5];
+	int client_channel_count;
 	int server_channel_socket;
 };
 

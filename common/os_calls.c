@@ -667,7 +667,7 @@ g_wait_connection(int server_socket)
   slaves = select(server_socket + 1, &rfds, NULL, NULL, NULL);
   if (slaves == -1)
   {
-    return 1;
+    return -1;
   }
   /* Return if no waiting slaves */
   else if (slaves == 0)
@@ -680,7 +680,7 @@ g_wait_connection(int server_socket)
   if (client <= 0 )
   {
     //close(server_socket);
-    return 1;
+    return -1;
   }
   return client;
 }

@@ -945,7 +945,11 @@ int main(int argc, char** argv, char** environ)
 {
 	l_config = g_malloc(sizeof(struct log_config), 1);
 	vchannel_read_logging_conf(l_config, "XHook");
-	log_start(l_config);
+	if (log_start(l_config) != LOG_STARTUP_OK)
+	{
+		g_printf("Enable to init log system\n");
+		return 1;
+	}
 	seam_chan.log_conf = l_config;
 	g_strncpy(seam_chan.name, "seamrdp", 9);
 	Window_list_init(window_list);

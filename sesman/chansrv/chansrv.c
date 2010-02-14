@@ -218,11 +218,12 @@ process_message_channel_setup(struct stream* s)
       g_rdpsnd_index = g_num_chan_items;
       g_rdpsnd_chan_id = ci->id;
     }
-    else if (g_strcasecmp(ci->name, "rdpdr") == 0)
+/*    else if (g_strcasecmp(ci->name, "rdpdr") == 0)
     {
       g_rdpdr_index = g_num_chan_items;
       g_rdpdr_chan_id = ci->id;
     }
+*/
 /*    else if (g_strcasecmp(ci->name, "seamrdp") == 0)
     {
       g_seamrdp_index = g_num_chan_items;
@@ -244,10 +245,11 @@ process_message_channel_setup(struct stream* s)
   {
     sound_init();
   }
-  if (g_rdpdr_index >= 0)
+/*  if (g_rdpdr_index >= 0)
   {
     dev_redir_init();
   }
+*/
 /*  if (g_seamrdp_index >= 0)
   {
     seamrdp_init();
@@ -284,10 +286,10 @@ process_message_channel_data(struct stream* s)
     {
       rv = sound_data_in(s, chan_id, chan_flags, length, total_length);
     }
-    else if (chan_id == g_rdpdr_chan_id)
+/*    else if (chan_id == g_rdpdr_chan_id)
     {
       rv = dev_redir_data_in(s, chan_id, chan_flags, length, total_length);
-    }
+    }*/
 /*    else if (chan_id == g_seamrdp_chan_id)
     {
       rv = seamrdp_data_in(s, chan_id, chan_flags, length, total_length);
