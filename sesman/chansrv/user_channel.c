@@ -109,7 +109,7 @@ user_channel_launch_server_channel(char* channel_name)
 	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_launch_server_channel]: "
 			"Launching the channel application %s ", channel_program);
 	sprintf(channel_program_path, "/usr/local/sbin/%s", channel_program);
-	g_execlp3(channel_program_path, channel_program, channel_name);
+	g_execlp3(channel_program_path, channel_program, username);
 	g_exit(0);
 }
 
@@ -314,6 +314,7 @@ int APP_CC
 user_channel_check_wait_objs(void)
 {
   struct stream* s;
+  struct stream* header;
   int data_length;
 	int size;
 	int i;
@@ -345,36 +346,46 @@ user_channel_check_wait_objs(void)
 			{
 				log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
 						"New data from channel '%s'",user_channels[i].channel_name);
-				make_stream(s);
-				init_stream(s, 1024);
-				size = g_tcp_recv(sock, s->data, sizeof(int)+1, 0);
-				if ( size < 1)
+				make_stream(header);
+				init_stream(header, 5);
+				size = g_tcp_recv(sock, header->data, 5, 0);
+				if ( size != 5)
 				{
 					log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
 							"channel %s closed : \n",user_channels[i].channel_name);
 					g_tcp_close(sock);
 					user_channels[i].client_channel_count = 0;
 					user_channels[i].client_channel_socket[0] = 0;
-					free_stream(s);
+					free_stream(header);
 					continue;
 				}
-				in_uint8(s, type);
+				in_uint8(header, type);
 				if(type != DATA_MESSAGE)
 				{
 					log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_process_channel_opening]: "
 							"Invalid operation type");
-					free_stream(s);
+					free_stream(header);
 					return 0;
 				}
-				in_uint32_be(s,data_length);
+				in_uint32_be(header, data_length);
 				log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
 						"data_length : %i\n", data_length);
+				free_stream(header);
+
+				make_stream(s);
+				init_stream(s, data_length);
 				size = g_tcp_recv(sock, s->data, data_length, 0);
-				s->data[data_length] = 0;
+				if ( size != data_length)
+				{
+					log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
+							"Unable to read data message");
+					free_stream(s);
+					continue;
+				}
+				//s->data[data_length] = 0;
 				log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
-						"data : %s\n",s->data);
-				log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
-						"data received : %s",s->data);
+						"data:");
+				log_hexdump(&log_conf, LOG_LEVEL_DEBUG, s->data, data_length);
 				if( user_channels[i].channel_id == -1)
 				{
 					log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
@@ -382,7 +393,7 @@ user_channel_check_wait_objs(void)
 					free_stream(s);
 					return 0 ;
 				}
-				user_channel_send(user_channels[i].channel_id, s->data, size);
+				user_channel_send(user_channels[i].channel_id, s->data, data_length);
 				free_stream(s);
 			}
 		}

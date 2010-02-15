@@ -40,9 +40,10 @@ static int fragment_size;
 static struct stream* splitted_packet;
 static Action actions[128];
 static int action_index=1;
-
+char username[256];
 static int printer_sock;
 static int disk_sock;
+
 
 /*****************************************************************************/
 int APP_CC
@@ -65,17 +66,18 @@ rdpdr_send(struct stream* s){
 
 /*****************************************************************************/
 int APP_CC
-rdpdr_transmit(int socket, int type, char* mess, int length)
+rdpdr_transmit(int sock, int type, char* mess, int length)
 {
   struct stream* header;
   int rv;
+
   make_stream(header);
   init_stream(header, 9);
   out_uint8(header, type);
   out_uint32_be(header, length);
   out_uint32_be(header, length);
   s_mark_end(header);
-  rv = g_tcp_send(socket, header->data, 9, 0);
+  rv = g_tcp_send(sock, header->data, 9, 0);
   log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_transmit]: "
   		"Header sended: %s", mess);
   log_hexdump(l_config, LOG_LEVEL_DEBUG, header->data, 9);
@@ -84,18 +86,19 @@ rdpdr_transmit(int socket, int type, char* mess, int length)
   	log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr[rdpdr_transmit]: "
     		"error while sending the header");
     free_stream(header);
-    return rv;
+    return 1;
   }
   free_stream(header);
-  rv = g_tcp_send(socket, mess, length, 0);
+  rv = g_tcp_send(sock, mess, length, 0);
   log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_transmit]: "
-  		"Message sended: %s", mess);
+  		"Message sended: ");
+  log_hexdump(l_config, LOG_LEVEL_DEBUG, mess, length);
   if (rv != length)
   {
   	log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr[rdpdr_transmit]: "
     		"error while sending the message: %s", mess);
   }
-	return rv;
+	return 0;
 }
 
 
@@ -167,6 +170,32 @@ rdpdr_in_unistr(struct stream* s, char *string, int str_size, int in_len)
     string[len] = 0;
     return len;
   }
+}
+
+/*****************************************************************************/
+int APP_CC
+rdpdr_get_socket_from_device_id(int device_id)
+{
+	int i;
+	int device_type;
+	for(i=0 ; i<device_count ; i++)
+	{
+		if(device_list[i].device_id == device_id)
+		{
+			device_type = device_list[i].device_type;
+			switch(device_type)
+			{
+			case RDPDR_DTYP_PRINT:
+				return printer_sock;
+
+				default:
+				  log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr[rdpdr_get_socket_from_device_id]: "
+								"Unknow device type : %02x", device_type);
+				return -1;
+			}
+		}
+	}
+	return -1;
 }
 
 /*****************************************************************************/
@@ -320,7 +349,7 @@ rdpdr_client_capability(struct stream* s)
       supported_operation[temp]=1;
       break;
     default:
-      log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr_channel[rdpdr_client_capability]: "
+      log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr[rdpdr_client_capability]: "
       		  "invalid capability type : %i", temp);
       break;
     }
@@ -335,7 +364,7 @@ int APP_CC
 rdpdr_confirm_clientID_request()
 {
   struct stream* s;
-  log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr_channel[rdpdr_send_capability_request]: Send Server Client ID Confirm Request");
+  log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_send_capability_request]: Send Server Client ID Confirm Request");
   make_stream(s);
   init_stream(s, 256);
   out_uint16_le(s, RDPDR_CTYP_CORE);
@@ -351,20 +380,60 @@ rdpdr_confirm_clientID_request()
 
 /*****************************************************************************/
 int APP_CC
+rdpdr_devicelist_announce(struct stream* s)
+{
+  int device_list_count, device_id, device_type, device_data_length;
+  int i;
+  char dos_name[9] = {0};
+  int handle;
+
+  log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rpdr_devicelist_announce]: "
+  		"	new message: PAKID_CORE_DEVICELIST_ANNOUNCE");
+  in_uint32_le(s, device_list_count);	/* DeviceCount */
+  log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rpdr_devicelist_announce]: "
+		  "%i device(s) declared", device_list_count);
+  /* device list */
+  for( i=0 ; i<device_list_count ; i++)
+  {
+    in_uint32_le(s, device_type);
+    log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rpdr_devicelist_announce]: "
+    		"device type: %i", device_type);
+    in_uint32_le(s, device_id);
+    log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rpdr_devicelist_announce]: "
+  		  "device id: %i", device_id);
+
+    in_uint8a(s,dos_name,8)
+    log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rpdr_devicelist_announce]: "
+  		  "dos name: '%s'", dos_name);
+    in_uint32_le(s, device_data_length);
+    log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rpdr_devicelist_announce]: "
+  		  "data length: %i", device_data_length);
+
+    device_list[device_count].device_id = device_id;
+    device_list[device_count].device_type = device_type;
+    device_count++;
+  }
+  return 0;
+}
+
+/*****************************************************************************/
+int APP_CC
 rdpdr_process_message(struct stream* s, int length, int total_length)
 {
   int component;
   int packetId;
   int result;
+  int device_id;
+  int device_sock;
   struct stream* packet;
 
   if(length != total_length)
   {
-  	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr_channel[rdpdr_process_message]: "
+  	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_process_message]: "
   			"packet is fragmented");
   	if(is_fragmented_packet == 0)
   	{
-  		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr_channel[rdpdr_process_message]: "
+  		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_process_message]: "
   				"packet is fragmented : first part");
   		is_fragmented_packet = 1;
   		fragment_size = length;
@@ -380,13 +449,13 @@ rdpdr_process_message(struct stream* s, int length, int total_length)
   		fragment_size += length;
   		if (fragment_size == total_length )
   		{
-    		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr_channel[rdpdr_process_message]: "
+    		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_process_message]: "
     				"packet is fragmented : last part");
   			packet = splitted_packet;
   		}
   		else
   		{
-    		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr_channel[rdpdr_process_message]: "
+    		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_process_message]: "
     				"packet is fragmented : next part");
   			return 0;
   		}
@@ -418,15 +487,23 @@ rdpdr_process_message(struct stream* s, int length, int total_length)
     	break;
 
     case PAKID_CORE_DEVICELIST_ANNOUNCE:
-    	rdpdr_transmit(printer_sock, DATA_MESSAGE, packet->data, total_length);
-    	//result = rdpdr_devicelist_announce(packet);
+    	rdpdr_devicelist_announce(packet);
+    	result = rdpdr_transmit(printer_sock, DATA_MESSAGE, packet->data, total_length);
       break;
-//    case PAKID_CORE_DEVICE_IOCOMPLETION:
-//    	result = rdpdr_process_iocompletion(packet);
-//    	break;
+    case PAKID_CORE_DEVICE_IOCOMPLETION:
+    	in_uint32_le(packet, device_id);
+    	device_sock = rdpdr_get_socket_from_device_id(device_id);
+    	if (device_sock == -1)
+    	{
+        log_message(l_config, LOG_LEVEL_WARNING, "vchannel_rdpdr_channel[rdpdr_process_message]: "
+        		"Unknow device type, failed to redirect message");
+        break;
+    	}
+    	result = rdpdr_transmit(printer_sock, DATA_MESSAGE, packet->data, total_length);
+    	break;
     default:
       log_message(l_config, LOG_LEVEL_WARNING, "vchannel_rdpdr_channel[rdpdr_process_message]: "
-      		"unknown message %02x",packetId);
+      		"Unknown message %02x",packetId);
       result = 1;
     }
     if(is_fragmented_packet == 1)
@@ -531,7 +608,7 @@ rdpdr_init()
 	{
 		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_init]: "
 				"Launching the channel application rdpdr_printer ");
-		g_execlp3("/usr/local/sbin/rdpdr_printer", "rdpdr_printer", 0);
+		g_execlp3("/usr/local/sbin/rdpdr_printer", "rdpdr_printer", username);
 		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_init]: "
 				"The channel application rdpdr_printer ended");
 		g_exit(0);
@@ -583,7 +660,7 @@ void *thread_vchannel_process (void * arg)
 		if( rv == ERROR )
 		{
 			free_stream(s);
-			continue;
+			pthread_exit((void*)1);
 		}
 		switch(rv)
 		{
@@ -615,6 +692,16 @@ int main(int argc, char** argv, char** environ)
 	pthread_t vchannel_thread;
 	void *ret;
 	l_config = g_malloc(sizeof(struct log_config), 1);
+	if (argc != 2)
+	{
+		g_printf("Usage : vchannel_rdpdr USERNAME\n");
+		return 1;
+	}
+	if ( g_getuser_info(argv[1], 0, 0, 0, 0, 0) == 1)
+	{
+		g_printf("The username '%s' did not exist\n", argv[1]);
+	}
+	g_sprintf(username, argv[1]);
 	vchannel_read_logging_conf(l_config, "vchannel_rdpdr");
 	if (log_start(l_config) != LOG_STARTUP_OK)
 	{
