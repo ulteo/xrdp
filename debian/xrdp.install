@@ -1,0 +1,11 @@
+debian/tmp/etc
+debian/tmp/usr/lib
+debian/tmp/usr/share
+debian/tmp/usr/sbin
+debian/tmp/usr/bin/logoff
+debian/tmp/usr/bin/startapp
+debian/tmp/usr/bin/xrdp-genkeymap
+debian/tmp/usr/bin/xrdp-keygen
+debian/tmp/usr/bin/xrdp-sesadmin
+debian/tmp/usr/bin/xrdp-sesrun
+debian/tmp/usr/bin/xrdp-sestest
