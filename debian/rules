@@ -8,13 +8,18 @@ include /usr/share/cdbs/1/class/python-distutils.mk
 include /usr/share/cdbs/1/rules/patchsys-quilt.mk
 
 DEB_PYTHON_INSTALL_ARGS_ALL := --root=$(CURDIR)/debian/python-xrdp
-DEB_MAKE_INSTALL_TARGET     := install DESTDIR=$(CURDIR)/debian/xrdp
+DEB_MAKE_INSTALL_TARGET     := install DESTDIR=$(CURDIR)/debian/tmp
 DEB_DH_MAKESHLIBS_ARGS_xrdp := --noscripts
+DEB_SHLIBDEPS_INCLUDE_seamless-xrdp-shell \
+			    := $(CURDIR)/debian/xrdp/usr/lib/xrdp
 
 binary-install/xrdp:: DEB_DH_INSTALLINIT_ARGS := --onlyscripts
 
 install/xrdp:: 
-	chmod +x debian/xrdp/etc/xrdp/xrdp.sh
-	mv debian/xrdp/etc/init.d/xrdp.sh debian/xrdp/etc/init.d/xrdp
-	sed '/^SESSION/c\SESSION="x-session-manager"' debian/xrdp/etc/xrdp/startwm.sh > ed_file.tmp
-	mv ed_file.tmp debian/xrdp/etc/xrdp/startwm.sh
+	sed '/^SESSION/c\SESSION="x-session-manager"' debian/tmp/etc/xrdp/startwm.sh \
+		> startwm.tmp
+	cp startwm.tmp debian/tmp/etc/xrdp/startwm.sh
+	chmod 755 debian/tmp/etc/xrdp/startwm.sh
+
+install/seamless-xrdp-shell::
+	chrpath -d debian/tmp/usr/bin/XHook

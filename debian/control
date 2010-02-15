@@ -15,6 +15,13 @@ Description: RDP server for Linux
   * seamless display
   * printer and local device mapping
 
+Package: seamless-xrdp-shell
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, xrdp
+Description: Seamless XRDP Shell
+ Seamlessrdpshell is a rdp addon offering the possibility to have an
+ application without a desktop
+
 Package: python-xrdp
 Section: python
 Architecture: all
