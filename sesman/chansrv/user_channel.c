@@ -257,7 +257,7 @@ user_channel_process_channel_opening(int channel_index, int client)
   int data_length;
   int size;
   int type;
-  int *count;
+  int count;
 
 	make_stream(s);
 	init_stream(s, 1024);
@@ -282,21 +282,21 @@ user_channel_process_channel_opening(int channel_index, int client)
 	}
 	in_uint32_be(s, data_length);
 	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_process_channel_opening]: "
-			"Data_length : %i\n", data_length);
+			"Data_length : %i", data_length);
 	size = g_tcp_recv(client, s->data, data_length, 0);
 	s->data[data_length] = 0;
 	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_process_channel_opening]: "
-			"Channel name : %s\n",s->data);
+			"Channel name : %s",s->data);
 
 	if(g_strcmp(user_channels[channel_index].channel_name, s->data) == 0)
 	{
 		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_process_channel_opening]: "
 				"New server connection for channel %s ", user_channels[channel_index].channel_name);
-		count = &user_channels[channel_index].client_channel_count;
-		user_channels[channel_index].client_channel_socket[*count] = client;
+		count = user_channels[channel_index].client_channel_count;
+		user_channels[channel_index].client_channel_socket[count] = client;
 		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_process_channel_opening]: "
-				"Socket : %i",user_channels[channel_index].channel_id);
-		*count++;
+				"Socket : %i", client);
+		user_channels[channel_index].client_channel_count++;
 	}
 	else
 	{
