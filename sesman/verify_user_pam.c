@@ -118,13 +118,11 @@ auth_userpass(char* user, char* pass)
     g_free(auth_info);
     return 0;
   }
-  g_printf("pam information -> user : %s\n", auth_info->user_pass.user);
-  g_printf("pam information -> pass : %s\n", auth_info->user_pass.pass);
   error = pam_authenticate(auth_info->ph, 0);
   if (error != PAM_SUCCESS)
   {
-    g_printf("pam_authenticate failed: %s\r\n",
-                         pam_strerror(auth_info->ph, error));
+    g_printf("pam_authenticate failed: %s(%s,%s)\r\n",
+                         pam_strerror(auth_info->ph, error), user, pass);
     g_free(auth_info);
     return 0;
   }
@@ -136,7 +134,6 @@ auth_userpass(char* user, char* pass)
     g_free(auth_info);
     return 0;
   }
-  //pam_end(auth_info->ph, &status);
   return (long)auth_info;
 }
 
