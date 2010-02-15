@@ -1,6 +1,7 @@
 
 SUBDIRS = \
   common \
+  vchannel \
   vnc \
   rdp \
   xup \
@@ -14,7 +15,6 @@ SUBDIRS = \
   genkeymap \
   python-xrdp \
   xrdp_printer \
-  vchannel \
   seamlessrdpshell
 
 EXTRA_DIST = setup.py

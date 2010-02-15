@@ -87,6 +87,7 @@ localstatedir="/var";
 fi
 AC_CONFIG_FILES([Makefile
                  common/Makefile
+                 vchannel/Makefile
                  vnc/Makefile
                  rdp/Makefile
                  libxrdp/Makefile
@@ -108,7 +109,6 @@ AC_CONFIG_FILES([Makefile
                  python-xrdp/Makefile
                  xrdp_printer/Makefile
 		 seamlessrdpshell/Makefile
-		 vchannel/Makefile
 		 sesman/chansrv/rdpdr/Makefile
 		 sesman/chansrv/rdpdr/printer/Makefile
 ])
