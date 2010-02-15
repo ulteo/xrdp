@@ -103,6 +103,7 @@ auth_userpass(char* user, char* pass)
   int error;
   struct t_auth_info* auth_info;
   char service_name[256];
+  int status;
 
   get_service_name(service_name);
   auth_info = g_malloc(sizeof(struct t_auth_info), 1);
@@ -135,6 +136,7 @@ auth_userpass(char* user, char* pass)
     g_free(auth_info);
     return 0;
   }
+  pam_end(auth_info->ph, &status);
   return (long)auth_info;
 }
 
