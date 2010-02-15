@@ -915,7 +915,8 @@ void *thread_vchannel_process (void * arg)
 		rv = vchannel_receive(&seam_chan, s, &length, &total_length);
 		if( rv == ERROR )
 		{
-			continue;
+			vchannel_close(&seam_chan);
+			pthread_exit (1);
 		}
 		switch(rv)
 		{
