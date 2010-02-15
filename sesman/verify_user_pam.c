@@ -136,7 +136,7 @@ auth_userpass(char* user, char* pass)
     g_free(auth_info);
     return 0;
   }
-  pam_end(auth_info->ph, &status);
+  //pam_end(auth_info->ph, &status);
   return (long)auth_info;
 }
 

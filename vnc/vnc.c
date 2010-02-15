@@ -814,6 +814,7 @@ lib_mod_connect(struct vnc* v)
   int error;
   int i;
   int check_sec_result;
+  int trial_count = 10;
 
 #ifdef OLD_LOG_VERSION
   v->server_msg(v, "started connecting", 0);
@@ -846,7 +847,16 @@ lib_mod_connect(struct vnc* v)
   g_sprintf(text, "connecting to %s %s", v->ip, con_port);
   v->server_msg(v, text, 0);
 #endif
-  error = g_tcp_connect(v->sck, v->ip, con_port);
+  while( trial_count != 0 )
+  {
+  	error = g_tcp_connect(v->sck, v->ip, con_port);
+  	if (error == 0)
+  	{
+  		break;
+  	}
+  	trial_count--;
+  	g_sleep(250);
+  }
   if (error == 0)
   {
 #ifdef OLD_LOG_VERSION
