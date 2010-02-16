@@ -182,7 +182,14 @@ log_message(struct log_config* l_cfg, const unsigned int lvl, const char* msg, .
 #ifdef LOG_ENABLE_THREAD
     pthread_mutex_lock(&(l_cfg->log_lock));
 #endif
-    rv = g_file_write(l_cfg->fd, (char*)buff, g_strlen((char*)buff));
+    if(l_cfg->fd == 0)
+    {
+    	g_printf("Enable to log in %s\n", l_cfg->log_file);
+    }
+    else
+    {
+    	rv = g_file_write(l_cfg->fd, (char*)buff, g_strlen((char*)buff));
+    }
 #ifdef LOG_ENABLE_THREAD
     pthread_mutex_unlock(&(l_cfg->log_lock));
 #endif
