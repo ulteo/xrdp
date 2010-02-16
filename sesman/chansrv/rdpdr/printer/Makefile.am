@@ -2,7 +2,7 @@
 INCLUDES = \
   -I$(top_srcdir)/common \
   -I$(top_srcdir)/vchannel \
-  -I../
+  -I$(top_srcdir)/sesman/chansrv/rdpdr
 
 AM_CFLAGS = \
   `cups-config --cflags` 
@@ -14,8 +14,8 @@ sbin_PROGRAMS = \
   rdpdr_printer
 
 rdpdr_printer_SOURCES = \
-  rdpdr.h main.c \
-  printer_dev.h printer_dev.c
+  printer_dev.h printer_dev.c \
+  main.c
 
 rdpdr_printer_LDADD = \
   -L/usr/X11R6/lib \

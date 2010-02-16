@@ -24,4 +24,5 @@ install-data-hook:
 	mv $(DESTDIR)$(sysconfdir)/init.d/xrdp.sh $(DESTDIR)$(sysconfdir)/init.d/xrdp
 
 EXTRA_DIST = \
-  $(kmini_DATA)
+  $(kmini_DATA) \
+  $(startinit_DATA)

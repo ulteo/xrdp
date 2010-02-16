@@ -10,7 +10,7 @@ sbin_PROGRAMS = \
   vchannel_rdpdr
 
 vchannel_rdpdr_SOURCES = \
-  main.c
+  rdpdr.h main.c
 
 vchannel_rdpdr_LDADD = \
   -lpthread \

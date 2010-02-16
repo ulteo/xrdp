@@ -25,3 +25,6 @@ seamlessrdpshell_DATA = \
 
 install-data-hook:
 	chmod 755 $(DESTDIR)$(bindir)/seamlessrdpshell
+
+EXTRA_DIST = \
+  $(seamlessrdpshell_DATA)
