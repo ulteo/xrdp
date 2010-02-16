@@ -490,8 +490,9 @@ channel_thread_loop(void* in_val)
 							"channel_thread_loop: g_term_event set");
         clipboard_deinit();
         sound_deinit();
-        dev_redir_deinit();
+        //dev_redir_deinit();
         //seamrdp_deinit();
+        user_channel_deinit();
         break;
       }
       if (g_lis_trans != 0)
@@ -512,8 +513,9 @@ channel_thread_loop(void* in_val)
                   "trans_check_wait_objs error resetting");
           clipboard_deinit();
           sound_deinit();
-          dev_redir_deinit();
+          //dev_redir_deinit();
           //seamrdp_deinit();
+          user_channel_deinit();
 
           trans_delete(g_con_trans);
           g_con_trans = 0;

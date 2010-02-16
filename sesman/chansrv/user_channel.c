@@ -135,15 +135,41 @@ user_channel_do_up(char* chan_name)
 
 /*****************************************************************************/
 int APP_CC
+user_channel_get_channel_from_name(char* channel_name)
+{
+	int i;
+	int sock;
+	for(i=0 ; i<channel_count ; i++)
+	{
+		if(strcmp(user_channels[i].channel_name, channel_name) == 0)
+		{
+			return i;
+		}
+	}
+	return -1;
+}
+
+/*****************************************************************************/
+int APP_CC
 user_channel_init(char* channel_name, int channel_id)
 {
 	int sock;
 	int i;
+	int channel_index;
+	char status[1];
+
 	if (g_user_channel_up == 0)
 	{
 		g_user_channel_up = 1;
 	}
-
+	channel_index = user_channel_get_channel_from_name(channel_name);
+	if (channel_index != -1)
+	{
+		status[0] = STATUS_CONNECTED;
+		sock = user_channels[channel_index].client_channel_socket[0];
+		user_channel_transmit(sock, SETUP_MESSAGE, status, 1, 1);
+		return 0;
+	}
 	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_init]: "
 			"new client connection for channel '%s' with id= %i ", channel_name, channel_id);
 	sock = user_channel_do_up(channel_name);
