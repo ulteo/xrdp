@@ -15,6 +15,7 @@ SUBDIRS = \
   genkeymap \
   python-xrdp \
   xrdp_printer \
-  seamlessrdpshell
+  seamlessrdpshell \
+  manpages
 
 EXTRA_DIST = setup.py

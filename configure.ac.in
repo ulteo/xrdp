@@ -108,8 +108,9 @@ AC_CONFIG_FILES([Makefile
                  genkeymap/Makefile
                  python-xrdp/Makefile
                  xrdp_printer/Makefile
-		 seamlessrdpshell/Makefile
-		 sesman/chansrv/rdpdr/Makefile
-		 sesman/chansrv/rdpdr/printer/Makefile
+                 seamlessrdpshell/Makefile
+                 sesman/chansrv/rdpdr/Makefile
+                 sesman/chansrv/rdpdr/printer/Makefile
+                 manpages/Makefile
 ])
 AC_OUTPUT
