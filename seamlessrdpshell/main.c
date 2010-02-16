@@ -42,7 +42,7 @@ static pthread_mutex_t mutex;
 static int message_id;
 static Display* display;
 static Window_list window_list;
-Vchannel seam_chan;
+static int seamrdp_channel;
 struct log_config* l_config;
 
 /*****************************************************************************/
@@ -65,7 +65,7 @@ send_message(char* data, int data_len)
 	init_stream(s, data_len+1);
 	out_uint8p(s, data, data_len+1);
 	s_mark_end(s);
-	if(vchannel_send(&seam_chan, s, data_len+1) < 0)
+	if(vchannel_send(seamrdp_channel, s->data, data_len+1) < 0)
 	{
 		log_message(l_config, LOG_LEVEL_ERROR, "XHook[send_message]: "
 				"Unable to send message");
@@ -912,11 +912,13 @@ void *thread_vchannel_process (void * arg)
 	send_message(buffer, strlen(buffer));
 	while(1){
 		make_stream(s);
-		rv = vchannel_receive(&seam_chan, s, &length, &total_length);
+		init_stream(s, 1024);
+
+		rv = vchannel_receive(seamrdp_channel, s->data, &length, &total_length);
 		if( rv == ERROR )
 		{
-			vchannel_close(&seam_chan);
-			pthread_exit (1);
+			vchannel_close(seamrdp_channel);
+			pthread_exit ((void*)1);
 		}
 		switch(rv)
 		{
@@ -945,27 +947,33 @@ void *thread_vchannel_process (void * arg)
 int main(int argc, char** argv, char** environ)
 {
 	l_config = g_malloc(sizeof(struct log_config), 1);
-	vchannel_read_logging_conf(l_config, "XHook");
-	if (log_start(l_config) != LOG_STARTUP_OK)
+	if (vchannel_init() == ERROR)
 	{
-		g_printf("Enable to init log system\n");
+		g_printf("XHook[main]: Enable to init channel system\n");
+		g_free(l_config);
 		return 1;
 	}
-	seam_chan.log_conf = l_config;
-	g_strncpy(seam_chan.name, "seamrdp", 9);
+	if (log_start(l_config) != LOG_STARTUP_OK)
+	{
+		g_printf("XHook[main]: Enable to init log system\n");
+		g_free(l_config);
+		return 1;
+	}
 	Window_list_init(window_list);
 	pthread_t Xevent_thread, Vchannel_thread;
 	void *ret;
 
 	pthread_mutex_init(&mutex, NULL);
 	message_id = 0;
-
-	if(vchannel_open(&seam_chan) == ERROR)
+	seamrdp_channel = vchannel_open("seamrdp");
+	if( seamrdp_channel == ERROR)
 	{
 		log_message(l_config, LOG_LEVEL_ERROR, "XHook[main]: "
 				"Error while connecting to vchannel provider");
+		g_free(l_config);
 		return 1;
 	}
+
 	XInitThreads();
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[main]: "
 			"Opening the default display : %s",getenv("DISPLAY"));
@@ -973,6 +981,7 @@ int main(int argc, char** argv, char** environ)
 	if ((display = XOpenDisplay(0))== 0){
 		log_message(l_config, LOG_LEVEL_ERROR, "XHook[main]: "
 				"Unable to open the default display : %s ",getenv("DISPLAY"));
+		g_free(l_config);
 		return 1;
 	}
 	XSynchronize(display, 1);
@@ -983,18 +992,20 @@ int main(int argc, char** argv, char** environ)
 	{
 		log_message(l_config, LOG_LEVEL_ERROR, "XHook[main]: "
 				"Pthread_create error for thread : Xevent_thread");
+		g_free(l_config);
 		return 1;
 	}
 	if (pthread_create (&Vchannel_thread, NULL, thread_vchannel_process, (void*)0) < 0)
 	{
 		log_message(l_config, LOG_LEVEL_ERROR, "XHook[main]: "
 				"Pthread_create error for thread : Vchannel_thread");
+		g_free(l_config);
 		return 1;
 	}
 
 	(void)pthread_join (Xevent_thread, &ret);
 	(void)pthread_join (Vchannel_thread, &ret);
 	pthread_mutex_destroy(&mutex);
-
+	g_free(l_config);
 	return 0;
 }
