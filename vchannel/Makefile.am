@@ -16,4 +16,5 @@ libvchannel_la_SOURCES = \
 
 libvchannel_la_LIBADD = \
   -lpthread \
-  -ldl
+  -ldl \
+  $(top_builddir)/common/libcommon.la 

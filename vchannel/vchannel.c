@@ -21,8 +21,53 @@
 #include "vchannel.h"
 
 
-int APP_CC
-vchannel_try_open(Vchannel* channel)
+
+static Vchannel channel_list[25];
+static struct log_config* log_conf;
+static int channel_count = 0;
+
+
+/*****************************************************************************/
+int
+vchannel_add_channel(int sock, const char* name)
+{
+	strncpy(channel_list[channel_count].name, name, 9);
+	channel_list[channel_count].sock = sock;
+	channel_count++;
+	return 0;
+}
+
+/*****************************************************************************/
+int
+vchannel_remove_channel(int sock)
+{
+	Vchannel* chan;
+	int index = vchannel_get_channel_from_socket(sock);
+	if(index == ERROR)
+	{
+		log_message(log_conf, LOG_LEVEL_WARNING ,"vchannel[vchannel_remove_channel]: "
+			"Unable to remove channel");
+		return 1;
+	}
+	chan = &channel_list[index];
+	strncpy(chan->name, "         ", 9);
+	chan->sock = 0;
+	channel_count --;
+
+	if(index != channel_count && channel_count != 0)
+	{
+		strncpy(channel_list[index].name, channel_list[channel_count].name, 9);
+		strncpy(channel_list[channel_count].name, "         ", 9);
+		channel_list[index].sock = channel_list[channel_count].sock;
+		channel_list[channel_count].sock = 0;
+	}
+	return 0;
+}
+
+
+/*****************************************************************************/
+int
+vchannel_try_open(const char* name)
 {
 	int sock;
 	int len;
@@ -33,96 +78,124 @@ vchannel_try_open(Vchannel* channel)
 	display_num = g_get_display_num_from_display(getenv("DISPLAY"));
 	if(display_num == 0)
 	{
-		log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_try_open]"
-				" : Display must be different of 0");
+		log_message(log_conf, LOG_LEVEL_DEBUG ,"vchannel{%s}[vchannel_try_open]"
+				" : Display must be different of 0", name);
 		return ERROR;
 	}
 
 	/* Create socket */
-	log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_try_open]"
-			" : Creating socket");
+	log_message(log_conf, LOG_LEVEL_DEBUG ,"vchannel{%s}[vchannel_try_open]"
+			" : Creating socket", name);
 	if ((sock = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
 	{
-		log_message(channel->log_conf, LOG_LEVEL_ERROR ,"vchannel[vchannel_try_open]"
-				" : Unable to create socket: %s",strerror(errno));
+		log_message(log_conf, LOG_LEVEL_ERROR ,"vchannel{%s}[vchannel_try_open]"
+				" : Unable to create socket: %s", name, strerror(errno));
 		return ERROR;
 	}
 
-	sprintf(socket_filename, "%s/%i/vchannel_%s", VCHANNEL_SOCKET_DIR, display_num, channel->name);
-	log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_try_open]"
-			" : Socket name : %s",socket_filename);
+	sprintf(socket_filename, "%s/%i/vchannel_%s", VCHANNEL_SOCKET_DIR, display_num, name);
+	log_message(log_conf, LOG_LEVEL_DEBUG ,"vchannel{%s}[vchannel_try_open]"
+			" : Socket name : %s", name, socket_filename);
 	/* Connect to server */
 	saun.sun_family = AF_UNIX;
 	strcpy(saun.sun_path, socket_filename);
 	len = sizeof(saun.sun_family) + strlen(saun.sun_path);
 	if (connect(sock, (struct sockaddr *) &saun, len) < 0)
 	{
-		log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_try_open]"
-				" : Unable to connect to vchannel server: %s",strerror(errno));
+		log_message(log_conf, LOG_LEVEL_DEBUG ,"vchannel{%s}[vchannel_try_open]"
+				" : Unable to connect to vchannel server: %s",name, strerror(errno));
 		close(sock);
 		return ERROR;
 	}
-	channel->sock = sock;
 	struct stream* s;
 	make_stream(s);
 	init_stream(s, 256);
-	out_uint8p(s, channel->name, strlen(channel->name));
+	out_uint8p(s, name, strlen(name));
 	s_mark_end(s);
-	if (_vchannel_send(channel,CHANNEL_OPEN, s, strlen(channel->name)) == ERROR)
+	vchannel_add_channel(sock, name);
+	if (_vchannel_send(sock,CHANNEL_OPEN, s->data, strlen(name)) == ERROR)
 	{
-		log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_try_open]"
-				" : Unable to send data on channel '%s'",channel->name);
+		log_message(log_conf, LOG_LEVEL_DEBUG ,"vchannel{%s}[vchannel_try_open]"
+				" : Unable to send data", name);
 		free_stream(s);
-		vchannel_close(channel);
+		vchannel_close(sock);
 		return ERROR;
 	}
 	free_stream(s);
-	return 0;
+	return sock;
 }
 
 /*****************************************************************************/
-int APP_CC
-vchannel_open(Vchannel *channel)
+int
+vchannel_get_channel_from_socket(int sock)
+{
+	int i;
+	for(i=0 ; i<channel_count ; i++)
+	{
+		if (channel_list[i].sock == sock)
+		{
+			return i;
+		}
+	}
+	return ERROR;
+}
+
+/*****************************************************************************/
+int
+vchannel_open(const char* name)
 {
 	int count = 0;
-	log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_open]: "
-			" : Try to open channel '%s'", channel->name);
+	int sock;
+	log_message(log_conf, LOG_LEVEL_DEBUG ,"vchannel{%s}[vchannel_open]: "
+			"Try to open channel", name);
 	while( count < VCHANNEL_OPEN_RETRY_ATTEMPT)
 	{
-		if(vchannel_try_open(channel) == ERROR)
+		sock = vchannel_try_open(name);
+		if(sock == ERROR)
 		{
-			log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_open]: "
-					" : Attempt %i failed on channel '%s'", count, channel->name);
+			log_message(log_conf, LOG_LEVEL_DEBUG ,"vchannel{%s}[vchannel_open]: "
+					" : Attempt %i failed on channel", name, count);
 			sleep(1);
 			count++;
 		}
 		else
 		{
-			log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_open]: "
-					" : Channel '%s' openned", channel->name);
-			return 0;
+			log_message(log_conf, LOG_LEVEL_DEBUG ,"vchannel{%s}[vchannel_open]: "
+					"Channel openned", name);
+			return sock;
 		}
 	}
-	log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_open]: "
-			"Failed to open channel '%s' [timeout reached]", channel->name);
+	log_message(log_conf, LOG_LEVEL_DEBUG ,"vchannel{%s}[vchannel_open]: "
+			"Failed to open channel [timeout reached]", name);
 	return ERROR;
 }
 
+/*****************************************************************************/
 int APP_CC
-vchannel_send(Vchannel* channel, struct stream *s, int length)
+vchannel_send(int sock, const char* data, int length)
 {
-	return _vchannel_send(channel, DATA_MESSAGE, s, length);
+	return _vchannel_send(sock, DATA_MESSAGE, data, length);
 }
 
 
 /*****************************************************************************/
-int APP_CC
-_vchannel_send(Vchannel* channel, int type, struct stream *s, int length)
+int
+_vchannel_send(int sock, int type, const char* data, int length)
 {
 	struct stream* header;
-	if(channel->sock < 0)
+	int index = vchannel_get_channel_from_socket(sock);
+	Vchannel* channel;
+
+	if(index == ERROR)
 	{
-		log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_send]: "
+		log_message(log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_receive]"
+				"Enable to get channel from socket %i", sock);
+		return ERROR;
+	}
+	channel = &channel_list[index];
+	if(sock < 0)
+	{
+		log_message(log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_send]: "
 				"The channel %s is not opened ", channel->name);
 		return ERROR;
 	}
@@ -131,43 +204,52 @@ _vchannel_send(Vchannel* channel, int type, struct stream *s, int length)
 	out_uint8(header, type);
 	out_uint32_be(header, length);
 	s_mark_end(header);
-	log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_send]: "
-			"Message send to channel '%s': ", channel->name);
-	log_hexdump(channel->log_conf, LOG_LEVEL_DEBUG, header->data, 4);
-	if(write(channel->sock, header->data, 5) < 5)
+	log_message(log_conf, LOG_LEVEL_DEBUG ,"vchannel{%s}[vchannel_send]: "
+			"Message send: ", channel->name);
+	log_hexdump(log_conf, LOG_LEVEL_DEBUG, header->data, 4);
+	if(write(sock, header->data, 5) < 5)
 	{
-		log_message(channel->log_conf, LOG_LEVEL_ERROR ,"vchannel[vchannel_send]: "
-				"Failed to send message size to channel %s [%s]", channel->name, strerror(errno));
+		log_message(log_conf, LOG_LEVEL_ERROR ,"vchannel{%s}[vchannel_send]: "
+				"Failed to send message [%s]", channel->name, strerror(errno));
 		free_stream(header);
 		return ERROR;
 	}
 	free_stream(header);
-	if(write(channel->sock, s->data, length) < length)
+	if(write(sock, data, length) < length)
 	{
-		log_message(channel->log_conf, LOG_LEVEL_ERROR ,"vchannel[vchannel_send]: "
-				"Failed to send message data to channel %s [%s]", channel->name, strerror(errno));
+		log_message(log_conf, LOG_LEVEL_ERROR ,"vchannel{%s}[vchannel_send]: "
+				"Failed to send message data to channel [%s]", channel->name, strerror(errno));
 		return ERROR;
 	}
-	log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_send]: "
-			"Message send to channel '%s': ", channel->name);
-	log_hexdump(channel->log_conf, LOG_LEVEL_DEBUG, s->data, length);
+	log_message(log_conf, LOG_LEVEL_DEBUG ,"vchannel{%s}[vchannel_send]: "
+			"Message sended ", channel->name);
+	log_hexdump(log_conf, LOG_LEVEL_DEBUG, (unsigned char*)data, length);
 
 	return 0;
 }
 
 /*****************************************************************************/
-int APP_CC
-vchannel_receive(Vchannel* channel, struct stream *s, int* length, int* total_length)
+int
+vchannel_receive(int sock, const char* data, int* length, int* total_length)
 {
 	struct stream* header;
 	int nb_read = 0;
 	int type;
 	int rv;
+	Vchannel* channel;
+	int index = vchannel_get_channel_from_socket(sock);
 
+	if(index == ERROR)
+	{
+		log_message(log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_receive]"
+				"Enable to get channel from socket %i", sock);
+		return ERROR;
+	}
+	channel = &channel_list[index];
 	if(channel->sock < 0)
 	{
-		log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_send]: "
-				"The channel %s is not opened ", channel->name);
+		log_message(log_conf, LOG_LEVEL_DEBUG ,"vchannel{%s}[vchannel_receive]"
+				"The channel is not opened ", channel->name);
 		return ERROR;
 	}
 	make_stream(header);
@@ -175,8 +257,8 @@ vchannel_receive(Vchannel* channel, struct stream *s, int* length, int* total_le
 	nb_read = g_tcp_recv(channel->sock, header->data, 9, 0);
 	if( nb_read != 9)
 	{
-		log_message(channel->log_conf, LOG_LEVEL_ERROR ,"vchannel[vchannel_receive]"
-				" : Error while receiving data lenght: %s",strerror(errno));
+		log_message(log_conf, LOG_LEVEL_ERROR ,"vchannel{%s}[vchannel_receive]"
+				" : Error while receiving data lenght: %s",channel->name, strerror(errno));
 		return ERROR;
 	}
 	in_uint8(header, type);
@@ -185,23 +267,23 @@ vchannel_receive(Vchannel* channel, struct stream *s, int* length, int* total_le
 	switch(type)
 	{
 	case CHANNEL_OPEN:
-		log_message(channel->log_conf, LOG_LEVEL_WARNING ,"vchannel[vchannel_receive]"
-				" : CHANNEL OPEN message is invalid message");
+		log_message(log_conf, LOG_LEVEL_DEBUG ,"vchannel{%s}[vchannel_receive]"
+				" : CHANNEL OPEN message is invalid message", channel->name);
 		rv = ERROR;
 		break;
 	case SETUP_MESSAGE:
-		log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_receive]"
-				" : status change message");
+		log_message(log_conf, LOG_LEVEL_DEBUG ,"vchannel{%s}[vchannel_receive]"
+				" : status change message", channel->name);
 		rv = 0;
 		break;
 	case DATA_MESSAGE:
-		log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_receive]"
-				" : data message");
+		log_message(log_conf, LOG_LEVEL_DEBUG ,"vchannel{%s}[vchannel_receive]"
+				" : data message", channel->name);
 		rv = 0;
 		break;
 	default:
-		log_message(channel->log_conf, LOG_LEVEL_ERROR ,"vchannel[vchannel_receive]"
-				" : Invalid message '%02x'", type);
+		log_message(log_conf, LOG_LEVEL_ERROR ,"vchannel{%s}[vchannel_receive]"
+				" : Invalid message '%02x'", channel->name, type);
 		rv = ERROR;
 		break;
 	}
@@ -209,47 +291,68 @@ vchannel_receive(Vchannel* channel, struct stream *s, int* length, int* total_le
 	{
 		return ERROR;
 	}
-	log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_receive]"
-			"Size of message : %i", *length);
-	init_stream(s, *length);
-	nb_read = g_tcp_recv(channel->sock, s->data, *length, 0);
+	log_message(log_conf, LOG_LEVEL_DEBUG ,"vchannel{%s}[vchannel_receive]"
+			"Size of message : %i", channel->name, *length);
+	nb_read = g_tcp_recv(channel->sock, (void*)data, *length, 0);
 	if(nb_read != *length)
 	{
-		log_message(channel->log_conf, LOG_LEVEL_ERROR ,"vchannel[vchannel_receive]"
-				" : Data length is invalid");
+		log_message(log_conf, LOG_LEVEL_ERROR ,"vchannel{%s}[vchannel_receive]"
+				" : Data length is invalid", channel->name);
 		return ERROR;
 	}
-	log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_receive]"
-			" : message received from channel %s: ", channel->name);
-	log_hexdump(channel->log_conf, LOG_LEVEL_DEBUG, s->data, *length);
+	log_message(log_conf, LOG_LEVEL_DEBUG ,"vchannel{%s}[vchannel_receive]"
+			"Message received: ", channel->name);
+	log_hexdump(log_conf, LOG_LEVEL_DEBUG, (unsigned char*)data, *length);
 	if (type == SETUP_MESSAGE)
 	{
-		return s->data[0];
+		return data[0];
 	}
 	return 0;
 }
 
 /*****************************************************************************/
-int APP_CC
-vchannel_close(Vchannel* channel)
+int
+vchannel_close(int sock)
 {
-	log_message(channel->log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_close]"
-			" : Channel '%s' closed", channel->name);
-	return close(channel->sock);
+	Vchannel* channel;
+	close(sock);
+	int index = vchannel_get_channel_from_socket(sock);
+	if(index == ERROR)
+	{
+		log_message(log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_close]"
+				"Enable to get channel from socket %i", sock);
+		return ERROR;
+	}
+	channel = &channel_list[index];
+	log_message(log_conf, LOG_LEVEL_DEBUG ,"vchannel{%s}[vchannel_receive]: "
+			"Channel closed", channel->name);
+
+	vchannel_remove_channel(sock);
+	return 0;
 }
 
 /*****************************************************************************/
-int APP_CC
-vchannel_read_logging_conf(struct log_config* log_conf, const char* chan_name)
+int
+vchannel_init()
 {
   char filename[256];
   char log_filename[256];
+  char display_text;
   struct list* names;
   struct list* values;
   char* name;
   char* value;
   int index;
-  log_conf->program_name = (char*)g_strdup(chan_name);
+  int display_num;
+
+  display_num = g_get_display_num_from_display(g_strdup(g_getenv("DISPLAY")));
+	if(display_num == 0)
+	{
+		g_printf("vchannel[vchannel_init]: Display must be different of 0\n");
+		return ERROR;
+	}
+	log_conf = g_malloc(sizeof(struct log_config), 1);
+  log_conf->program_name = "vchannel";
   log_conf->log_file = 0;
   log_conf->fd = 0;
   log_conf->log_level = LOG_LEVEL_DEBUG;
@@ -286,17 +389,19 @@ vchannel_read_logging_conf(struct log_config* log_conf, const char* chan_name)
     }
     if( g_strlen(log_conf->log_file) > 1)
     {
-
-    	sprintf(log_filename, "%s/%i/vchannel_%s.log",
-    			log_conf->log_file,
-    			g_get_display_num_from_display(getenv("DISPLAY")),
-    			log_conf->program_name);
+    	g_sprintf(log_filename, "%s/%i/vchannels.log",
+    			log_conf->log_file,	display_num);
     	log_conf->log_file = (char*)g_strdup(log_filename);
     }
+  	if(log_start(log_conf) != LOG_STARTUP_OK)
+  	{
+  		g_printf("vchannel[vchannel_init]: Unable to start log system\n");
+  	}
   }
   else
   {
-  	g_printf("Invalid channel configuration file : %s\n",filename);
+  	g_printf("vchannel[vchannel_init]: Invalid channel configuration file : %s\n", filename);
+  	return 1;
   }
   list_delete(names);
   list_delete(values);

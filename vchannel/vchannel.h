@@ -31,6 +31,7 @@
 #include <syslog.h>
 #include <stdarg.h>
 #include <errno.h>
+#include <os_calls.h>
 #include "log.h"
 #include "parse.h"
 #include "list.h"
@@ -59,20 +60,19 @@
 
 
 typedef struct{
-	struct log_config* log_conf;
 	char name[9];
 	int sock;
 } Vchannel;
 
 int APP_CC
-vchannel_open(Vchannel *channel);
+vchannel_open(const char* name);
 int APP_CC
-vchannel_send(Vchannel *channel, struct stream *s, int length);
+vchannel_send(int sock, const char* data, int length);
 int APP_CC
-vchannel_receive(Vchannel* channel, struct stream *s, int* length, int* total_length);
+vchannel_receive(int sock, const char* data, int* length, int* total_length);
 int APP_CC
-vchannel_close(Vchannel *channel);
+vchannel_close(int sock);
 int APP_CC
-vchannel_read_logging_conf(struct log_config* log_conf, const char* chan_name);
+vchannel_init();
 
 #endif /* VCHANNEL_H_ */
