@@ -1,5 +1,6 @@
 
 AM_CFLAGS = \
+  -DXRDP_CFG_PATH=\"${sysconfdir}/xrdp\" \
   -Wall -O2 -D_REENTRANT
 
 INCLUDES = \
@@ -23,8 +24,15 @@ seamlessrdpshelldir=$(bindir)
 seamlessrdpshell_DATA = \
   seamlessrdpshell
 
+seamlessrdpshellconfdir=$(sysconfdir)/xrdp
+
+seamlessrdpshellconf_DATA = \
+  seamrdp.conf 
+
 install-data-hook:
 	chmod 755 $(DESTDIR)$(bindir)/seamlessrdpshell
 
 EXTRA_DIST = \
-  $(seamlessrdpshell_DATA)
+  $(seamlessrdpshell_DATA) \
+  $(seamlessrdpshellsysconf_DATA)
+
