@@ -38,8 +38,8 @@ static Action actions[128];
 static int action_index=1;
 
 struct log_config	*l_config;
-Vchannel printer_chan;
-Vchannel rdpdr_chan;
+int  printer_sock;
+int rdpdr_sock;
 struct device device_list[128];
 int device_count = 0;
 char username[256];
@@ -52,7 +52,7 @@ printer_send(struct stream* s){
   int rv;
   int length = (int)(s->end - s->data);
 
-  rv = vchannel_send(&rdpdr_chan, s, length);
+  rv = vchannel_send(rdpdr_sock, s->data, length);
   if (rv != 0)
   {
     log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_printer[printer_send]: "
@@ -475,14 +475,15 @@ void *thread_spool_process (void * arg)
 /*****************************************************************************/
 void *thread_vchannel_process (void * arg)
 {
-	char* buffer = malloc(1024);
 	struct stream* s = NULL;
+	make_stream(s);
+	init_stream(s, 1024);
 	int rv;
 	int length;
 	int total_length;
 	while(1){
 		make_stream(s);
-		rv = vchannel_receive(&printer_chan, s, &length, &total_length);
+		rv = vchannel_receive(printer_sock, s->data, &length, &total_length);
 		switch(rv)
 		{
 		case ERROR:
@@ -526,28 +527,26 @@ int main(int argc, char** argv, char** environ)
 		g_printf("The username '%s' did not exist\n", argv[1]);
 	}
 	g_strncpy(username, argv[1], sizeof(username));
-	vchannel_read_logging_conf(l_config, "rdpdr_printer");
+	vchannel_init();
 	if (log_start(l_config) != LOG_STARTUP_OK)
 	{
 		g_printf("Enable to init log system\n");
 		return 1;
 	}
-	printer_chan.log_conf = l_config;
-	rdpdr_chan.log_conf = l_config;
 	pthread_mutex_init(&mutex, NULL);
-	g_strncpy(printer_chan.name, "printer", 9);
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_printer[main]: "
 				"Open channel to rdpdr main apps");
-	if(vchannel_open(&printer_chan) == ERROR)
+	printer_sock = vchannel_open("printer");
+	if(printer_sock == ERROR)
 	{
 		log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_printer[main]: "
 				"Error while connecting to vchannel provider");
 		return 1;
 	}
-	g_strncpy(rdpdr_chan.name, "rdpdr", 9);
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_printer[main]: "
 				"Open channel to channel server");
-	if(vchannel_open(&rdpdr_chan) == ERROR)
+	rdpdr_sock = vchannel_open("rdpdr");
+	if(rdpdr_sock == ERROR)
 	{
 		log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_printer[main]: "
 				"Error while connecting to rdpdr provider");
