@@ -16,6 +16,16 @@
 #include <stdio.h>
 
 
+/* config constant */
+#define XHOOK_CFG_GLOBAL						"Globals"
+#define XHOOK_CFG_NAME							"Name"
+#define XHOOK_CFG_LOGGING						"Logging"
+#define XHOOK_CFG_LOG_DIR						"LogDir"
+#define XHOOK_CFG_LOG_LEVEL					"LogLevel"
+#define XHOOK_CFG_LOG_ENABLE_SYSLOG	"EnableSyslog"
+#define XHOOK_CFG_LOG_SYSLOG_LEVEL	"SyslogLevel"
+
+
 /* socket constant */
 #define ERROR	-1
 #define	SOCKET_ERRNO	errno

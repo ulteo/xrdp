@@ -32,6 +32,7 @@
 
 #include <vchannel.h>
 #include <os_calls.h>
+#include <file.h>
 #include "seamlessrdpshell.h"
 #include "xutils.h"
 
@@ -151,6 +152,10 @@ void synchronize(){
 	int pid;
 
 	name = '\0';
+	buffer = malloc(1024);
+	sprintf(buffer, "HELLO,%i,0x%08x\n", 0, 0);
+	send_message(buffer, strlen(buffer));
+	free(buffer);
 
 	for(i=0; i < window_list.item_count; i++)
 	{
@@ -917,6 +922,7 @@ void *thread_vchannel_process (void * arg)
 		rv = vchannel_receive(seamrdp_channel, s->data, &length, &total_length);
 		if( rv == ERROR )
 		{
+			printf("close\n");
 			vchannel_close(seamrdp_channel);
 			pthread_exit ((void*)1);
 		}
@@ -929,12 +935,14 @@ void *thread_vchannel_process (void * arg)
 		case STATUS_CONNECTED:
 			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_vchannel_process]: "
 					"Status connected");
+			synchronize();
 			break;
 		case STATUS_DISCONNECTED:
 			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_vchannel_process]: "
 					"Status disconnected");
 			break;
 		default:
+			s->data[length]=0;
 			process_message(s->data);
 			break;
 		}
@@ -943,26 +951,118 @@ void *thread_vchannel_process (void * arg)
 	pthread_exit (0);
 }
 
+int
+XHook_init()
+{
+  char filename[256];
+  char log_filename[256];
+  struct list* names;
+  struct list* values;
+  char* name;
+  char* value;
+  int index;
+  int display_num;
+
+  display_num = g_get_display_num_from_display(g_strdup(g_getenv("DISPLAY")));
+	if(display_num == 0)
+	{
+		g_printf("XHook[XHook_init]: Display must be different of 0\n");
+		return ERROR;
+	}
+	l_config = g_malloc(sizeof(struct log_config), 1);
+	l_config->program_name = "XHook";
+	l_config->log_file = 0;
+	l_config->fd = 0;
+	l_config->log_level = LOG_LEVEL_DEBUG;
+	l_config->enable_syslog = 0;
+	l_config->syslog_level = LOG_LEVEL_DEBUG;
+
+  names = list_create();
+  names->auto_free = 1;
+  values = list_create();
+  values->auto_free = 1;
+  g_snprintf(filename, 255, "%s/seamrdp.conf", XRDP_CFG_PATH);
+  if (file_by_name_read_section(filename, XHOOK_CFG_GLOBAL, names, values) == 0)
+  {
+    for (index = 0; index < names->count; index++)
+    {
+      name = (char*)list_get_item(names, index);
+      value = (char*)list_get_item(values, index);
+      if (0 == g_strcasecmp(name, XHOOK_CFG_NAME))
+      {
+        if( g_strlen(value) > 1)
+        {
+        	l_config->program_name = (char*)g_strdup(value);
+        }
+      }
+    }
+  }
+  if (file_by_name_read_section(filename, XHOOK_CFG_LOGGING, names, values) == 0)
+  {
+    for (index = 0; index < names->count; index++)
+    {
+      name = (char*)list_get_item(names, index);
+      value = (char*)list_get_item(values, index);
+      if (0 == g_strcasecmp(name, XHOOK_CFG_LOG_DIR))
+      {
+      	l_config->log_file = (char*)g_strdup(value);
+      }
+      if (0 == g_strcasecmp(name, XHOOK_CFG_LOG_LEVEL))
+      {
+      	l_config->log_level = log_text2level(value);
+      }
+      if (0 == g_strcasecmp(name, XHOOK_CFG_LOG_ENABLE_SYSLOG))
+      {
+      	l_config->enable_syslog = log_text2bool(value);
+      }
+      if (0 == g_strcasecmp(name, XHOOK_CFG_LOG_SYSLOG_LEVEL))
+      {
+      	l_config->syslog_level = log_text2level(value);
+      }
+    }
+  }
+  if( g_strlen(l_config->log_file) > 1 && g_strlen(l_config->program_name) > 1)
+  {
+  	g_sprintf(log_filename, "%s/%i/%s.log",
+  			l_config->log_file,	display_num, l_config->program_name);
+  	l_config->log_file = (char*)g_strdup(log_filename);
+  }
+  list_delete(names);
+  list_delete(values);
+
+	if(log_start(l_config) != LOG_STARTUP_OK)
+	{
+		g_printf("vchannel[vchannel_init]: Unable to start log system\n");
+		return ERROR;
+	}
+  else
+  {
+  	g_printf("vchannel[vchannel_init]: Invalid channel configuration file : %s\n", filename);
+  	return LOG_STARTUP_OK;
+  }
+  return 0;
+}
+
 /*****************************************************************************/
 int main(int argc, char** argv, char** environ)
 {
+	pthread_t Xevent_thread, Vchannel_thread;
+	void *ret;
 	l_config = g_malloc(sizeof(struct log_config), 1);
+	if (XHook_init() != LOG_STARTUP_OK)
+	{
+		g_printf("XHook[main]: Enable to init log system\n");
+		g_free(l_config);
+		return 1;
+	}
 	if (vchannel_init() == ERROR)
 	{
 		g_printf("XHook[main]: Enable to init channel system\n");
 		g_free(l_config);
 		return 1;
 	}
-	if (log_start(l_config) != LOG_STARTUP_OK)
-	{
-		g_printf("XHook[main]: Enable to init log system\n");
-		g_free(l_config);
-		return 1;
-	}
-	Window_list_init(window_list);
-	pthread_t Xevent_thread, Vchannel_thread;
-	void *ret;
 
+	Window_list_init(window_list);
 	pthread_mutex_init(&mutex, NULL);
 	message_id = 0;
 	seamrdp_channel = vchannel_open("seamrdp");
