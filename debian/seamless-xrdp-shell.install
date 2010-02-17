@@ -1,3 +1,4 @@
+debian/tmp/etc/xrdp/seamrdp.conf
 debian/tmp/usr/bin/seamlessrdpshell
 debian/tmp/usr/bin/XHook
 debian/lintian-overrides/seamless-xrdp-shell /usr/share/lintian/overrides/

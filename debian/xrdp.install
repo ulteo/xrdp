@@ -1,4 +1,9 @@
-debian/tmp/etc
+debian/tmp/etc/xrdp/rdpdr.conf
+debian/tmp/etc/xrdp/startwm.sh
+debian/tmp/etc/xrdp/*.ini
+debian/tmp/etc/xrdp/Xserver
+debian/tmp/etc/pam.d
+debian/tmp/etc/init.d
 debian/tmp/usr/lib
 debian/tmp/usr/share
 debian/tmp/usr/sbin

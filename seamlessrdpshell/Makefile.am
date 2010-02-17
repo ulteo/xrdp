@@ -34,5 +34,5 @@ install-data-hook:
 
 EXTRA_DIST = \
   $(seamlessrdpshell_DATA) \
-  $(seamlessrdpshellsysconf_DATA)
+  $(seamlessrdpshellconf_DATA)
 
