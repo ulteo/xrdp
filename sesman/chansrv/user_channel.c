@@ -37,9 +37,9 @@ user_channel_send( int chan_id, char* mess, int size){
   int rv;
 
   rv = send_channel_data(chan_id, mess, size);
-  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_send]: "
+  log_message(&log_conf, LOG_LEVEL_DEBUG_PLUS, "chansrv[user_channel_send]: "
   		"message sended: ");
-  log_hexdump(&log_conf, LOG_LEVEL_DEBUG, mess, size);
+  log_hexdump(&log_conf, LOG_LEVEL_DEBUG_PLUS, mess, size);
   return rv;
 }
 
@@ -63,9 +63,9 @@ user_channel_transmit(int socket, int type, char* mess, int length, int total_le
   out_uint32_be(header, total_length);
   s_mark_end(header);
   rv = g_tcp_send(socket, header->data, 9, 0);
-  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_transmit]: "
+  log_message(&log_conf, LOG_LEVEL_DEBUG_PLUS, "chansrv[user_channel_transmit]: "
   		"Header sended:");
-  log_hexdump(&log_conf, LOG_LEVEL_DEBUG, header->data, 9);
+  log_hexdump(&log_conf, LOG_LEVEL_DEBUG_PLUS, header->data, 9);
   if (rv != 9)
   {
     log_message(&log_conf, LOG_LEVEL_ERROR, "chansrv[user_channel_transmit]: "
@@ -77,6 +77,7 @@ user_channel_transmit(int socket, int type, char* mess, int length, int total_le
   rv = g_tcp_send(socket, mess, length, 0);
   log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_transmit]: "
   		"Message sended:");
+  log_hexdump(&log_conf, LOG_LEVEL_DEBUG_PLUS, mess, length);
   if (rv != length)
   {
     log_message(&log_conf, LOG_LEVEL_ERROR, "chansrv[user_channel_transmit]: "

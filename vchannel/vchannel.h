@@ -47,7 +47,7 @@
 #define VCHAN_CFG_LOG_ENABLE_SYSLOG	"EnableSyslog"
 #define VCHAN_CFG_LOG_SYSLOG_LEVEL	"SyslogLevel"
 
-
+#define CHANNEL_PDU_LENGTH			1600
 /* message type */
 #define SETUP_MESSAGE			0x01
 #define DATA_MESSAGE			0x02

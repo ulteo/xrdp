@@ -188,14 +188,14 @@ _vchannel_send(int sock, int type, const char* data, int length)
 
 	if(index == ERROR)
 	{
-		log_message(log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_receive]: "
+		log_message(log_conf, LOG_LEVEL_WARNING ,"vchannel[vchannel_receive]: "
 				"Enable to get channel from socket %i", sock);
 		return ERROR;
 	}
 	channel = &channel_list[index];
 	if(sock < 0)
 	{
-		log_message(log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_send]: "
+		log_message(log_conf, LOG_LEVEL_WARNING ,"vchannel[vchannel_send]: "
 				"The channel %s is not opened ", channel->name);
 		return ERROR;
 	}
@@ -204,9 +204,9 @@ _vchannel_send(int sock, int type, const char* data, int length)
 	out_uint8(header, type);
 	out_uint32_be(header, length);
 	s_mark_end(header);
-	log_message(log_conf, LOG_LEVEL_DEBUG ,"vchannel{%s}[vchannel_send]: "
+	log_message(log_conf, LOG_LEVEL_DEBUG_PLUS ,"vchannel{%s}[vchannel_send]: "
 			"Message send: ", channel->name);
-	log_hexdump(log_conf, LOG_LEVEL_DEBUG, header->data, 4);
+	log_hexdump(log_conf, LOG_LEVEL_DEBUG_PLUS, header->data, 4);
 	if(write(sock, header->data, 5) < 5)
 	{
 		log_message(log_conf, LOG_LEVEL_ERROR ,"vchannel{%s}[vchannel_send]: "
@@ -221,9 +221,9 @@ _vchannel_send(int sock, int type, const char* data, int length)
 				"Failed to send message data to channel [%s]", channel->name, strerror(errno));
 		return ERROR;
 	}
-	log_message(log_conf, LOG_LEVEL_DEBUG ,"vchannel{%s}[vchannel_send]: "
-			"Message sended ", channel->name);
-	log_hexdump(log_conf, LOG_LEVEL_DEBUG, (unsigned char*)data, length);
+	log_message(log_conf, LOG_LEVEL_DEBUG_PLUS ,"vchannel{%s}[vchannel_send]: "
+			"Message sended:", channel->name);
+	log_hexdump(log_conf, LOG_LEVEL_DEBUG_PLUS, (unsigned char*)data, length);
 
 	return 0;
 }
@@ -241,14 +241,14 @@ vchannel_receive(int sock, const char* data, int* length, int* total_length)
 
 	if(index == ERROR)
 	{
-		log_message(log_conf, LOG_LEVEL_DEBUG ,"vchannel[vchannel_receive]: "
+		log_message(log_conf, LOG_LEVEL_WARNING ,"vchannel[vchannel_receive]: "
 				"Enable to get channel from socket %i", sock);
 		return ERROR;
 	}
 	channel = &channel_list[index];
 	if(channel->sock < 0)
 	{
-		log_message(log_conf, LOG_LEVEL_DEBUG ,"vchannel{%s}[vchannel_receive]: "
+		log_message(log_conf, LOG_LEVEL_WARNING ,"vchannel{%s}[vchannel_receive]: "
 				"The channel is not opened ", channel->name);
 		return ERROR;
 	}
@@ -261,6 +261,9 @@ vchannel_receive(int sock, const char* data, int* length, int* total_length)
 				"Error while receiving data lenght: %s",channel->name, strerror(errno));
 		return ERROR;
 	}
+	log_message(log_conf, LOG_LEVEL_DEBUG_PLUS ,"vchannel{%s}[vchannel_receive]: "
+			"Header received: ", channel->name);
+	log_hexdump(log_conf, LOG_LEVEL_DEBUG_PLUS, header->data, *length);
 	in_uint8(header, type);
 	in_uint32_be(header, *length);
 	in_uint32_be(header, *total_length);
@@ -291,8 +294,6 @@ vchannel_receive(int sock, const char* data, int* length, int* total_length)
 	{
 		return ERROR;
 	}
-	log_message(log_conf, LOG_LEVEL_DEBUG ,"vchannel{%s}[vchannel_receive]: "
-			"Size of message : %i", channel->name, *length);
 	nb_read = g_tcp_recv(channel->sock, (void*)data, *length, 0);
 	if(nb_read != *length)
 	{
@@ -300,9 +301,9 @@ vchannel_receive(int sock, const char* data, int* length, int* total_length)
 			"Data length is invalid", channel->name);
 		return ERROR;
 	}
-	log_message(log_conf, LOG_LEVEL_DEBUG ,"vchannel{%s}[vchannel_receive]: "
+	log_message(log_conf, LOG_LEVEL_DEBUG_PLUS ,"vchannel{%s}[vchannel_receive]: "
 			"Message received: ", channel->name);
-	log_hexdump(log_conf, LOG_LEVEL_DEBUG, (unsigned char*)data, *length);
+	log_hexdump(log_conf, LOG_LEVEL_DEBUG_PLUS, (unsigned char*)data, *length);
 	if (type == SETUP_MESSAGE)
 	{
 		return data[0];

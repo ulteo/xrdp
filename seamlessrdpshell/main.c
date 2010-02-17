@@ -935,7 +935,6 @@ void *thread_vchannel_process (void * arg)
 		case STATUS_CONNECTED:
 			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_vchannel_process]: "
 					"Status connected");
-			synchronize();
 			break;
 		case STATUS_DISCONNECTED:
 			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_vchannel_process]: "
