@@ -205,8 +205,8 @@ _vchannel_send(int sock, int type, const char* data, int length)
 	out_uint32_be(header, length);
 	s_mark_end(header);
 	log_message(log_conf, LOG_LEVEL_DEBUG_PLUS ,"vchannel{%s}[vchannel_send]: "
-			"Message send: ", channel->name);
-	log_hexdump(log_conf, LOG_LEVEL_DEBUG_PLUS, header->data, 4);
+			"Header send: ", channel->name);
+	log_hexdump(log_conf, LOG_LEVEL_DEBUG_PLUS, header->data, 5);
 	if(write(sock, header->data, 5) < 5)
 	{
 		log_message(log_conf, LOG_LEVEL_ERROR ,"vchannel{%s}[vchannel_send]: "
@@ -328,8 +328,7 @@ vchannel_close(int sock)
 	log_message(log_conf, LOG_LEVEL_DEBUG ,"vchannel{%s}[vchannel_receive]: "
 			"Channel closed", channel->name);
 
-	vchannel_remove_channel(sock);
-	return 0;
+	return vchannel_remove_channel(sock);
 }
 
 /*****************************************************************************/
