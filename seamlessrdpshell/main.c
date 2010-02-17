@@ -961,6 +961,7 @@ XHook_init()
   char* value;
   int index;
   int display_num;
+  int res;
 
   display_num = g_get_display_num_from_display(g_strdup(g_getenv("DISPLAY")));
 	if(display_num == 0)
@@ -1028,18 +1029,17 @@ XHook_init()
   }
   list_delete(names);
   list_delete(values);
+  res = log_start(l_config);
 
-	if(log_start(l_config) != LOG_STARTUP_OK)
+	if( res != LOG_STARTUP_OK)
 	{
-		g_printf("vchannel[vchannel_init]: Unable to start log system\n");
-		return ERROR;
+		g_printf("vchannel[vchannel_init]: Unable to start log system[%i]\n", res);
+		return res;
 	}
   else
   {
-  	g_printf("vchannel[vchannel_init]: Invalid channel configuration file : %s\n", filename);
   	return LOG_STARTUP_OK;
   }
-  return 0;
 }
 
 /*****************************************************************************/
