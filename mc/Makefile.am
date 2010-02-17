@@ -8,7 +8,7 @@ AM_CFLAGS = \
 INCLUDES = \
   -I$(top_srcdir)/common
 
-lib_LTLIBRARIES = \
+pkglib_LTLIBRARIES = \
   libmc.la
 
 libmc_la_SOURCES = \

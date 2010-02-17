@@ -79,8 +79,8 @@ AC_CHECK_HEADERS([libxml/xmlmemory.h],,[AC_MSG_ERROR([please install libxml2-dev
 AC_CHECK_HEADERS([libxml/parser.h],,[AC_MSG_ERROR([please install libxml2-dev])])
 AC_CHECK_HEADERS([libxml/xinclude.h],,[AC_MSG_ERROR([please install libxml2-dev])])
 
-libdir="${libdir}/xrdp";
 if test "x${prefix}" = "xNONE" ; then
+libdir="/usr/lib"
 sysconfdir="/etc";
 bindir="/usr/bin";
 localstatedir="/var";

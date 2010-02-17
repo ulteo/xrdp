@@ -9,7 +9,7 @@ AM_CFLAGS = \
 INCLUDES = \
   -I$(top_srcdir)/common
 
-lib_LTLIBRARIES = \
+pkglib_LTLIBRARIES = \
   libscp.la
 
 libscp_la_SOURCES = \

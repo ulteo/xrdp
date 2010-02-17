@@ -5,7 +5,7 @@ AM_CFLAGS = \
   -DXRDP_SHARE_PATH=\"${datadir}/xrdp\" \
   -DXRDP_PID_PATH=\"${localstatedir}/run\"
 
-lib_LTLIBRARIES = \
+pkglib_LTLIBRARIES = \
   libcommon.la
 
 libcommon_la_SOURCES = \
