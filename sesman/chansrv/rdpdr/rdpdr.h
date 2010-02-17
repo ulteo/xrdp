@@ -5,6 +5,18 @@
 #include "arch.h"
 #include "parse.h"
 
+
+/* config constant */
+#define RDPDR_CFG_GLOBAL						"Globals"
+#define RDPDR_CFG_NAME							"Name"
+#define RDPDR_CFG_LOGGING						"Logging"
+#define RDPDR_CFG_LOG_DIR						"LogDir"
+#define RDPDR_CFG_LOG_LEVEL					"LogLevel"
+#define RDPDR_CFG_LOG_ENABLE_SYSLOG	"EnableSyslog"
+#define RDPDR_CFG_LOG_SYSLOG_LEVEL	"SyslogLevel"
+
+
+
 /* protocol message */
 /* RDPDR_HEADER */
 /* Component */

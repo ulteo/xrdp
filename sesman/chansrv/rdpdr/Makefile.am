@@ -1,3 +1,6 @@
+AM_CFLAGS = \
+  -DXRDP_CFG_PATH=\"${sysconfdir}/xrdp\" \
+  -Wall -O2 -D_REENTRANT
 
 SUBDIRS = \
   printer

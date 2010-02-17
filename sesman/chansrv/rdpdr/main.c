@@ -569,7 +569,7 @@ rdpdr_process_channel_opening(int client, char* device)
 
 /*****************************************************************************/
 int APP_CC
-rdpdr_init()
+rdpdr_init_devices()
 {
 	int display_num;
 	char socket_filename[256];
@@ -630,6 +630,101 @@ rdpdr_init()
 	}
 	return 0;
 }
+
+/*****************************************************************************/
+int
+rdpdr_init()
+{
+  char filename[256];
+  char log_filename[256];
+  struct list* names;
+  struct list* values;
+  char* name;
+  char* value;
+  int index;
+  int display_num;
+  int res;
+
+  display_num = g_get_display_num_from_display(g_strdup(g_getenv("DISPLAY")));
+	if(display_num == 0)
+	{
+		g_printf("XHook[XHook_init]: Display must be different of 0\n");
+		return ERROR;
+	}
+	l_config = g_malloc(sizeof(struct log_config), 1);
+	l_config->program_name = "XHook";
+	l_config->log_file = 0;
+	l_config->fd = 0;
+	l_config->log_level = LOG_LEVEL_DEBUG;
+	l_config->enable_syslog = 0;
+	l_config->syslog_level = LOG_LEVEL_DEBUG;
+
+  names = list_create();
+  names->auto_free = 1;
+  values = list_create();
+  values->auto_free = 1;
+  g_snprintf(filename, 255, "%s/rdpdr.conf", XRDP_CFG_PATH);
+  if (file_by_name_read_section(filename, RDPDR_CFG_GLOBAL, names, values) == 0)
+  {
+    for (index = 0; index < names->count; index++)
+    {
+      name = (char*)list_get_item(names, index);
+      value = (char*)list_get_item(values, index);
+      if (0 == g_strcasecmp(name, RDPDR_CFG_NAME))
+      {
+        if( g_strlen(value) > 1)
+        {
+        	l_config->program_name = (char*)g_strdup(value);
+        }
+      }
+    }
+  }
+  if (file_by_name_read_section(filename, RDPDR_CFG_LOGGING, names, values) == 0)
+  {
+    for (index = 0; index < names->count; index++)
+    {
+      name = (char*)list_get_item(names, index);
+      value = (char*)list_get_item(values, index);
+      if (0 == g_strcasecmp(name, RDPDR_CFG_LOG_DIR))
+      {
+      	l_config->log_file = (char*)g_strdup(value);
+      }
+      if (0 == g_strcasecmp(name, RDPDR_CFG_LOG_LEVEL))
+      {
+      	l_config->log_level = log_text2level(value);
+      }
+      if (0 == g_strcasecmp(name, RDPDR_CFG_LOG_ENABLE_SYSLOG))
+      {
+      	l_config->enable_syslog = log_text2bool(value);
+      }
+      if (0 == g_strcasecmp(name, RDPDR_CFG_LOG_SYSLOG_LEVEL))
+      {
+      	l_config->syslog_level = log_text2level(value);
+      }
+    }
+  }
+  if( g_strlen(l_config->log_file) > 1 && g_strlen(l_config->program_name) > 1)
+  {
+  	g_sprintf(log_filename, "%s/%i/%s.log",
+  			l_config->log_file,	display_num, l_config->program_name);
+  	l_config->log_file = (char*)g_strdup(log_filename);
+  }
+  list_delete(names);
+  list_delete(values);
+  res = log_start(l_config);
+
+	if( res != LOG_STARTUP_OK)
+	{
+		g_printf("vchannel[vchannel_init]: Unable to start log system [%i]\n", res);
+		return res;
+	}
+  else
+  {
+  	return LOG_STARTUP_OK;
+  }
+  return 0;
+}
+
 /*****************************************************************************/
 void *thread_spool_process (void * arg)
 {
@@ -656,6 +751,7 @@ void *thread_vchannel_process (void * arg)
 	rdpdr_send_init();
 	while(1){
 		make_stream(s);
+		printf("socket : %i\n", rdpdr_sock);
 		rv = vchannel_receive(rdpdr_sock, s->data, &length, &total_length);
 		if( rv == ERROR )
 		{
@@ -703,9 +799,16 @@ int main(int argc, char** argv, char** environ)
 		return 1;
 	}
 	g_sprintf(username, argv[1]);
+	if (rdpdr_init() != LOG_STARTUP_OK)
+	{
+		g_printf("vchannel_rdpdr[main]: Enable to init log system\n");
+		g_free(l_config);
+		return 1;
+	}
+
 	if (vchannel_init() == ERROR)
 	{
-		g_printf("XHook[main]: Enable to init channel system\n");
+		g_printf("vchannel_rdpdr[main]: Enable to init channel system\n");
 		g_free(l_config);
 		return 1;
 	}
