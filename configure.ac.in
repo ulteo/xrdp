@@ -80,7 +80,7 @@ AC_CHECK_HEADERS([libxml/parser.h],,[AC_MSG_ERROR([please install libxml2-dev])]
 AC_CHECK_HEADERS([libxml/xinclude.h],,[AC_MSG_ERROR([please install libxml2-dev])])
 
 if test "x${prefix}" = "xNONE" ; then
-libdir="/usr/lib"
+prefix="/usr"
 sysconfdir="/etc";
 bindir="/usr/bin";
 localstatedir="/var";
