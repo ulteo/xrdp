@@ -22,67 +22,71 @@
 import os
 import socket
 import struct
+import ctypes
 from VchannelException import VchannelException
 
-def _VchannelGetSocket():
-	if not os.environ.has_key("DISPLAY"):
-		raise VchannelException("Unable to get environment variable $DISPLAY")
-	
-	path = "/var/spool/xrdp/xrdp_user_channel_socket%s"%(os.environ["DISPLAY"])
-	if not os.path.exists(path):
-		raise VchannelException("The socket did not exist")
-	
-	# todo if not read/write access ...
-	
-	return path
+class VirtualChannel():
+	def __init__(self, name):
+		self.CHUNK_LENGTH = 1600
+		self.STATUS_ERROR = -1
+		self.STATUS_NORMAL = 0
+		self.STATUS_DISCONNECTED = 1
+		self.STATUS_CONNECTED = 2
+		self._dll = ctypes.cdll.LoadLibrary("libvchannel.so")
+		self._dll.vchannel_init()
+		self._handle = None
+		self.name = name
+		self.connected = False
 
+	def isConnected(self) :
+		return self.connected
 
-def VchannelOpen(name):
-	path = _VchannelGetSocket()
-	if path is None:
-		raise VchannelException("Internal error")
+	def Open(self) :
+	        self._handle = self._dll.vchannel_open(self.name)
+		if self._handle == self.STATUS_ERROR :
+			self._handle = None
+			connected = False
+			return False
+		self.connected = True
+		return True
 
-	try:
-                s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-                s.connect(path)
-	except socket.error:
-		raise VchannelException("Unable to open Vchannel : %s"%(name))	
+	def Close(self):
+		if self._handle == None :
+			return False
 
-	VchannelWrite(s, name)
-	return s
+		res = self._dll.vchannel_close(self._handle)
+		return res == self.STATUS_NORMAL
 
+	def Read(self):
+		if self._handle == None :
+			return None
 
-def VchannelClose(s):
-	return s.close()
+		buffer = ctypes.create_string_buffer(1600)
+		buffer_len = ctypes.c_ulong(0)
+		total_len = ctypes.c_ulong(0)
 
+		ret = self._dll.vchannel_receive(self._handle, ctypes.byref(buffer), ctypes.byref(buffer_len), ctypes.byref(total_len))
 
-def VchannelRead(s):
-	try:
-		data = s.recv(4)
-	except socket.error:
-		raise VchannelException("Unable read data from channel")
+		if ret == self.STATUS_NORMAL:
+			return buffer.raw
+		if ret == self.STATUS_ERROR:
+			return None
+		if ret == self.STATUS_DISCONNECTED:
+			self.connected = False
+			return None
+		if ret == self.STATUS_CONNECTED:
+			self.connected = True
+			return None
 
-	if len(data) == 0:
-		raise VchannelException("Data size is invalid")
-	
-	size = struct.unpack('>I',data)[0]
-	if size == 0:
-		return None
-	try:
-		data = s.recv(size)
-	except socket.error:
-		raise VchannelException("Unable read data from channel")
+	def Write(self, message):
+		if self._handle == None :
+			return False
 
-	return data
+		buffer = ctypes.create_string_buffer(len(message))
+		buffer.raw = message
+		buffer_len = ctypes.c_ulong(len(message))
 
-
-def VchannelWrite(s, data):
-	data_len = struct.pack('>I', len(data))
-	try:
-		s.sendall(data_len)
-		s.sendall(data)
-	except socket.error:
-		raise VchannelException("Unable write data on the channel")
-
-	return True
+		ret = self._dll.vchannel_send(self._handle, ctypes.byref(buffer), buffer_len)
+		
+		return ret == self.STATUS_NORMAL
 
