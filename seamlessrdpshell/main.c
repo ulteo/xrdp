@@ -917,7 +917,7 @@ void *thread_vchannel_process (void * arg)
 	send_message(buffer, strlen(buffer));
 	while(1){
 		make_stream(s);
-		init_stream(s, 1024);
+		init_stream(s, 1600);
 
 		rv = vchannel_receive(seamrdp_channel, s->data, &length, &total_length);
 		if( rv == ERROR )
