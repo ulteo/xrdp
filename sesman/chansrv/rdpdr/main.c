@@ -742,20 +742,6 @@ rdpdr_init()
 }
 
 /*****************************************************************************/
-void *thread_spool_process (void * arg)
-{
-	while (1) {
-		pthread_mutex_lock(&mutex);
-
-		pthread_mutex_unlock(&mutex);
-	}
-
-	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[thread_spool_process]: "
-			"Finished spool process");
-	pthread_exit (0);
-}
-
-/*****************************************************************************/
 void *thread_vchannel_process (void * arg)
 {
 	struct stream* s = NULL;
@@ -853,7 +839,6 @@ int main(int argc, char** argv, char** environ)
 		return 1;
 	}
 
-	(void)pthread_join (spool_thread, &ret);
 	(void)pthread_join (vchannel_thread, &ret);
 	pthread_mutex_destroy(&mutex);
 
