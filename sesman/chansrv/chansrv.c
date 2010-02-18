@@ -497,8 +497,6 @@ channel_thread_loop(void* in_val)
       }
       if (g_lis_trans != 0)
       {
-      	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[channel_thread_loop]: "
-							"username : %s",username);
         if (trans_check_wait_objs(g_lis_trans) != 0)
         {
         	log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[channel_thread_loop]: "
@@ -570,6 +568,15 @@ nil_signal_handler(int sig)
 {
 	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[nil_signal_handler]: "
 				"nil_signal_handler: got signal %d", sig);
+}
+
+/*****************************************************************************/
+void DEFAULT_CC
+stop_signal_handler(int sig)
+{
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[stop_signal_handler]: "
+				"signal_handler: got signal %d", sig);
+	g_waitchild();
 }
 
 /*****************************************************************************/
@@ -747,6 +754,7 @@ main(int argc, char** argv)
   g_signal_terminate(term_signal_handler); /* SIGTERM */
   g_signal_user_interrupt(term_signal_handler); /* SIGINT */
   g_signal_pipe(nil_signal_handler); /* SIGPIPE */
+  g_signal_child_stop(stop_signal_handler);
   g_snprintf(text, 255, "xrdp_chansrv_%8.8x_main_term", pid);
   g_term_event = g_create_wait_obj(text);
   g_snprintf(text, 255, "xrdp_chansrv_%8.8x_thread_done", pid);

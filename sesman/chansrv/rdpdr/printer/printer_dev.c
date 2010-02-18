@@ -32,6 +32,7 @@ static struct printer_device printer_devices[128];
 static int printer_devices_count = 0;
 static char user_spool_dir[256];
 extern int inotify_sock;
+extern int printer_up;
 
 /************************************************************************/
 int				/* O - 0 if name is no good, 1 if name is good */
@@ -679,17 +680,12 @@ printer_dev_del(int device_id)
 			return 1;
 		}
 	}
+	g_remove_dirs(user_spool_dir);
 	if(g_directory_exist(user_spool_dir))
 	{
-		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_printer[printer_dev_del]:"
-				"remove user spool directory : %s",user_spool_dir);
-		if(g_remove_dirs(user_spool_dir))
-		{
-			log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_printer[printer_dev_del]:"
-							"enable to remove user spool directory : %s",user_spool_dir);
-		}
+		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_printer[printer_dev_del]:"
+				"Unable to remove user spool directory : %s",user_spool_dir);
 	}
-
 	return 0;
 }
 
@@ -703,7 +699,7 @@ printer_dev_get_next_job(char* jobs, int *device_id)
 	int index;
 
 	len = read(inotify_sock, buf, BUF_LEN);
-	if( len < 0 )
+	if( len < 0 || printer_up == 0)
 	{
 		return 1;
 	}

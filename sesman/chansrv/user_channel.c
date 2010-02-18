@@ -105,13 +105,13 @@ user_channel_launch_server_channel(char* channel_name)
 	}
 	if( pid == 0)
 	{
-		return 0;
+		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_launch_server_channel]: "
+				"Launching the channel application %s ", channel_program);
+		g_sprintf(channel_program_path, "%s/%s",XRDP_SBIN_PATH, channel_program);
+		g_execlp3(channel_program_path, channel_program, username);
+		g_exit(0);
 	}
-	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_launch_server_channel]: "
-			"Launching the channel application %s ", channel_program);
-	g_sprintf(channel_program_path, "%s/%s",XRDP_SBIN_PATH, channel_program);
-	g_execlp3(channel_program_path, channel_program, username);
-	g_exit(0);
+	return 0;
 }
 
 /*****************************************************************************/
@@ -154,9 +154,9 @@ user_channel_get_channel_from_name(char* channel_name)
 int APP_CC
 user_channel_init(char* channel_name, int channel_id)
 {
-	int sock;
+	int sock = 0;
 	int i;
-	int channel_index;
+	int channel_index = -1;
 	char status[1];
 
 	if (g_user_channel_up == 0)
@@ -164,10 +164,13 @@ user_channel_init(char* channel_name, int channel_id)
 		g_user_channel_up = 1;
 	}
 	channel_index = user_channel_get_channel_from_name(channel_name);
-	if (channel_index != -1)
+	if (channel_index != -1 )
+	{
+		sock = user_channels[channel_index].client_channel_socket[0];
+	}
+	if (sock != 0 )
 	{
 		status[0] = STATUS_CONNECTED;
-		sock = user_channels[channel_index].client_channel_socket[0];
 		user_channel_transmit(sock, SETUP_MESSAGE, status, 1, 1);
 		return 0;
 	}
@@ -180,10 +183,14 @@ user_channel_init(char* channel_name, int channel_id)
 				"Unable to open channel %s", channel_name);
 		return 0;
 	}
-	user_channels[channel_count].channel_id = channel_id;
-	g_strcpy(user_channels[channel_count].channel_name, channel_name);
-	user_channels[channel_count].server_channel_socket = sock;
-	channel_count++;
+	if (channel_index == -1)
+	{
+		channel_index = channel_count;
+		channel_count++;
+	}
+	user_channels[channel_index].channel_id = channel_id;
+	g_strcpy(user_channels[channel_index].channel_name, channel_name);
+	user_channels[channel_index].server_channel_socket = sock;
 	return 0;
 }
 
@@ -201,7 +208,6 @@ user_channel_deinit(void)
 	{
 		for (j=0 ; j<user_channels[i].client_channel_count ; j++ )
 		{
-
 			socket = user_channels[i].client_channel_socket[j];
 			user_channel_transmit(socket, SETUP_MESSAGE, status, 1, 1 );
 		}

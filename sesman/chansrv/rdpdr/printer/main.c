@@ -38,7 +38,7 @@ struct log_config	*l_config;
 int  printer_sock;
 int rdpdr_sock;
 int inotify_sock;
-
+int printer_up = 0;
 struct device device_list[128];
 int device_count = 0;
 char username[256];
@@ -531,6 +531,24 @@ printer_init()
 }
 
 /*****************************************************************************/
+int printer_deinit()
+{
+	char status[1];
+	int i;
+
+	status[0] = STATUS_DISCONNECTED;
+	vchannel_close(rdpdr_sock);
+	vchannel_close(printer_sock);
+  for(i=0 ; i<device_count ; i++)
+  {
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_printer[printer_deinit]:"
+				"Remove printer with the id %i", device_list[i].device_type);
+		printer_dev_del(device_list[i].device_id);
+  }
+	g_exit(0);
+}
+
+/*****************************************************************************/
 void *thread_spool_process (void * arg)
 {
 	char buffer[1024];
@@ -548,7 +566,10 @@ void *thread_spool_process (void * arg)
 	{
 		if( printer_dev_get_next_job(buffer, &device_id) == 0)
 		{
-			printer_begin_io_request(buffer, device_id);
+			if(printer_up == 1)
+			{
+				printer_begin_io_request(buffer, device_id);
+			}
 		}
 	}
 
@@ -585,6 +606,7 @@ void *thread_vchannel_process (void * arg)
 		case STATUS_DISCONNECTED:
 			log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_printer[thread_vchannel_process]: "
 					"Status disconnected");
+			printer_deinit();
 			break;
 		default:
 			printer_process_message(s, length, total_length);
@@ -656,6 +678,7 @@ int main(int argc, char** argv, char** environ)
 				"Pthread_create error for thread : vchannel_thread");
 		return 1;
 	}
+	printer_up = 1;
 	(void)pthread_join (spool_thread, &ret);
 	(void)pthread_join (vchannel_thread, &ret);
 

@@ -89,7 +89,7 @@ rdpdr_transmit(int sock, int type, char* mess, int length)
   	s_mark_end(header);
   	rv = g_tcp_send(sock, header->data, 9, 0);
   	log_message(l_config, LOG_LEVEL_DEBUG_PLUS, "vchannel_rdpdr[rdpdr_transmit]: "
-  			"Header sended: %s", header->data);
+  			"Header sended:");
   	log_hexdump(l_config, LOG_LEVEL_DEBUG_PLUS, (unsigned char*)header->data, 9);
   	if (rv != 9)
   	{
@@ -104,10 +104,10 @@ rdpdr_transmit(int sock, int type, char* mess, int length)
   	log_message(l_config, LOG_LEVEL_DEBUG_PLUS, "vchannel_rdpdr[rdpdr_transmit]: "
   			"Message sended: ");
   	log_hexdump(l_config, LOG_LEVEL_DEBUG_PLUS, (unsigned char*)mess, 1600);
-  	if (rv != 1600)
+  	if (rv != length)
   	{
   		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr[rdpdr_transmit]: "
-  				"error while sending the message: %s", mess);
+  				"error while sending the message:");
   		return 1;
   	}
   	temp_size+=1600;
@@ -739,6 +739,17 @@ rdpdr_init()
 }
 
 /*****************************************************************************/
+int rdpdr_deinit()
+{
+	char status[1];
+	status[0] = STATUS_DISCONNECTED;
+	rdpdr_transmit(printer_sock, SETUP_MESSAGE, status, 1);
+	vchannel_close(rdpdr_sock);
+	g_tcp_close(printer_sock);
+	return 0;
+}
+
+/*****************************************************************************/
 int main(int argc, char** argv, char** environ)
 {
 	struct stream* s = NULL;
@@ -787,7 +798,6 @@ int main(int argc, char** argv, char** environ)
 	while(1){
 		make_stream(s);
 		init_stream(s, 1600);
-		printf("socket : %i\n", rdpdr_sock);
 		rv = vchannel_receive(rdpdr_sock, s->data, &length, &total_length);
 		if( rv == ERROR )
 		{
@@ -807,7 +817,9 @@ int main(int argc, char** argv, char** environ)
 		case STATUS_DISCONNECTED:
 			log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[thread_vchannel_process]: "
 					"Status disconnected");
-			break;
+			rdpdr_deinit();
+			free_stream(s);
+			return 0;
 		default:
 			rdpdr_process_message(s, length, total_length);
 			break;
