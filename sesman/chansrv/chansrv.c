@@ -213,12 +213,12 @@ process_message_channel_setup(struct stream* s)
       g_cliprdr_chan_id = ci->id;
     }
 
-    else if (g_strcasecmp(ci->name, "rdpsnd") == 0)
+/*    else if (g_strcasecmp(ci->name, "rdpsnd") == 0)
     {
       g_rdpsnd_index = g_num_chan_items;
       g_rdpsnd_chan_id = ci->id;
     }
-/*    else if (g_strcasecmp(ci->name, "rdpdr") == 0)
+    else if (g_strcasecmp(ci->name, "rdpdr") == 0)
     {
       g_rdpdr_index = g_num_chan_items;
       g_rdpdr_chan_id = ci->id;
@@ -241,11 +241,11 @@ process_message_channel_setup(struct stream* s)
   {
     clipboard_init();
   }
-  if (g_rdpsnd_index >= 0)
+/*  if (g_rdpsnd_index >= 0)
   {
     sound_init();
   }
-/*  if (g_rdpdr_index >= 0)
+  if (g_rdpdr_index >= 0)
   {
     dev_redir_init();
   }
@@ -282,11 +282,11 @@ process_message_channel_data(struct stream* s)
     {
       rv = clipboard_data_in(s, chan_id, chan_flags, length, total_length);
     }
-    else if (chan_id == g_rdpsnd_chan_id)
+/*    else if (chan_id == g_rdpsnd_chan_id)
     {
       rv = sound_data_in(s, chan_id, chan_flags, length, total_length);
     }
-/*    else if (chan_id == g_rdpdr_chan_id)
+    else if (chan_id == g_rdpdr_chan_id)
     {
       rv = dev_redir_data_in(s, chan_id, chan_flags, length, total_length);
     }*/
@@ -489,7 +489,7 @@ channel_thread_loop(void* in_val)
       	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[channel_thread_loop]: "
 							"channel_thread_loop: g_term_event set");
         clipboard_deinit();
-        sound_deinit();
+        //sound_deinit();
         //dev_redir_deinit();
         //seamrdp_deinit();
         user_channel_deinit();
@@ -512,7 +512,7 @@ channel_thread_loop(void* in_val)
         	log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[channel_thread_loop]: "
                   "trans_check_wait_objs error resetting");
           clipboard_deinit();
-          sound_deinit();
+          //sound_deinit();
           //dev_redir_deinit();
           //seamrdp_deinit();
           user_channel_deinit();
@@ -527,7 +527,7 @@ channel_thread_loop(void* in_val)
         }
       }
       clipboard_check_wait_objs();
-      sound_check_wait_objs();
+      //sound_check_wait_objs();
       //dev_redir_check_wait_objs();
       //seamrdp_check_wait_objs();
       user_channel_check_wait_objs();
@@ -538,7 +538,7 @@ channel_thread_loop(void* in_val)
       trans_get_wait_objs(g_lis_trans, objs, &num_objs, &timeout);
       trans_get_wait_objs(g_con_trans, objs, &num_objs, &timeout);
       clipboard_get_wait_objs(objs, &num_objs, &timeout);
-      sound_get_wait_objs(objs, &num_objs, &timeout);
+      //sound_get_wait_objs(objs, &num_objs, &timeout);
       //dev_redir_get_wait_objs(objs, &num_objs, &timeout);
       //seamrdp_get_wait_objs(objs, &num_objs, &timeout);
       user_channel_get_wait_objs(objs, &num_objs, &timeout);
