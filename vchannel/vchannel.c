@@ -295,6 +295,12 @@ vchannel_receive(int sock, const char* data, int* length, int* total_length)
 		return ERROR;
 	}
 	nb_read = g_tcp_recv(channel->sock, (void*)data, *length, 0);
+	if (nb_read == -1)
+	{
+		log_message(log_conf, LOG_LEVEL_ERROR ,"vchannel{%s}[vchannel_receive]: "
+			"Error while receiving data [%s]", channel->name, strerror(errno));
+		return ERROR;
+	}
 	if(nb_read != *length)
 	{
 		log_message(log_conf, LOG_LEVEL_ERROR ,"vchannel{%s}[vchannel_receive]: "
