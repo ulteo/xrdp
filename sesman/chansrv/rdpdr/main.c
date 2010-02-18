@@ -25,7 +25,6 @@
 #include "defines.h"
 
 
-static pthread_mutex_t mutex;
 struct log_config	*l_config;
 static char hostname[256];
 static int use_unicode;
@@ -742,53 +741,13 @@ rdpdr_init()
 }
 
 /*****************************************************************************/
-void *thread_vchannel_process (void * arg)
+int main(int argc, char** argv, char** environ)
 {
 	struct stream* s = NULL;
 	int rv;
 	int length;
 	int total_length;
 
-	rdpdr_send_init();
-	while(1){
-		make_stream(s);
-		init_stream(s, 1600);
-		printf("socket : %i\n", rdpdr_sock);
-		rv = vchannel_receive(rdpdr_sock, s->data, &length, &total_length);
-		if( rv == ERROR )
-		{
-			free_stream(s);
-			pthread_exit((void*)1);
-		}
-		switch(rv)
-		{
-		case ERROR:
-			log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr[thread_vchannel_process]: "
-					"Invalid message");
-			break;
-		case STATUS_CONNECTED:
-			log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[thread_vchannel_process]: "
-					"Status connected");
-			break;
-		case STATUS_DISCONNECTED:
-			log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[thread_vchannel_process]: "
-					"Status disconnected");
-			break;
-		default:
-			rdpdr_process_message(s, length, total_length);
-			break;
-		}
-		free_stream(s);
-	}
-	pthread_exit (0);
-}
-
-/*****************************************************************************/
-int main(int argc, char** argv, char** environ)
-{
-	pthread_t spool_thread;
-	pthread_t vchannel_thread;
-	void *ret;
 	l_config = g_malloc(sizeof(struct log_config), 1);
 	if (argc != 2)
 	{
@@ -825,22 +784,37 @@ int main(int argc, char** argv, char** environ)
 		g_printf("vchannel_rdpdr[main]: Enable to init device programs\n");
 		return 1;
 	}
-	pthread_mutex_init(&mutex, NULL);
-	if (pthread_create (&spool_thread, NULL, thread_spool_process, (void*)0) < 0)
-	{
-		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr[main]: "
-				"Pthread_create error for thread : spool_thread");
-		return 1;
-	}
-	if (pthread_create (&vchannel_thread, NULL, thread_vchannel_process, (void*)0) < 0)
-	{
-		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr[main]: "
-				"Pthread_create error for thread : vchannel_thread");
-		return 1;
-	}
 
-	(void)pthread_join (vchannel_thread, &ret);
-	pthread_mutex_destroy(&mutex);
-
+	rdpdr_send_init();
+	while(1){
+		make_stream(s);
+		init_stream(s, 1600);
+		printf("socket : %i\n", rdpdr_sock);
+		rv = vchannel_receive(rdpdr_sock, s->data, &length, &total_length);
+		if( rv == ERROR )
+		{
+			free_stream(s);
+			pthread_exit((void*)1);
+		}
+		switch(rv)
+		{
+		case ERROR:
+			log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr[thread_vchannel_process]: "
+					"Invalid message");
+			break;
+		case STATUS_CONNECTED:
+			log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[thread_vchannel_process]: "
+					"Status connected");
+			break;
+		case STATUS_DISCONNECTED:
+			log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[thread_vchannel_process]: "
+					"Status disconnected");
+			break;
+		default:
+			rdpdr_process_message(s, length, total_length);
+			break;
+		}
+		free_stream(s);
+	}
 	return 0;
 }

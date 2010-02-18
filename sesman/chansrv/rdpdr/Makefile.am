@@ -17,7 +17,6 @@ vchannel_rdpdr_SOURCES = \
   rdpdr.h main.c
 
 vchannel_rdpdr_LDADD = \
-  -lpthread \
   $(top_builddir)/vchannel/libvchannel.la \
   $(top_builddir)/common/libcommon.la 
 
