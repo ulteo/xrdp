@@ -528,7 +528,7 @@ channel_thread_loop(void* in_val)
       }
       clipboard_check_wait_objs();
       sound_check_wait_objs();
-      dev_redir_check_wait_objs();
+      //dev_redir_check_wait_objs();
       //seamrdp_check_wait_objs();
       user_channel_check_wait_objs();
       timeout = 0;
@@ -539,7 +539,7 @@ channel_thread_loop(void* in_val)
       trans_get_wait_objs(g_con_trans, objs, &num_objs, &timeout);
       clipboard_get_wait_objs(objs, &num_objs, &timeout);
       sound_get_wait_objs(objs, &num_objs, &timeout);
-      dev_redir_get_wait_objs(objs, &num_objs, &timeout);
+      //dev_redir_get_wait_objs(objs, &num_objs, &timeout);
       //seamrdp_get_wait_objs(objs, &num_objs, &timeout);
       user_channel_get_wait_objs(objs, &num_objs, &timeout);
 
