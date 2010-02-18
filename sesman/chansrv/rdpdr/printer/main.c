@@ -40,10 +40,11 @@ static int action_index=1;
 struct log_config	*l_config;
 int  printer_sock;
 int rdpdr_sock;
+int inotify_sock;
+
 struct device device_list[128];
 int device_count = 0;
 char username[256];
-int printer_sock;
 
 
 /*****************************************************************************/
@@ -58,9 +59,9 @@ printer_send(struct stream* s){
     log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_printer[printer_send]: "
     		"Enable to send message");
   }
-  log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_printer[printer_send]: "
+  log_message(l_config, LOG_LEVEL_DEBUG_PLUS, "rdpdr_printer[printer_send]: "
 				"send message: ");
-  log_hexdump(l_config, LOG_LEVEL_DEBUG, (unsigned char*)s->data, length );
+  log_hexdump(l_config, LOG_LEVEL_DEBUG_PLUS, (unsigned char*)s->data, length );
 
   return rv;
 }
@@ -277,6 +278,7 @@ printer_devicelist_announce(struct stream* s)
   int i;
   char dos_name[9] = {0};
   int handle;
+  char* p;
 
   log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_printer[printer_devicelist_announce]: "
   		"	new message: PAKID_CORE_DEVICELIST_ANNOUNCE");
@@ -308,8 +310,9 @@ printer_devicelist_announce(struct stream* s)
     }
     log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_printer[printer_devicelist_announce]: "
 					"Add printer device");
-    //TODO creation socket
+    p = s->p;
     handle = printer_dev_add(s, device_data_length, device_id, dos_name);
+    s->p = p + device_data_length;
     if (handle != 1)
     {
     	device_list[device_count].device_id = device_id;
@@ -374,7 +377,6 @@ printer_process_message(struct stream* s, int length, int total_length)
   int packetId;
   int result;
   struct stream* packet;
-
   if(length != total_length)
   {
   	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_printer[printer_process_message]: "
@@ -387,8 +389,8 @@ printer_process_message(struct stream* s, int length, int total_length)
   		fragment_size = length;
   		make_stream(splitted_packet);
   		init_stream(splitted_packet, total_length);
-  		g_memcpy(splitted_packet->p,s->p, length );
-  		log_hexdump(l_config, LOG_LEVEL_DEBUG, (unsigned char*)s->p, length);
+  		g_memcpy(splitted_packet->p, s->p, length );
+  		log_hexdump(l_config, LOG_LEVEL_DEBUG_PLUS, (unsigned char*)s->p, length);
   		return 0;
   	}
   	else
@@ -413,8 +415,8 @@ printer_process_message(struct stream* s, int length, int total_length)
   {
   	packet = s;
   }
-  log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_printer[printer_process_message]: data received:");
-  log_hexdump(l_config, LOG_LEVEL_DEBUG, (unsigned char*)packet->p, total_length);
+  log_message(l_config, LOG_LEVEL_DEBUG_PLUS, "rdpdr_printer[printer_process_message]: data received:");
+  log_hexdump(l_config, LOG_LEVEL_DEBUG_PLUS, (unsigned char*)packet->p, total_length);
   in_uint16_le(packet, component);
   in_uint16_le(packet, packetId);
   log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_printer[printer_process_message]: component=0x%04x packetId=0x%04x", component, packetId);
@@ -439,9 +441,97 @@ printer_process_message(struct stream* s, int length, int total_length)
     	fragment_size = 0;
     	free_stream(packet);
     }
-
   }
   return result;
+}
+
+/*****************************************************************************/
+int
+printer_init()
+{
+  char filename[256];
+  char log_filename[256];
+  struct list* names;
+  struct list* values;
+  char* name;
+  char* value;
+  int index;
+  int display_num;
+  int res;
+
+  display_num = g_get_display_num_from_display(g_strdup(g_getenv("DISPLAY")));
+	if(display_num == 0)
+	{
+		g_printf("rdpdr_printer[printer_init]: Display must be different of 0\n");
+		return ERROR;
+	}
+	l_config = g_malloc(sizeof(struct log_config), 1);
+	l_config->program_name = "rdpdr_printer";
+	l_config->log_file = 0;
+	l_config->fd = 0;
+	l_config->log_level = LOG_LEVEL_DEBUG;
+	l_config->enable_syslog = 0;
+	l_config->syslog_level = LOG_LEVEL_DEBUG;
+
+  names = list_create();
+  names->auto_free = 1;
+  values = list_create();
+  values->auto_free = 1;
+  g_snprintf(filename, 255, "%s/rdpdr.conf", XRDP_CFG_PATH);
+  if (file_by_name_read_section(filename, RDPDR_CFG_GLOBAL, names, values) == 0)
+  {
+    for (index = 0; index < names->count; index++)
+    {
+      name = (char*)list_get_item(names, index);
+      value = (char*)list_get_item(values, index);
+      if (0 == g_strcasecmp(name, RDPDR_CFG_NAME))
+      {
+        if( g_strlen(value) > 1)
+        {
+        	l_config->program_name = (char*)g_strdup(value);
+        }
+      }
+    }
+  }
+  if (file_by_name_read_section(filename, RDPDR_CFG_LOGGING, names, values) == 0)
+  {
+    for (index = 0; index < names->count; index++)
+    {
+      name = (char*)list_get_item(names, index);
+      value = (char*)list_get_item(values, index);
+      if (0 == g_strcasecmp(name, RDPDR_CFG_LOG_DIR))
+      {
+      	l_config->log_file = (char*)g_strdup(value);
+      }
+      if (0 == g_strcasecmp(name, RDPDR_CFG_LOG_LEVEL))
+      {
+      	l_config->log_level = log_text2level(value);
+      }
+      if (0 == g_strcasecmp(name, RDPDR_CFG_LOG_ENABLE_SYSLOG))
+      {
+      	l_config->enable_syslog = log_text2bool(value);
+      }
+      if (0 == g_strcasecmp(name, RDPDR_CFG_LOG_SYSLOG_LEVEL))
+      {
+      	l_config->syslog_level = log_text2level(value);
+      }
+    }
+  }
+  if( g_strlen(l_config->log_file) > 1 && g_strlen(l_config->program_name) > 1)
+  {
+  	g_sprintf(log_filename, "%s/%i/%s.log",
+  			l_config->log_file,	display_num, l_config->program_name);
+  	l_config->log_file = (char*)g_strdup(log_filename);
+  }
+  list_delete(names);
+  list_delete(values);
+  res = log_start(l_config);
+	if( res != LOG_STARTUP_OK)
+	{
+		g_printf("rdpdr_printer[rdpdr_init]: Unable to start log system [%i]\n", res);
+		return res;
+	}
+  return LOG_STARTUP_OK;
 }
 
 /*****************************************************************************/
@@ -452,14 +542,14 @@ void *thread_spool_process (void * arg)
 	int device_id;
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_printer[thread_spool_process]:"
 				"Initialise inotify socket");
-	printer_sock = inotify_init();
-	if (printer_sock <= 0)
+	inotify_sock = inotify_init();
+	if (inotify_sock <= 0)
 	{
 		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_printer[thread_spool_process]:"
 				"Enable to setup inotify (%s)",strerror(errno));
 		pthread_exit ((void*) 1);
 	}
-	while (printer_sock > 0)
+	while (inotify_sock > 0)
 	{
 		if( printer_dev_get_next_job(buffer, &device_id) == 0)
 		{
@@ -476,14 +566,15 @@ void *thread_spool_process (void * arg)
 void *thread_vchannel_process (void * arg)
 {
 	struct stream* s = NULL;
-	make_stream(s);
-	init_stream(s, 1024);
 	int rv;
 	int length;
 	int total_length;
+
 	while(1){
 		make_stream(s);
+		init_stream(s, 1605);
 		rv = vchannel_receive(printer_sock, s->data, &length, &total_length);
+
 		switch(rv)
 		{
 		case ERROR:
@@ -527,13 +618,19 @@ int main(int argc, char** argv, char** environ)
 		g_printf("The username '%s' did not exist\n", argv[1]);
 	}
 	g_strncpy(username, argv[1], sizeof(username));
-	vchannel_init();
-	if (log_start(l_config) != LOG_STARTUP_OK)
+	if (printer_init() != LOG_STARTUP_OK)
 	{
-		g_printf("Enable to init log system\n");
+		g_printf("rdpdr_printer[main]: Enable to init log system\n");
+		g_free(l_config);
 		return 1;
 	}
-	pthread_mutex_init(&mutex, NULL);
+	if (vchannel_init() == ERROR)
+	{
+		g_printf("XHook[main]: Enable to init channel system\n");
+		g_free(l_config);
+		return 1;
+	}
+
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_printer[main]: "
 				"Open channel to rdpdr main apps");
 	printer_sock = vchannel_open("printer");
@@ -567,7 +664,6 @@ int main(int argc, char** argv, char** environ)
 	}
 	(void)pthread_join (spool_thread, &ret);
 	(void)pthread_join (vchannel_thread, &ret);
-	pthread_mutex_destroy(&mutex);
 
 	return 0;
 }

@@ -22,6 +22,7 @@
 #include <os_calls.h>
 #include <xrdp_constants.h>
 #include "rdpdr.h"
+#include "defines.h"
 
 
 static pthread_mutex_t mutex;
@@ -56,10 +57,10 @@ rdpdr_send(struct stream* s){
     log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr[rdpdr_send]: "
     		"Enable to send message");
   }
-  log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_send]: "
+/*  log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_send]: "
 				"send message: ");
   log_hexdump(l_config, LOG_LEVEL_DEBUG, (unsigned char*)s->data, length );
-
+*/
   return rv;
 }
 
@@ -69,33 +70,49 @@ rdpdr_transmit(int sock, int type, char* mess, int length)
 {
   struct stream* header;
   int rv;
-
-  make_stream(header);
-  init_stream(header, 9);
-  out_uint8(header, type);
-  out_uint32_be(header, length);
-  out_uint32_be(header, length);
-  s_mark_end(header);
-  rv = g_tcp_send(sock, header->data, 9, 0);
-  log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_transmit]: "
-  		"Header sended: %s", mess);
-  log_hexdump(l_config, LOG_LEVEL_DEBUG, header->data, 9);
-  if (rv != 9)
+  int temp_size = 0;
+  char* p;
+  int total_length;
+  if (sock < 1)
   {
-  	log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr[rdpdr_transmit]: "
-    		"error while sending the header");
-    free_stream(header);
+    log_message(l_config, LOG_LEVEL_WARNING, "vchannel_rdpdr[rdpdr_transmit]: "
+    		"The socket is not open");
     return 1;
   }
-  free_stream(header);
-  rv = g_tcp_send(sock, mess, length, 0);
-  log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_transmit]: "
-  		"Message sended: ");
-  log_hexdump(l_config, LOG_LEVEL_DEBUG, mess, length);
-  if (rv != length)
+  total_length = length;
+  while (temp_size < total_length)
   {
-  	log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr[rdpdr_transmit]: "
-    		"error while sending the message: %s", mess);
+  	length = MIN(1600, total_length - temp_size);
+  	make_stream(header);
+  	init_stream(header, 9);
+  	out_uint8(header, type);
+  	out_uint32_be(header, length);
+  	out_uint32_be(header, total_length);
+  	s_mark_end(header);
+  	rv = g_tcp_send(sock, header->data, 9, 0);
+  	log_message(l_config, LOG_LEVEL_DEBUG_PLUS, "vchannel_rdpdr[rdpdr_transmit]: "
+  			"Header sended: %s", header->data);
+  	log_hexdump(l_config, LOG_LEVEL_DEBUG_PLUS, header->data, 9);
+  	if (rv != 9)
+  	{
+  		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr[rdpdr_transmit]: "
+  				"error while sending the header");
+  		free_stream(header);
+  		return 1;
+  	}
+  	free_stream(header);
+  	p = mess+temp_size;
+  	rv = g_tcp_send(sock, p, length, 0);
+  	log_message(l_config, LOG_LEVEL_DEBUG_PLUS, "vchannel_rdpdr[rdpdr_transmit]: "
+  			"Message sended: ");
+  	log_hexdump(l_config, LOG_LEVEL_DEBUG_PLUS, mess, 1600);
+  	if (rv != 1600)
+  	{
+  		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr[rdpdr_transmit]: "
+  				"error while sending the message: %s", mess);
+  		return 1;
+  	}
+  	temp_size+=1600;
   }
 	return 0;
 }
@@ -428,18 +445,18 @@ rdpdr_process_message(struct stream* s, int length, int total_length)
 
   if(length != total_length)
   {
-  	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_process_message]: "
+  	log_message(l_config, LOG_LEVEL_DEBUG_PLUS, "vchannel_rdpdr[rdpdr_process_message]: "
   			"packet is fragmented");
   	if(is_fragmented_packet == 0)
   	{
-  		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_process_message]: "
+  		log_message(l_config, LOG_LEVEL_DEBUG_PLUS, "vchannel_rdpdr[rdpdr_process_message]: "
   				"packet is fragmented : first part");
   		is_fragmented_packet = 1;
   		fragment_size = length;
   		make_stream(splitted_packet);
   		init_stream(splitted_packet, total_length);
   		g_memcpy(splitted_packet->p,s->p, length );
-  		log_hexdump(l_config, LOG_LEVEL_DEBUG, (unsigned char*)s->p, length);
+  		log_hexdump(l_config, LOG_LEVEL_DEBUG_PLUS, (unsigned char*)s->p, length);
   		return 0;
   	}
   	else
@@ -464,8 +481,8 @@ rdpdr_process_message(struct stream* s, int length, int total_length)
   {
   	packet = s;
   }
-  log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr_channel[rdpdr_process_message]: data received:");
-  log_hexdump(l_config, LOG_LEVEL_DEBUG, (unsigned char*)packet->p, total_length);
+  log_message(l_config, LOG_LEVEL_DEBUG_PLUS, "vchannel_rdpdr_channel[rdpdr_process_message]: data received:");
+  log_hexdump(l_config, LOG_LEVEL_DEBUG_PLUS, (unsigned char*)packet->p, total_length);
   in_uint16_le(packet, component);
   in_uint16_le(packet, packetId);
   log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr_channel[rdpdr_process_message]: component=0x%04x packetId=0x%04x", component, packetId);
@@ -575,6 +592,8 @@ rdpdr_init_devices()
 	char socket_filename[256];
 	int pid;
 	int sock;
+	char printer_program_path[256];
+
 	display_num = g_get_display_num_from_display(g_getenv("DISPLAY"));
 	if(display_num == 0)
 	{
@@ -607,7 +626,8 @@ rdpdr_init_devices()
 	{
 		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_init]: "
 				"Launching the channel application rdpdr_printer ");
-		g_execlp3("/usr/local/sbin/rdpdr_printer", "rdpdr_printer", username);
+		sprintf(printer_program_path, "%s/%s",XRDP_SBIN_PATH, "rdpdr_printer");
+		g_execlp3(printer_program_path, "rdpdr_printer", username);
 		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_init]: "
 				"The channel application rdpdr_printer ended");
 		g_exit(0);
@@ -715,14 +735,10 @@ rdpdr_init()
 
 	if( res != LOG_STARTUP_OK)
 	{
-		g_printf("vchannel[vchannel_init]: Unable to start log system [%i]\n", res);
+		g_printf("vchannel_rdpdr[rdpdr_init]: Unable to start log system [%i]\n", res);
 		return res;
 	}
-  else
-  {
-  	return LOG_STARTUP_OK;
-  }
-  return 0;
+  return LOG_STARTUP_OK;
 }
 
 /*****************************************************************************/
@@ -743,14 +759,14 @@ void *thread_spool_process (void * arg)
 void *thread_vchannel_process (void * arg)
 {
 	struct stream* s = NULL;
-	make_stream(s);
-	init_stream(s, 1024);
 	int rv;
 	int length;
 	int total_length;
+
 	rdpdr_send_init();
 	while(1){
 		make_stream(s);
+		init_stream(s, 1600);
 		printf("socket : %i\n", rdpdr_sock);
 		rv = vchannel_receive(rdpdr_sock, s->data, &length, &total_length);
 		if( rv == ERROR )
@@ -805,20 +821,12 @@ int main(int argc, char** argv, char** environ)
 		g_free(l_config);
 		return 1;
 	}
-
 	if (vchannel_init() == ERROR)
 	{
 		g_printf("vchannel_rdpdr[main]: Enable to init channel system\n");
 		g_free(l_config);
 		return 1;
 	}
-	if (log_start(l_config) != LOG_STARTUP_OK)
-	{
-		g_printf("Enable to init log system\n");
-		return 1;
-	}
-
-	pthread_mutex_init(&mutex, NULL);
 	rdpdr_sock = vchannel_open("rdpdr");
 	if(rdpdr_sock == ERROR)
 	{
@@ -826,10 +834,12 @@ int main(int argc, char** argv, char** environ)
 				"Error while connecting to vchannel provider");
 		return 1;
 	}
-	if (rdpdr_init() == 1)
+	if (rdpdr_init_devices() == 1)
 	{
+		g_printf("vchannel_rdpdr[main]: Enable to init device programs\n");
 		return 1;
 	}
+	pthread_mutex_init(&mutex, NULL);
 	if (pthread_create (&spool_thread, NULL, thread_spool_process, (void*)0) < 0)
 	{
 		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr[main]: "

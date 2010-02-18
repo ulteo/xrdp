@@ -1,11 +1,12 @@
+AM_CFLAGS = \
+  -DXRDP_CFG_PATH=\"${sysconfdir}/xrdp\" \
+  -Wall -O2 -D_REENTRANT \
+  `cups-config --cflags`
 
 INCLUDES = \
   -I$(top_srcdir)/common \
   -I$(top_srcdir)/vchannel \
   -I$(top_srcdir)/sesman/chansrv/rdpdr
-
-AM_CFLAGS = \
-  `cups-config --cflags` 
 
 AM_LDFLAGS = \
   `cups-config --libs`
@@ -14,8 +15,8 @@ sbin_PROGRAMS = \
   rdpdr_printer
 
 rdpdr_printer_SOURCES = \
-  printer_dev.h printer_dev.c \
-  main.c
+  main.c \
+  printer_dev.h printer_dev.c 
 
 rdpdr_printer_LDADD = \
   -L/usr/X11R6/lib \

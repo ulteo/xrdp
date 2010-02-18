@@ -31,7 +31,7 @@ extern char username[256];
 static struct printer_device printer_devices[128];
 static int printer_devices_count = 0;
 static char user_spool_dir[256];
-extern int printer_sock;
+extern int inotify_sock;
 
 /************************************************************************/
 int				/* O - 0 if name is no good, 1 if name is good */
@@ -702,8 +702,7 @@ printer_dev_get_next_job(char* jobs, int *device_id)
 	int len;
 	int index;
 
-	len = read(printer_sock, buf, BUF_LEN);
-
+	len = read(inotify_sock, buf, BUF_LEN);
 	if( len < 0 )
 	{
 		return 1;
@@ -781,10 +780,10 @@ printer_dev_init_printer_socket( char* printer_name)
 	  		" Enable to change printer directory owner : %s",user_spool_dir);
 		return 1;
 	}
-	if(printer_sock == 0)
+	if(inotify_sock == 0)
 	{
-		printer_sock = inotify_init();
-		if (printer_sock <= 0)
+		inotify_sock = inotify_init();
+		if (inotify_sock <= 0)
 		{
 			log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_printer[printer_dev_init_printer_socket]:"
 					"Enable to setup inotify (%s)",strerror(errno));
@@ -793,7 +792,7 @@ printer_dev_init_printer_socket( char* printer_name)
 	}
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_printer[printer_dev_init_printer_socket]:"
 			"Adding watch to %s\n", printer_spool_dir);
-  watch = inotify_add_watch(printer_sock, printer_spool_dir, IN_MOVE);
+  watch = inotify_add_watch(inotify_sock, printer_spool_dir, IN_MOVE);
   if (watch  < 0)
   {
 		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_printer[printer_dev_init_printer_socket]:"
@@ -802,14 +801,6 @@ printer_dev_init_printer_socket( char* printer_name)
   }
   return watch;
 }
-
-/*****************************************************************************/
-int APP_CC
-printer_dev_get_printer_socket()
-{
-	return printer_sock;
-}
-
 
 /*****************************************************************************/
 int APP_CC
