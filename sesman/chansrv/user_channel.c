@@ -75,7 +75,7 @@ user_channel_transmit(int socket, int type, char* mess, int length, int total_le
   }
   free_stream(header);
   rv = g_tcp_send(socket, mess, length, 0);
-  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_transmit]: "
+  log_message(&log_conf, LOG_LEVEL_DEBUG_PLUS, "chansrv[user_channel_transmit]: "
   		"Message sended:");
   log_hexdump(&log_conf, LOG_LEVEL_DEBUG_PLUS, mess, length);
   if (rv != length)
