@@ -19,8 +19,6 @@ xrdp_chansrv_SOURCES = \
   chansrv.c chansrv.h \
   sound.c sound.h \
   clipboard.c clipboard.h \
-  devredir.c devredir.h \
-  printer_dev.c printer_dev.h \
   user_channel.h user_channel.c 
 
 xrdp_chansrv_LDADD = \
