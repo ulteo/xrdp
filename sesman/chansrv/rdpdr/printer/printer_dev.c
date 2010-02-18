@@ -646,7 +646,7 @@ printer_dev_del(int device_id)
 	}
 
 	printer_dev_get_restricted_user_list(http, lp_name, user_list);
-	user_list_p = &user_list;
+	user_list_p = (char*)&user_list;
 	if (g_str_replace_first(user_list, username, "") == 1)
 	{
 		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_printer[printer_dev_del]:"

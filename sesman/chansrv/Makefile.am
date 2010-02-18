@@ -17,7 +17,6 @@ sbin_PROGRAMS = \
 
 xrdp_chansrv_SOURCES = \
   chansrv.c chansrv.h \
-  sound.c sound.h \
   clipboard.c clipboard.h \
   user_channel.h user_channel.c 
 

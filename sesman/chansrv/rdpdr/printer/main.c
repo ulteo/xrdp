@@ -21,16 +21,13 @@
 #include <vchannel.h>
 #include <os_calls.h>
 #include <xrdp_constants.h>
+#include <file.h>
+#include <sys/inotify.h>
 #include "rdpdr.h"
+#include "printer_dev.h"
 
 
-static pthread_mutex_t mutex;
-static char hostname[256];
-static int use_unicode;
-static int vers_major;
-static int vers_minor;
 static int client_id;
-static int supported_operation[6] = {0};
 static int is_fragmented_packet = 0;
 static int fragment_size;
 static struct stream* splitted_packet;
@@ -272,6 +269,28 @@ printer_process_iocompletion(struct stream* s)
 
 /*****************************************************************************/
 int APP_CC
+printer_device_list_reply(int handle)
+{
+  struct stream* s;
+  log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_printer[printer_device_list_reply]:"
+  		" reply to the device add");
+  make_stream(s);
+  init_stream(s, 256);
+  out_uint16_le(s, RDPDR_CTYP_CORE);
+  out_uint16_le(s, PAKID_CORE_DEVICE_REPLY);
+  out_uint16_le(s, 0x1);  							/* major version */
+  out_uint16_le(s, RDP5);							/* minor version */
+  out_uint32_le(s, client_id);							/* client ID */
+  s_mark_end(s);
+
+  g_sleep(10);
+  printer_send(s);
+  free_stream(s);
+  return 0;
+}
+
+/*****************************************************************************/
+int APP_CC
 printer_devicelist_announce(struct stream* s)
 {
   int device_list_count, device_id, device_type, device_data_length;
@@ -327,29 +346,6 @@ printer_devicelist_announce(struct stream* s)
   return 0;
 }
 
-
-/*****************************************************************************/
-int APP_CC
-printer_device_list_reply(int handle)
-{
-  struct stream* s;
-  log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_printer[printer_device_list_reply]:"
-  		" reply to the device add");
-  make_stream(s);
-  init_stream(s, 256);
-  out_uint16_le(s, RDPDR_CTYP_CORE);
-  out_uint16_le(s, PAKID_CORE_DEVICE_REPLY);
-  out_uint16_le(s, 0x1);  							/* major version */
-  out_uint16_le(s, RDP5);							/* minor version */
-  out_uint32_le(s, client_id);							/* client ID */
-  s_mark_end(s);
-
-  g_sleep(10);
-  printer_send(s);
-  free_stream(s);
-  return 0;
-}
-
 /*****************************************************************************/
 int APP_CC
 printer_confirm_clientID_request()
@@ -375,7 +371,7 @@ printer_process_message(struct stream* s, int length, int total_length)
 {
   int component;
   int packetId;
-  int result;
+  int result = 0;
   struct stream* packet;
   if(length != total_length)
   {
@@ -538,7 +534,6 @@ printer_init()
 void *thread_spool_process (void * arg)
 {
 	char buffer[1024];
-	int len;
 	int device_id;
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_printer[thread_spool_process]:"
 				"Initialise inotify socket");
@@ -606,7 +601,6 @@ int main(int argc, char** argv, char** environ)
 	pthread_t spool_thread;
 	pthread_t vchannel_thread;
 	void *ret;
-	int gid;
 	l_config = g_malloc(sizeof(struct log_config), 1);
 	if (argc != 2)
 	{

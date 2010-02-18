@@ -93,7 +93,7 @@ user_channel_launch_server_channel(char* channel_name)
 	char channel_program[256];
 	char channel_program_path[256];
 	int pid;
-	sprintf(channel_program, "vchannel_%s", channel_name);
+	g_sprintf(channel_program, "vchannel_%s", channel_name);
 	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_launch_server_channel]: "
 			"Try to launch the channel application %s ", channel_program);
 	pid = g_fork();
@@ -109,7 +109,7 @@ user_channel_launch_server_channel(char* channel_name)
 	}
 	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_launch_server_channel]: "
 			"Launching the channel application %s ", channel_program);
-	sprintf(channel_program_path, "%s/%s",XRDP_SBIN_PATH, channel_program);
+	g_sprintf(channel_program_path, "%s/%s",XRDP_SBIN_PATH, channel_program);
 	g_execlp3(channel_program_path, channel_program, username);
 	g_exit(0);
 }

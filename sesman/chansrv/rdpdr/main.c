@@ -21,6 +21,7 @@
 #include <vchannel.h>
 #include <os_calls.h>
 #include <xrdp_constants.h>
+#include <file.h>
 #include "rdpdr.h"
 #include "defines.h"
 
@@ -37,11 +38,9 @@ int device_count = 0;
 static int is_fragmented_packet = 0;
 static int fragment_size;
 static struct stream* splitted_packet;
-static Action actions[128];
-static int action_index=1;
 char username[256];
 static int printer_sock;
-static int disk_sock;
+//static int disk_sock;
 static int rdpdr_sock;
 
 /*****************************************************************************/
@@ -91,7 +90,7 @@ rdpdr_transmit(int sock, int type, char* mess, int length)
   	rv = g_tcp_send(sock, header->data, 9, 0);
   	log_message(l_config, LOG_LEVEL_DEBUG_PLUS, "vchannel_rdpdr[rdpdr_transmit]: "
   			"Header sended: %s", header->data);
-  	log_hexdump(l_config, LOG_LEVEL_DEBUG_PLUS, header->data, 9);
+  	log_hexdump(l_config, LOG_LEVEL_DEBUG_PLUS, (unsigned char*)header->data, 9);
   	if (rv != 9)
   	{
   		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr[rdpdr_transmit]: "
@@ -104,7 +103,7 @@ rdpdr_transmit(int sock, int type, char* mess, int length)
   	rv = g_tcp_send(sock, p, length, 0);
   	log_message(l_config, LOG_LEVEL_DEBUG_PLUS, "vchannel_rdpdr[rdpdr_transmit]: "
   			"Message sended: ");
-  	log_hexdump(l_config, LOG_LEVEL_DEBUG_PLUS, mess, 1600);
+  	log_hexdump(l_config, LOG_LEVEL_DEBUG_PLUS, (unsigned char*)mess, 1600);
   	if (rv != 1600)
   	{
   		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr[rdpdr_transmit]: "
@@ -229,6 +228,25 @@ rdpdr_send_init(void)
   out_uint16_le(s, 0x1);
   out_uint16_le(s, 0x0c);
   out_uint32_le(s, 0x1);
+  s_mark_end(s);
+  rdpdr_send(s);
+  free_stream(s);
+  return 0;
+}
+
+/*****************************************************************************/
+int APP_CC
+rdpdr_confirm_clientID_request()
+{
+  struct stream* s;
+  log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_send_capability_request]: Send Server Client ID Confirm Request");
+  make_stream(s);
+  init_stream(s, 256);
+  out_uint16_le(s, RDPDR_CTYP_CORE);
+  out_uint16_le(s, PAKID_CORE_CLIENTID_CONFIRM);
+  out_uint16_le(s, 0x1);  							/* major version */
+  out_uint16_le(s, RDP5);							/* minor version */
+
   s_mark_end(s);
   rdpdr_send(s);
   free_stream(s);
@@ -376,31 +394,11 @@ rdpdr_client_capability(struct stream* s)
 
 /*****************************************************************************/
 int APP_CC
-rdpdr_confirm_clientID_request()
-{
-  struct stream* s;
-  log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_send_capability_request]: Send Server Client ID Confirm Request");
-  make_stream(s);
-  init_stream(s, 256);
-  out_uint16_le(s, RDPDR_CTYP_CORE);
-  out_uint16_le(s, PAKID_CORE_CLIENTID_CONFIRM);
-  out_uint16_le(s, 0x1);  							/* major version */
-  out_uint16_le(s, RDP5);							/* minor version */
-
-  s_mark_end(s);
-  rdpdr_send(s);
-  free_stream(s);
-  return 0;
-}
-
-/*****************************************************************************/
-int APP_CC
 rdpdr_devicelist_announce(struct stream* s)
 {
   int device_list_count, device_id, device_type, device_data_length;
   int i;
   char dos_name[9] = {0};
-  int handle;
 
   log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rpdr_devicelist_announce]: "
   		"	new message: PAKID_CORE_DEVICELIST_ANNOUNCE");
@@ -437,7 +435,7 @@ rdpdr_process_message(struct stream* s, int length, int total_length)
 {
   int component;
   int packetId;
-  int result;
+  int result = 0;
   int device_id;
   int device_sock;
   struct stream* packet;
