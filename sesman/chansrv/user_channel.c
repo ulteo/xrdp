@@ -109,7 +109,7 @@ user_channel_launch_server_channel(char* channel_name)
 	}
 	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_launch_server_channel]: "
 			"Launching the channel application %s ", channel_program);
-	sprintf(channel_program_path, "/usr/local/sbin/%s", channel_program);
+	sprintf(channel_program_path, "%s/%s",XRDP_SBIN_PATH, channel_program);
 	g_execlp3(channel_program_path, channel_program, username);
 	g_exit(0);
 }
@@ -127,10 +127,10 @@ user_channel_do_up(char* chan_name)
 	g_chown(socket_filename, username);
   log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_do_up]: "
   		"Channel socket '%s' is created", socket_filename);
-  /*if(strcmp(chan_name, "rdpdr") == 0)
+  if(strcmp(chan_name, "rdpdr") == 0)
   {
   	user_channel_launch_server_channel(chan_name);
-  }*/
+  }
 	return sock;
 }
 
@@ -221,9 +221,9 @@ user_channel_data_in(struct stream* s, int chan_id, int chan_flags, int length,
 	{
 		if( user_channels[i].channel_id == chan_id )
 		{
-		  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_data_in]: "
+		  log_message(&log_conf, LOG_LEVEL_DEBUG_PLUS, "chansrv[user_channel_data_in]: "
 		  		"new client message for channel %s ",user_channels[i].channel_name);
-			log_hexdump(&log_conf, LOG_LEVEL_DEBUG, (unsigned char*)s->p, length);
+			log_hexdump(&log_conf, LOG_LEVEL_DEBUG_PLUS, (unsigned char*)s->p, length);
 			//user_channels[i].client_channel_socket[0] -> the main client socket
 			if(user_channels[i].client_channel_socket[0] == 0 )
 			{
