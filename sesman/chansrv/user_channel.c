@@ -410,9 +410,9 @@ user_channel_check_wait_objs(void)
 					continue;
 				}
 				//s->data[data_length] = 0;
-				log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
+				log_message(&log_conf, LOG_LEVEL_DEBUG_PLUS, "chansrv[user_channel_check_wait_objs]: "
 						"data:");
-				log_hexdump(&log_conf, LOG_LEVEL_DEBUG, s->data, data_length);
+				log_hexdump(&log_conf, LOG_LEVEL_DEBUG_PLUS, s->data, data_length);
 				if( user_channels[i].channel_id == -1)
 				{
 					log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
