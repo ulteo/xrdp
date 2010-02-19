@@ -16,5 +16,3 @@ SUBDIRS = \
   xrdp_printer \
   seamlessrdpshell \
   manpages
-
-EXTRA_DIST = setup.py
