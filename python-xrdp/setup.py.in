@@ -1,0 +1,13 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from distutils.core import setup
+
+setup(name='python-xrdp',
+      version='trunk@REVISION@',
+      description='Python API for XRDP',
+      author='Samuel Bovée',
+      author_email='samuel@ulteo.com',
+      url='http://www.ulteo.com',
+      packages=['']
+)
