@@ -4,10 +4,12 @@
 from distutils.core import setup
 
 setup(name='python-xrdp',
-      version='trunk@REVISION@',
+      version='99.99~trunk+svn@REVISION@',
       description='Python API for XRDP',
       author='Samuel Bovée',
       author_email='samuel@ulteo.com',
       url='http://www.ulteo.com',
-      packages=['']
+      packages=['xrdp'],
+      package_dir={'xrdp': ''}
 )
+
