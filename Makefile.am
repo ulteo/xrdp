@@ -13,7 +13,6 @@ SUBDIRS = \
   docs \
   instfiles \
   genkeymap \
-  python-xrdp \
   xrdp_printer \
   seamlessrdpshell \
   manpages

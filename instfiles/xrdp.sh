@@ -15,7 +15,7 @@
 # chkconfig: 2345 11 89
 # description: starts xrdp
 
-SBINDIR=/usr/local/sbin
+SBINDIR=/usr/sbin
 LOG=/dev/null
 CFGDIR=/etc/xrdp
 LOGDIR=/var/log/xrdp
@@ -66,8 +66,7 @@ xrdp_stop()
 
 is_xrdp_running()
 {
-  ps u --noheading -C xrdp | grep -q -i xrdp
-  if test $? -eq 0
+  if [ -s /var/run/xrdp.pid ] && kill -0 $(cat /var/run/xrdp.pid) >/dev/null 2>&1
   then
     return 1;
   else
@@ -77,8 +76,7 @@ is_xrdp_running()
 
 is_sesman_running()
 {
-  ps u --noheading -C xrdp-sesman | grep -q -i xrdp-sesman
-  if test $? -eq 0
+  if [ -s /var/run/xrdp.pid ] && kill -0 $(cat /var/run/xrdp.pid) >/dev/null 2>&1
   then
     return 1;
   else

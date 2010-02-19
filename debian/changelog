@@ -12,7 +12,6 @@ xrdp (99.99~trunk00058-0ulteo0) trunk; urgency=low
 
 xrdp (99.99~trunk00051-0ulteo0) trunk; urgency=low
 
-  * Adding the first implementation of python-xrdp packaging
   * Improve xrdp packaging
  
  -- Samuel Bovée <samuel@ulteo.com>  Thu, 04 Feb 2010 15:12:09 +0100

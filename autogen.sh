@@ -18,7 +18,6 @@ else
   revision=0
 fi
 sed -e "s/@REVISION@/${revision}/g" < configure.ac.in > configure.in
-sed -e "s/@REVISION@/${revision}/g" < setup.py.in     > setup.py
 
 # ????
 CONFIG_PATH=$PWD/sesman/tools/config.c
