@@ -15,12 +15,18 @@ Description: RDP server for Linux
   * seamless display
   * printer and local device mapping
 
-Package: seamless-xrdp-shell
+Package: xrdp-seamrdp
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, xrdp
 Description: Seamless XRDP Shell
  Seamlessrdpshell is a rdp addon offering the possibility to have an
  application without a desktop
+
+Package: xrdp-printer
+Architecture: all
+Depends: python (>= 2.5), xrdp, ghostscript, cupsys
+Description: cups file converter to ps format
+ Xrdpi-Printer convert a ps file from cups in ps
 
 Package: python-xrdp
 Section: python
@@ -28,9 +34,3 @@ Architecture: all
 Depends: python (>= 2.5), xrdp
 Description: Python API for XRDP
  Python-XRDP is a Python wrapper for XRDP, the RDP server for Linux
-
-Package: xrdp-printer
-Architecture: all
-Depends: python (>= 2.5), xrdp, ghostscript, cupsys
-Description: cups file converter to ps format
- Xrdpi-Printer convert a ps file from cups in ps

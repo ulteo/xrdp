@@ -1,6 +1,6 @@
 xrdp (99.99~trunk000109-0ulteo0) trunk; urgency=low
 
-  * Adding the first implementation of seamless-xrdp-shell packaging
+  * Adding the first implementation of xrdp-seamrdp packaging
  
  -- Samuel Bovée <samuel@ulteo.com>  Thu, 15 Feb 2010 16:12:09 +0100
 
