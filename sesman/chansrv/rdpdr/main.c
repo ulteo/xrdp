@@ -421,7 +421,7 @@ rdpdr_devicelist_announce(struct stream* s)
     in_uint32_le(s, device_data_length);
     log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rpdr_devicelist_announce]: "
   		  "data length: %i", device_data_length);
-
+    s->p+=device_data_length;
     device_list[device_count].device_id = device_id;
     device_list[device_count].device_type = device_type;
     device_count++;
@@ -509,7 +509,7 @@ rdpdr_process_message(struct stream* s, int length, int total_length)
     	if (device_sock == -1)
     	{
         log_message(l_config, LOG_LEVEL_WARNING, "vchannel_rdpdr_channel[rdpdr_process_message]: "
-        		"Unknow device type, failed to redirect message");
+        		"Unknow device, failed to redirect message");
         break;
     	}
     	result = rdpdr_transmit(printer_sock, DATA_MESSAGE, packet->data, total_length);
