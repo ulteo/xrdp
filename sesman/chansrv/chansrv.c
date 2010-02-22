@@ -25,7 +25,7 @@
 #include "chansrv.h"
 #include "defines.h"
 //#include "sound.h"
-#include "clipboard.h"
+//#include "clipboard.h"
 //#include "devredir.h"
 //#include "seamrdp.h"
 #include "user_channel.h"
@@ -207,12 +207,12 @@ process_message_channel_setup(struct stream* s)
     in_uint16_le(s, ci->flags);
     log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[process_message_channel_setup]: "
     		"chan name '%s' id %d flags %8.8x", ci->name, ci->id, ci->flags);
-    if (g_strcasecmp(ci->name, "cliprdr") == 0)
+/*    if (g_strcasecmp(ci->name, "cliprdr") == 0)
     {
       g_cliprdr_index = g_num_chan_items;
       g_cliprdr_chan_id = ci->id;
     }
-
+*/
 /*    else if (g_strcasecmp(ci->name, "rdpsnd") == 0)
     {
       g_rdpsnd_index = g_num_chan_items;
@@ -230,18 +230,18 @@ process_message_channel_setup(struct stream* s)
       g_seamrdp_chan_id = ci->id;
     }
 */
-    else
-    {
+//    else
+//    {
     	user_channel_init(ci->name, ci->id);
-    }
+//    }
     g_num_chan_items++;
   }
   rv = send_channel_setup_response_message();
-  if (g_cliprdr_index >= 0)
+/*  if (g_cliprdr_index >= 0)
   {
     clipboard_init();
   }
-/*  if (g_rdpsnd_index >= 0)
+  if (g_rdpsnd_index >= 0)
   {
     sound_init();
   }
@@ -278,11 +278,11 @@ process_message_channel_data(struct stream* s)
   rv = send_channel_data_response_message();
   if (rv == 0)
   {
-    if (chan_id == g_cliprdr_chan_id)
+/*    if (chan_id == g_cliprdr_chan_id)
     {
       rv = clipboard_data_in(s, chan_id, chan_flags, length, total_length);
     }
-/*    else if (chan_id == g_rdpsnd_chan_id)
+    else if (chan_id == g_rdpsnd_chan_id)
     {
       rv = sound_data_in(s, chan_id, chan_flags, length, total_length);
     }
@@ -295,10 +295,10 @@ process_message_channel_data(struct stream* s)
       rv = seamrdp_data_in(s, chan_id, chan_flags, length, total_length);
     }
 */
-    else
-    {
+//    else
+//    {
       rv = user_channel_data_in(s, chan_id, chan_flags, length, total_length);
-    }
+//    }
   }
   return rv;
 }
@@ -488,7 +488,7 @@ channel_thread_loop(void* in_val)
       {
       	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[channel_thread_loop]: "
 							"channel_thread_loop: g_term_event set");
-        clipboard_deinit();
+        //clipboard_deinit();
         //sound_deinit();
         //dev_redir_deinit();
         //seamrdp_deinit();
@@ -509,7 +509,7 @@ channel_thread_loop(void* in_val)
         {
         	log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[channel_thread_loop]: "
                   "trans_check_wait_objs error resetting");
-          clipboard_deinit();
+          //clipboard_deinit();
           //sound_deinit();
           //dev_redir_deinit();
           //seamrdp_deinit();
@@ -524,7 +524,7 @@ channel_thread_loop(void* in_val)
           }
         }
       }
-      clipboard_check_wait_objs();
+      //clipboard_check_wait_objs();
       //sound_check_wait_objs();
       //dev_redir_check_wait_objs();
       //seamrdp_check_wait_objs();
@@ -535,7 +535,7 @@ channel_thread_loop(void* in_val)
       num_objs++;
       trans_get_wait_objs(g_lis_trans, objs, &num_objs, &timeout);
       trans_get_wait_objs(g_con_trans, objs, &num_objs, &timeout);
-      clipboard_get_wait_objs(objs, &num_objs, &timeout);
+      //clipboard_get_wait_objs(objs, &num_objs, &timeout);
       //sound_get_wait_objs(objs, &num_objs, &timeout);
       //dev_redir_get_wait_objs(objs, &num_objs, &timeout);
       //seamrdp_get_wait_objs(objs, &num_objs, &timeout);

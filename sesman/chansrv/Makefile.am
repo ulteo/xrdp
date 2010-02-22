@@ -6,8 +6,6 @@ AM_CFLAGS = \
   -DXRDP_PID_PATH=\"${localstatedir}/run\" \
   `cups-config --cflags` 
 
-AM_LDFLAGS = \
-  `cups-config --libs`
 
 INCLUDES = \
   -I$(top_srcdir)/common
@@ -17,13 +15,11 @@ sbin_PROGRAMS = \
 
 xrdp_chansrv_SOURCES = \
   chansrv.c chansrv.h \
-  clipboard.c clipboard.h \
   user_channel.h user_channel.c 
 
 xrdp_chansrv_LDADD = \
   -L/usr/X11R6/lib \
-  $(top_builddir)/common/libcommon.la \
-  -lX11 -lXfixes 
+  $(top_builddir)/common/libcommon.la 
 
 chansrvsysconfdir=$(sysconfdir)/xrdp
 
