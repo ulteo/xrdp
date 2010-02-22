@@ -40,10 +40,6 @@ fi
 xrdp_start()
 {
   echo -n "Starting: xrdp and sesman . . "
-  mkdir $LOGDIR 1>>$LOG 
-  chgrp tsusers $LOGDIR  1>>$LOG
-  mkdir $SPOOLDIR  1>>$LOG 2>&1
-  chgrp tsusers $SPOOLDIR 1>>$LOG 2>&1
   logoff all
   $SBINDIR/xrdp 1>>$LOG 2>&1
   $SBINDIR/xrdp-sesman 1>>$LOG 2>&1
@@ -58,8 +54,6 @@ xrdp_stop()
   logoff all
   $SBINDIR/xrdp-sesman --kill 1>>$LOG 
   $SBINDIR/xrdp --kill 1>>$LOG
-  rm -fr $LOGDIR 1>>$LOG 2>&1
-  rm -fr $SPOOLDIR 1>>$LOG 2>&1
   echo "."
   return 0;
 }
