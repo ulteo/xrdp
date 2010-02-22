@@ -15,7 +15,7 @@
 # chkconfig: 2345 11 89
 # description: starts xrdp
 
-SBINDIR=/usr/local/sbin
+SBINDIR=/usr/sbin
 LOG=/dev/null
 CFGDIR=/etc/xrdp
 LOGDIR=/var/log/xrdp
