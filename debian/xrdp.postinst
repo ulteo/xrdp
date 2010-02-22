@@ -1,0 +1,21 @@
+#!/bin/sh
+
+groupadd tsusers
+
+LOG=/var/log/xrdp
+if [ ! -d $LOG ]
+then
+  mkdir -p $LOG
+fi
+chgrp tsusers $LOG
+
+SPOOL=/var/spool/xrdp
+if [ ! -d $SPOOL ]
+then
+  mkdir -p $SPOOL
+fi
+chgrp tsusers $SPOOL
+
+#DEBHELPER#
+
+exit 0
