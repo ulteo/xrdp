@@ -394,7 +394,7 @@ send_session(int client, int session_id)
 	doc->encoding = xmlCharStrdup("UTF-8");
 	node = xmlNewNode(NULL, xmlCharStrdup("response"));
 	char prop[128];
-	g_sprintf(prop, "%i", sess[0].pid);
+	g_sprintf(prop, "%i", sess[0].display);
 	node2 = xmlNewNode(NULL, xmlCharStrdup("session"));
 	xmlSetProp(node2, xmlCharStrdup("id"), xmlCharStrdup(prop) );
 	xmlSetProp(node2, xmlCharStrdup("username"), xmlCharStrdup(sess[0].name) );

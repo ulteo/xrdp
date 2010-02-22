@@ -1240,11 +1240,9 @@ session_list_session(int* count)
   tmp = g_sessions;
   while (tmp != 0)
   {
-	  sess[*count].display = tmp->item->display;
 	  log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[session_list_session]: "
 					"name : %s",tmp->item->name);
-	  g_strncpy(sess[*count].name, tmp->item->name, g_strlen(tmp->item->name));
-	  sess[*count].status = tmp->item->status;
+	  g_memcpy(&sess[*count], tmp->item, sizeof(struct session_item));
 	  tmp=tmp->next;
 	  *count += 1;
   }
