@@ -15,4 +15,4 @@ libmc_la_SOURCES = \
   mc.c mc.h
 
 libmc_la_LIBADD = \
-  $(top_builddir)/common/libcommon.la
+  $(top_builddir)/common/libxrdp_common.la

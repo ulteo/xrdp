@@ -23,4 +23,4 @@ libxrdp_la_SOURCES = \
   xrdp_bitmap_compress.c
 
 libxrdp_la_LIBADD = \
-  $(top_builddir)/common/libcommon.la
+  $(top_builddir)/common/libxrdp_common.la

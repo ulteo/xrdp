@@ -23,4 +23,4 @@ librdp_la_SOURCES = \
   rdp_tcp.c
 
 librdp_la_LIBADD = \
-  $(top_builddir)/common/libcommon.la
+  $(top_builddir)/common/libxrdp_common.la

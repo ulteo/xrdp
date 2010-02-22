@@ -9,12 +9,12 @@ INCLUDES = \
   -I$(top_srcdir)/common
 
 lib_LTLIBRARIES = \
-  libvchannel.la
+  libxrdp_vchannel.la
 
-libvchannel_la_SOURCES = \
+libxrdp_vchannel_la_SOURCES = \
   vchannel.h vchannel.c 
 
-libvchannel_la_LIBADD = \
+libxrdp_vchannel_la_LIBADD = \
   -lpthread \
   -ldl \
-  $(top_builddir)/common/libcommon.la 
+  $(top_builddir)/common/libxrdp_common.la 

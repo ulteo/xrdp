@@ -16,4 +16,4 @@ libvnc_la_SOURCES = \
   vnc.h
 
 libvnc_la_LIBADD = \
-  $(top_builddir)/common/libcommon.la
+  $(top_builddir)/common/libxrdp_common.la

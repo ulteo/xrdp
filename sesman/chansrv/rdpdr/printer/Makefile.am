@@ -20,7 +20,7 @@ rdpdr_printer_SOURCES = \
 
 rdpdr_printer_LDADD = \
   -L/usr/X11R6/lib \
-  $(top_builddir)/vchannel/libvchannel.la \
-  $(top_builddir)/common/libcommon.la 
+  $(top_builddir)/vchannel/libxrdp_vchannel.la \
+  $(top_builddir)/common/libxrdp_common.la 
 
 

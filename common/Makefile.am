@@ -5,10 +5,10 @@ AM_CFLAGS = \
   -DXRDP_SHARE_PATH=\"${datadir}/xrdp\" \
   -DXRDP_PID_PATH=\"${localstatedir}/run\"
 
-pkglib_LTLIBRARIES = \
-  libcommon.la
+lib_LTLIBRARIES = \
+  libxrdp_common.la
 
-libcommon_la_SOURCES = \
+libxrdp_common_la_SOURCES = \
   xrdp_constants.h \
   arch.h defines.h parse.h \
   d3des.c d3des.h \
@@ -20,7 +20,7 @@ libcommon_la_SOURCES = \
   thread_calls.c thread_calls.h \
   trans.c trans.h
 
-libcommon_la_LIBADD = \
+libxrdp_common_la_LIBADD = \
   -lcrypto \
   -lpthread \
   -ldl

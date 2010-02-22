@@ -15,4 +15,4 @@ libxup_la_SOURCES = \
   xup.c xup.h
 
 libxup_la_LIBADD = \
-  $(top_builddir)/common/libcommon.la
+  $(top_builddir)/common/libxrdp_common.la

@@ -15,4 +15,4 @@ xrdp_sessvc_SOURCES = \
   sessvc.c
 
 xrdp_sessvc_LDADD = \
-  $(top_builddir)/common/libcommon.la
+  $(top_builddir)/common/libxrdp_common.la

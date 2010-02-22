@@ -50,7 +50,7 @@ xrdp_sesman_SOURCES = \
   auth.h
 
 xrdp_sesman_LDADD = \
-  $(top_builddir)/common/libcommon.la \
+  $(top_builddir)/common/libxrdp_common.la \
   $(top_builddir)/sesman/libscp/libscp.la \
   $(AUTH_LIB)
 

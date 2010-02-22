@@ -19,7 +19,7 @@ xrdp_chansrv_SOURCES = \
 
 xrdp_chansrv_LDADD = \
   -L/usr/X11R6/lib \
-  $(top_builddir)/common/libcommon.la 
+  $(top_builddir)/common/libxrdp_common.la 
 
 chansrvsysconfdir=$(sysconfdir)/xrdp
 

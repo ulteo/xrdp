@@ -28,4 +28,4 @@ libscp_la_SOURCES = \
   libscp.h libscp_types_mng.h libscp_types.h
 
 libscp_la_LIBADD = \
-  $(top_builddir)/common/libcommon.la
+  $(top_builddir)/common/libxrdp_common.la
