@@ -483,7 +483,6 @@ get_icon(Window win_in, Window win_out )
 
 			if(message_length >1000 || i == width * height -1)
 			{
-				sprintf(buffer_pos,"\n");
 				send_message(buffer, strlen(buffer));
 
 				message_id++;
