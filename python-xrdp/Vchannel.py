@@ -32,7 +32,7 @@ class VirtualChannel():
 		self.STATUS_NORMAL = 0
 		self.STATUS_DISCONNECTED = 1
 		self.STATUS_CONNECTED = 2
-		self._dll = ctypes.cdll.LoadLibrary("libvchannel.so")
+		self._dll = ctypes.cdll.LoadLibrary("libxrdp_vchannel.so.0")
 		self._dll.vchannel_init()
 		self._handle = None
 		self.name = name
@@ -77,6 +77,7 @@ class VirtualChannel():
 		if ret == self.STATUS_CONNECTED:
 			self.connected = True
 			return None
+                return None
 
 	def Write(self, message):
 		if self._handle == None :
