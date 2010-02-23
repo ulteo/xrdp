@@ -147,15 +147,9 @@ void synchronize(){
 	Window win_in;
 	Window proper_win = 0;
 	Atom type;
-	unsigned char *name;
+	unsigned char *name = 0;
 	int flags = 0;
 	int pid;
-
-	name = '\0';
-	buffer = malloc(1024);
-	sprintf(buffer, "HELLO,%i,0x%08x\n", 0, 0);
-	send_message(buffer, strlen(buffer));
-	free(buffer);
 
 	for(i=0; i < window_list.item_count; i++)
 	{
