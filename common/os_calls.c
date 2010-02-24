@@ -498,7 +498,7 @@ g_tcp_last_error_would_block(int sck)
 #if defined(_WIN32)
   return WSAGetLastError() == WSAEWOULDBLOCK;
 #else
-  return (errno == EWOULDBLOCK) || (errno == EINPROGRESS);
+  return (errno == EWOULDBLOCK) || (errno == EAGAIN) || (errno == EINPROGRESS);
 #endif
 }
 
