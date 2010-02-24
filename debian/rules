@@ -9,8 +9,8 @@ DEB_SHLIBDEPS_INCLUDE_seamless-xrdp-shell \
 
 binary-install/xrdp:: DEB_DH_INSTALLINIT_ARGS := --onlyscripts
 
+STARTWM=$(CURDIR)/debian/tmp/etc/xrdp/startwm.sh
+
 install/xrdp:: 
-	sed '/^SESSION/c\SESSION="x-session-manager"' debian/tmp/etc/xrdp/startwm.sh \
-		> startwm.tmp
-	cp startwm.tmp debian/tmp/etc/xrdp/startwm.sh
-	chmod 755 debian/tmp/etc/xrdp/startwm.sh
+	sed '/^SESSION/c\SESSION="x-session-manager"' $(STARTWM) -i
+	chmod 755 $(STARTWM)
