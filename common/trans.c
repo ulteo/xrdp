@@ -371,6 +371,10 @@ trans_listen(struct trans* self, char* port)
 struct stream* APP_CC
 trans_get_in_s(struct trans* self)
 {
+  if(self == 0 )
+  {
+    return 0;
+  }
   return self->in_s;
 }
 
@@ -378,6 +382,14 @@ trans_get_in_s(struct trans* self)
 struct stream* APP_CC
 trans_get_out_s(struct trans* self, int size)
 {
+  if(self == 0 )
+  {
+    return 0;
+  }
+  if(self->out_s == 0 )
+  {
+    return 0;
+  }
   init_stream(self->out_s, size);
   return self->out_s;
 }

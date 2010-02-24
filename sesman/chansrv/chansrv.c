@@ -67,6 +67,8 @@ send_channel_data(int chan_id, char* data, int size)
   s = trans_get_out_s(g_con_trans, 8192);
   if (s == 0)
   {
+    log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[send_channel_data]: "
+    		"No client RDP client");
     return 1;
   }
   rv = 0;
