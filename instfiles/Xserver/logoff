@@ -88,8 +88,14 @@ def findPID(tag, pid_exception, user):
 
 
 # main
+try:
+  current_user = os.environ["USER"]
+except KeyError:
+  #no USER environ var when booting
+  sys.exit(2)
+
 if len(sys.argv) != 2:
-  user = os.environ["USER"]
+  user = current_user
 else :
   user = sys.argv[1]
 
@@ -99,7 +105,7 @@ if user == None:
 my_pid = os.getpid()
 func = findPID
 if user in "all" :
-    if not os.environ["USER"] in "root":
+    if not current_user in "root":
       print "You must be root to close all the xrdp session"
       sys.exit(2)
     else:
@@ -112,12 +118,5 @@ while pid != None :
   if os.path.exists("/proc/%i"%(pid)) :
     os.kill(pid, signal.SIGTERM)
   pid = func("XRDP_PROCESS", my_pid, user)
-
-
-
-    
-
-
-
 
 
