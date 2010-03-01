@@ -508,6 +508,7 @@ printer_dev_add(struct stream* s, int device_data_length,
 	http_t *http = NULL;
 	int watch;
 
+
   in_uint32_le(s, flags);
   log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_printer[printer_dev_add]: "
 		  "flags = %i", flags);
@@ -746,8 +747,11 @@ printer_dev_init_printer_socket( char* printer_name)
 	char printer_spool_dir[1024];
 	int watch;
 
+	g_chown(LP_SPOOL_DIR, "lp");
+	g_chown(SPOOL_DIR, "lp");
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_printer[printer_dev_init_printer_socket]:"
   		" Init printer_socket");
+
 	g_sprintf(user_spool_dir, "%s%s",SPOOL_DIR, username);
 	g_mkdir(user_spool_dir);
 	if( g_directory_exist(user_spool_dir) < 0)

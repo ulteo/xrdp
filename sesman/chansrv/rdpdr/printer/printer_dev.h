@@ -29,6 +29,7 @@
 #define PPD_FILE 		"/usr/share/ppd/PostscriptColor.ppd"
 #define DEVICE_URI	"xrdpprinter:"
 #define SPOOL_DIR		"/var/spool/xrdp_printer/"
+#define LP_SPOOL_DIR "/var/spool/xrdp_printer/SPOOL"
 
 int DEFAULT_CC
 printer_dev_add(struct stream* s, int device_data_length, int device_id, char* dos_name);
