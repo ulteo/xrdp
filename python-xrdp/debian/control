@@ -2,7 +2,8 @@ Source: python-xrdp
 Section: x11
 Priority: extra
 Maintainer: Samuel Bovée <samuel@ulteo.com>
-Build-Depends: debhelper (>= 5), cdbs, python (>= 2.5), python-central
+Build-Depends: debhelper (>= 5), cdbs,
+ python (>= 2.5), python-central, python-svn
 Standards-Version: 3.7.3
 
 Package: python-xrdp
