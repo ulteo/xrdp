@@ -16,6 +16,7 @@ f = file("setup.py.in", "r")
 content = f.read()
 f.close()
 
+content = content.replace("@REVISION@", str(revision))
 content = content.replace("@VERSION@", str(version))
 
 f = file("setup.py", "w")
