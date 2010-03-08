@@ -9,8 +9,8 @@ if os.environ.has_key("OVD_VERSION"):
 
 else:
     c = pysvn.Client()
-    revision = c.info(".")["revision"].number
-    version = "99.99~trunk+svn%05d"%(revision)
+    revision = "%05d" % (c.info(".")["revision"].number)
+    version = "99.99~trunk+svn%s"%(revision)
 
 f = file("setup.py.in", "r")
 content = f.read()
