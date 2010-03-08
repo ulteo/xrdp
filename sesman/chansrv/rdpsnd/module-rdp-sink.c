@@ -55,14 +55,8 @@
 #include <unistd.h>
 #include <limits.h>
 
-#include <pulse/timeval.h>
-#include <pulse/xmalloc.h>
-
-#include <pulsecore/macro.h>
 #include <pulsecore/sink.h>
 #include <pulsecore/module.h>
-#include <pulsecore/core-util.h>
-#include <pulsecore/core-error.h>
 #include <pulsecore/modargs.h>
 #include <pulsecore/log.h>
 #include <pulsecore/thread.h>
@@ -157,19 +151,21 @@ void pa_sink_process(int stamp, int fd, pa_sink *s, size_t length) {
     pa_assert(pa_frame_aligned(length, &s->sample_spec));
 
     pa_memchunk chunk;
-    if(length == 0)
-    {
-    	return ;
-    }
     /* If something is connected to our monitor source, we have to
      * pass valid data to it */
     void *p;
     while (length > 0) {
     	pa_sink_render(s, length, &chunk);
     	p = pa_memblock_acquire(chunk.memblock);
-      pa_log_debug("module-rdp[pa_sink_process]: "
-      		"Send wave packet");
-      vchannel_sound_send_wave_info(stamp, chunk.length, (char*) p + chunk.index);
+
+      //pa_log("module-rdp[pa_sink_process]: "
+      //		"Send wave packet %i",chunk.length);
+      if(chunk.length != 0)
+      {
+        //pa_log("avant vchannel_sound_send_wave_info");
+      	vchannel_sound_send_wave_info(stamp, chunk.length, (char*) p + chunk.index);
+      	//pa_log("après vchannel_sound_send_wave_info");
+      }
     	pa_memblock_release(chunk.memblock);
     	pa_memblock_unref(chunk.memblock);
     	pa_assert(chunk.length <= length);
@@ -185,8 +181,8 @@ static void thread_func(void *userdata) {
 
     pa_assert(u);
 
-    pa_log_debug("module-rdp[thread_func]: "
-    		"Thread starting up");
+    //pa_log_debug("module-rdp[thread_func]: "
+    //		"Thread starting up");
 
     pa_thread_mq_install(&u->thread_mq);
     pa_rtpoll_install(u->rtpoll);

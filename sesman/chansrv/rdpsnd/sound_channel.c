@@ -89,20 +89,27 @@ vchannel_sound_send_wave_info(int timestamp, int len, char* data)
 	init_stream(s, 16);
 	/* RDPSND PDU Header */
 	out_uint8(s, SNDC_WAVE);
+  //pa_log("1");
 
 	out_uint8(s, 0);												/* padding */
 	out_uint16_le(s, len+8);								/* data size*/
+	//pa_log("2");
 	/* Body */
 	out_uint16_le(s, timestamp);						/* wTimeStamp */
 	out_uint16_le(s, 0); 										/* wFormatNo */
+	//pa_log("3");
 	out_uint8(s, block_count);							/* cBlockNo */
 	block_count++;
 	out_uint8s(s,3);		 										/* bPad */
 	out_uint8a(s, p, 4); 										/* first 4 data bytes */
+	//pa_log("4");
 
 	s_mark_end(s);
+	//pa_log("5");
 	vchannel_sound_send(s, 0);
+	//pa_log("5.1");
 	free_stream(s);
+	//pa_log("6");
 
 	make_stream(s);
 	init_stream(s, len);
@@ -110,9 +117,9 @@ vchannel_sound_send_wave_info(int timestamp, int len, char* data)
 	out_uint8s(s,4);		 										/* bPad */
 	out_uint8a(s, p, len-4);
 	s_mark_end(s);
-	pa_log("avant vchannel_send");
+	//pa_log("avant vchannel_send");
 	vchannel_sound_send(s, 0);
-	pa_log("après vchannel_send");
+	//pa_log("après vchannel_send");
 	free_stream(s);
 
 }
@@ -378,9 +385,9 @@ void *thread_vchannel_process (void * arg)
 			pthread_exit ((void*)1);
 		}
 		s->data[length]=0;
-		pa_log("Avant process message ");
+		//pa_log("Avant process message ");
 		vchannel_sound_process_message(s, length, total_length);
-		pa_log("Après process message ");
+		//pa_log("Après process message ");
 		free_stream(s);
 	}
 	pthread_exit (0);
