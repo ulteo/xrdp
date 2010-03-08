@@ -110,7 +110,9 @@ vchannel_sound_send_wave_info(int timestamp, int len, char* data)
 	out_uint8s(s,4);		 										/* bPad */
 	out_uint8a(s, p, len-4);
 	s_mark_end(s);
+	pa_log("avant vchannel_send");
 	vchannel_sound_send(s, 0);
+	pa_log("après vchannel_send");
 	free_stream(s);
 
 }
@@ -366,20 +368,19 @@ void *thread_vchannel_process (void * arg)
 				"Prepare to receive ");
 
 		rv = vchannel_receive(sndrdp_channel, s->data, &length, &total_length);
+		pa_log("information received");
 		if( rv == ERROR )
 		{
+			pa_log("ERROR");
 			pa_log_warn("module-rdp[thread_vchannel_process]: "
 					"channel closed");
 			vchannel_close(sndrdp_channel);
 			pthread_exit ((void*)1);
 		}
-		switch(rv)
-		{
-		default:
-			s->data[length]=0;
-			vchannel_sound_process_message(s, length, total_length);
-			break;
-		}
+		s->data[length]=0;
+		pa_log("Avant process message ");
+		vchannel_sound_process_message(s, length, total_length);
+		pa_log("Après process message ");
 		free_stream(s);
 	}
 	pthread_exit (0);

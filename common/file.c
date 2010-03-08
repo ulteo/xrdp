@@ -172,15 +172,18 @@ file_split_name_value(char* text, char* name, char* value)
   len = g_strlen(text);
   for (i = 0; i < len; i++)
   {
-    if (text[i] == '=')
+    if (text[i] == '=' && on_to == 0)
     {
       on_to = 1;
     }
     else if (on_to)
     {
-      value[value_index] = text[i];
-      value_index++;
-      value[value_index] = 0;
+    	if(text[i] != '"')
+    	{
+				value[value_index] = text[i];
+				value_index++;
+				value[value_index] = 0;
+    	}
     }
     else
     {
@@ -321,7 +324,6 @@ file_by_name_read_section(const char* file_name, const char* section,
   int fd;
   int file_size;
   int rv;
-
   file_size = g_file_get_size(file_name);
   if (file_size < 1)
   {
