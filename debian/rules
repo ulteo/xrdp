@@ -4,13 +4,14 @@ include /usr/share/cdbs/1/class/autotools.mk
 include /usr/share/cdbs/1/rules/debhelper.mk
 include /usr/share/cdbs/1/rules/patchsys-quilt.mk
 
-DEB_SHLIBDEPS_INCLUDE_seamless-xrdp-shell \
-			    := $(CURDIR)/debian/xrdp/usr/lib/xrdp
+DEB_SHLIBDEPS_INCLUDE_seamless-xrdp-shell := \
+    $(CURDIR)/debian/xrdp/usr/lib/xrdp
+
+DEB_DH_MAKESHLIBS_ARGS_xrdp-sound := --noscripts
 
 binary-install/xrdp:: DEB_DH_INSTALLINIT_ARGS := --onlyscripts
 
-STARTWM=$(CURDIR)/debian/tmp/etc/xrdp/startwm.sh
-
 install/xrdp:: 
-	sed '/^SESSION/c\SESSION="x-session-manager"' $(STARTWM) -i
-	chmod 755 $(STARTWM)
+	STARTWM=$(CURDIR)/debian/tmp/etc/xrdp/startwm.sh; \
+	sed '/^SESSION/c\SESSION="x-session-manager"' $$STARTWM -i; \
+	chmod 755 $$STARTWM

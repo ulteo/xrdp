@@ -27,3 +27,10 @@ Architecture: all
 Depends: python (>= 2.5), xrdp, ghostscript, cupsys
 Description: cups file converter to ps format
  Xrdpi-Printer convert a ps file from cups in ps
+
+Package: xrdp-sound
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, xrdp, pulseaudio
+Description: XRDP plugin for PulseAudio
+ This package contains the XRDP plugin for PulseAudio, a sound server for POSIX
+ and WIN32 systems.

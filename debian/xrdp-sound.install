@@ -1,0 +1,2 @@
+debian/tmp/usr/lib/xrdp/librdpsnd.so*
+debian/lintian-overrides/xrdp-sound /usr/share/lintian/overrides/

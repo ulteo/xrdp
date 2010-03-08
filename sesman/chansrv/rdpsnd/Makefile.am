@@ -3,7 +3,6 @@ xrdplibdir=$(libdir)/xrdp
 AM_CFLAGS = \
   -DHAVE_CONFIG_H
 
-
 INCLUDES = \
   -Ipulse_headers \
   -I$(top_builddir)/common \
@@ -28,5 +27,6 @@ sndsysconf_DATA = \
 
 # must be tab below
 install-data-hook:
-	ln -sf $(DESTDIR)$(xrdplibdir)/librdpsnd.so.0.0.0 $(DESTDIR)/usr/lib/pulse-0.9/modules/module-rdp-sink.so
-
+	pulsemoddir=$(DESTDIR)/usr/lib/pulse-0.9/modules; \
+	mkdir -p $$pulsemoddir; \
+	ln -sf $(DESTDIR)$(xrdplibdir)/librdpsnd.so.0.0.0  $$pulsemoddir/module-rdp-sink.so

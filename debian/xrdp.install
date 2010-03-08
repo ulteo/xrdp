@@ -4,7 +4,12 @@ debian/tmp/etc/xrdp/*.ini
 debian/tmp/etc/xrdp/Xserver
 debian/tmp/etc/pam.d
 debian/tmp/etc/init.d
-debian/tmp/usr/lib/xrdp/*.so*
+debian/tmp/usr/lib/xrdp/libmc.so*
+debian/tmp/usr/lib/xrdp/librdp.so*
+debian/tmp/usr/lib/xrdp/libscp.so*
+debian/tmp/usr/lib/xrdp/libvnc.so*
+debian/tmp/usr/lib/xrdp/libxrdp.so*
+debian/tmp/usr/lib/xrdp/libxup.so*
 debian/tmp/usr/lib/*.so*
 debian/tmp/usr/share
 debian/tmp/usr/sbin

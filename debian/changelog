@@ -1,3 +1,9 @@
+xrdp (99.99~trunk000187-0ulteo0) trunk; urgency=low
+
+  * Adding the first implementation of xrdp-sound
+
+ -- Samuel Bovée <samuel@ulteo.com>  Mon, 08 Mar 2010 15:51:29 +0100
+
 xrdp (99.99~trunk000109-0ulteo0) trunk; urgency=low
 
   * Adding the first implementation of xrdp-seamrdp packaging
