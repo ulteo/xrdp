@@ -3,8 +3,7 @@ AM_CFLAGS = \
   -DXRDP_CFG_PATH=\"${sysconfdir}/xrdp\" \
   -DXRDP_SBIN_PATH=\"${sbindir}\" \
   -DXRDP_SHARE_PATH=\"${datadir}/xrdp\" \
-  -DXRDP_PID_PATH=\"${localstatedir}/run\" \
-  `cups-config --cflags` 
+  -DXRDP_PID_PATH=\"${localstatedir}/run\" 
 
 
 INCLUDES = \
@@ -18,7 +17,6 @@ xrdp_chansrv_SOURCES = \
   user_channel.h user_channel.c 
 
 xrdp_chansrv_LDADD = \
-  -L/usr/X11R6/lib \
   $(top_builddir)/common/libxrdp_common.la 
 
 chansrvsysconfdir=$(sysconfdir)/xrdp
@@ -27,7 +25,8 @@ chansrvsysconf_DATA = \
   vchannel.ini 
 
 SUBDIRS = \
-  rdpdr 
+  rdpdr \
+  rdpsnd
 
 EXTRA_DIST = \
   $(chansrvsysconf_DATA)

@@ -33,6 +33,19 @@
 #define STATUS_CONNECTED				0x02
 
 
+/* configuration file section and param */
+#define CHANNEL_GLOBAL_CONF			"Globals"
+#define CHANNEL_APP_NAME_PROP		"ApplicationName"
+#define CHANNEL_APP_PATH_PROP		"ApplicationPath"
+#define CHANNEL_APP_ARGS_PROP		"ApplicationArguments"
+#define CHANNEL_TYPE_PROP				"ChannelType"
+#define CHANNEL_TYPE_ROOT				"RootChannel"
+#define CHANNEL_TYPE_USER				"UserChannel"
+
+/* channel launcher */
+#define CHANNEL_LAUNCHER_NAME		"xrdp-channel-launcher"
+
+
 
 struct user_channel
 {

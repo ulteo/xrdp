@@ -20,8 +20,9 @@
 
 #include "user_channel.h"
 #include "chansrv.h"
-#include "os_calls.h"
-
+#include <os_calls.h>
+#include <list.h>
+#include <errno.h>
 
 static int g_user_channel_up = 0;
 extern char* username;
@@ -49,6 +50,38 @@ user_channel_cleanup(){
 	return 0;
 }
 
+/*****************************************************************************/
+char* APP_CC
+user_channel_get_channel_app_property(const char* channel_file_conf, const char* property)
+{
+  char* name;
+  char* value;
+  struct list* names;
+  struct list* values;
+  int index;
+
+  names = list_create();
+  names->auto_free = 1;
+  values = list_create();
+  values->auto_free = 1;
+  if (file_by_name_read_section(channel_file_conf, CHANNEL_GLOBAL_CONF, names, values) == 0)
+  {
+    for (index = 0; index < names->count; index++)
+    {
+      name = (char*)list_get_item(names, index);
+      value = (char*)list_get_item(values, index);
+      if (0 == g_strcasecmp(name, property))
+      {
+        if( g_strlen(value) > 1)
+        {
+        	printf("totot : %s\n", value);
+        	return value;
+        }
+      }
+    }
+  }
+  return 0;
+}
 
 /*****************************************************************************/
 int APP_CC
@@ -90,25 +123,78 @@ user_channel_transmit(int socket, int type, char* mess, int length, int total_le
 int APP_CC
 user_channel_launch_server_channel(char* channel_name)
 {
-	char channel_program[256];
-	char channel_program_path[256];
+	char channel_file_conf[256];
+	char channel_launcher_path[256];
+	char* channel_program_name;
+	char* channel_program_arguments;
+	char* channel_type;
+	char* display_string;
+  struct list* channel_params;
 	int pid;
-	g_sprintf(channel_program, "vchannel_%s", channel_name);
+
+	g_sprintf(channel_file_conf, "%s/%s.conf", XRDP_CFG_PATH, channel_name);
+	if (!g_file_exist(channel_file_conf))
+	{
+		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_launch_server_channel]: "
+				"Channel %s is not registered ", channel_name);
+		return 0;
+	}
+	channel_program_name = user_channel_get_channel_app_property(channel_file_conf, CHANNEL_APP_NAME_PROP);
+	channel_type = user_channel_get_channel_app_property(channel_file_conf, CHANNEL_TYPE_PROP);
+	channel_program_arguments = user_channel_get_channel_app_property(channel_file_conf, CHANNEL_APP_ARGS_PROP);
+
+	if (channel_program_name ==0 || channel_program_arguments ==0 || channel_type == 0)
+	{
+		log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[user_channel_launch_server_channel]: "
+				"Channel conf file for %s is not correct", channel_name);
+		return 1;
+	}
+
 	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_launch_server_channel]: "
-			"Try to launch the channel application %s ", channel_program);
+			"Channel app name for %s: %s", channel_name, channel_program_name);
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_launch_server_channel]: "
+				"Channel type for %s: %s", channel_name, channel_type);
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_launch_server_channel]: "
+				"Channel args for %s: %s", channel_name, channel_program_arguments);
+
+
+	g_sprintf(channel_launcher_path, "%s/%s", XRDP_SBIN_PATH, CHANNEL_LAUNCHER_NAME);
+
 	pid = g_fork();
 	if(pid < 0)
 	{
 		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_launch_server_channel]: "
-				"Error while launching the channel application %s ", channel_program);
+				"Error while launching the channel application %s ", CHANNEL_LAUNCHER_NAME);
 		return 1;
 	}
 	if( pid == 0)
 	{
 		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_launch_server_channel]: "
-				"Launching the channel application %s ", channel_program);
-		g_sprintf(channel_program_path, "%s/%s",XRDP_SBIN_PATH, channel_program);
-		g_execlp3(channel_program_path, channel_program, username);
+				"Launching the channel application %s ", CHANNEL_LAUNCHER_NAME);
+	  channel_params = list_create();
+	  channel_params->auto_free = 1;
+
+	  display_string = g_getenv("DISPLAY");
+	  /* building parameters */
+	  list_add_item(channel_params, (long)g_strdup(channel_launcher_path));
+	  list_add_item(channel_params, (long)g_strdup(channel_program_name));
+	  list_add_item(channel_params, (long)g_strdup(channel_program_arguments));
+	  list_add_item(channel_params, (long)g_strdup(username));
+	  list_add_item(channel_params, (long)g_strdup(display_string));
+	  if( g_strcmp(channel_type, CHANNEL_TYPE_ROOT) == 0)
+	  {
+	  	list_add_item(channel_params, (long)g_strdup("root"));
+	  }
+	  else
+	  {
+	  	list_add_item(channel_params, (long)g_strdup(username));
+	  }
+	  list_add_item(channel_params, 0);
+	  if (g_execvp(CHANNEL_LAUNCHER_NAME, ((char**)channel_params->items)) < 0)
+	  {
+			log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_launch_server_channel]: "
+					"Enable to launch application %s : %s", CHANNEL_LAUNCHER_NAME, strerror(errno));
+	  }
 		g_exit(0);
 	}
 	return 0;
@@ -127,10 +213,8 @@ user_channel_do_up(char* chan_name)
 	g_chown(socket_filename, username);
   log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_do_up]: "
   		"Channel socket '%s' is created", socket_filename);
-  if(strcmp(chan_name, "rdpdr") == 0)
-  {
-  	user_channel_launch_server_channel(chan_name);
-  }
+  user_channel_launch_server_channel(chan_name);
+
 	return sock;
 }
 
