@@ -13,7 +13,7 @@ sbin_PROGRAMS = \
   xrdp-chansrv
 
 xrdp_chansrv_SOURCES = \
-  chansrv.c chansrv.h \
+  chansrv.h chansrv.c \
   user_channel.h user_channel.c 
 
 xrdp_chansrv_LDADD = \

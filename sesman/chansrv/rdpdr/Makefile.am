@@ -27,4 +27,3 @@ rdpdrsysconf_DATA = \
 
 EXTRA_DIST = \
   $(rdpdrsysconf_DATA)
-
