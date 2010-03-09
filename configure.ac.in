@@ -82,6 +82,9 @@ AC_CHECK_HEADERS([libxml/xinclude.h], [], [AC_MSG_ERROR([Please install libxml2-
 # Check for pulse headers
 AC_CHECK_HEADERS([pulse/pulseaudio.h], [], [AC_MSG_ERROR([Please install libpulse-dev])])
 
+# Check for libtool headers
+AC_CHECK_HEADERS([ltdl.h], [], [AC_MSG_ERROR([Please install libltdl3-dev or libltdl-dev])])
+
 if test "x${prefix}" = "xNONE" ; then
    prefix="/usr"
    sysconfdir="/etc";
