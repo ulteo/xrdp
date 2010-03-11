@@ -10,7 +10,7 @@ INCLUDES = \
   -I$(top_srcdir)/common
 
 sbin_PROGRAMS = \
-  xrdp-chansrv
+  xrdp-chansrv 
 
 xrdp_chansrv_SOURCES = \
   chansrv.h chansrv.c \
@@ -24,9 +24,18 @@ chansrvsysconfdir=$(sysconfdir)/xrdp
 chansrvsysconf_DATA = \
   vchannel.ini 
 
+channel_launcherdir = $(sbindir)
+
+channel_launcher_DATA = \
+  xrdp-channel-launcher
+
 SUBDIRS = \
   rdpdr \
   rdpsnd
 
+install-data-hook:
+	chmod 755 $(DESTDIR)$(sbindir)/xrdp-channel-launcher
+
 EXTRA_DIST = \
-  $(chansrvsysconf_DATA)
+  $(chansrvsysconf_DATA) \
+  $(channel_launcher_DATA)
