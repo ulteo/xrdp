@@ -31,8 +31,7 @@ static struct stream* splitted_packet;
 static RD_WAVEFORMATEX formats[MAX_FORMATS];
 static int format_index = 0;
 static block_count = 0;
-
-
+int completion_count=0;
 
 /*****************************************************************************/
 int vchannel_sound_send(struct stream* s, int update_size){
@@ -52,7 +51,6 @@ int vchannel_sound_send(struct stream* s, int update_size){
   }
   pa_log_debug("module-rdp[vchannel_sound_send]: "
     		"Send message of size : %i",size);
-
   return rv;
 }
 
@@ -89,37 +87,48 @@ vchannel_sound_send_wave_info(int timestamp, int len, char* data)
 	init_stream(s, 16);
 	/* RDPSND PDU Header */
 	out_uint8(s, SNDC_WAVE);
-  //pa_log("1");
 
 	out_uint8(s, 0);												/* padding */
 	out_uint16_le(s, len+8);								/* data size*/
-	//pa_log("2");
 	/* Body */
 	out_uint16_le(s, timestamp);						/* wTimeStamp */
 	out_uint16_le(s, 0); 										/* wFormatNo */
-	//pa_log("3");
 	out_uint8(s, block_count);							/* cBlockNo */
 	block_count++;
 	out_uint8s(s,3);		 										/* bPad */
 	out_uint8a(s, p, 4); 										/* first 4 data bytes */
-	//pa_log("4");
 
 	s_mark_end(s);
-	//pa_log("5");
 	vchannel_sound_send(s, 0);
-	//pa_log("5.1");
 	free_stream(s);
-	//pa_log("6");
 
 	make_stream(s);
 	init_stream(s, len);
+
 	p+=4;
 	out_uint8s(s,4);		 										/* bPad */
 	out_uint8a(s, p, len-4);
+
 	s_mark_end(s);
-	//pa_log("avant vchannel_send");
 	vchannel_sound_send(s, 0);
-	//pa_log("après vchannel_send");
+	free_stream(s);
+
+}
+
+/*****************************************************************************/
+int APP_CC
+vchannel_sound_send_next_wave_info(int len, char* data)
+{
+	pa_log_debug("module-rdp[vchannel_sound_send_next_wave_info]: "
+			"Send wave information");
+	char *p = data;
+	struct stream* s;
+
+	make_stream(s);
+	init_stream(s, len);
+	out_uint8a(s, p, len);
+	s_mark_end(s);
+	vchannel_sound_send(s, 0);
 	free_stream(s);
 
 }
@@ -328,6 +337,7 @@ vchannel_sound_process_message(struct stream* s, int length, int total_length)
 	case SNDC_WAVECONFIRM:
   	pa_log_debug("module-rdp[vchannel_sound_process_message]: "
   			"SNDC_WAVECONFIRM");
+  	completion_count--;
 		break;
 
 	default:
@@ -375,19 +385,30 @@ void *thread_vchannel_process (void * arg)
 				"Prepare to receive ");
 
 		rv = vchannel_receive(sndrdp_channel, s->data, &length, &total_length);
-		pa_log("information received");
-		if( rv == ERROR )
+		switch(rv)
 		{
-			pa_log("ERROR");
-			pa_log_warn("module-rdp[thread_vchannel_process]: "
-					"channel closed");
+		case ERROR:
+			pa_log_debug("module-rdp[thread_vchannel_process]: "
+					"Invalid message");
+			free_stream(s);
 			vchannel_close(sndrdp_channel);
-			pthread_exit ((void*)1);
+			pthread_exit ((void*) 1);
+			break;
+		case STATUS_CONNECTED:
+			pa_log_debug("module-rdp[thread_vchannel_process]: "
+					"Status connected");
+			break;
+		case STATUS_DISCONNECTED:
+			pa_log_debug("module-rdp[thread_vchannel_process]: "
+					"Status disconnected");
+			//printer_deinit();
+			break;
+		default:
+			s->data[length]=0;
+			vchannel_sound_process_message(s, length, total_length);
+			break;
 		}
-		s->data[length]=0;
-		//pa_log("Avant process message ");
-		vchannel_sound_process_message(s, length, total_length);
-		//pa_log("Après process message ");
+
 		free_stream(s);
 	}
 	pthread_exit (0);

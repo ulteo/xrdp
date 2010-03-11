@@ -81,6 +81,8 @@ PA_MODULE_USAGE(
 
 #define DEFAULT_SINK_NAME "rdp"
 
+extern int completion_count;
+
 struct userdata {
     pa_core *core;
     pa_module *module;
@@ -94,7 +96,6 @@ struct userdata {
 
     size_t block_size;
     int fd;
-
     struct timeval timestamp;
 };
 
@@ -144,6 +145,7 @@ void pa_sink_process(int stamp, int fd, pa_sink *s, size_t length) {
     pa_sink_input *i;
     void *state = NULL;
     int write_type = 0;
+    int packet_id=0;
 
     pa_sink_assert_ref(s);
     pa_assert(PA_SINK_OPENED(s->thread_info.state));
@@ -154,24 +156,37 @@ void pa_sink_process(int stamp, int fd, pa_sink *s, size_t length) {
     /* If something is connected to our monitor source, we have to
      * pass valid data to it */
     void *p;
+    int current_size=0;
+    pa_log_debug("module-rdp[pa_sink_process]: "
+    		"Send wave Frame ");
+
+    if (completion_count > 20)
+    {
+//      while (length > 0) {
+//      	pa_sink_render(s, length, &chunk);
+//      	p = pa_memblock_acquire(chunk.memblock);
+//      	pa_memblock_release(chunk.memblock);
+//      	pa_memblock_unref(chunk.memblock);
+//      	pa_assert(chunk.length <= length);
+//      	length -= chunk.length;
+//      }
+
+    	return;
+    }
     while (length > 0) {
     	pa_sink_render(s, length, &chunk);
     	p = pa_memblock_acquire(chunk.memblock);
 
-      //pa_log("module-rdp[pa_sink_process]: "
-      //		"Send wave packet %i",chunk.length);
-      if(chunk.length != 0)
+      if(chunk.length != 0 )
       {
-        //pa_log("avant vchannel_sound_send_wave_info");
       	vchannel_sound_send_wave_info(stamp, chunk.length, (char*) p + chunk.index);
-      	//pa_log("après vchannel_sound_send_wave_info");
+      	completion_count++;
       }
     	pa_memblock_release(chunk.memblock);
     	pa_memblock_unref(chunk.memblock);
     	pa_assert(chunk.length <= length);
     	length -= chunk.length;
     }
-
 }
 
 static void thread_func(void *userdata) {
@@ -181,8 +196,8 @@ static void thread_func(void *userdata) {
 
     pa_assert(u);
 
-    //pa_log_debug("module-rdp[thread_func]: "
-    //		"Thread starting up");
+    pa_log_debug("module-rdp[thread_func]: "
+    		"Thread starting up");
 
     pa_thread_mq_install(&u->thread_mq);
     pa_rtpoll_install(u->rtpoll);
