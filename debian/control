@@ -2,7 +2,7 @@ Source: xrdp
 Section: x11
 Priority: extra
 Maintainer: Jeremy Desvages <jeremy@ulteo.com>, Samuel Bovée <samuel@ulteo.com>
-Build-Depends: debhelper (>= 5), cdbs, quilt,
+Build-Depends: debhelper (>= 5), cdbs, quilt, libcupsys2-dev | libcups2-dev, libxml2-dev,
  libx11-dev, libxfixes-dev, libssl-dev, libpam0g-dev, libpulse-dev, libltdl3-dev
 Standards-Version: 3.8.3
 
