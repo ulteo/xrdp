@@ -367,6 +367,16 @@ vchannel_sound_init(void)
 }
 
 /*****************************************************************************/
+int APP_CC
+vchannel_sound_deinit(void)
+{
+	pa__done();
+	return 0;
+}
+
+
+
+/*****************************************************************************/
 void *thread_vchannel_process (void * arg)
 {
 	struct stream* s = NULL;
@@ -401,7 +411,7 @@ void *thread_vchannel_process (void * arg)
 		case STATUS_DISCONNECTED:
 			pa_log_debug("module-rdp[thread_vchannel_process]: "
 					"Status disconnected");
-			//printer_deinit();
+			vchannel_sound_deinit();
 			break;
 		default:
 			s->data[length]=0;
