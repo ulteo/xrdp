@@ -27,7 +27,7 @@ static int g_rdpsnd_chan_id = 0;
 
 static int is_fragmented_packet = 0;
 static int fragment_size;
-static struct stream* splitted_packet;
+static struct stream* splitted_packet = 0;
 static RD_WAVEFORMATEX formats[MAX_FORMATS];
 static int format_index = 0;
 static block_count = 0;
@@ -349,8 +349,13 @@ vchannel_sound_process_message(struct stream* s, int length, int total_length)
 	{
 		is_fragmented_packet = 0;
 		fragment_size = 0;
-		free_stream(packet);
+		if(splitted_packet != 0)
+		{
+			free_stream(splitted_packet);
+		}
+		splitted_packet = 0;
 	}
+
   return result;
 }
 
@@ -370,7 +375,7 @@ vchannel_sound_init(void)
 int APP_CC
 vchannel_sound_deinit(void)
 {
-	pa__done();
+	g_exit(0);
 	return 0;
 }
 
