@@ -48,14 +48,14 @@
 
 ### Load several protocols
 .ifexists module-esound-protocol-unix.so
-load-module module-esound-protocol-unix socket="socket"
+#load-module module-esound-protocol-unix socket="socket"
 .endif
 load-module module-native-protocol-unix
 
 ### Network access (may be configured with paprefs, so leave this commented
 ### here if you plan to use paprefs)
-load-module module-esound-protocol-tcp
-load-module module-native-protocol-tcp
+#load-module module-esound-protocol-tcp
+#load-module module-native-protocol-tcp
 #load-module module-zeroconf-publish
 
 ### Load the RTP reciever module (also configured via paprefs, see above)
@@ -108,4 +108,4 @@ load-module module-native-protocol-tcp
 
 #load-module module-esound-sink
 load-module module-rdp-sink
-load-module module-pipe-source
+#load-module module-pipe-source
