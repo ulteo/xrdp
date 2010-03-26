@@ -38,6 +38,11 @@ librdpsnd_la_LIBADD = \
   $(top_builddir)/vchannel/libxrdp_vchannel.la \
   $(top_builddir)/common/libxrdp_common.la 
 
+alsaconfdir=$(sysconfdir)
+
+alsaconf_DATA = \
+  asound.conf
+
 sndsysconfdir=$(sysconfdir)/xrdp
 
 sndsysconf_DATA = \
@@ -50,4 +55,6 @@ install-data-hook:
 	ln -sf $(DESTDIR)$(libdir)/xrdp/librdpsnd.so.0.0.0  $$pulsemoddir/module-rdp-sink.so
 	chmod 755 $(DESTDIR)$(sysconfdir)/xrdp/rdpsnd.pa
 
-EXTRA_DIST = $(sndsysconf_DATA)
+EXTRA_DIST = \
+  $(sndsysconf_DATA) \
+  $(alsaconf_DATA)
