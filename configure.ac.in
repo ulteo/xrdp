@@ -118,6 +118,5 @@ AC_CONFIG_FILES([Makefile
                  sesman/chansrv/rdpsnd/Makefile
                  sesman/chansrv/rdpdr/Makefile
                  sesman/chansrv/rdpdr/printer/Makefile
-                 manpages/Makefile
 ])
 AC_OUTPUT
