@@ -41,3 +41,5 @@ autoheader --force
 
 echo "# launch automake #"
 automake --add-missing --copy --force-missing
+
+./configure $@
