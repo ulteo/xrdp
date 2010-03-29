@@ -31,7 +31,7 @@ Description: cups file converter to ps format
 
 Package: xrdp-sound
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, xrdp, pulseaudio
+Depends: ${shlibs:Depends}, ${misc:Depends}, xrdp, pulseaudio, alsa-base, alsa-utils, libasound2-plugins
 Description: XRDP plugin for PulseAudio
  This package contains the XRDP plugin for PulseAudio, a sound server for POSIX
  and WIN32 systems.
