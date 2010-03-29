@@ -32,13 +32,11 @@ xrdp_LDADD = \
   $(top_builddir)/libxrdp/libxrdp.la
 
 xrdpsysconfdir=$(sysconfdir)/xrdp
-
 xrdpsysconf_DATA = \
   xrdp.ini \
   rsakeys.ini
 
 xrdppkgdatadir=$(datadir)/xrdp
-
 xrdppkgdata_DATA = \
   ad24b.bmp \
   ad256.bmp \

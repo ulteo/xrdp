@@ -89,6 +89,7 @@ if test "x${prefix}" = "xNONE" ; then
    prefix="/usr"
    sysconfdir="/etc";
    bindir="/usr/bin";
+   datarootdir="/usr/share";
    localstatedir="/var";
 fi
 
@@ -113,7 +114,7 @@ AC_CONFIG_FILES([Makefile
                  instfiles/pam.d/Makefile
                  instfiles/Xserver/Makefile
                  genkeymap/Makefile
-                 xrdp_printer/Makefile
+                 printer/Makefile
                  seamlessrdpshell/Makefile
                  sesman/chansrv/rdpsnd/Makefile
                  sesman/chansrv/rdpdr/Makefile

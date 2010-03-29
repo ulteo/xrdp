@@ -13,5 +13,5 @@ SUBDIRS = \
   docs \
   instfiles \
   genkeymap \
-  xrdp_printer \
+  printer \
   seamlessrdpshell
