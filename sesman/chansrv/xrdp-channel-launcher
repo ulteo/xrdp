@@ -21,20 +21,22 @@ CHANNEL_APPLICATION=$1
 CHANNEL_ARGS=$2
 USER=$3
 DISPLAY=$4
-APPLICATION="${CHANNEL_APPLICATION} ${CHANNEL_ARGS}"
+PRIVILEGE=$5
+APPLICATION="${CHANNEL_APPLICATION} ${CHANNEL_ARGS} ${USER}"
 
 
-echo ${CHANNEL_APPLICATION}
-echo ${CHANNEL_ARGS}
-echo ${USER}
-echo ${DISPLAY}
+echo "channel app : ${CHANNEL_APPLICATION}"
+echo "argument : ${CHANNEL_ARGS}"
+echo "user : ${USER}"
+echo "display : ${DISPLAY}"
+echo "privilege : ${PRIVILEGE}"
 
-if [ "${USER}" = "root" ]; then
-	echo "su - ${USER} -c '${APPLICATION}'"
-	su - ${USER} -c "export DISPLAY=:${DISPLAY} && ${APPLICATION}"
+if [ "${PRIVILEGE}" = "root" ]; then
+	echo "${APPLICATION}"
+	export DISPLAY=:${DISPLAY} && ${APPLICATION}
 else
-	echo "su - ${USER} -c '${APPLICATION}'"
-	su - ${USER} -c "export DISPLAY=:${DISPLAY} && ${APPLICATION}"
+	echo "su - ${PRIVILEGE} -c '${APPLICATION}'"
+	su - ${PRIVILEGE} -c "export DISPLAY=:${DISPLAY} && ${APPLICATION}"
 fi
 
 echo "fin"
