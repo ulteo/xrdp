@@ -4,7 +4,8 @@ AM_CFLAGS = \
   -Wall -O2 -D_REENTRANT
 
 SUBDIRS = \
-  printer
+  printer \
+  disk
 
 INCLUDES = \
   -I$(top_srcdir)/common \
