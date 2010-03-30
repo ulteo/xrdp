@@ -40,7 +40,7 @@ static int fragment_size;
 static struct stream* splitted_packet;
 char username[256];
 static int printer_sock;
-//static int disk_sock;
+static int disk_sock;
 static int rdpdr_sock;
 
 /*****************************************************************************/
@@ -201,6 +201,9 @@ rdpdr_get_socket_from_device_id(int device_id)
 			{
 			case RDPDR_DTYP_PRINT:
 				return printer_sock;
+
+			case RDPDR_DTYP_FILESYSTEM:
+				return disk_sock;
 
 				default:
 				  log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr[rdpdr_get_socket_from_device_id]: "
@@ -501,7 +504,7 @@ rdpdr_process_message(struct stream* s, int length, int total_length)
 
     case PAKID_CORE_DEVICELIST_ANNOUNCE:
     	rdpdr_devicelist_announce(packet);
-    	result = rdpdr_transmit(printer_sock, DATA_MESSAGE, packet->data, total_length);
+    	result = rdpdr_transmit(disk_sock, DATA_MESSAGE, packet->data, total_length);
       break;
     case PAKID_CORE_DEVICE_IOCOMPLETION:
     	in_uint32_le(packet, device_id);
@@ -512,7 +515,7 @@ rdpdr_process_message(struct stream* s, int length, int total_length)
         		"Unknow device, failed to redirect message");
         break;
     	}
-    	result = rdpdr_transmit(printer_sock, DATA_MESSAGE, packet->data, total_length);
+    	result = rdpdr_transmit(disk_sock, DATA_MESSAGE, packet->data, total_length);
     	break;
     default:
       log_message(l_config, LOG_LEVEL_WARNING, "vchannel_rdpdr_channel[rdpdr_process_message]: "
@@ -532,7 +535,7 @@ rdpdr_process_message(struct stream* s, int length, int total_length)
 
 /*****************************************************************************/
 int DEFAULT_CC
-rdpdr_process_channel_opening(int client, char* device)
+rdpdr_process_channel_opening(int client, const char* device)
 {
 	struct stream* s;
   int data_length;
@@ -583,69 +586,151 @@ rdpdr_process_channel_opening(int client, char* device)
 
 /*****************************************************************************/
 int APP_CC
-rdpdr_init_devices()
+rdpdr_launch_printer_manager(int display_num)
 {
-	int display_num;
+	char device_program_path[256];
+	char device_program_name[15];
 	char socket_filename[256];
 	int pid;
 	int sock;
-	char printer_program_path[256];
 
-	display_num = g_get_display_num_from_display(g_getenv("DISPLAY"));
-	if(display_num == 0)
-	{
-	  log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr[rdpdr_init]: "
-	  		"Unable to get display");
-	  return 1;
-	}
-  log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_init]: "
-  		"Activate all the device type");
-	/* socket creation */
   g_sprintf(socket_filename, "/var/spool/xrdp/%i/vchannel_printer", display_num);
   sock = g_create_unix_socket(socket_filename);
 	if (sock == 1)
 	{
-	  log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr[rdpdr_init]: "
+	  log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr[rdpdr_launch_printer_manager]: "
 	  		"Unable create printer socket");
 	  return 1;
 	}
-	/* printer launch */
-	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_init]: "
-			"Try to launch the rdpdr device application 'printer' ");
+
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_launch_printer_manager]: "
+			"Try to launch the rdpdr device application 'rdpdr_printer'");
 	pid = g_fork();
 	if(pid < 0)
 	{
-		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_init]: "
+		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_launch_printer_manager]: "
 				"Error while launching the channel application rdpdr_printer");
 		return 1;
 	}
 	if( pid == 0)
 	{
-		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_init]: "
+		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_launch_printer_manager]: "
 				"Launching the channel application rdpdr_printer ");
-		sprintf(printer_program_path, "%s/%s",XRDP_SBIN_PATH, "rdpdr_printer");
-		g_execlp3(printer_program_path, "rdpdr_printer", username);
-		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_init]: "
+
+		g_sprintf(device_program_path, "%s/%s",XRDP_SBIN_PATH, "rdpdr_printer");
+		g_execlp3(device_program_path, device_program_name, username);
+		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_launch_printer_manager]: "
 				"The channel application rdpdr_printer ended");
 		g_exit(0);
 	}
 	/* wait device */
-	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_init]: "
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_launch_printer_manager]: "
 			"Waiting printer program");
-	printer_sock = g_wait_connection(sock);
-	if(printer_sock < 0 )
+	disk_sock = g_wait_connection(sock);
+	if(disk_sock < 0 )
 	{
-		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_[rdpdr_init]: "
+		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_[rdpdr_launch_printer_manager]: "
 				"Error while waiting xrdp_printer");
 		return 1;
 	}
-	if( rdpdr_process_channel_opening(printer_sock, "printer") == 1)
+	if( rdpdr_process_channel_opening(disk_sock, "printer") == 1)
 	{
-		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_[rdpdr_init]: "
+		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_[rdpdr_launch_printer_manager]: "
 						"Error while waiting channel to xrdp_printer");
 		return 1;
 	}
 	return 0;
+}
+
+/*****************************************************************************/
+int APP_CC
+rdpdr_launch_disk_manager(int display_num)
+{
+	char program_command[256];
+	char socket_filename[256];
+  struct list* channel_params;
+
+	int pid;
+	int sock;
+
+  g_sprintf(socket_filename, "/var/spool/xrdp/%i/vchannel_disk", display_num);
+  sock = g_create_unix_socket(socket_filename);
+	if (sock == 1)
+	{
+	  log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr[rdpdr_launch_disk_manager]: "
+	  		"Unable create disk socket");
+	  return 1;
+	}
+	g_chown(socket_filename, username);
+
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_launch_disk_manager]: "
+			"Try to launch the rdpdr device application 'rdpdr_disk'");
+	g_sprintf(program_command, "/usr/sbin/rdpdr_disk %s", username);
+
+	pid = g_fork();
+	if(pid < 0)
+	{
+		log_message(l_config, LOG_LEVEL_DEBUG, "chansrv[user_channel_launch_server_channel]: "
+				"Error while launching the channel application %s ", program_command);
+		return 1;
+	}
+	if( pid == 0)
+	{
+		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_launch_disk_manager]: "
+				"Launching the disk program");
+	  channel_params = list_create();
+	  channel_params->auto_free = 1;
+
+	  /* building parameters */
+	  list_add_item(channel_params, (long)g_strdup("su"));
+	  list_add_item(channel_params, (long)g_strdup(username));
+	  list_add_item(channel_params, (long)g_strdup("-c"));
+	  list_add_item(channel_params, (long)g_strdup(program_command));
+
+	  list_add_item(channel_params, 0);
+	  if (g_execvp("su", ((char**)channel_params->items)) < 0)
+	  {
+			log_message(l_config, LOG_LEVEL_DEBUG, "chansrv[user_channel_launch_server_channel]: "
+					"Enable to launch application %s : %s", program_command, strerror(errno));
+	  }
+		g_exit(0);
+	}
+	/* wait device */
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_launch_disk_manager]: "
+			"Waiting disk program");
+	disk_sock = g_wait_connection(sock);
+	if(disk_sock < 0 )
+	{
+		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_[rdpdr_launch_disk_manager]: "
+				"Error while waiting xrdp_disk");
+		return 1;
+	}
+	if( rdpdr_process_channel_opening(disk_sock, "disk") == 1)
+	{
+		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_[rdpdr_launch_disk_manager]: "
+						"Error while waiting channel to xrdp_disk");
+		return 1;
+	}
+	return 0;
+}
+
+/*****************************************************************************/
+int APP_CC
+rdpdr_init_devices()
+{
+	int display_num;
+
+	display_num = g_get_display_num_from_display(g_getenv("DISPLAY"));
+	if(display_num == 0)
+	{
+	  log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr[rdpdr_init_devices]: "
+	  		"Unable to get display");
+	  return 1;
+	}
+  log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_init_devices]: "
+  		"Activate all the device type");
+
+  return rdpdr_launch_disk_manager(display_num);
 }
 
 /*****************************************************************************/
@@ -743,9 +828,11 @@ int rdpdr_deinit()
 {
 	char status[1];
 	status[0] = STATUS_DISCONNECTED;
+	rdpdr_transmit(disk_sock, SETUP_MESSAGE, status, 1);
 	rdpdr_transmit(printer_sock, SETUP_MESSAGE, status, 1);
 	vchannel_close(rdpdr_sock);
 	g_tcp_close(printer_sock);
+	g_tcp_close(disk_sock);
 	return 0;
 }
 
