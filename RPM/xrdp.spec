@@ -12,7 +12,8 @@ Packager: Samuel Bovée <samuel@ulteo.com>
 Group: Applications/System
 ExclusiveArch: x86_64
 Buildroot: %{_tmppath}/%{name}-%{version}-root
-#BuildRequires: debhelper, cdbs, quilt, libcups2-dev, libxml2-dev, libx11-dev, libxfixes-dev, libssl-dev, libpam0g-dev, libpulse-dev, libltdl3-dev
+Patch0: /ici/il/faut/le mettre
+BuildRequires: cups-devel, libxml2-devel, libX11-devel, libXfixes-devel, openssl-devel, pam-devel, pulseaudio-lib-devel, libtool-ltdl-devel
 Requires: python
 
 %description
@@ -120,7 +121,7 @@ application without a desktop
 
 Summary: cups file converter to ps format
 Group: Applications/System
-Requires: xrdp, ghostscript, cupsys
+Requires: xrdp, ghostscript, cups
 
 %description printer
 Xrdpi-Printer convert a ps file from cups in ps
@@ -141,7 +142,7 @@ chown -R lp /var/spool/xrdp_printer
 
 Summary: XRDP plugin for PulseAudio
 Group: Applications/System
-Requires: xrdp, pulseaudio, alsa-base, alsa-utils, libasound2-plugins
+Requires: xrdp, pulseaudio, alsa-utils, alsa-lib
 
 %description sound
 This package contains the XRDP plugin for PulseAudio, a sound server for POSIX
