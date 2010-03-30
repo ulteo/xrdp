@@ -1966,6 +1966,18 @@ g_execvp(const char* p1, char* args[])
 /*****************************************************************************/
 /* does not work in win32 */
 int APP_CC
+g_user_execvp(const char* p1, char* args[])
+{
+#if defined(_WIN32)
+  return 0;
+#else
+  return execvp(p1, args);
+#endif
+}
+
+/*****************************************************************************/
+/* does not work in win32 */
+int APP_CC
 g_execlp3(const char* a1, const char* a2, const char* a3)
 {
 #if defined(_WIN32)
