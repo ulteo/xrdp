@@ -80,7 +80,7 @@ user_channel_get_channel_app_property(const char* channel_file_conf, const char*
       }
     }
   }
-  return 0;
+  return "";
 }
 
 /*****************************************************************************/
@@ -143,7 +143,8 @@ user_channel_launch_server_channel(char* channel_name)
 	channel_type = user_channel_get_channel_app_property(channel_file_conf, CHANNEL_TYPE_PROP);
 	channel_program_arguments = user_channel_get_channel_app_property(channel_file_conf, CHANNEL_APP_ARGS_PROP);
 
-	if (channel_program_name ==0 || channel_program_arguments ==0 || channel_type == 0)
+
+	if (g_strcmp(channel_program_name, "") == 0 || g_strcmp(channel_type, "") == 0)
 	{
 		log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[user_channel_launch_server_channel]: "
 				"Channel conf file for %s is not correct", channel_name);
