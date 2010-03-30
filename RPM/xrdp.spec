@@ -2,6 +2,8 @@
 Name: xrdp
 ###############################################
 
+#TODO: faire marcher les patch et les droits lp dans printer
+
 Summary: RDP server for Linux
 Version: 1.0
 Release: 1
@@ -10,10 +12,10 @@ Vendor: Ulteo SAS
 URL: http://www.ulteo.com
 Packager: Samuel Bovée <samuel@ulteo.com>
 Group: Applications/System
-ExclusiveArch: x86_64
+ExclusiveArch: i386 x86_64
 Buildroot: %{_tmppath}/%{name}-%{version}-root
-Patch0: /ici/il/faut/le mettre
-BuildRequires: cups-devel, libxml2-devel, libX11-devel, libXfixes-devel, openssl-devel, pam-devel, pulseaudio-lib-devel, libtool-ltdl-devel
+#Patch0: xrdp/debian/patches/00_check_running.patch
+BuildRequires: libtool, gcc, cups-devel, libxml2-devel, libX11-devel, libXfixes-devel, openssl-devel, pam-devel, pulseaudio-lib-devel, libtool-ltdl-devel
 Requires: python
 
 %description
@@ -31,14 +33,15 @@ svn up SOURCES/xrdp
 svn export --force SOURCES/xrdp BUILD
 
 %build
-./autogen.sh
+./autogen.sh --mandir=/usr/share/man
 make
 
 %install
 rm -fr $RPM_BUILD_ROOT
 make install DESTDIR=$RPM_BUILD_ROOT
-sed '/^SESSION/c\SESSION="x-session-manager"' $RPM_BUILD_ROOT/etc/xrdp/startwm.sh -i
+sed -i '/^SESSION/c\SESSION="x-session-manager"' $RPM_BUILD_ROOT/etc/xrdp/startwm.sh
 chmod 755 $RPM_BUILD_ROOT/etc/xrdp/startwm.sh
+ln -sf /usr/lib/xrdp/librdpsnd.so.0.0.0 $RPM_BUILD_ROOT/usr/lib/pulse-0.9/modules/module-rdp-sink.so
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -131,10 +134,8 @@ Xrdpi-Printer convert a ps file from cups in ps
 %config /etc/cups/xrdp_printer.conf
 /usr/lib/cups/backend/xrdpprinter
 /usr/share/cups/model/PostscriptColor.ppd.gz
-
-%post printer
-mkdir -p /var/spool/xrdp_printer/SPOOL
-chown -R lp /var/spool/xrdp_printer
+%defattr(-,lp,root)
+%dir /var/spool/xrdp_printer/SPOOL
 
 ###########################################
 %package sound
@@ -150,5 +151,7 @@ and WIN32 systems
 
 %files sound
 %defattr(-,root,root)
-#/etc/xrdp/rdpsnd.*
-#/usr/lib/xrdp/librdpsnd.so*
+%config /etc/asound.conf
+%config /etc/xrdp/rdpsnd.*
+/usr/lib/xrdp/librdpsnd.so*
+/usr/lib/pulse-0.9/modules/module-rdp-sink.so

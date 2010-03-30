@@ -4,7 +4,7 @@ printerconf_DATA=xrdp_printer.conf
 printerlibdir=$(libdir)/cups/backend
 printerlib_DATA=xrdpprinter
 
-printermodeldir=$(datarootdir)/cups/model/
+printermodeldir=$(datadir)/cups/model/
 printermodel_DATA=PostscriptColor.ppd.gz
 
 install-data-hook:
