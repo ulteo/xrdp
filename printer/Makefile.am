@@ -8,6 +8,7 @@ printermodeldir=$(datadir)/cups/model/
 printermodel_DATA=PostscriptColor.ppd.gz
 
 install-data-hook:
+	chmod +x $(DESTDIR)$(libdir)/cups/backend/xrdpprinter
 	mkdir -p $(DESTDIR)$(localstatedir)/spool/xrdp_printer/SPOOL
 
 EXTRA_DIST = \

@@ -1,9 +1,10 @@
 Source: xrdp
 Section: x11
 Priority: extra
-Maintainer: Jeremy Desvages <jeremy@ulteo.com>, Samuel Bovée <samuel@ulteo.com>
-Build-Depends: debhelper (>= 5), cdbs, quilt, libcupsys2-dev | libcups2-dev, libxml2-dev,
- libx11-dev, libxfixes-dev, libssl-dev, libpam0g-dev, libpulse-dev, libltdl3-dev
+Maintainer: Samuel Bovée <samuel@ulteo.com>
+Build-Depends: debhelper (>= 5), cdbs, quilt, libcupsys2-dev | libcups2-dev,
+ libxml2-dev, libx11-dev, libxfixes-dev, libssl-dev, libpam0g-dev, libpulse-dev,
+ libltdl3-dev, libfuse-dev
 Standards-Version: 3.8.3
 
 Package: xrdp
@@ -31,7 +32,8 @@ Description: cups file converter to ps format
 
 Package: xrdp-sound
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, xrdp, pulseaudio, alsa-base, alsa-utils, libasound2-plugins
+Depends: ${shlibs:Depends}, ${misc:Depends}, xrdp, pulseaudio,
+ alsa-base, alsa-utils, libasound2-plugins
 Description: XRDP plugin for PulseAudio
  This package contains the XRDP plugin for PulseAudio, a sound server for POSIX
  and WIN32 systems.

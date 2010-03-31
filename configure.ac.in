@@ -39,15 +39,12 @@ then
 fi
 
 # checking for Xlib, Xfixes
-AC_CHECK_HEADER([X11/Xlib.h], [],
-  [AC_MSG_ERROR([please install libx11-dev])])
-AC_CHECK_HEADER([X11/extensions/Xfixes.h], [],
-  [AC_MSG_ERROR([please install libx11-dev and libxfixes-dev])],
+AC_CHECK_HEADER([X11/Xlib.h], [], [AC_MSG_ERROR([please install libx11-dev])])
+AC_CHECK_HEADER([X11/extensions/Xfixes.h], [], [AC_MSG_ERROR([please install libx11-dev and libxfixes-dev])],
   [#include <X11/Xlib.h>])
 
 # checking for libcups2
-AC_CHECK_HEADER([cups/cups.h], [],
-  [AC_MSG_ERROR([please install libcups2-dev])])
+AC_CHECK_HEADER([cups/cups.h], [], [AC_MSG_ERROR([please install libcups2-dev])])
 
 # checking for libxml2
 # Determine XML2 include path
@@ -75,15 +72,18 @@ if test "x$XML2_INCLUDE" = "x"; then
     CPPFLAGS="$old_CPPFLAGS $XML2_INCLUDE"
 fi
 
-AC_CHECK_HEADERS([libxml/xmlmemory.h], [], [AC_MSG_ERROR([Please install libxml2-dev])])
-AC_CHECK_HEADERS([libxml/parser.h], [], [AC_MSG_ERROR([Please install libxml2-dev])])
-AC_CHECK_HEADERS([libxml/xinclude.h], [], [AC_MSG_ERROR([Please install libxml2-dev])])
+AC_CHECK_HEADERS([libxml/xmlmemory.h libxml/parser.h libxml/xinclude.h], [],
+		[AC_MSG_ERROR([Please install libxml2-dev])])
 
-# Check for pulse headers
-AC_CHECK_HEADERS([pulse/pulseaudio.h], [], [AC_MSG_ERROR([Please install libpulse-dev])])
+# Check for pulseaudio headers
+AC_CHECK_HEADER([pulse/pulseaudio.h], [], [AC_MSG_ERROR([Please install libpulse-dev])])
 
 # Check for libtool headers
-AC_CHECK_HEADERS([ltdl.h], [], [AC_MSG_ERROR([Please install libltdl3-dev or libltdl-dev])])
+AC_CHECK_HEADER([ltdl.h], [], [AC_MSG_ERROR([Please install libltdl3-dev or libltdl-dev])])
+
+# Check for fuse headers
+CPPFLAGS="-D_FILE_OFFSET_BITS=64"
+AC_CHECK_HEADER([fuse.h], [], [AC_MSG_ERROR([Please install libfuse-dev])])
 
 if test "x${prefix}" = "xNONE" ; then
    prefix="/usr"

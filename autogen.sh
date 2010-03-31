@@ -26,20 +26,5 @@ if [ ! -e $CONFIG_PATH ]; then
   ln -s ../config.c $CONFIG_PATH
 fi
 
-# create configure file
-echo "# launch aclocal #"
-aclocal
-
-echo "# launch libtoolize #"
-libtoolize --force
-
-echo "# launch autoconf #"
-autoconf --force
-
-echo "# launch autoheader #"
-autoheader --force
-
-echo "# launch automake #"
-automake --add-missing --copy --force-missing
-
+autoreconf -fvi
 ./configure $@

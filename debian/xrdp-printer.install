@@ -1,3 +1,2 @@
-xrdp_printer/xrdpprinter            usr/lib/cups/backend/
-xrdp_printer/PostscriptColor.ppd.gz usr/share/cups/model/
-xrdp_printer/xrdp_printer.conf      etc/cups/
+debian/tmp/usr/lib/cups/backend/xrdpprinter
+debian/tmp/usr/share/cups/model/PostscriptColor.ppd.gz
