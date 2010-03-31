@@ -23,9 +23,12 @@
 
 static struct disk_device disk_devices[128];
 static int disk_devices_count = 0;
+extern pthread_t vchannel_thread;
+extern void *thread_vchannel_process (void * arg);
 extern struct log_config *l_config;
 extern char mount_point[256];
-
+extern int rdpdr_sock;
+extern int disk_up;
 
 /*****************************************************************************/
 int APP_CC
@@ -62,7 +65,7 @@ disk_dev_in_unistr(struct stream* s, char *string, int str_size, int in_len)
         iconv_close(iconv_h);
         iconv_h = (iconv_t) - 1;
         log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[disk_dev_in_unistr]: "
-							"Iconv fail, errno %d\n", errno);
+							"Iconv fail, errno %d", errno);
         g_iconv_works = False;
         return rdpdr_in_unistr(s, string, str_size, in_len);
       }
@@ -135,19 +138,17 @@ disk_dev_add(struct stream* s, int device_data_length,
 
 static int disk_dev_getattr(const char *path, struct stat *stbuf)
 {
-	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_getattr\n");
-	int res;
-
-	res = lstat(path, stbuf);
-	if (res == -1)
-		return -errno;
-
-	return 0;
+	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_getattr on %s",path);
+	if (disk_up)
+	{
+		return 0;
+	}
+	return -1;
 }
 
 static int disk_dev_access(const char *path, int mask)
 {
-	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_access\n");
+	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_access");
 	int res;
 
 	res = access(path, mask);
@@ -159,7 +160,7 @@ static int disk_dev_access(const char *path, int mask)
 
 static int disk_dev_readlink(const char *path, char *buf, size_t size)
 {
-	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_readlink\n");
+	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_readlink");
 	int res;
 
 	res = readlink(path, buf, size - 1);
@@ -176,7 +177,7 @@ static int disk_dev_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 {
 	DIR *dp;
 	struct dirent *de;
-	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_readdir\n");
+	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_readdir");
 
 	(void) offset;
 	(void) fi;
@@ -200,7 +201,7 @@ static int disk_dev_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
 static int disk_dev_mknod(const char *path, mode_t mode, dev_t rdev)
 {
-	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_mknod\n");
+	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_mknod");
 	int res;
 
 	/* On Linux this could just be 'mknod(path, mode, rdev)' but this
@@ -221,7 +222,7 @@ static int disk_dev_mknod(const char *path, mode_t mode, dev_t rdev)
 
 static int disk_dev_mkdir(const char *path, mode_t mode)
 {
-	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_mkdir\n");
+	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_mkdir");
 	int res;
 
 	res = mkdir(path, mode);
@@ -233,7 +234,7 @@ static int disk_dev_mkdir(const char *path, mode_t mode)
 
 static int disk_dev_unlink(const char *path)
 {
-	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_unlink\n");
+	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_unlink");
 	int res;
 
 	res = unlink(path);
@@ -245,7 +246,7 @@ static int disk_dev_unlink(const char *path)
 
 static int disk_dev_rmdir(const char *path)
 {
-	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_rmdir\n");
+	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_rmdir");
 	int res;
 
 	res = rmdir(path);
@@ -257,7 +258,7 @@ static int disk_dev_rmdir(const char *path)
 
 static int disk_dev_symlink(const char *from, const char *to)
 {
-	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_symlink\n");
+	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_symlink");
 	int res;
 
 	res = symlink(from, to);
@@ -269,7 +270,7 @@ static int disk_dev_symlink(const char *from, const char *to)
 
 static int disk_dev_rename(const char *from, const char *to)
 {
-	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_rename\n");
+	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_rename");
 	int res;
 
 	res = rename(from, to);
@@ -281,7 +282,7 @@ static int disk_dev_rename(const char *from, const char *to)
 
 static int disk_dev_link(const char *from, const char *to)
 {
-	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_link\n");
+	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_link");
 	int res;
 
 	res = link(from, to);
@@ -293,7 +294,7 @@ static int disk_dev_link(const char *from, const char *to)
 
 static int disk_dev_chmod(const char *path, mode_t mode)
 {
-	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_chmod\n");
+	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_chmod");
 	int res;
 
 	res = chmod(path, mode);
@@ -305,7 +306,7 @@ static int disk_dev_chmod(const char *path, mode_t mode)
 
 static int disk_dev_chown(const char *path, uid_t uid, gid_t gid)
 {
-	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_chown\n");
+	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_chown");
 	int res;
 
 	res = lchown(path, uid, gid);
@@ -317,7 +318,7 @@ static int disk_dev_chown(const char *path, uid_t uid, gid_t gid)
 
 static int disk_dev_truncate(const char *path, off_t size)
 {
-	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_truncate\n");
+	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_truncate");
 	int res;
 
 	res = truncate(path, size);
@@ -329,7 +330,7 @@ static int disk_dev_truncate(const char *path, off_t size)
 
 static int disk_dev_utimens(const char *path, const struct timespec ts[2])
 {
-	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_utimens\n");
+	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_utimens");
 	int res;
 	struct timeval tv[2];
 
@@ -347,7 +348,7 @@ static int disk_dev_utimens(const char *path, const struct timespec ts[2])
 
 static int disk_dev_open(const char *path, struct fuse_file_info *fi)
 {
-	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_open\n");
+	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_open");
 	int res;
 
 	res = open(path, fi->flags);
@@ -361,7 +362,7 @@ static int disk_dev_open(const char *path, struct fuse_file_info *fi)
 static int disk_dev_read(const char *path, char *buf, size_t size, off_t offset,
 		    struct fuse_file_info *fi)
 {
-	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_read\n");
+	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_read");
 	int fd;
 	int res;
 
@@ -381,7 +382,7 @@ static int disk_dev_read(const char *path, char *buf, size_t size, off_t offset,
 static int disk_dev_write(const char *path, const char *buf, size_t size,
 		     off_t offset, struct fuse_file_info *fi)
 {
-	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_write\n");
+	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_write");
 	int fd;
 	int res;
 
@@ -400,7 +401,7 @@ static int disk_dev_write(const char *path, const char *buf, size_t size,
 
 static int disk_dev_statfs(const char *path, struct statvfs *stbuf)
 {
-	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_statfs\n");
+	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_statfs");
 	int res;
 
 	res = statvfs(path, stbuf);
@@ -414,7 +415,7 @@ static int disk_dev_release(const char *path, struct fuse_file_info *fi)
 {
 	/* Just a stub.	 This method is optional and can safely be left
 	   unimplemented */
-	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_release\n");
+	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_release");
 	(void) path;
 	(void) fi;
 	return 0;
@@ -425,11 +426,33 @@ static int disk_dev_fsync(const char *path, int isdatasync,
 {
 	/* Just a stub.	 This method is optional and can safely be left
 	   unimplemented */
-	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_fsync\n");
+	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_fsync");
 	(void) path;
 	(void) isdatasync;
 	(void) fi;
 	return 0;
+}
+
+static void* disk_dev_init()
+{
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_init]: ");
+	if (pthread_create (&vchannel_thread, NULL, thread_vchannel_process, (void*)0) < 0)
+	{
+		log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[disk_dev_init]: "
+				"Pthread_create error for thread : vchannel_thread");
+		return NULL;
+	}
+	disk_up = 1;
+	return NULL;
+}
+
+
+static void disk_dev_destroy(void *private_data)
+{
+	(void)private_data;
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_destroy]: ");
+	pthread_cancel(vchannel_thread);
+	pthread_join(vchannel_thread, NULL);
 }
 
 #ifdef HAVE_SETXATTR
@@ -486,17 +509,19 @@ static struct fuse_operations disk_dev_oper = {
 	.unlink		= disk_dev_unlink,
 	.rmdir		= disk_dev_rmdir,
 	.rename		= disk_dev_rename,
-	.link		= disk_dev_link,
+	.link			= disk_dev_link,
 	.chmod		= disk_dev_chmod,
 	.chown		= disk_dev_chown,
 	.truncate	= disk_dev_truncate,
 	.utimens	= disk_dev_utimens,
-	.open		= disk_dev_open,
-	.read		= disk_dev_read,
+	.open			= disk_dev_open,
+	.read			= disk_dev_read,
 	.write		= disk_dev_write,
 	.statfs		= disk_dev_statfs,
 	.release	= disk_dev_release,
 	.fsync		= disk_dev_fsync,
+	.init			= disk_dev_init,
+	.destroy	= disk_dev_destroy,
 #ifdef HAVE_SETXATTR
 	.setxattr	= disk_dev_setxattr,
 	.getxattr	= disk_dev_getxattr,
@@ -506,18 +531,24 @@ static struct fuse_operations disk_dev_oper = {
 };
 
 int DEFAULT_CC
-fuse_process()
+fuse_run()
 {
 	struct fuse_args args = FUSE_ARGS_INIT(0, NULL);
-	umask(0);
+	g_mkdir(mount_point);
+	if( g_directory_exist(mount_point) == 0)
+	{
+		log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[main]: "
+				"Unable to initialize the mount point");
+	}
 
+	umask(0);
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[main]: "
 			"Configuration of fuse");
 	fuse_opt_add_arg(&args, "");
-
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[main]: "
 			"Setup of the main mount point: %s", mount_point);
   fuse_opt_add_arg(&args, mount_point);
 
 	return fuse_main(args.argc, args.argv, &disk_dev_oper, NULL);
 }
+

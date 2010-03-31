@@ -48,7 +48,7 @@ struct disk_device
 };
 
 int DEFAULT_CC
-fuse_process();
+fuse_run();
 int DEFAULT_CC
 disk_dev_add(struct stream* s, int device_data_length, int device_id, char* dos_name);
 

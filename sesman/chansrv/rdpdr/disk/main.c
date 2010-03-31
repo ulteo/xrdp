@@ -38,6 +38,7 @@ struct device device_list[128];
 int device_count = 0;
 char username[256];
 char mount_point[256];
+pthread_t vchannel_thread;
 
 /*****************************************************************************/
 int APP_CC
@@ -540,18 +541,6 @@ int disk_deinit()
 }
 
 /*****************************************************************************/
-void *thread_disk_process (void * arg)
-{
-	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[thread_disk_process]:"
-				"initialise main mount point");
-	fuse_process();
-
-	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[thread_disk_process]: "
-			"Finished spool process");
-	pthread_exit (0);
-}
-
-/*****************************************************************************/
 void *thread_vchannel_process (void * arg)
 {
 	struct stream* s = NULL;
@@ -596,10 +585,6 @@ void *thread_vchannel_process (void * arg)
 /*****************************************************************************/
 int main(int argc, char** argv, char** environ)
 {
-	pthread_t disk_thread;
-	pthread_t vchannel_thread;
-	void *ret;
-
 	l_config = g_malloc(sizeof(struct log_config), 1);
 	if (argc != 2)
 	{
@@ -645,30 +630,7 @@ int main(int argc, char** argv, char** environ)
 				"Error while connecting to rdpdr provider");
 		return 1;
 	}
+
 	g_sprintf(mount_point, "/home/%s/rdp_drive", username);
-	g_mkdir(mount_point);
-	if( g_directory_exist(mount_point) == 0)
-	{
-		log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[main]: "
-				"Unable to initialize the mount point");
-	}
-	/* init */
-	if (pthread_create (&disk_thread, NULL, thread_disk_process, (void*)0) < 0)
-	{
-		log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[main]: "
-				"Pthread_create error for thread : spool_thread");
-		return 1;
-	}
-	if (pthread_create (&vchannel_thread, NULL, thread_vchannel_process, (void*)0) < 0)
-	{
-		log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[main]: "
-				"Pthread_create error for thread : vchannel_thread");
-		return 1;
-	}
-	disk_up = 1;
-	(void)pthread_join (vchannel_thread, &ret);
-	(void)pthread_join (disk_thread, &ret);
-
-
-	return fuse_process();
+	return fuse_run();
 }
