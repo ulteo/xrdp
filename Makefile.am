@@ -14,4 +14,5 @@ SUBDIRS = \
   instfiles \
   genkeymap \
   printer \
+  python \
   seamlessrdpshell

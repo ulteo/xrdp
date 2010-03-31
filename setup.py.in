@@ -30,6 +30,6 @@ setup_args["author_email"] = 'samuel@ulteo.com'
 setup_args["url"] = "http://www.ulteo.com/"
 setup_args["version"] = '99.99~trunk+svn@REVISION@'
 setup_args["packages"] = ['xrdp']
-setup_args["package_dir"] = {'xrdp': ''}
+setup_args["package_dir"] = {'xrdp': 'python'}
 
 setup(**setup_args)

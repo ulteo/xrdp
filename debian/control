@@ -2,9 +2,10 @@ Source: xrdp
 Section: x11
 Priority: extra
 Maintainer: Samuel Bovée <samuel@ulteo.com>
-Build-Depends: debhelper (>= 5), cdbs, quilt, libcupsys2-dev | libcups2-dev,
+Build-Depends: debhelper (>= 5), cdbs, quilt,
+ python (>= 2.5), python-central, python-svn
  libxml2-dev, libx11-dev, libxfixes-dev, libssl-dev, libpam0g-dev, libpulse-dev,
- libltdl3-dev, libfuse-dev
+ libcupsys2-dev | libcups2-dev, libltdl3-dev, libfuse-dev
 Standards-Version: 3.8.3
 
 Package: xrdp
@@ -37,3 +38,10 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, xrdp, pulseaudio,
 Description: XRDP plugin for PulseAudio
  This package contains the XRDP plugin for PulseAudio, a sound server for POSIX
  and WIN32 systems.
+
+Package: xrdp-python
+Section: python
+Architecture: all
+Depends: python (>= 2.5), xrdp
+Description: Python API for XRDP
+ XRDP-Python is a Python wrapper for XRDP

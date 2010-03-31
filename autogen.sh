@@ -26,5 +26,6 @@ if [ ! -e $CONFIG_PATH ]; then
   ln -s ../config.c $CONFIG_PATH
 fi
 
+python autogen.py
 autoreconf -fvi
 ./configure $@

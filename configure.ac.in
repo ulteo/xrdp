@@ -115,6 +115,7 @@ AC_CONFIG_FILES([Makefile
                  instfiles/Xserver/Makefile
                  genkeymap/Makefile
                  printer/Makefile
+                 python/Makefile
                  seamlessrdpshell/Makefile
                  sesman/chansrv/rdpsnd/Makefile
                  sesman/chansrv/rdpdr/Makefile
