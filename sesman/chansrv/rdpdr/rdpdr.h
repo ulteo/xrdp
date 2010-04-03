@@ -110,7 +110,7 @@
 #define RDPDR_DTYP_FILESYSTEM                   0x00000008
 #define RDPDR_DTYP_SMARTCARD                    0x00000020
 
-/* io operation */
+/* io operation: major function */
 #define IRP_MJ_CREATE                           0x00000000
 #define IRP_MJ_CLOSE                            0x00000002
 #define IRP_MJ_READ                             0x00000003
@@ -123,12 +123,22 @@
 #define IRP_MJ_DIRECTORY_CONTROL                0x0000000C
 #define IRP_MJ_LOCK_CONTROL                     0x00000011
 
-/* InformationClass */
+/* io operation: minor function */
+#define IRP_MN_QUERY_DIRECTORY                  0x00000001
+#define IRP_MN_NOTIFY_CHANGE_DIRECTORY          0x00000002
+
+/* InformationClass for file */
 #define FileFsVolumeInformation                 0x00000001
 #define FileFsSizeInformation                   0x00000003
 #define FileFsAttributeInformation              0x00000005
 #define FileFsFullSizeInformation               0x00000007
 #define FileFsDeviceInformation                 0x00000004
+
+/* InformationClass for directory */
+#define FileDirectoryInformation                0x00000001
+#define FileFullDirectoryInformation            0x00000002
+#define FileBothDirectoryInformation            0x00000003
+#define FileNamesInformation                    0x0000000C
 
 /* DesiredAccess */
 /*    for File */
@@ -140,6 +150,7 @@
 #define FILE_EXECUTE                            0x00000020
 #define FILE_READ_ATTRIBUTES                    0x00000080
 #define FILE_WRITE_ATTRIBUTES                   0x00000100
+#define FILE_EXECUTE_ATTRIBUTES                 0x00001000
 #define DELETE                                  0x00010000
 #define READ_CONTROL                            0x00020000
 #define WRITE_DAC                               0x00040000
@@ -227,6 +238,7 @@ struct device
 {
 	int device_id;
 	int device_type;
+	int ready;
 };
 
 
@@ -237,9 +249,5 @@ typedef struct {
 	int file_id ;
 	int message_id;
 } Action;
-
-
-
-
 
 #endif
