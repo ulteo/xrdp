@@ -15,7 +15,8 @@ sbin_PROGRAMS = \
 
 rdpdr_disk_SOURCES = \
   main.c \
-  disk_dev.c disk_dev.h
+  disk_dev.c disk_dev.h \
+  rdpfs.c
 
 rdpdr_disk_LDADD = \
   -L/usr/X11R6/lib \
