@@ -16,11 +16,9 @@ sbin_PROGRAMS = \
 rdpdr_disk_SOURCES = \
   main.c \
   disk_dev.c disk_dev.h \
-  rdpfs.c
+  rdpfs.h rdpfs.c
 
 rdpdr_disk_LDADD = \
   -L/usr/X11R6/lib \
   $(top_builddir)/vchannel/libxrdp_vchannel.la \
   $(top_builddir)/common/libxrdp_common.la 
-
-
