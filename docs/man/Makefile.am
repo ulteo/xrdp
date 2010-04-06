@@ -10,6 +10,8 @@ xrdpman1_DATA = \
   xrdp-sestest.1 \
   vchannel_rdpdr.1 \
   rdpdr_printer.1 \
+  rdpdr_disk.1 \
+  xrdp-channel-launcher.1 \
   seamlessrdpshell.1 \
   XHook.1
 

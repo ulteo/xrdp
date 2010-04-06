@@ -16,3 +16,6 @@ SUBDIRS = \
   printer \
   python \
   seamlessrdpshell
+
+EXTRA_DIST = \
+  setup.py
