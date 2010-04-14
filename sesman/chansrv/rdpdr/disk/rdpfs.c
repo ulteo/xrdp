@@ -292,43 +292,6 @@ rdpfs_close()
 }
 
 /*****************************************************************************/
-void rdpfs_drive_init()
-{
-	int i;
-	int device_id;
-	int completion_id = action_index;
-	action_index++;
-
-	for (i=0 ; i<device_count ; i++)
-	{
-		device_id = device_list[i].device_id;
-		rdpfs_create(device_id, GENERIC_READ|FILE_EXECUTE_ATTRIBUTES,	FILE_SHARE_READ|FILE_SHARE_DELETE|FILE_SHARE_WRITE,	FILE_OPEN, FILE_SYNCHRONOUS_IO_NONALERT, "");
-		log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[rdpfs_open]: "
-				"wait creation reply");
-		rdpfs_wait_reply();
-		log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[rdpfs_open]: "
-				"after wait creation reply");
-
-		//volume information
-		rdpfs_query_volume_information(completion_id, device_id, FileFsVolumeInformation, "");
-		rdpfs_wait_reply();
-		//rdpfs_query_information(device_id, FileBasicInformation,"");
-		//rdpfs_query_information(device_id, FileStandardInformation,"");
-		//rdpfs_request_close(device_id);
-		//close
-//		if (pthread_mutex_unlock(&mutex) != 0) {
-//		    perror("pthread_mutex_lock() error");
-//				log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[rdpfs_open]: "
-//						"pthread_mutex_lock()");
-//		    return;
-//		}
-
-	}
-
-}
-
-
-/*****************************************************************************/
 void rdpfs_readdir(int device_id, const char* path)
 {
 	struct stream* s;
@@ -725,14 +688,15 @@ rdpfs_process_information_response(int completion_id, struct stream* s)
 	rep = &rdpfs_response[completion_id];
 
 	in_uint32_le(s, length);			/* response length */
-	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_iocompletion]: "
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_information_response]: "
 			"IRP_MJ_QUERY_INFORMATION response : response length : %i", length);
 	rep->Request_type = RDPDR_IRP_MJ_QUERY_INFORMATION;
 
 	switch (actions[completion_id].request_param)
 	{
 	case FileBasicInformation:
-		printf("\tFileBasicInformation\n");
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_information_response]: "
+				"IRP_MJ_QUERY_INFORMATION response : param response FileBasicInformation");
 
 		in_uint32_le(s, low);	/* create_access_time */
 		in_uint32_le(s, high);
@@ -750,28 +714,21 @@ rdpfs_process_information_response(int completion_id, struct stream* s)
 		in_uint32_le(s, high);
 		rep->fs_inf.last_change_time = convert_1970_to_filetime(high, low);
 
-		out_uint32_le(s, rep->fs_inf.file_attributes);
+		in_uint32_le(s, rep->fs_inf.file_attributes);
 		break;
 
-//	case FileStandardInformation:
-//		printf("\tFileStandardInformation\n");
-//		out_uint32_le(out, filestat.st_size);	/* Allocation size */
-//		out_uint32_le(out, 0);
-//		out_uint32_le(out, filestat.st_size);	/* End of file */
-//		out_uint32_le(out, 0);
-//		out_uint32_le(out, filestat.st_nlink);	/* Number of links */
-//		out_uint8(out, 0);	/* Delete pending */
-//		out_uint8(out, S_ISDIR(filestat.st_mode) ? 1 : 0);	/* Directory */
-//		break;
-//
-//	case FileObjectIdInformation:
-//		printf("\tFileObjectIdInformation\n");
-//		out_uint32_le(out, file_attributes);	/* File Attributes */
-//		out_uint32_le(out, 0);	/* Reparse Tag */
-//		break;
-//
-	default:
+	case FileStandardInformation:
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_information_response]: "
+				"IRP_MJ_QUERY_INFORMATION response : param response FileStandardInformation");
+		in_uint64_le(s, rep->fs_inf.allocation_size);       /* Allocation size */
+		in_uint64_le(s, rep->fs_inf.file_size);             /* End of file */
+		in_uint32_le(s, rep->fs_inf.nlink);                 /* Number of links */
+		in_uint32_le(s, rep->fs_inf.detele_request);        /* Delete pending */
+		in_uint8(s, rep->fs_inf.is_dir);                     /* Directory */
+		in_uint32_le(s, ignored);
+		break;
 
+	default:
 		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_information_response]: "
 						"IRP_MJ_QUERY_INFORMATION response : unknow response");
 		return 1;

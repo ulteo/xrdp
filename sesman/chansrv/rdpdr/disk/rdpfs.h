@@ -46,6 +46,11 @@ struct fs_info
 	int last_write_time;
 	int last_change_time;
 	int file_attributes;
+	long file_size;
+	long allocation_size;    /* number of occuped cluster */
+	int nlink;
+	int detele_request;
+	int is_dir;
 };
 
 
