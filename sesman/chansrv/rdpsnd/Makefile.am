@@ -34,9 +34,9 @@ librdpsnd_la_SOURCES = \
   sound_channel.h sound_channel.c \
   config.h $(HEADERS_PULSECORE)
 
-librdpsnd_la_LIBADD = \
-  $(top_builddir)/vchannel/libxrdp_vchannel.la \
-  $(top_builddir)/common/libxrdp_common.la 
+#librdpsnd_la_LIBADD = \
+#  $(top_builddir)/vchannel/libxrdp_vchannel.la \
+#  $(top_builddir)/common/libxrdp_common.la 
 
 alsaconfdir=$(sysconfdir)
 
