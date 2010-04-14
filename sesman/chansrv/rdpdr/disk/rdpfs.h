@@ -41,7 +41,11 @@ struct volume_info
 
 struct fs_info
 {
-
+	int create_access_time;
+	int last_access_time;
+	int last_write_time;
+	int last_change_time;
+	int file_attributes;
 };
 
 

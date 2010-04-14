@@ -40,6 +40,36 @@ pthread_cond_t reply_cond;
 pthread_mutex_t mutex;
 extern int disk_up;
 
+
+
+/* Convert seconds since 1970 to a filetime */
+static void
+seconds_since_1970_to_filetime(time_t seconds, uint32 * high, uint32 * low)
+{
+	unsigned long long ticks;
+
+	ticks = (seconds + 11644473600LL) * 10000000;
+	*low = (uint32) ticks;
+	*high = (uint32) (ticks >> 32);
+}
+
+/* Convert seconds since 1970 back to filetime */
+static time_t
+convert_1970_to_filetime(uint32 high, uint32 low)
+{
+	unsigned long long ticks;
+	time_t val;
+
+	ticks = low + (((unsigned long long) high) << 32);
+	ticks /= 10000000;
+	ticks -= 11644473600LL;
+
+	val = (time_t) ticks;
+	return (val);
+
+}
+
+
 /* Output a string in Unicode */
 void
 rdp_out_unistr(struct stream* s, char *string, int len)
@@ -671,7 +701,7 @@ rdpfs_process_volume_information_response(int completion_id, struct stream* s)
 
 	default:
 
-		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_iocompletion]: "
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_volume_information_response]: "
 						"IRP_MJ_QUERY_VOLUME_INFORMATION response : unknow response");
 		return 1;
 	}
@@ -699,29 +729,29 @@ rdpfs_process_information_response(int completion_id, struct stream* s)
 			"IRP_MJ_QUERY_INFORMATION response : response length : %i", length);
 	rep->Request_type = RDPDR_IRP_MJ_QUERY_INFORMATION;
 
-//	switch (actions[completion_id].request_param)
-//	{
-//	case FileBasicInformation:
-//		printf("\tFileBasicInformation\n");
-//		seconds_since_1970_to_filetime(get_create_time(&filestat), &ft_high,
-//					       &ft_low);
-//		out_uint32_le(out, ft_low);	/* create_access_time */
-//		out_uint32_le(out, ft_high);
-//
-//		seconds_since_1970_to_filetime(filestat.st_atime, &ft_high, &ft_low);
-//		out_uint32_le(out, ft_low);	/* last_access_time */
-//		out_uint32_le(out, ft_high);
-//
-//		seconds_since_1970_to_filetime(filestat.st_mtime, &ft_high, &ft_low);
-//		out_uint32_le(out, ft_low);	/* last_write_time */
-//		out_uint32_le(out, ft_high);
-//
-//		seconds_since_1970_to_filetime(filestat.st_ctime, &ft_high, &ft_low);
-//		out_uint32_le(out, ft_low);	/* last_change_time */
-//		out_uint32_le(out, ft_high);
-//
-//		out_uint32_le(out, file_attributes);
-//		break;
+	switch (actions[completion_id].request_param)
+	{
+	case FileBasicInformation:
+		printf("\tFileBasicInformation\n");
+
+		in_uint32_le(s, low);	/* create_access_time */
+		in_uint32_le(s, high);
+		rep->fs_inf.create_access_time = convert_1970_to_filetime(high, low);
+
+		in_uint32_le(s, low);	/* last_access_time */
+		in_uint32_le(s, high);
+		rep->fs_inf.last_access_time = convert_1970_to_filetime(high, low);
+
+		in_uint32_le(s, low);	/* last_write_time */
+		in_uint32_le(s, high);
+		rep->fs_inf.last_write_time = convert_1970_to_filetime(high, low);
+
+		in_uint32_le(s, low);	/* last_change_time */
+		in_uint32_le(s, high);
+		rep->fs_inf.last_change_time = convert_1970_to_filetime(high, low);
+
+		out_uint32_le(s, rep->fs_inf.file_attributes);
+		break;
 
 //	case FileStandardInformation:
 //		printf("\tFileStandardInformation\n");
@@ -740,11 +770,12 @@ rdpfs_process_information_response(int completion_id, struct stream* s)
 //		out_uint32_le(out, 0);	/* Reparse Tag */
 //		break;
 //
-//	default:
-//
-//		unimpl("IRP Query (File) Information class: 0x%x\n", info_class);
-//		return RD_STATUS_INVALID_PARAMETER;
-//	}
+	default:
+
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_information_response]: "
+						"IRP_MJ_QUERY_INFORMATION response : unknow response");
+		return 1;
+	}
 }
 
 
