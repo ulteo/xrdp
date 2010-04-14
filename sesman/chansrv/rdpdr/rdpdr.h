@@ -133,6 +133,11 @@
 #define FileFsAttributeInformation              0x00000005
 #define FileFsFullSizeInformation               0x00000007
 #define FileFsDeviceInformation                 0x00000004
+#define FileBasicInformation                    0x00000004
+#define FileStandardInformation                 0x00000005
+#define FileAttributeTagInformation             0x00000035
+
+
 
 /* InformationClass for directory */
 #define FileDirectoryInformation                0x00000001
@@ -246,6 +251,7 @@ typedef struct {
 	int device;
 	char path[256];
 	int last_req;
+	int request_param;
 	int file_id ;
 	int message_id;
 } Action;
