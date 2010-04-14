@@ -19,7 +19,7 @@
 
 
 #include "disk_dev.h"
-
+#include "rdpfs.h"
 
 static struct disk_device disk_devices[128];
 static int disk_devices_count = 0;
@@ -180,28 +180,56 @@ disk_dev_add(struct stream* s, int device_data_length,
 /************************************************************************/
 static int disk_dev_getattr(const char *path, struct stat *stbuf)
 {
+	struct disk_device *disk;
+	char* rdp_path;
+
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_getattr]: "
 				"getattr on %s", path);
 	if (disk_up == 0)
 	{
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_getattr]: "
+				"get_attr return");
 		return -1;
 	}
 
-	if (strcmp(path, "/") == 0) {
+	rdp_path = g_strdup(path);
+	if (strcmp(rdp_path, "/") == 0) {
 		stbuf->st_mode = S_IFDIR | 0755;
 		stbuf->st_nlink = disk_devices_count + 2;
 		return 0;
 	}
 
-	if (strchr(path+1, '/') == NULL)
+	disk = disk_dev_get_device_from_path(rdp_path);
+	if ( disk == 0)
 	{
-		stbuf->st_mode = S_IFDIR | 0755;
-		stbuf->st_nlink = 2;
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_getattr]: "
+				"Device from path(%s) did not exists", rdp_path);
 		return 0;
 	}
+	g_str_replace_first(rdp_path, disk->dir_name, "");
 
+	/* test volume */
+	if (strcmp(rdp_path, "/") == 0)
+	{
+		int i;
+		int completion_id = 0;
 
+		completion_id = rdpfs_create(disk->device_id, GENERIC_READ|FILE_EXECUTE_ATTRIBUTES,	FILE_SHARE_READ|FILE_SHARE_DELETE|FILE_SHARE_WRITE,	FILE_OPEN, FILE_SYNCHRONOUS_IO_NONALERT, "");
+		rdpfs_wait_reply();
+		rdpfs_query_volume_information(completion_id, disk->device_id, FileFsVolumeInformation, "");
+		rdpfs_wait_reply();
+		rdpfs_query_information(completion_id, disk->device_id, FileBasicInformation,"");
+		rdpfs_wait_reply();
+		rdpfs_query_information(completion_id, disk->device_id, FileStandardInformation,"");
+		rdpfs_wait_reply();
+		rdpfs_request_close(completion_id, disk->device_id);
+		rdpfs_wait_reply();
+	}
+	/* test path */
+	stbuf->st_mode = S_IFDIR | 0755;
+	stbuf->st_nlink = disk_devices_count + 2;
 	return 0;
+
 }
 
 /************************************************************************/
@@ -243,6 +271,7 @@ static int disk_dev_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	struct disk_device *disk;
 	char* rdp_path;
 
+
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_readdir]: "
 				"readdir on %s", path);
 
@@ -258,7 +287,7 @@ static int disk_dev_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		return 0;
 	}
 
-	disk = disk_dev_get_device_from_path(path);
+	/*disk = disk_dev_get_device_from_path(path);
 	if(disk == 0)
 	{
 		return 0;
@@ -276,7 +305,7 @@ static int disk_dev_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	{
 		rdpfs_readdir(disk->device_id, rdp_path);
 	}
-
+*/
 	return -errno;
 }
 
@@ -534,6 +563,7 @@ static int disk_dev_fsync(const char *path, int isdatasync,
 /************************************************************************/
 static void* disk_dev_init()
 {
+	void *ret;
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_init]: ");
 	if (pthread_create (&vchannel_thread, NULL, thread_vchannel_process, (void*)0) < 0)
 	{

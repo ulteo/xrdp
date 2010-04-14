@@ -25,11 +25,49 @@
 #include "log.h"
 #include "vchannel.h"
 
+struct volume_info
+{
+	int creation_time_low;
+	int creation_time_high;
+	int serial;
+	char label[256];
+	char fs_type[256];
+	long f_bfree;
+	long f_bsize;
+	long f_blocks;
+	int f_namelen;
+	int f_namemax;
+};
+
+struct fs_info
+{
+
+};
+
+
+struct request_response
+{
+	int Request_type;
+	int Request_param;
+	struct volume_info volume_inf;
+	struct fs_info fs_inf;
+	unsigned char buffer[1024];
+} ;
+
+
+
+
 int APP_CC
 rdpfs_send(struct stream* s);
 void APP_CC
+rdpfs_query_volume_information(int completion_id, int device_id, int information, const char* query );
+void APP_CC
+rdpfs_query_information(int completion_id, int device_id, int information, const char* query );
+int APP_CC
 rdpfs_create(int device_id, int desired_access, int shared_access,
 		int creation_disposition, int flags, const char* path);
+void APP_CC
+rdpfs_request_close(int completion_id, int device_id);
 
 
 #endif /* RDPFS_H_ */
