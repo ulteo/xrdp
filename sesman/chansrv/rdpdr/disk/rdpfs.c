@@ -32,7 +32,7 @@ static int is_fragmented_packet = 0;
 static int fragment_size;
 static struct stream* splitted_packet;
 static Action actions[128];
-static struct request_response rdpfs_response[128];
+struct request_response rdpfs_response[128];
 static int action_index=0;
 struct device device_list[128];
 int device_count = 0;

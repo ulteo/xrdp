@@ -48,77 +48,7 @@ extern struct log_config *l_config;
 extern char mount_point[256];
 extern int rdpdr_sock;
 extern int disk_up;
-
-/*****************************************************************************/
-int APP_CC
-disk_dev_in_unistr(struct stream* s, char *string, int str_size, int in_len)
-{
-#ifdef HAVE_ICONV
-  size_t ibl = in_len, obl = str_size - 1;
-  char *pin = (char *) s->p, *pout = string;
-  static iconv_t iconv_h = (iconv_t) - 1;
-
-  if (g_iconv_works)
-  {
-    if (iconv_h == (iconv_t) - 1)
-    {
-      if ((iconv_h = iconv_open(g_codepage, WINDOWS_CODEPAGE)) == (iconv_t) - 1)
-      {
-        log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[disk_dev_in_unistr]: "
-        		"Iconv_open[%s -> %s] fail %p",
-					WINDOWS_CODEPAGE, g_codepage, iconv_h);
-        g_iconv_works = False;
-        return rdp_in_unistr(s, string, str_size, in_len);
-      }
-    }
-
-    if (iconv(iconv_h, (ICONV_CONST char **) &pin, &ibl, &pout, &obl) == (size_t) - 1)
-    {
-      if (errno == E2BIG)
-      {
-        log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[disk_dev_in_unistr]: "
-							"Server sent an unexpectedly long string, truncating");
-      }
-      else
-      {
-        iconv_close(iconv_h);
-        iconv_h = (iconv_t) - 1;
-        log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[disk_dev_in_unistr]: "
-							"Iconv fail, errno %d", errno);
-        g_iconv_works = False;
-        return rdpdr_in_unistr(s, string, str_size, in_len);
-      }
-    }
-
-    /* we must update the location of the current STREAM for future reads of s->p */
-    s->p += in_len;
-    *pout = 0;
-    return pout - string;
-  }
-  else
-#endif
-  {
-    int i = 0;
-    int len = in_len / 2;
-    int rem = 0;
-
-    if (len > str_size - 1)
-    {
-      log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[disk_dev_in_unistr]: "
-						"server sent an unexpectedly long string, truncating");
-      len = str_size - 1;
-      rem = in_len - 2 * len;
-    }
-    while (i < len)
-    {
-      in_uint8a(s, &string[i++], 1);
-      in_uint8s(s, 1);
-    }
-    in_uint8s(s, rem);
-    string[len] = 0;
-    return len;
-  }
-}
+extern struct request_response rdpfs_response[128];
 
 /************************************************************************/
 struct disk_device* APP_CC
@@ -173,9 +103,6 @@ disk_dev_get_device_from_path(const char* path)
 	return 0;
 }
 
-
-
-
 /************************************************************************/
 int APP_CC
 disk_dev_add(struct stream* s, int device_data_length,
@@ -195,6 +122,42 @@ disk_dev_add(struct stream* s, int device_data_length,
 /************************************************************************
 	Begin of fuse operation
  */
+
+/************************************************************************/
+static int disk_dev_volume_getattr(struct disk_device* disk, struct stat *stbuf)
+{
+	int i;
+	int completion_id = 0;
+
+	completion_id = rdpfs_create(disk->device_id, GENERIC_READ|FILE_EXECUTE_ATTRIBUTES,	FILE_SHARE_READ|FILE_SHARE_DELETE|FILE_SHARE_WRITE,	FILE_OPEN, FILE_SYNCHRONOUS_IO_NONALERT, "");
+	rdpfs_wait_reply();
+	//rdpfs_query_volume_information(completion_id, disk->device_id, FileFsVolumeInformation, "");
+	//rdpfs_wait_reply();
+	rdpfs_query_information(completion_id, disk->device_id, FileBasicInformation,"");
+	rdpfs_wait_reply();
+	rdpfs_query_information(completion_id, disk->device_id, FileStandardInformation,"");
+	rdpfs_wait_reply();
+	rdpfs_request_close(completion_id, disk->device_id);
+	rdpfs_wait_reply();
+	/* test path */
+	stbuf->st_mode = S_IFDIR | 0755;
+	stbuf->st_nlink = rdpfs_response[completion_id].fs_inf.nlink;
+
+	return 0;
+}
+
+/************************************************************************/
+static int disk_dev_file_getattr(struct disk_device* disk, const char* path, struct stat *stbuf)
+{
+	int i;
+	int completion_id = 0;
+
+	/* test path */
+	stbuf->st_mode = S_IFDIR | 0755;
+	stbuf->st_nlink = 2;
+
+	return 0;
+}
 
 /************************************************************************/
 static int disk_dev_getattr(const char *path, struct stat *stbuf)
@@ -230,25 +193,9 @@ static int disk_dev_getattr(const char *path, struct stat *stbuf)
 	/* test volume */
 	if (strcmp(rdp_path, "/") == 0)
 	{
-		int i;
-		int completion_id = 0;
-
-		completion_id = rdpfs_create(disk->device_id, GENERIC_READ|FILE_EXECUTE_ATTRIBUTES,	FILE_SHARE_READ|FILE_SHARE_DELETE|FILE_SHARE_WRITE,	FILE_OPEN, FILE_SYNCHRONOUS_IO_NONALERT, "");
-		rdpfs_wait_reply();
-		rdpfs_query_volume_information(completion_id, disk->device_id, FileFsVolumeInformation, "");
-		rdpfs_wait_reply();
-		rdpfs_query_information(completion_id, disk->device_id, FileBasicInformation,"");
-		rdpfs_wait_reply();
-		rdpfs_query_information(completion_id, disk->device_id, FileStandardInformation,"");
-		rdpfs_wait_reply();
-		rdpfs_request_close(completion_id, disk->device_id);
-		rdpfs_wait_reply();
+		return disk_dev_volume_getattr(disk, stbuf);
 	}
-	/* test path */
-	stbuf->st_mode = S_IFDIR | 0755;
-	stbuf->st_nlink = disk_devices_count + 2;
-	return 0;
-
+	return disk_dev_file_getattr(disk, rdp_path, stbuf);
 }
 
 /************************************************************************/
@@ -289,7 +236,7 @@ static int disk_dev_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	(void) offset;
 	struct disk_device *disk;
 	char* rdp_path;
-
+	int completion_id;
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_readdir]: "
 				"readdir on %s", path);
@@ -306,26 +253,36 @@ static int disk_dev_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		return 0;
 	}
 
-	/*disk = disk_dev_get_device_from_path(path);
+	disk = disk_dev_get_device_from_path(path);
 	if(disk == 0)
 	{
 		return 0;
 	}
-	g_sprintf(rdp_path, "%s/*", path, "/*");
+
+	rdp_path = g_strdup(path);
 	g_str_replace_first(rdp_path, disk->dir_name, "");
 	g_str_replace_first(rdp_path, "//", "/");
+	if(strcmp(rdp_path,"") == 0)
+	{
+		rdp_path = g_strdup("/");
+	}
+
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_readdir]: "
 				"Request rdp path %s", rdp_path );
-	if(rdp_path == NULL)
-	{
-		rdpfs_readdir(disk->device_id, "/*");
-	}
-	else
-	{
-		rdpfs_readdir(disk->device_id, rdp_path);
-	}
-*/
-	return -errno;
+
+	completion_id = rdpfs_create(disk->device_id,
+                               GENERIC_ALL|DELETE,
+                               FILE_SHARE_READ|FILE_SHARE_DELETE|FILE_SHARE_WRITE,
+                               FILE_OPEN,
+                               FILE_SYNCHRONOUS_IO_NONALERT|FILE_DIRECTORY_FILE,
+                               rdp_path);
+	rdpfs_wait_reply();
+	//query directory control
+	/* test path */
+	filler(buf, ".", NULL, 0);
+	filler(buf, "..", NULL, 0);
+
+	return 0;
 }
 
 /************************************************************************/
