@@ -42,7 +42,6 @@ sig_sesman_cleanup()
 {
 	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[sig_sesman_cleanup]: ");
 	g_remove_dirs(XRDP_TEMP_DIR);
-	g_file_delete("/var/spool/xrdp_management");
 }
 
 /******************************************************************************/
@@ -55,20 +54,17 @@ sig_sesman_shutdown(int sig)
 
   if (g_getpid() != g_pid)
   {
-    LOG_DBG(&(g_cfg->log), "g_getpid() [%d] differs from g_pid [%d]", (g_getpid()), g_pid);
+  	log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "g_getpid() [%d] differs from g_pid [%d]", (g_getpid()), g_pid);
     return;
   }
-
-  LOG_DBG(&(g_cfg->log), " - getting signal %d pid %d", sig, g_getpid());
-
+  log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, " - getting signal %d pid %d", sig, g_getpid());
   g_set_wait_obj(g_term_event);
-
   g_tcp_close(g_sck);
-
   session_sigkill_all();
   sig_sesman_cleanup();
   g_snprintf(pid_file, 255, "%s/xrdp-sesman.pid", XRDP_PID_PATH);
   g_file_delete(pid_file);
+  g_exit(1);
 }
 
 /******************************************************************************/
