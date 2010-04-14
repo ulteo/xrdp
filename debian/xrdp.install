@@ -11,7 +11,7 @@ debian/tmp/usr/lib/xrdp/libvnc.so*
 debian/tmp/usr/lib/xrdp/libxrdp.so*
 debian/tmp/usr/lib/xrdp/libxup.so*
 debian/tmp/usr/lib/*.so*
-debian/tmp/usr/share
+debian/tmp/usr/share/xrdp
 debian/tmp/usr/sbin
 debian/tmp/usr/bin/logoff
 debian/tmp/usr/bin/startapp

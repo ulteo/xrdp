@@ -10,7 +10,7 @@ Standards-Version: 3.8.3
 
 Package: xrdp
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, python (>= 2.5)
+Depends: ${shlibs:Depends}, python (>= 2.5)
 Recommends: xfonts-base, xfonts-encodings
 Description: RDP server for Linux
  Xrdp is a RDP server for Linux. It provides remote display of a desktop and
@@ -20,7 +20,7 @@ Description: RDP server for Linux
 
 Package: xrdp-seamrdp
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, xrdp
+Depends: ${shlibs:Depends}, xrdp
 Description: Seamless XRDP Shell
  Seamlessrdpshell is a rdp addon offering the possibility to have an
  application without a desktop
@@ -33,7 +33,7 @@ Description: cups file converter to ps format
 
 Package: xrdp-sound
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, xrdp, pulseaudio,
+Depends: ${shlibs:Depends}, xrdp, pulseaudio,
  alsa-base, alsa-utils, libasound2-plugins
 Description: XRDP plugin for PulseAudio
  This package contains the XRDP plugin for PulseAudio, a sound server for POSIX
@@ -42,6 +42,6 @@ Description: XRDP plugin for PulseAudio
 Package: xrdp-python
 Section: python
 Architecture: all
-Depends: python (>= 2.5), xrdp
+Depends: xrdp, python (>= 2.5)
 Description: Python API for XRDP
  XRDP-Python is a Python wrapper for XRDP
