@@ -383,19 +383,15 @@ rdpfs_request_close(int completion_id, int device_id)
 	make_stream(s);
 	init_stream(s,1024);
 
-	actions[action_index].device = device_id;
-	actions[action_index].file_id = action_index;
-	actions[action_index].last_req = IRP_MJ_CLOSE;
-	actions[action_index].message_id = 0;
-
+	actions[completion_id].last_req = IRP_MJ_CLOSE;
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_request_close]:"
-			"close device id %i\n",device_id);
+			"close device id %i\n", actions[completion_id].device);
 	out_uint16_le(s, RDPDR_CTYP_CORE);
 	out_uint16_le(s, PAKID_CORE_DEVICE_IOREQUEST);
-	out_uint32_le(s, actions[action_index].device);
-	out_uint32_le(s, actions[action_index].file_id);
-	out_uint32_le(s, actions[action_index].file_id);
+	out_uint32_le(s, actions[completion_id].device);
+	out_uint32_le(s, actions[completion_id].file_id);
+	out_uint32_le(s, actions[completion_id].file_id);
 	out_uint32_le(s, IRP_MJ_CLOSE);   											/* major version */
 	out_uint32_le(s, 0);																		/* minor version */
 
@@ -413,6 +409,7 @@ rdpfs_query_volume_information(int completion_id, int device_id, int information
 {
 	struct stream* s;
 	int index;
+	int query_length;
 	make_stream(s);
 	init_stream(s,1024);
 
@@ -422,6 +419,7 @@ rdpfs_query_volume_information(int completion_id, int device_id, int information
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_query_volume_information]:"
   		"Process job[%s]",query);
+	query_length = (g_strlen(query)+1)*2;
 	out_uint16_le(s, RDPDR_CTYP_CORE);
 	out_uint16_le(s, PAKID_CORE_DEVICE_IOREQUEST);
 	out_uint32_le(s, actions[completion_id].device);
@@ -431,9 +429,9 @@ rdpfs_query_volume_information(int completion_id, int device_id, int information
 	out_uint32_le(s, 0);																		/* minor version */
 
 	out_uint32_le(s, information);													/* FsInformationClass */
-	out_uint32_le(s, g_strlen(query));											/* length */
-	out_uint8s(s, 24);																			/* padding */
-	out_uint8p(s, query, g_strlen(query));									/* query */
+	out_uint32_le(s, query_length);                         /* length */
+	out_uint8s(s, 24);                                      /* padding */
+	out_uint8p(s, query, query_length);                     /* query */
 
 	s_mark_end(s);
 	rdpfs_send(s);
@@ -451,7 +449,7 @@ rdpfs_query_information(int completion_id, int device_id, int information, const
 	init_stream(s,1024);
 
 	g_strcpy(actions[completion_id].path, query);
-	actions[completion_id].last_req = IRP_MJ_QUERY_VOLUME_INFORMATION;
+	actions[completion_id].last_req = IRP_MJ_QUERY_INFORMATION;
 	actions[completion_id].request_param = information;
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_query_information]:"
@@ -475,6 +473,42 @@ rdpfs_query_information(int completion_id, int device_id, int information, const
   return ;
 }
 
+/*****************************************************************************/
+void APP_CC
+rdpfs_query_directory(int completion_id, int device_id, int information, const char* query )
+{
+	struct stream* s;
+	int index;
+	int query_length;
+	make_stream(s);
+	init_stream(s,1024);
+
+	g_strcpy(actions[completion_id].path, query);
+	actions[completion_id].last_req = IRP_MN_QUERY_DIRECTORY;
+	actions[completion_id].request_param = information;
+
+	query_length = (g_strlen(query)+1)*2;
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_query_directory]:"
+  		"Process query[%s]",query);
+	out_uint16_le(s, RDPDR_CTYP_CORE);
+	out_uint16_le(s, PAKID_CORE_DEVICE_IOREQUEST);
+	out_uint32_le(s, actions[completion_id].device);
+	out_uint32_le(s, actions[completion_id].file_id);
+	out_uint32_le(s, completion_id);
+	out_uint32_le(s, IRP_MJ_DIRECTORY_CONTROL);           /* major version */
+	out_uint32_le(s, IRP_MN_QUERY_DIRECTORY);             /* minor version */
+
+	out_uint32_le(s, information);                        /* FsInformationClass */
+	out_uint8(s, 1);                                      /* path is considered ? */
+	out_uint32_le(s, query_length);                       /* length */
+	out_uint8s(s, 23);                                    /* padding */
+	rdp_out_unistr(s, (char*)query, query_length);     /* query */
+
+	s_mark_end(s);
+	rdpfs_send(s);
+	free_stream(s);
+  return ;
+}
 
 
 /*****************************************************************************/
@@ -591,6 +625,95 @@ rdpfs_process_create_response(int completion_id, struct stream* s)
 
 }
 
+/*****************************************************************************/
+int APP_CC
+rdpfs_process_directory_response(int completion_id, struct stream* s)
+{
+	int is_last_entry;
+	int length;
+	int filename_length;
+	int short_filename_length;
+
+	struct request_response* rep;
+	int label_length;
+	int object_fs;
+	int low;
+	int high;
+	int ignored;
+	int fs_name_len;
+
+
+	rep = &rdpfs_response[completion_id];
+
+	in_uint32_le(s, length);			/* response length */
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_directory_response]: "
+			"IRP_MN_QUERY_DIRECTORY response : response length : %i", length);
+
+	switch (actions[completion_id].request_param)
+	{
+	case FileDirectoryInformation:
+
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_directory_response]: "
+				"IRP_MJ_QUERY_DIRECTORY response : extract FileDirectoryInformation information (unsupported)");
+		break;
+
+	case FileFullDirectoryInformation:
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_directory_response]: "
+				"IRP_MJ_QUERY_DIRECTORY response : extract FileFullDirectoryInformation information (unsupported)");
+		break;
+
+	case FileBothDirectoryInformation:
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_iocompletion]: "
+						"IRP_MJ_QUERY_DIRECTORY response : extract FileBothDirectoryInformation information");
+
+		in_uint32_le(s, is_last_entry );
+		in_uint8s(s, 4);
+
+		in_uint32_le(s, low);	/* creation time */
+		in_uint32_le(s, high);
+		rep->fs_inf.create_access_time = convert_1970_to_filetime(high, low);
+
+		in_uint32_le(s, low);	/* last_access_time */
+		in_uint32_le(s, high);
+		rep->fs_inf.last_access_time = convert_1970_to_filetime(high, low);
+
+		in_uint32_le(s, low);	/* last_write_time */
+		in_uint32_le(s, high);
+		rep->fs_inf.last_write_time = convert_1970_to_filetime(high, low);
+
+		in_uint32_le(s, low);	/* last_change_time */
+		in_uint32_le(s, high);
+		rep->fs_inf.last_change_time = convert_1970_to_filetime(high, low);
+
+		in_uint64_le(s, rep->fs_inf.file_size);	/* filesize */
+		in_uint64_le(s, rep->fs_inf.allocation_size);   /* allocated filesize  */
+		in_uint32_le(s, rep->fs_inf.file_attributes);   /* attributes  */
+
+		in_uint32_le(s, filename_length);        /* unicode filename length */
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_volume_information_response]: "
+						"filename length : %i", filename_length);
+
+		in_uint8s(s, 29);               /* we ignore the short file name */
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_volume_information_response]: "
+						"message : ");
+		log_hexdump(l_config, LOG_LEVEL_DEBUG, s->p, filename_length);
+
+		rdp_in_unistr(s, rep->fs_inf.filename, sizeof(rep->fs_inf.filename), filename_length);
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_volume_information_response]: "
+						"IRP_MJ_QUERY_DIRECTORY response : get filename : %s", rep->fs_inf.filename);
+
+		break;
+
+	default:
+
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_volume_information_response]: "
+						"IRP_MJ_QUERY_DIRECTORY response : unknow response");
+		return 1;
+	}
+	return 0;
+}
+
+
 
 /*****************************************************************************/
 int APP_CC
@@ -668,7 +791,7 @@ rdpfs_process_volume_information_response(int completion_id, struct stream* s)
 						"IRP_MJ_QUERY_VOLUME_INFORMATION response : unknow response");
 		return 1;
 	}
-
+	return 0;
 }
 
 /*****************************************************************************/
@@ -691,6 +814,7 @@ rdpfs_process_information_response(int completion_id, struct stream* s)
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_information_response]: "
 			"IRP_MJ_QUERY_INFORMATION response : response length : %i", length);
 	rep->Request_type = RDPDR_IRP_MJ_QUERY_INFORMATION;
+
 
 	switch (actions[completion_id].request_param)
 	{
@@ -731,7 +855,7 @@ rdpfs_process_information_response(int completion_id, struct stream* s)
 	default:
 		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_information_response]: "
 						"IRP_MJ_QUERY_INFORMATION response : unknow response");
-		return 1;
+		return 0;
 	}
 }
 
@@ -760,6 +884,8 @@ rdpfs_process_iocompletion(struct stream* s)
 	in_uint32_le(s, io_status);
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_iocompletion]: "
 			"io_statio : %08x", io_status);
+
+	rdpfs_response[completion_id].request_status = io_status;
 	if( io_status != STATUS_SUCCESS)
 	{
 		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_iocompletion]: "
@@ -781,9 +907,13 @@ rdpfs_process_iocompletion(struct stream* s)
 		result = rdpfs_process_information_response(completion_id, s);
 		break;
 
+	case IRP_MN_QUERY_DIRECTORY:
+		result = rdpfs_process_directory_response(completion_id, s);
+		break;
+
 	case IRP_MJ_WRITE:
 		in_uint32_le(s, size);
-		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_printer[printer_process_iocompletion]: "
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_iocompletion]: "
 				"%i octect written for the jobs %s",size, actions[completion_id].path);
 		offset = 1024* actions[completion_id].message_id;
 		size = g_file_size(actions[completion_id].path);
@@ -796,13 +926,15 @@ rdpfs_process_iocompletion(struct stream* s)
 		break;
 
 	case IRP_MJ_CLOSE:
-		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_printer[printer_process_iocompletion]: "
-				"file %s closed",actions[completion_id].path);
-		//TODO
-		//result = printer_dev_delete_job(actions[completion_id].path);
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_iocompletion]: "
+				"file '%s' closed",actions[completion_id].path);
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_iocompletion]: "
+				"toto");
+
+		result = 0;
 		break;
 	default:
-		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_printer[printer_process_iocompletion]: "
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_iocompletion]: "
 				"last request %08x is invalid",actions[completion_id].last_req);
 		return -1;
 	}

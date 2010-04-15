@@ -51,6 +51,7 @@ struct fs_info
 	int nlink;
 	int detele_request;
 	int is_dir;
+	char filename[256];
 };
 
 
@@ -61,6 +62,7 @@ struct request_response
 	struct volume_info volume_inf;
 	struct fs_info fs_inf;
 	unsigned char buffer[1024];
+	int request_status;
 } ;
 
 
@@ -73,8 +75,9 @@ rdpfs_query_volume_information(int completion_id, int device_id, int information
 void APP_CC
 rdpfs_query_information(int completion_id, int device_id, int information, const char* query );
 int APP_CC
-rdpfs_create(int device_id, int desired_access, int shared_access,
-		int creation_disposition, int flags, const char* path);
+rdpfs_create(int device_id, int desired_access, int shared_access, int creation_disposition, int flags, const char* path);
+void APP_CC
+rdpfs_query_volume_information(int completion_id, int device_id, int information, const char* query );
 void APP_CC
 rdpfs_request_close(int completion_id, int device_id);
 

@@ -36,7 +36,6 @@
 #define _XOPEN_SOURCE 500
 #endif
 
-
 #include "disk_dev.h"
 #include "rdpfs.h"
 
@@ -193,6 +192,8 @@ static int disk_dev_getattr(const char *path, struct stat *stbuf)
 	/* test volume */
 	if (strcmp(rdp_path, "/") == 0)
 	{
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_getattr]: "
+				"request (disk_dev_volume_getattr)");
 		return disk_dev_volume_getattr(disk, stbuf);
 	}
 	return disk_dev_file_getattr(disk, rdp_path, stbuf);
@@ -235,7 +236,7 @@ static int disk_dev_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	(void) fi;
 	(void) offset;
 	struct disk_device *disk;
-	char* rdp_path;
+	char rdp_path[256];
 	int completion_id;
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_readdir]: "
@@ -259,13 +260,9 @@ static int disk_dev_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		return 0;
 	}
 
-	rdp_path = g_strdup(path);
+	g_sprintf(rdp_path, "%s/", path);
 	g_str_replace_first(rdp_path, disk->dir_name, "");
 	g_str_replace_first(rdp_path, "//", "/");
-	if(strcmp(rdp_path,"") == 0)
-	{
-		rdp_path = g_strdup("/");
-	}
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_readdir]: "
 				"Request rdp path %s", rdp_path );
@@ -277,10 +274,52 @@ static int disk_dev_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                                FILE_SYNCHRONOUS_IO_NONALERT|FILE_DIRECTORY_FILE,
                                rdp_path);
 	rdpfs_wait_reply();
-	//query directory control
-	/* test path */
-	filler(buf, ".", NULL, 0);
-	filler(buf, "..", NULL, 0);
+	g_sprintf(rdp_path, "%s*", rdp_path);
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_readdir]: "
+				"Request rdp path %s", rdp_path );
+
+
+	while( rdpfs_response[completion_id].request_status == 0 )
+	{
+		struct stat st;
+		rdpfs_query_directory(completion_id, disk->device_id, FileBothDirectoryInformation, rdp_path);
+		rdpfs_wait_reply();
+		if (rdpfs_response[completion_id].request_status == 0)
+		{
+			memset(&st, 0, sizeof(st));
+			st.st_nlink = rdpfs_response[completion_id].fs_inf.nlink;
+			st.st_mode = 0;
+			if (rdpfs_response[completion_id].fs_inf.file_attributes | FILE_ATTRIBUTE_DIRECTORY)
+			{
+				st.st_mode |= S_IFDIR;
+			}
+			if (rdpfs_response[completion_id].fs_inf.file_attributes | FILE_ATTRIBUTE_READONLY)
+			{
+				st.st_mode |= 0744;
+			}
+			else
+			{
+				st.st_mode |= 0755;
+			}
+			st.st_atime = rdpfs_response[completion_id].fs_inf.last_access_time;
+			st.st_mtime = rdpfs_response[completion_id].fs_inf.last_change_time;
+			st.st_ctime = rdpfs_response[completion_id].fs_inf.create_access_time;
+			log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_readdir]: "
+						"Add %s to directory list for %s", rdpfs_response[completion_id].fs_inf.filename, rdp_path );
+
+			if (filler(buf, rdpfs_response[completion_id].fs_inf.filename, &st, 0))
+			{
+				log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_readdir]: "
+							"Failed to add the file %s", rdpfs_response[completion_id].fs_inf.filename);
+			}
+			log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_readdir]: "
+						"oups\n");
+			g_strcpy(rdp_path, "");
+		}
+	}
+//	/* test path */
+//	filler(buf, ".", NULL, 0);
+//	filler(buf, "..", NULL, 0);
 
 	return 0;
 }
@@ -559,6 +598,7 @@ static void disk_dev_destroy(void *private_data)
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_destroy]: ");
 	pthread_cancel(vchannel_thread);
 	pthread_join(vchannel_thread, NULL);
+	g_exit(0);
 
 }
 
