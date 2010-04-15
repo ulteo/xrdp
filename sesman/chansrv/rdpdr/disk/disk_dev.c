@@ -71,13 +71,13 @@ disk_dev_get_device_from_path(const char* path)
 	//extract device name
 	char *pos;
 	int count;
-	char device_name[256];
 	int i;
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_get_device_from_path]: "
 				"The path is: %s", path);
 
-	pos = strchr(path+1, '/');
+	path++;
+	pos = strchr(path, '/');
 	if(pos == NULL)
 	{
 		count = strlen(path);
@@ -86,16 +86,13 @@ disk_dev_get_device_from_path(const char* path)
 	{
 		count = pos-path;
 	}
-	strncpy(device_name, path+1, count);
-	device_name[count+1] = 0;
-
-	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_get_device_from_path]: "
-				"The drive is: %s", device_name);
 
 	for (i=0 ; i< disk_devices_count ; i++)
 	{
-		if(strcmp(device_name, disk_devices[i].dir_name) == 0)
+		if(g_strncmp(path, disk_devices[i].dir_name, count) == 0)
 		{
+			log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_get_device_from_path]: "
+						"The drive is: %s", disk_devices[i].dir_name);
 			return &disk_devices[i];
 		}
 	}
