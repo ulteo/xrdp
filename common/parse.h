@@ -195,6 +195,31 @@ struct stream
 #endif
 
 /******************************************************************************/
+#if defined(B_ENDIAN) || defined(NEED_ALIGN)
+#define in_uint64_le(s, v) \
+{ \
+  (v) = (unsigned int) \
+    ( \
+      (*((unsigned char*)((s)->p + 0)) << 0) | \
+      (*((unsigned char*)((s)->p + 1)) << 8) | \
+      (*((unsigned char*)((s)->p + 2)) << 16) | \
+      (*((unsigned char*)((s)->p + 3)) << 24) \
+      (*((unsigned char*)((s)->p + 0)) << 32) | \
+      (*((unsigned char*)((s)->p + 1)) << 40) | \
+      (*((unsigned char*)((s)->p + 2)) << 48) | \
+      (*((unsigned char*)((s)->p + 3)) << 56) \
+    ); \
+  (s)->p += 8; \
+}
+#else
+#define in_uint64_le(s, v) \
+{ \
+  (v) = *((unsigned long*)((s)->p)); \
+  (s)->p += 8; \
+}
+#endif
+
+/******************************************************************************/
 #define in_uint32_be(s, v) \
 { \
   (v) = *((unsigned char*)((s)->p)); \
