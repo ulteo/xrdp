@@ -16,6 +16,7 @@ sbin_PROGRAMS = \
 rdpdr_disk_SOURCES = \
   main.c \
   disk_dev.c disk_dev.h \
+  hashmap.c hashmap.h \
   rdpfs.h rdpfs.c
 
 rdpdr_disk_LDADD = \

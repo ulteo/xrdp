@@ -314,9 +314,6 @@ static int disk_dev_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 			g_strcpy(rdp_path, "");
 		}
 	}
-//	/* test path */
-//	filler(buf, ".", NULL, 0);
-//	filler(buf, "..", NULL, 0);
 
 	return 0;
 }
