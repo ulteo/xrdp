@@ -27,8 +27,7 @@
 
 struct volume_info
 {
-	int creation_time_low;
-	int creation_time_high;
+	int creation_time;
 	int serial;
 	char label[256];
 	char fs_type[256];
