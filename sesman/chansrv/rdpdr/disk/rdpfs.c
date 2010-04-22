@@ -55,12 +55,10 @@ seconds_since_1970_to_filetime(time_t seconds, uint32 * high, uint32 * low)
 
 /* Convert seconds since 1970 back to filetime */
 static time_t
-convert_1970_to_filetime(uint32 high, uint32 low)
+convert_1970_to_filetime(uint64_t ticks)
 {
-	unsigned long long ticks;
 	time_t val;
 
-	ticks = low + (((unsigned long long) high) << 32);
 	ticks /= 10000000;
 	ticks -= 11644473600LL;
 
@@ -637,8 +635,7 @@ rdpfs_process_directory_response(int completion_id, struct stream* s)
 	struct request_response* rep;
 	int label_length;
 	int object_fs;
-	int low;
-	int high;
+	uint64_t time;
 	int ignored;
 	int fs_name_len;
 
@@ -669,21 +666,17 @@ rdpfs_process_directory_response(int completion_id, struct stream* s)
 		in_uint32_le(s, is_last_entry );
 		in_uint8s(s, 4);
 
-		in_uint32_le(s, low);	/* creation time */
-		in_uint32_le(s, high);
-		rep->fs_inf.create_access_time = convert_1970_to_filetime(high, low);
+		in_uint64_le(s, time);	/* creation time */
+		rep->fs_inf.create_access_time = convert_1970_to_filetime(time);
 
-		in_uint32_le(s, low);	/* last_access_time */
-		in_uint32_le(s, high);
-		rep->fs_inf.last_access_time = convert_1970_to_filetime(high, low);
+		in_uint32_le(s, time);	/* last_access_time */
+		rep->fs_inf.last_access_time = convert_1970_to_filetime(time);
 
-		in_uint32_le(s, low);	/* last_write_time */
-		in_uint32_le(s, high);
-		rep->fs_inf.last_write_time = convert_1970_to_filetime(high, low);
+		in_uint32_le(s, time);	/* last_write_time */
+		rep->fs_inf.last_write_time = convert_1970_to_filetime(time);
 
-		in_uint32_le(s, low);	/* last_change_time */
-		in_uint32_le(s, high);
-		rep->fs_inf.last_change_time = convert_1970_to_filetime(high, low);
+		in_uint32_le(s, time);	/* last_change_time */
+		rep->fs_inf.last_change_time = convert_1970_to_filetime(time);
 
 		in_uint64_le(s, rep->fs_inf.file_size);	/* filesize */
 		in_uint64_le(s, rep->fs_inf.allocation_size);   /* allocated filesize  */
@@ -744,8 +737,7 @@ rdpfs_process_volume_information_response(int completion_id, struct stream* s)
 				"IRP_MJ_QUERY_VOLUME_INFORMATION response : extract FileFsVolumeInformation information");
 		rep->Request_param = actions[completion_id].request_param;
 
-		in_uint32_le(s, rep->volume_inf.creation_time_low);     /* volume creation time low */
-		in_uint32_le(s, rep->volume_inf.creation_time_high);    /* volume creation time high */
+		in_uint64_le(s, rep->volume_inf.creation_time);     /* volume creation time */
 		in_uint32_le(s, rep->volume_inf.serial);            	  /* serial */
 
 		in_uint32_le(s, label_length);	                        /* length of string */
@@ -802,11 +794,9 @@ rdpfs_process_information_response(int completion_id, struct stream* s)
 	struct request_response* rep;
 	int label_length;
 	int object_fs;
-	int low;
-	int high;
 	int ignored;
 	int fs_name_len;
-
+	uint64_t time;
 
 	rep = &rdpfs_response[completion_id];
 
@@ -822,21 +812,17 @@ rdpfs_process_information_response(int completion_id, struct stream* s)
 		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_information_response]: "
 				"IRP_MJ_QUERY_INFORMATION response : param response FileBasicInformation");
 
-		in_uint32_le(s, low);	/* create_access_time */
-		in_uint32_le(s, high);
-		rep->fs_inf.create_access_time = convert_1970_to_filetime(high, low);
+		in_uint32_le(s, time);	/* create_access_time */
+		rep->fs_inf.create_access_time = convert_1970_to_filetime(time);
 
-		in_uint32_le(s, low);	/* last_access_time */
-		in_uint32_le(s, high);
-		rep->fs_inf.last_access_time = convert_1970_to_filetime(high, low);
+		in_uint32_le(s, time);	/* last_access_time */
+		rep->fs_inf.last_access_time = convert_1970_to_filetime(time);
 
-		in_uint32_le(s, low);	/* last_write_time */
-		in_uint32_le(s, high);
-		rep->fs_inf.last_write_time = convert_1970_to_filetime(high, low);
+		in_uint32_le(s, time);	/* last_write_time */
+		rep->fs_inf.last_write_time = convert_1970_to_filetime(time);
 
-		in_uint32_le(s, low);	/* last_change_time */
-		in_uint32_le(s, high);
-		rep->fs_inf.last_change_time = convert_1970_to_filetime(high, low);
+		in_uint32_le(s, time);	/* last_change_time */
+		rep->fs_inf.last_change_time = convert_1970_to_filetime(time);
 
 		in_uint32_le(s, rep->fs_inf.file_attributes);
 		break;
