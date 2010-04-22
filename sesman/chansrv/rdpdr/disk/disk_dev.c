@@ -38,6 +38,7 @@
 
 #include "disk_dev.h"
 #include "rdpfs.h"
+#include "rdpfs_cache.h"
 
 static struct disk_device disk_devices[128];
 static int disk_devices_count = 0;

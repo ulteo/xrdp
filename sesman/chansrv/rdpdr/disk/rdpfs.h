@@ -25,19 +25,6 @@
 #include "log.h"
 #include "vchannel.h"
 
-struct volume_info
-{
-	int creation_time;
-	int serial;
-	char label[256];
-	char fs_type[256];
-	long f_bfree;
-	long f_bsize;
-	long f_blocks;
-	int f_namelen;
-	int f_namemax;
-};
-
 struct fs_info
 {
 	int create_access_time;
@@ -58,7 +45,6 @@ struct request_response
 {
 	int Request_type;
 	int Request_param;
-	struct volume_info volume_inf;
 	struct fs_info fs_inf;
 	unsigned char buffer[1024];
 	int request_status;

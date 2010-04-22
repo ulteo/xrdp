@@ -17,6 +17,7 @@ rdpdr_disk_SOURCES = \
   main.c \
   disk_dev.c disk_dev.h \
   hashmap.c hashmap.h \
+  rdpfs_cache.c rdpfs_cache.h \
   rdpfs.h rdpfs.c
 
 rdpdr_disk_LDADD = \

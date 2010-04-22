@@ -737,41 +737,39 @@ rdpfs_process_volume_information_response(int completion_id, struct stream* s)
 				"IRP_MJ_QUERY_VOLUME_INFORMATION response : extract FileFsVolumeInformation information");
 		rep->Request_param = actions[completion_id].request_param;
 
-		in_uint64_le(s, rep->volume_inf.creation_time);     /* volume creation time */
-		in_uint32_le(s, rep->volume_inf.serial);            	  /* serial */
-
+		in_uint64_le(s, rep->fs_inf.create_access_time);    /* volume creation time */
+		in_uint8s(s, 4);                                    /* serial (ignored) */
 		in_uint32_le(s, label_length);	                        /* length of string */
-
 		in_uint8(s, object_fs);	                                /* support objects? */
 		if (object_fs != 0)
 		{
 			log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[rdpfs_process_iocompletion]: "
 					"IRP_MJ_QUERY_VOLUME_INFORMATION response : Xrdp did not support object file system");
 		}
-		rdp_in_unistr(s, rep->volume_inf.label, sizeof(rep->volume_inf.label), label_length);
+		rdp_in_unistr(s, rep->fs_inf.filename, sizeof(rep->fs_inf.filename), label_length);
 		break;
 
 	case FileFsSizeInformation:
 		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_iocompletion]: "
 						"IRP_MJ_QUERY_VOLUME_INFORMATION response : extract FileFsSizeInformation information");
 
-		in_uint32_le(s, low);                          /* Total allocation units low */
-		in_uint32_le(s, high);                         /* Total allocation high units */
-		in_uint32_le(s, rep->volume_inf.f_bfree);	     /* Available allocation units */
-		in_uint32_le(s, rep->volume_inf.f_blocks);     /* Available allowcation units */
-		in_uint32_le(s, ignored);                      /* Sectors per allocation unit */
-		in_uint32_le(s, ignored);                      /* Bytes per sector */
+//		in_uint32_le(s, low);                          /* Total allocation units low */
+//		in_uint32_le(s, high);                         /* Total allocation high units */
+//		in_uint32_le(s, rep->volume_inf.f_bfree);	     /* Available allocation units */
+//		in_uint32_le(s, rep->volume_inf.f_blocks);     /* Available allowcation units */
+//		in_uint32_le(s, ignored);                      /* Sectors per allocation unit */
+//		in_uint32_le(s, ignored);                      /* Bytes per sector */
 		break;
 
 	case FileFsAttributeInformation:
 		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_iocompletion]: "
 						"IRP_MJ_QUERY_VOLUME_INFORMATION response : extract FileFsAttributeInformation information");
 
-		in_uint32_le(s, ignored);                      /* fs attributes */
-		in_uint32_le(s, rep->volume_inf.f_namelen);	   /* max length of filename */
-
-		in_uint32_le(s, fs_name_len);                  /* length of fs_type */
-		rdp_in_unistr(s, rep->volume_inf.fs_type, sizeof(rep->volume_inf.fs_type), fs_name_len);
+//		in_uint32_le(s, ignored);                      /* fs attributes */
+//		in_uint32_le(s, rep->volume_inf.f_namelen);	   /* max length of filename */
+//
+//		in_uint32_le(s, fs_name_len);                  /* length of fs_type */
+//		rdp_in_unistr(s, rep->volume_inf.fs_type, sizeof(rep->volume_inf.fs_type), fs_name_len);
 		break;
 
 	case FileFsDeviceInformation:
