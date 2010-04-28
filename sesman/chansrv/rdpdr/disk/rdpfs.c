@@ -784,7 +784,7 @@ rdpfs_process_directory_response(int completion_id, struct stream* s)
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_volume_information_response]: "
 							"IRP_MJ_QUERY_DIRECTORY response : path added in cache : %s", path);
 
-	rdpfs_cache_add_fs(path, file_response);
+	rdpfs_cache_add_fs(g_strdup(path), file_response);
 
 
 	return 0;
