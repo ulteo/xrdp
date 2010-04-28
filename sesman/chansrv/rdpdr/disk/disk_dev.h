@@ -41,11 +41,6 @@
 #include "os_calls.h"
 #include "parse.h"
 
-struct disk_device
-{
-	int device_id;
-	char dir_name[256];
-};
 
 int DEFAULT_CC
 fuse_run();

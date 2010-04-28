@@ -21,6 +21,7 @@
 
 #include "rdpfs.h"
 #include <xrdp_constants.h>
+#include <fuse.h>
 
 
 
@@ -34,8 +35,8 @@ static struct stream* splitted_packet;
 static Action actions[128];
 struct request_response rdpfs_response[128];
 static int action_index=0;
-struct device device_list[128];
-int device_count = 0;
+static struct disk_device disk_devices[128];
+static int disk_devices_count = 0;
 pthread_cond_t reply_cond;
 pthread_mutex_t mutex;
 extern int disk_up;
@@ -154,7 +155,7 @@ rdp_in_unistr(struct stream* s, char *string, int str_size, int in_len)
     {
       if ((iconv_h = iconv_open(g_codepage, WINDOWS_CODEPAGE)) == (iconv_t) - 1)
       {
-        log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_printer[printer_dev_in_unistr]: "
+        log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[printer_dev_in_unistr]: "
         		"Iconv_open[%s -> %s] fail %p",
 					WINDOWS_CODEPAGE, g_codepage, iconv_h);
         g_iconv_works = False;
@@ -166,14 +167,14 @@ rdp_in_unistr(struct stream* s, char *string, int str_size, int in_len)
     {
       if (errno == E2BIG)
       {
-        log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_printer[printer_dev_in_unistr]: "
+        log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[printer_dev_in_unistr]: "
 							"Server sent an unexpectedly long string, truncating");
       }
       else
       {
         iconv_close(iconv_h);
         iconv_h = (iconv_t) - 1;
-        log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_printer[printer_dev_in_unistr]: "
+        log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[printer_dev_in_unistr]: "
 							"Iconv fail, errno %d\n", errno);
         g_iconv_works = False;
         return rdpdr_in_unistr(s, string, str_size, in_len);
@@ -194,7 +195,7 @@ rdp_in_unistr(struct stream* s, char *string, int str_size, int in_len)
 
     if (len > str_size - 1)
     {
-      log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_printer[printer_dev_in_unistr]: "
+      log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[printer_dev_in_unistr]: "
 						"server sent an unexpectedly long string, truncating");
       len = str_size - 1;
       rem = in_len - 2 * len;
@@ -251,6 +252,76 @@ rdpfs_wait_reply()
   }
 }
 
+int APP_CC
+rdpfs_get_device_count()
+{
+	return disk_devices_count;
+}
+
+struct disk_device* APP_CC
+rdpfs_get_device_by_index(int device_index)
+{
+	return &disk_devices[device_index];
+}
+
+
+/************************************************************************/
+struct disk_device* APP_CC
+rdpfs_get_dir(int device_id)
+{
+	int i;
+	for (i=0 ; i< disk_devices_count ; i++)
+	{
+		if(device_id == disk_devices[i].device_id)
+		{
+			return &disk_devices[i];
+		}
+	}
+	return 0;
+}
+
+/************************************************************************/
+struct disk_device* APP_CC
+rdpfs_get_device_from_path(const char* path)
+{
+	//extract device name
+	char *pos;
+	int count;
+	int i;
+
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_get_device_from_path]: "
+				"The path is: %s", path);
+
+	path++;
+	pos = strchr(path, '/');
+	if(pos == NULL)
+	{
+		count = strlen(path);
+	}
+	else
+	{
+		count = pos-path;
+	}
+
+	for (i=0 ; i< disk_devices_count ; i++)
+	{
+		if(g_strncmp(path, disk_devices[i].dir_name, count) == 0)
+		{
+			log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_get_device_from_path]: "
+						"The drive is: %s", disk_devices[i].dir_name);
+			return &disk_devices[i];
+		}
+	}
+	return 0;
+}
+
+int APP_CC
+rdpfs_convert_fs_to_stat(struct fs_info* fs, struct stat* st)
+{
+	st->st_mode = S_IFDIR | 0755;
+	st->st_nlink = 2;
+	return 0;
+}
 
 /*****************************************************************************/
 int APP_CC
@@ -278,6 +349,9 @@ rdpfs_open()
 				"Error while connecting to rdpdr provider");
 		return 1;
 	}
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_open]: "
+			"Initialise the rdpfs cache");
+	rdpfs_cache_init();
 	return 0;
 }
 
@@ -389,7 +463,7 @@ rdpfs_request_close(int completion_id, int device_id)
 	out_uint16_le(s, PAKID_CORE_DEVICE_IOREQUEST);
 	out_uint32_le(s, actions[completion_id].device);
 	out_uint32_le(s, actions[completion_id].file_id);
-	out_uint32_le(s, actions[completion_id].file_id);
+	out_uint32_le(s, completion_id);
 	out_uint32_le(s, IRP_MJ_CLOSE);   											/* major version */
 	out_uint32_le(s, 0);																		/* minor version */
 
@@ -481,7 +555,10 @@ rdpfs_query_directory(int completion_id, int device_id, int information, const c
 	make_stream(s);
 	init_stream(s,1024);
 
-	g_strcpy(actions[completion_id].path, query);
+	if (g_strcmp(query, "") != 0)
+	{
+		g_strcpy(actions[completion_id].path, query);
+	}
 	actions[completion_id].last_req = IRP_MN_QUERY_DIRECTORY;
 	actions[completion_id].request_param = information;
 
@@ -531,6 +608,18 @@ rdpfs_list_reply(int handle)
   return 0;
 }
 
+/************************************************************************/
+int APP_CC
+rdpfs_add(struct stream* s, int device_data_length,
+								int device_id, char* dos_name)
+{
+	disk_devices[disk_devices_count].device_id = device_id;
+	g_strcpy(disk_devices[disk_devices_count].dir_name, dos_name);
+	disk_devices_count++;
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_add]: "
+				"Succedd to add disk");
+  return disk_devices_count-1;
+}
 
 
 
@@ -576,14 +665,10 @@ rdpfs_list_announce(struct stream* s)
 					"Add disk device");
     p = s->p;
     handle = 0;
-    disk_dev_add(s, device_data_length, device_id, dos_name);
+    handle = rdpfs_add(s, device_data_length, device_id, dos_name);
     s->p = p + device_data_length;
     if (handle != 1)
     {
-    	device_list[device_count].device_id = device_id;
-    	device_list[device_count].device_type = RDPDR_DTYP_FILESYSTEM;
-    	device_list[device_count].ready = 0;
-    	device_count++;
     	rdpfs_list_reply(handle);
     	continue;
     }
@@ -627,82 +712,81 @@ rdpfs_process_create_response(int completion_id, struct stream* s)
 int APP_CC
 rdpfs_process_directory_response(int completion_id, struct stream* s)
 {
+	if(rdpfs_response[completion_id].request_status != 0)
+	{
+		return 0;
+	}
 	int is_last_entry;
 	int length;
 	int filename_length;
 	int short_filename_length;
 
-	struct request_response* rep;
+	struct fs_info* file_response;
 	int label_length;
 	int object_fs;
 	uint64_t time;
 	int ignored;
 	int fs_name_len;
+	char path[256];
+	struct disk_device* disk;
 
-
-	rep = &rdpfs_response[completion_id];
-
+	file_response = &rdpfs_response[completion_id].fs_inf;
 	in_uint32_le(s, length);			/* response length */
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_directory_response]: "
 			"IRP_MN_QUERY_DIRECTORY response : response length : %i", length);
 
-	switch (actions[completion_id].request_param)
+	if (actions[completion_id].request_param != FileBothDirectoryInformation)
 	{
-	case FileDirectoryInformation:
-
 		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_directory_response]: "
-				"IRP_MJ_QUERY_DIRECTORY response : extract FileDirectoryInformation information (unsupported)");
-		break;
-
-	case FileFullDirectoryInformation:
-		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_directory_response]: "
-				"IRP_MJ_QUERY_DIRECTORY response : extract FileFullDirectoryInformation information (unsupported)");
-		break;
-
-	case FileBothDirectoryInformation:
-		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_iocompletion]: "
-						"IRP_MJ_QUERY_DIRECTORY response : extract FileBothDirectoryInformation information");
-
-		in_uint32_le(s, is_last_entry );
-		in_uint8s(s, 4);
-
-		in_uint64_le(s, time);	/* creation time */
-		rep->fs_inf.create_access_time = convert_1970_to_filetime(time);
-
-		in_uint32_le(s, time);	/* last_access_time */
-		rep->fs_inf.last_access_time = convert_1970_to_filetime(time);
-
-		in_uint32_le(s, time);	/* last_write_time */
-		rep->fs_inf.last_write_time = convert_1970_to_filetime(time);
-
-		in_uint32_le(s, time);	/* last_change_time */
-		rep->fs_inf.last_change_time = convert_1970_to_filetime(time);
-
-		in_uint64_le(s, rep->fs_inf.file_size);	/* filesize */
-		in_uint64_le(s, rep->fs_inf.allocation_size);   /* allocated filesize  */
-		in_uint32_le(s, rep->fs_inf.file_attributes);   /* attributes  */
-
-		in_uint32_le(s, filename_length);        /* unicode filename length */
-		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_volume_information_response]: "
-						"filename length : %i", filename_length);
-
-		in_uint8s(s, 29);               /* we ignore the short file name */
-		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_volume_information_response]: "
-						"message : ");
-		log_hexdump(l_config, LOG_LEVEL_DEBUG, s->p, filename_length);
-
-		rdp_in_unistr(s, rep->fs_inf.filename, sizeof(rep->fs_inf.filename), filename_length);
-		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_volume_information_response]: "
-						"IRP_MJ_QUERY_DIRECTORY response : get filename : %s", rep->fs_inf.filename);
-
-		break;
-
-	default:
-
-		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_volume_information_response]: "
-						"IRP_MJ_QUERY_DIRECTORY response : unknow response");
+				"IRP_MN_QUERY_DIRECTORY response : bad flag for request parameter : %04x", actions[completion_id].request_param);
 		return 1;
 	}
+
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_iocompletion]: "
+			"IRP_MJ_QUERY_DIRECTORY response : extract FileBothDirectoryInformation information");
+
+	in_uint32_le(s, is_last_entry );
+	in_uint8s(s, 4);
+
+	in_uint64_le(s, time);	/* creation time */
+	file_response->create_access_time = convert_1970_to_filetime(time);
+
+	in_uint64_le(s, time);	/* last_access_time */
+	file_response->last_access_time = convert_1970_to_filetime(time);
+
+	in_uint64_le(s, time);	/* last_write_time */
+	file_response->last_write_time = convert_1970_to_filetime(time);
+
+	in_uint64_le(s, time);	/* last_change_time */
+	file_response->last_change_time = convert_1970_to_filetime(time);
+
+	in_uint64_le(s, file_response->file_size);	/* filesize */
+	in_uint64_le(s, file_response->allocation_size);   /* allocated filesize  */
+	in_uint32_le(s, file_response->file_attributes);   /* attributes  */
+
+	in_uint32_le(s, filename_length);        /* unicode filename length */
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_volume_information_response]: "
+			"filename length : %i", filename_length);
+
+	in_uint8s(s, 29);               /* we ignore the short file name */
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_volume_information_response]: "
+			"message : ");
+	log_hexdump(l_config, LOG_LEVEL_DEBUG, s->p, filename_length);
+
+	rdp_in_unistr(s, file_response->filename, sizeof(file_response->filename), filename_length);
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_volume_information_response]: "
+						"IRP_MJ_QUERY_DIRECTORY response : get filename : %s", file_response->filename);
+
+	disk = rdpfs_get_dir(actions[completion_id].device);
+	g_sprintf(path, "/%s%s",  disk->dir_name, actions[completion_id].path);
+	path[g_strlen(path)-1] = 0;
+	g_sprintf(path, "%s%s",  path, file_response->filename);
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_volume_information_response]: "
+							"IRP_MJ_QUERY_DIRECTORY response : path added in cache : %s", path);
+
+	rdpfs_cache_add_fs(path, file_response);
+
+
 	return 0;
 }
 

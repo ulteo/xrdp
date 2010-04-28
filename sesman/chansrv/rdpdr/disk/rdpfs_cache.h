@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2008 Ulteo SAS
+ * Copyright (C) 2010 Ulteo SAS
  * http://www.ulteo.com
  * Author David Lechevalier <david@ulteo.com> 2010
  *
@@ -49,5 +49,7 @@ void APP_CC
 rdpfs_cache_remove_fs(const char* fs_name);
 int APP_CC
 rdpfs_cache_contain_fs(const char* fs_name);
+void APP_CC
+rdpfs_cache_dump();
 
 #endif /* RDPFS_CACHE_H_ */

@@ -67,7 +67,9 @@
 #include <string.h>
 
 #include "hashmap.h"
+#include "log.h"
 
+extern struct log_config *l_config;
 
 struct HashMap *newHashMap(void (*destructor)(void *arg, char *key,
                            void *value),
@@ -125,7 +127,6 @@ const void *addToHashMap(struct HashMap *hashmap, const char *key,
                         const void *value) {
   int i;
   int j;
-  printf("1\n");
   if (hashmap->numEntries + 1 > (hashmap->mapSize * 8)/10) {
     struct HashMap newMap;
     newMap.numEntries            = hashmap->numEntries;
@@ -152,7 +153,6 @@ const void *addToHashMap(struct HashMap *hashmap, const char *key,
     hashmap->mapSize             = newMap.mapSize;
     hashmap->numEntries          = newMap.numEntries;
   }
-  printf("1\n");
   unsigned hash                  = stringHashFunc(key);
   int idx                        = hash % hashmap->mapSize;
   i                              = 0;

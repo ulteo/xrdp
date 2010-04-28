@@ -40,8 +40,6 @@
 #include "rdpfs.h"
 #include "rdpfs_cache.h"
 
-static struct disk_device disk_devices[128];
-static int disk_devices_count = 0;
 extern pthread_t vchannel_thread;
 extern void *thread_vchannel_process (void * arg);
 extern struct log_config *l_config;
@@ -50,70 +48,7 @@ extern int rdpdr_sock;
 extern int disk_up;
 extern struct request_response rdpfs_response[128];
 
-/************************************************************************/
-struct disk_device* APP_CC
-disk_dev_get_dir(int device_id)
-{
-	int i;
-	for (i=0 ; i< disk_devices_count ; i++)
-	{
-		if(device_id == disk_devices[i].device_id)
-		{
-			return &disk_devices[i];
-		}
-	}
-	return 0;
-}
 
-/************************************************************************/
-struct disk_device* APP_CC
-disk_dev_get_device_from_path(const char* path)
-{
-	//extract device name
-	char *pos;
-	int count;
-	int i;
-
-	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_get_device_from_path]: "
-				"The path is: %s", path);
-
-	path++;
-	pos = strchr(path, '/');
-	if(pos == NULL)
-	{
-		count = strlen(path);
-	}
-	else
-	{
-		count = pos-path;
-	}
-
-	for (i=0 ; i< disk_devices_count ; i++)
-	{
-		if(g_strncmp(path, disk_devices[i].dir_name, count) == 0)
-		{
-			log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_get_device_from_path]: "
-						"The drive is: %s", disk_devices[i].dir_name);
-			return &disk_devices[i];
-		}
-	}
-	return 0;
-}
-
-/************************************************************************/
-int APP_CC
-disk_dev_add(struct stream* s, int device_data_length,
-								int device_id, char* dos_name)
-{
-
-
-	disk_devices[disk_devices_count].device_id = device_id;
-	g_strcpy(disk_devices[disk_devices_count].dir_name, dos_name);
-	disk_devices_count++;
-	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_add]: "
-				"Succedd to add disk");
-  return g_time1();
-}
 
 
 /************************************************************************
@@ -161,6 +96,7 @@ static int disk_dev_getattr(const char *path, struct stat *stbuf)
 {
 	struct disk_device *disk;
 	char* rdp_path;
+	struct fs_info* fs;
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_getattr]: "
 				"getattr on %s", path);
@@ -173,28 +109,39 @@ static int disk_dev_getattr(const char *path, struct stat *stbuf)
 
 	rdp_path = g_strdup(path);
 	if (strcmp(rdp_path, "/") == 0) {
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_getattr]: "
+				"%i device mounted ", rdpfs_get_device_count());
 		stbuf->st_mode = S_IFDIR | 0755;
-		stbuf->st_nlink = disk_devices_count + 2;
+		stbuf->st_nlink = rdpfs_get_device_count() + 2;
 		return 0;
 	}
 
-	disk = disk_dev_get_device_from_path(rdp_path);
-	if ( disk == 0)
+	fs = rdpfs_cache_get_fs(rdp_path);
+	if (fs == NULL)
 	{
 		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_getattr]: "
-				"Device from path(%s) did not exists", rdp_path);
-		return 0;
-	}
-	g_str_replace_first(rdp_path, disk->dir_name, "");
+				"%s not in cache", rdp_path);
+		disk = rdpfs_get_device_from_path(rdp_path);
+		if ( disk == 0)
+		{
+			log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_getattr]: "
+					"Device from path(%s) did not exists", rdp_path);
+			return 0;
+		}
+		g_str_replace_first(rdp_path, disk->dir_name, "");
 
-	/* test volume */
-	if (strcmp(rdp_path, "/") == 0)
-	{
-		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_getattr]: "
-				"request (disk_dev_volume_getattr)");
-		return disk_dev_volume_getattr(disk, stbuf);
+		/* test volume */
+		if (strcmp(rdp_path, "/") == 0)
+		{
+			log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_getattr]: "
+					"request (disk_dev_volume_getattr)");
+			return disk_dev_volume_getattr(disk, stbuf);
+		}
+		return disk_dev_file_getattr(disk, rdp_path, stbuf);
 	}
-	return disk_dev_file_getattr(disk, rdp_path, stbuf);
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_getattr]: "
+			"%s is in cache", rdp_path);
+	return rdpfs_convert_fs_to_stat(fs, stbuf);
 }
 
 /************************************************************************/
@@ -202,13 +149,8 @@ static int disk_dev_access(const char *path, int mask)
 {
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_access]: "
 				"access on %s", path);
-	int res;
 
-	res = access(mount_point, mask);
-	if (res == -1)
-		return -errno;
-
-	return 0;
+	return F_OK;
 }
 
 /************************************************************************/
@@ -244,15 +186,18 @@ static int disk_dev_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	{
 		filler(buf, ".", NULL, 0);
 		filler(buf, "..", NULL, 0);
-		for (i=0 ; i<disk_devices_count ; i++)
+		for (i=0 ; i<rdpfs_get_device_count() ; i++)
 		{
-			disk = &disk_devices[i];
+			disk = rdpfs_get_device_by_index(i);
 			filler(buf, disk->dir_name , NULL, 0);
+			log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_readir]: "
+					"the device name is : %s", disk->dir_name);
+
 		}
 		return 0;
 	}
 
-	disk = disk_dev_get_device_from_path(path);
+	disk = rdpfs_get_device_from_path(path);
 	if(disk == 0)
 	{
 		return 0;
@@ -277,44 +222,34 @@ static int disk_dev_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 				"Request rdp path %s", rdp_path );
 
 
+	struct stat st;
+	rdpfs_query_directory(completion_id, disk->device_id, FileBothDirectoryInformation, rdp_path);
+	rdpfs_wait_reply();
+	if (rdpfs_response[completion_id].request_status == 0)
+	{
+		if (filler(buf, rdpfs_response[completion_id].fs_inf.filename, NULL, 0))
+		{
+			log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_readdir]: "
+						"Failed to add the file %s", rdpfs_response[completion_id].fs_inf.filename);
+		}
+	}
 	while( rdpfs_response[completion_id].request_status == 0 )
 	{
-		struct stat st;
-		rdpfs_query_directory(completion_id, disk->device_id, FileBothDirectoryInformation, rdp_path);
+		rdpfs_query_directory(completion_id, disk->device_id, FileBothDirectoryInformation, "");
 		rdpfs_wait_reply();
 		if (rdpfs_response[completion_id].request_status == 0)
 		{
-			memset(&st, 0, sizeof(st));
-			st.st_nlink = rdpfs_response[completion_id].fs_inf.nlink;
-			st.st_mode = 0;
-			if (rdpfs_response[completion_id].fs_inf.file_attributes | FILE_ATTRIBUTE_DIRECTORY)
-			{
-				st.st_mode |= S_IFDIR;
-			}
-			if (rdpfs_response[completion_id].fs_inf.file_attributes | FILE_ATTRIBUTE_READONLY)
-			{
-				st.st_mode |= 0744;
-			}
-			else
-			{
-				st.st_mode |= 0755;
-			}
-			st.st_atime = rdpfs_response[completion_id].fs_inf.last_access_time;
-			st.st_mtime = rdpfs_response[completion_id].fs_inf.last_change_time;
-			st.st_ctime = rdpfs_response[completion_id].fs_inf.create_access_time;
 			log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_readdir]: "
-						"Add %s to directory list for %s", rdpfs_response[completion_id].fs_inf.filename, rdp_path );
-
-			if (filler(buf, rdpfs_response[completion_id].fs_inf.filename, &st, 0))
+						"Add %s in filler", rdpfs_response[completion_id].fs_inf.filename);
+			if (filler(buf, rdpfs_response[completion_id].fs_inf.filename, NULL, 0))
 			{
 				log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_readdir]: "
 							"Failed to add the file %s", rdpfs_response[completion_id].fs_inf.filename);
 			}
-			log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_readdir]: "
-						"oups\n");
-			g_strcpy(rdp_path, "");
 		}
 	}
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_readdir]: "
+				"Fin");
 
 	return 0;
 }

@@ -25,12 +25,18 @@
 #include "log.h"
 #include "vchannel.h"
 
+struct disk_device
+{
+	int device_id;
+	char dir_name[256];
+};
+
 struct fs_info
 {
-	int create_access_time;
-	int last_access_time;
-	int last_write_time;
-	int last_change_time;
+	long create_access_time;
+	long last_access_time;
+	long last_write_time;
+	long last_change_time;
 	int file_attributes;
 	long file_size;
 	long allocation_size;    /* number of occuped cluster */
@@ -38,6 +44,7 @@ struct fs_info
 	int detele_request;
 	int is_dir;
 	char filename[256];
+	char key[256];
 };
 
 
@@ -52,7 +59,17 @@ struct request_response
 
 
 
-
+int APP_CC
+rdpfs_get_device_count();
+struct disk_device* APP_CC
+rdpfs_get_device_by_index(int device_index);
+struct disk_device* APP_CC
+rdpfs_get_dir(int device_id);
+int APP_CC
+rdpfs_add(struct stream* s, int device_data_length,
+								int device_id, char* dos_name);
+struct disk_device* APP_CC
+rdpfs_get_device_from_path(const char* path);
 int APP_CC
 rdpfs_send(struct stream* s);
 void APP_CC
