@@ -85,5 +85,9 @@ void APP_CC
 rdpfs_request_close(int completion_id, int device_id);
 int APP_CC
 rdpfs_convert_fs_to_stat(struct fs_info* fs, struct stat* st);
+int APP_CC
+rdpfs_get_other_permission(mode_t mode);
+int APP_CC
+rdpfs_get_owner_permission(mode_t mode);
 
 #endif /* RDPFS_H_ */

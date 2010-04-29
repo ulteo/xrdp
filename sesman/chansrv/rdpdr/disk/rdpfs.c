@@ -344,6 +344,55 @@ rdpfs_convert_fs_to_stat(struct fs_info* fs, struct stat* st)
 	return 0;
 }
 
+/************************************************************************/
+int APP_CC
+rdpfs_get_owner_permission(mode_t mode)
+{
+	int owner_perm = 0;
+
+	if( mode & 0100)
+	{
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_get_owner_permission]: "
+					"Owner can execute");
+		owner_perm |= GENERIC_EXECUTE;
+	}
+	if( mode & 0200)
+	{
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_get_owner_permission]: "
+					"Owner can write");
+		owner_perm |= GENERIC_WRITE;
+	}
+	if( mode & 0400)
+	{
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_get_owner_permission]: "
+					"Owner can read ");
+		owner_perm |= GENERIC_READ;
+	}
+	return owner_perm;
+}
+
+/************************************************************************/
+int APP_CC
+rdpfs_get_other_permission(mode_t mode)
+{
+	int other_perm = 0;
+
+	if( mode & 0002)
+	{
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_get_other_permission]: "
+					"Other can write");
+		other_perm |= FILE_SHARE_WRITE;
+	}
+	if( mode & 0004)
+	{
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_get_other_permission]: "
+					"Other can read");
+		other_perm |= FILE_SHARE_READ;
+	}
+	return other_perm;
+}
+
+
 /*****************************************************************************/
 int APP_CC
 rdpfs_open()
@@ -431,17 +480,20 @@ rdpfs_create(int device_id, int desired_access, int shared_access,
 	struct stream* s;
 	int index;
 	int completion_id;
+
 	make_stream(s);
 	init_stream(s,1024);
 
 	completion_id = action_index;
 	action_index++;
+
 	actions[completion_id].device = device_id;
 	actions[completion_id].file_id = completion_id;
 	actions[completion_id].last_req = IRP_MJ_CREATE;
+
 	g_strcpy(actions[completion_id].path, path);
 
-	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_readdir]:"
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_create]:"
   		"Process job[%s]",path);
 	out_uint16_le(s, RDPDR_CTYP_CORE);
 	out_uint16_le(s, PAKID_CORE_DEVICE_IOREQUEST);

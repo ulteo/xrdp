@@ -56,37 +56,26 @@ extern struct request_response rdpfs_response[128];
  */
 
 /************************************************************************/
-static int disk_dev_volume_getattr(struct disk_device* disk, struct stat *stbuf)
-{
-	int i;
-	int completion_id = 0;
-
-	completion_id = rdpfs_create(disk->device_id, GENERIC_READ|FILE_EXECUTE_ATTRIBUTES,	FILE_SHARE_READ|FILE_SHARE_DELETE|FILE_SHARE_WRITE,	FILE_OPEN, FILE_SYNCHRONOUS_IO_NONALERT, "");
-	rdpfs_wait_reply();
-	//rdpfs_query_volume_information(completion_id, disk->device_id, FileFsVolumeInformation, "");
-	//rdpfs_wait_reply();
-	rdpfs_query_information(completion_id, disk->device_id, FileBasicInformation,"");
-	rdpfs_wait_reply();
-	rdpfs_query_information(completion_id, disk->device_id, FileStandardInformation,"");
-	rdpfs_wait_reply();
-	rdpfs_request_close(completion_id, disk->device_id);
-	rdpfs_wait_reply();
-
-	return rdpfs_convert_fs_to_stat(&rdpfs_response[completion_id].fs_inf, stbuf);
-
-}
-
-/************************************************************************/
 static int disk_dev_file_getattr(struct disk_device* disk, const char* path, struct stat *stbuf)
 {
 	int i;
 	int completion_id = 0;
 
-	/* test path */
-	stbuf->st_mode = S_IFDIR | 0755;
-	stbuf->st_nlink = 2;
+	completion_id = rdpfs_create(disk->device_id, GENERIC_READ|FILE_EXECUTE_ATTRIBUTES,	FILE_SHARE_READ|FILE_SHARE_DELETE|FILE_SHARE_WRITE,	FILE_OPEN, FILE_SYNCHRONOUS_IO_NONALERT, path);
+	rdpfs_wait_reply();
+	if (rdpfs_response[completion_id].request_status == 0)
+	{
+		rdpfs_query_information(completion_id, disk->device_id, FileBasicInformation, path);
+		rdpfs_wait_reply();
+		rdpfs_query_information(completion_id, disk->device_id, FileStandardInformation,path);
+		rdpfs_wait_reply();
+		rdpfs_request_close(completion_id, disk->device_id);
+		rdpfs_wait_reply();
+		return rdpfs_convert_fs_to_stat(&rdpfs_response[completion_id].fs_inf, stbuf);
+	}
 
-	return 0;
+	return -ENOENT;
+
 }
 
 /************************************************************************/
@@ -128,15 +117,17 @@ static int disk_dev_getattr(const char *path, struct stat *stbuf)
 		}
 		g_str_replace_first(rdp_path, disk->dir_name, "");
 
-		/* test volume */
+
 		if (strcmp(rdp_path, "/") == 0)
 		{
 			log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_getattr]: "
 					"request (disk_dev_volume_getattr)");
-			return disk_dev_volume_getattr(disk, stbuf);
+			return disk_dev_file_getattr(disk, "", stbuf);
 		}
-		return disk_dev_file_getattr(disk, rdp_path, stbuf);
+
+		return disk_dev_file_getattr(disk, rdp_path+1, stbuf);
 	}
+
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_getattr]: "
 			"%s is in cache", rdp_path);
 	return rdpfs_convert_fs_to_stat(fs, stbuf);
@@ -155,13 +146,6 @@ static int disk_dev_access(const char *path, int mask)
 static int disk_dev_readlink(const char *path, char *buf, size_t size)
 {
 	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_readlink");
-	int res;
-
-	res = readlink(path, buf, size - 1);
-	if (res == -1)
-		return -errno;
-
-	buf[res] = '\0';
 	return 0;
 }
 
@@ -255,21 +239,45 @@ static int disk_dev_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 /************************************************************************/
 static int disk_dev_mknod(const char *path, mode_t mode, dev_t rdev)
 {
-	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_mknod");
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_mknod] ");
 	int res;
+	int completion_id = 0;
+	struct disk_device* disk;
+	int owner_perm = 0;
+	int other_perm = 0;
+	int attributes = 0;
+	char* rdp_path;
 
-	/* On Linux this could just be 'mknod(path, mode, rdev)' but this
-	   is more portable */
-	if (S_ISREG(mode)) {
-		res = open(path, O_CREAT | O_EXCL | O_WRONLY, mode);
-		if (res >= 0)
-			res = close(res);
-	} else if (S_ISFIFO(mode))
-		res = mkfifo(path, mode);
-	else
-		res = mknod(path, mode, rdev);
-	if (res == -1)
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_mknod]: rdev : %i", rdev);
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_mknod]: rdev : %i", mode);
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_mknod]: rdev : %s", path);
+
+	disk = rdpfs_get_device_from_path(path);
+	if (disk == NULL)
+	{
+		log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[disk_dev_mknod]:"
+					"Unable to get device from path : %s", path);
 		return -errno;
+	}
+
+
+	owner_perm = rdpfs_get_owner_permission(mode);
+	other_perm = rdpfs_get_other_permission(mode);
+
+	rdp_path = g_strdup(path);
+	g_str_replace_first(rdp_path, disk->dir_name, "");
+	g_str_replace_first(rdp_path, "//", "/");
+
+	attributes = FILE_SYNCHRONOUS_IO_NONALERT |FILE_NON_DIRECTORY_FILE;
+	completion_id = rdpfs_create(disk->device_id, owner_perm,	other_perm,	FILE_CREATE, attributes, rdp_path);
+	rdpfs_wait_reply();
+
+	if( rdpfs_response[completion_id].request_status != 0 )
+	{
+		return -errno;
+	}
+	rdpfs_request_close(completion_id, disk->device_id);
+	rdpfs_wait_reply();
 
 	return 0;
 }
@@ -277,12 +285,43 @@ static int disk_dev_mknod(const char *path, mode_t mode, dev_t rdev)
 /************************************************************************/
 static int disk_dev_mkdir(const char *path, mode_t mode)
 {
-	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_mkdir");
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_mkdir] ");
 	int res;
+	int completion_id = 0;
+	struct disk_device* disk;
+	int owner_perm = 0;
+	int other_perm = 0;
+	int attributes = 0;
+	char* rdp_path;
 
-	res = mkdir(path, mode);
-	if (res == -1)
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_mkdir]: rdev : %i", mode);
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_mkdir]: rdev : %s", path);
+
+	disk = rdpfs_get_device_from_path(path);
+	if (disk == NULL)
+	{
+		log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[disk_dev_mknod]:"
+					"Unable to get device from path : %s", path);
 		return -errno;
+	}
+
+	owner_perm = rdpfs_get_owner_permission(mode);
+	other_perm = rdpfs_get_other_permission(mode);
+
+	rdp_path = g_strdup(path);
+	g_str_replace_first(rdp_path, disk->dir_name, "");
+	g_str_replace_first(rdp_path, "//", "/");
+
+	attributes = FILE_SYNCHRONOUS_IO_NONALERT |FILE_DIRECTORY_FILE;
+	completion_id = rdpfs_create(disk->device_id, owner_perm,	other_perm,	FILE_CREATE, attributes, rdp_path);
+	rdpfs_wait_reply();
+
+	if( rdpfs_response[completion_id].request_status != 0 )
+	{
+		return -errno;
+	}
+	rdpfs_request_close(completion_id, disk->device_id);
+	rdpfs_wait_reply();
 
 	return 0;
 }
@@ -290,7 +329,7 @@ static int disk_dev_mkdir(const char *path, mode_t mode)
 /************************************************************************/
 static int disk_dev_unlink(const char *path)
 {
-	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_unlink");
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_unlink] ");
 	int res;
 
 	res = unlink(path);
@@ -395,18 +434,6 @@ static int disk_dev_truncate(const char *path, off_t size)
 static int disk_dev_utimens(const char *path, const struct timespec ts[2])
 {
 	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_utimens");
-	int res;
-	struct timeval tv[2];
-
-	tv[0].tv_sec = ts[0].tv_sec;
-	tv[0].tv_usec = ts[0].tv_nsec / 1000;
-	tv[1].tv_sec = ts[1].tv_sec;
-	tv[1].tv_usec = ts[1].tv_nsec / 1000;
-
-	res = utimes(path, tv);
-	if (res == -1)
-		return -errno;
-
 	return 0;
 }
 
@@ -414,13 +441,6 @@ static int disk_dev_utimens(const char *path, const struct timespec ts[2])
 static int disk_dev_open(const char *path, struct fuse_file_info *fi)
 {
 	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_open");
-	int res;
-
-	res = open(path, fi->flags);
-	if (res == -1)
-		return -errno;
-
-	close(res);
 	return 0;
 }
 
@@ -593,7 +613,6 @@ static struct fuse_operations disk_dev_oper = {
 	.chown		= disk_dev_chown,
 	.truncate	= disk_dev_truncate,
 	.utimens	= disk_dev_utimens,
-	.open			= disk_dev_open,
 	.read			= disk_dev_read,
 	.write		= disk_dev_write,
 	.statfs		= disk_dev_statfs,
