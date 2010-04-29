@@ -24,6 +24,7 @@
 #include "rdpdr.h"
 #include "log.h"
 #include "vchannel.h"
+#include <sys/stat.h>
 
 struct disk_device
 {
@@ -82,6 +83,7 @@ void APP_CC
 rdpfs_query_volume_information(int completion_id, int device_id, int information, const char* query );
 void APP_CC
 rdpfs_request_close(int completion_id, int device_id);
-
+int APP_CC
+rdpfs_convert_fs_to_stat(struct fs_info* fs, struct stat* st);
 
 #endif /* RDPFS_H_ */

@@ -240,7 +240,7 @@ rdpfs_receive(const char* data, int* length, int* total_length)
 
 }
 
-
+/*****************************************************************************/
 void APP_CC
 rdpfs_wait_reply()
 {
@@ -252,12 +252,14 @@ rdpfs_wait_reply()
   }
 }
 
+/*****************************************************************************/
 int APP_CC
 rdpfs_get_device_count()
 {
 	return disk_devices_count;
 }
 
+/*****************************************************************************/
 struct disk_device* APP_CC
 rdpfs_get_device_by_index(int device_index)
 {
@@ -315,10 +317,29 @@ rdpfs_get_device_from_path(const char* path)
 	return 0;
 }
 
+/************************************************************************/
 int APP_CC
 rdpfs_convert_fs_to_stat(struct fs_info* fs, struct stat* st)
 {
-	st->st_mode = S_IFDIR | 0755;
+	st->st_mode = S_IFREG | 0744;
+	if( fs->file_attributes & FILE_ATTRIBUTE_DIRECTORY )
+	{
+		st->st_mode = S_IFDIR | 0744;
+	}
+
+	if( fs->file_attributes & FILE_ATTRIBUTE_READONLY )
+	{
+		st->st_mode |= 0444;
+	}
+
+	st->st_size = fs->file_size;
+	st->st_atim.tv_sec = fs->last_access_time;
+	st->st_ctim.tv_sec = fs->create_access_time;
+	st->st_mtim.tv_sec = fs->last_change_time;
+	st->st_blocks = fs->allocation_size;
+	st->st_uid = g_getuid();
+	st->st_gid = g_getuid();
+
 	st->st_nlink = 2;
 	return 0;
 }
@@ -894,19 +915,21 @@ rdpfs_process_information_response(int completion_id, struct stream* s)
 		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_information_response]: "
 				"IRP_MJ_QUERY_INFORMATION response : param response FileBasicInformation");
 
-		in_uint32_le(s, time);	/* create_access_time */
+		in_uint64_le(s, time);	/* create_access_time */
 		rep->fs_inf.create_access_time = convert_1970_to_filetime(time);
 
-		in_uint32_le(s, time);	/* last_access_time */
+		in_uint64_le(s, time);	/* last_access_time */
 		rep->fs_inf.last_access_time = convert_1970_to_filetime(time);
 
-		in_uint32_le(s, time);	/* last_write_time */
+		in_uint64_le(s, time);	/* last_write_time */
 		rep->fs_inf.last_write_time = convert_1970_to_filetime(time);
 
-		in_uint32_le(s, time);	/* last_change_time */
+		in_uint64_le(s, time);	/* last_change_time */
 		rep->fs_inf.last_change_time = convert_1970_to_filetime(time);
 
 		in_uint32_le(s, rep->fs_inf.file_attributes);
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_information_response]: "
+				"IRP_MJ_QUERY_INFORMATION response : param response FileBasicInformation : %04x", rep->fs_inf.file_attributes);
 		break;
 
 	case FileStandardInformation:

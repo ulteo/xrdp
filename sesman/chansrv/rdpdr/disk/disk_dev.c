@@ -71,11 +71,9 @@ static int disk_dev_volume_getattr(struct disk_device* disk, struct stat *stbuf)
 	rdpfs_wait_reply();
 	rdpfs_request_close(completion_id, disk->device_id);
 	rdpfs_wait_reply();
-	/* test path */
-	stbuf->st_mode = S_IFDIR | 0755;
-	stbuf->st_nlink = rdpfs_response[completion_id].fs_inf.nlink;
 
-	return 0;
+	return rdpfs_convert_fs_to_stat(&rdpfs_response[completion_id].fs_inf, stbuf);
+
 }
 
 /************************************************************************/
