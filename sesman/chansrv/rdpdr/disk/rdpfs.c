@@ -620,6 +620,13 @@ rdpfs_query_information(int completion_id, int device_id, int information, const
 
 /*****************************************************************************/
 void APP_CC
+rdpfs_query_setinformation(int completion_id, int information, struct fs_info* fs )
+{
+
+}
+
+/*****************************************************************************/
+void APP_CC
 rdpfs_query_directory(int completion_id, int device_id, int information, const char* query )
 {
 	struct stream* s;
@@ -938,6 +945,13 @@ rdpfs_process_volume_information_response(int completion_id, struct stream* s)
 						"IRP_MJ_QUERY_VOLUME_INFORMATION response : unknow response");
 		return 1;
 	}
+	return 0;
+}
+
+/*****************************************************************************/
+int APP_CC
+rdpfs_process_setinformation_response(int completion_id, struct stream* s)
+{
 	return 0;
 }
 
