@@ -46,7 +46,7 @@ static void rdpfs_update_fs_cache_index()
 	fs = &direntry_cache.fs_list[direntry_cache.index];
 	fs->allocation_size     = 0;
 	fs->create_access_time  = 0;
-	fs->detele_request      = 0;
+	fs->delele_request      = 0;
 	fs->file_attributes     = 0;
 	fs->file_size           = 0;
 	fs->is_dir              = 0;
@@ -98,7 +98,7 @@ rdpfs_cache_add_fs(const char* path, struct fs_info* fs_inf)
 
 	fs->allocation_size = fs_inf->allocation_size;
 	fs->create_access_time = fs_inf->create_access_time;
-	fs->detele_request = fs_inf->detele_request;
+	fs->delele_request = fs_inf->delele_request;
 	fs->file_attributes = fs_inf->file_attributes;
 	fs->file_size = fs_inf->file_size;
 	fs->is_dir = fs_inf->is_dir;

@@ -622,7 +622,40 @@ rdpfs_query_information(int completion_id, int device_id, int information, const
 void APP_CC
 rdpfs_query_setinformation(int completion_id, int information, struct fs_info* fs )
 {
+	struct stream* s;
+	int index;
+	int query_length;
+	make_stream(s);
+	init_stream(s,1024);
 
+	actions[completion_id].last_req = IRP_MJ_SET_INFORMATION;
+	actions[completion_id].request_param = information;
+
+	out_uint16_le(s, RDPDR_CTYP_CORE);
+	out_uint16_le(s, PAKID_CORE_DEVICE_IOREQUEST);
+	out_uint32_le(s, actions[completion_id].device);
+	out_uint32_le(s, actions[completion_id].file_id);
+	out_uint32_le(s, completion_id);
+	out_uint32_le(s, IRP_MJ_SET_INFORMATION);           /* major version */
+	out_uint32_le(s, 0);                                /* minor version */
+
+	out_uint32_le(s, information);
+	switch(information)
+	{
+	case FileDispositionInformation:
+		out_uint32_le(s, 0);                               /* length */
+		out_uint8(s, 24);                                  /* padding */
+		break;
+
+	default:
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_query_setinformation]: "
+						"IRP_MJ_SET_INFORMATION request : unknow FsInformationClass");
+	}
+
+	s_mark_end(s);
+	rdpfs_send(s);
+	free_stream(s);
+  return ;
 }
 
 /*****************************************************************************/
@@ -952,6 +985,8 @@ rdpfs_process_volume_information_response(int completion_id, struct stream* s)
 int APP_CC
 rdpfs_process_setinformation_response(int completion_id, struct stream* s)
 {
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_setinformation_response]: "
+							"IRP_MJ_QUERY_SET_VOLUME_INFORMATION response : %04x", rdpfs_response[completion_id].request_status);
 	return 0;
 }
 
@@ -1004,7 +1039,7 @@ rdpfs_process_information_response(int completion_id, struct stream* s)
 		in_uint64_le(s, rep->fs_inf.allocation_size);       /* Allocation size */
 		in_uint64_le(s, rep->fs_inf.file_size);             /* End of file */
 		in_uint32_le(s, rep->fs_inf.nlink);                 /* Number of links */
-		in_uint32_le(s, rep->fs_inf.detele_request);        /* Delete pending */
+		in_uint32_le(s, rep->fs_inf.delele_request);        /* Delete pending */
 		in_uint8(s, rep->fs_inf.is_dir);                     /* Directory */
 		in_uint32_le(s, ignored);
 		break;
@@ -1015,7 +1050,6 @@ rdpfs_process_information_response(int completion_id, struct stream* s)
 		return 0;
 	}
 }
-
 
 /*****************************************************************************/
 int APP_CC
@@ -1064,6 +1098,10 @@ rdpfs_process_iocompletion(struct stream* s)
 		result = rdpfs_process_information_response(completion_id, s);
 		break;
 
+	case IRP_MJ_SET_INFORMATION:
+		result = rdpfs_process_setinformation_response(completion_id, s);
+		break;
+
 	case IRP_MN_QUERY_DIRECTORY:
 		result = rdpfs_process_directory_response(completion_id, s);
 		break;
@@ -1085,8 +1123,6 @@ rdpfs_process_iocompletion(struct stream* s)
 	case IRP_MJ_CLOSE:
 		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_iocompletion]: "
 				"file '%s' closed",actions[completion_id].path);
-		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_iocompletion]: "
-				"toto");
 
 		result = 0;
 		break;

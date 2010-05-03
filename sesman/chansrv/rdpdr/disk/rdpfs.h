@@ -42,7 +42,7 @@ struct fs_info
 	long file_size;
 	long allocation_size;    /* number of occuped cluster */
 	int nlink;
-	int detele_request;
+	int delele_request;
 	int is_dir;
 	char filename[256];
 	char key[256];
