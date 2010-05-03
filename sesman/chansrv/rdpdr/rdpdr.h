@@ -145,6 +145,14 @@
 #define FileBothDirectoryInformation            0x00000003
 #define FileNamesInformation                    0x0000000C
 
+/* InformationClass for setinformation */
+#define FileBasicInformation                    0x00000004
+#define FileEndOfFileInformation                0x00000020
+#define FileDispositionInformation              0x0000000D
+#define FileRenameInformation                   0x00000010
+#define FileAllocationInformation               0x00000019
+
+
 /* DesiredAccess */
 /*    for File */
 #define FILE_READ_DATA                          0x00000001
