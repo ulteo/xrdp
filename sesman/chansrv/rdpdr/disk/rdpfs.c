@@ -434,45 +434,6 @@ rdpfs_close()
 }
 
 /*****************************************************************************/
-void rdpfs_readdir(int device_id, const char* path)
-{
-	struct stream* s;
-	int index;
-	int path_len;
-	make_stream(s);
-	init_stream(s,1024);
-
-	actions[action_index].device = device_id;
-	actions[action_index].file_id = action_index;
-	actions[action_index].last_req = IRP_MJ_DIRECTORY_CONTROL;
-	actions[action_index].message_id = 0;
-	g_strcpy(actions[action_index].path, path);
-
-	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_readdir]:"
-  		"Process job[%s]",path);
-	out_uint16_le(s, RDPDR_CTYP_CORE);
-	out_uint16_le(s, PAKID_CORE_DEVICE_IOREQUEST);
-	out_uint32_le(s, actions[action_index].device);
-	out_uint32_le(s, actions[action_index].file_id);
-	out_uint32_le(s, actions[action_index].file_id);
-	out_uint32_le(s, IRP_MJ_DIRECTORY_CONTROL);   	/* major version */
-	out_uint32_le(s, IRP_MN_QUERY_DIRECTORY);				/* minor version */
-
-	out_uint32_le(s, FileBothDirectoryInformation);	/* FsInformationClass */
-	out_uint8(s, 0);																/* InitialQuery */
-	path_len = (g_strlen(path)+1)*2;
-	out_uint32_le(s, path_len);											/* PathLength */
-	out_uint8s(s, 23);															/* Padding */
-	rdp_out_unistr(s, (char*)path, path_len);				/* Path */
-
-	s_mark_end(s);
-	rdpfs_send(s);
-	free_stream(s);
-  return ;
-}
-
-
-/*****************************************************************************/
 int APP_CC
 rdpfs_create(int device_id, int desired_access, int shared_access,
 		int creation_disposition, int flags, const char* path)
