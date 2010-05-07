@@ -649,6 +649,8 @@ rdpfs_query_setinformation(int completion_id, int information, struct fs_info* f
 	make_stream(s);
 	init_stream(s,1024);
 
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_query_setinformation]: ");
+
 	actions[completion_id].last_req = IRP_MJ_SET_INFORMATION;
 	actions[completion_id].request_param = information;
 
@@ -664,8 +666,17 @@ rdpfs_query_setinformation(int completion_id, int information, struct fs_info* f
 	switch(information)
 	{
 	case FileDispositionInformation:
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_query_setinformation]: "
+				"set FileDispositionInformation");
 		out_uint32_le(s, 0);                               /* length */
 		out_uint8(s, 24);                                  /* padding */
+		break;
+
+	case FileEndOfFileInformation:
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_query_setinformation]: "
+				"set FileEndOfFileInformation to %i", fs->file_size);
+		out_uint8s(s, 28);	/* padding */
+		out_uint32_le(s, fs->file_size);	/* file size */
 		break;
 
 	default:

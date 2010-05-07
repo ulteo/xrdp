@@ -484,11 +484,47 @@ static int disk_dev_chown(const char *path, uid_t uid, gid_t gid)
 /************************************************************************/
 static int disk_dev_truncate(const char *path, off_t size)
 {
+	int completion_id = 0;
+	struct disk_device* disk;
+	int attributes = 0;
+	int desired_access = 0;
+	int shared_access = 0;
+	char* rdp_path;
+	struct fs_info fs;
+
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_truncate]: "
 			"path : %s", path);
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_truncate]: "
 			"size : %i", size);
-	disk_dev_mknod(path, 0744, 0);
+
+	disk = rdpfs_get_device_from_path(path);
+	if (disk == NULL)
+	{
+		log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[disk_dev_truncate]:"
+					"Unable to get device from path : %s", path);
+		return -errno;
+	}
+
+	rdp_path = g_strdup(path);
+	g_str_replace_first(rdp_path, disk->dir_name, "");
+	g_str_replace_first(rdp_path, "//", "/");
+
+	fs.file_size = size;
+
+	attributes = FILE_SYNCHRONOUS_IO_NONALERT;
+	desired_access = GENERIC_READ|FILE_EXECUTE_ATTRIBUTES;
+	shared_access = FILE_SHARE_READ|FILE_SHARE_DELETE|FILE_SHARE_WRITE;
+	completion_id = rdpfs_create(disk->device_id, desired_access , shared_access,	FILE_OPEN, attributes, rdp_path);
+	rdpfs_wait_reply();
+
+	if( rdpfs_response[completion_id].request_status != 0 )
+	{
+		return -errno;
+	}
+	rdpfs_query_setinformation(completion_id, FileEndOfFileInformation, &fs);
+	rdpfs_wait_reply();
+	rdpfs_request_close(completion_id, disk->device_id);
+	rdpfs_wait_reply();
 
 	return 0;
 }
@@ -580,9 +616,6 @@ static int disk_dev_write(const char *path, const char *buf, size_t size,
 			" Size to write : %i", size);
 	log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[disk_dev_write]: "
 			" Write from : %i", offset);
-	log_hexdump(l_config, LOG_LEVEL_ERROR, buf, size);
-
-
 
 	int completion_id = 0;
 	struct disk_device* disk;
@@ -623,7 +656,7 @@ static int disk_dev_write(const char *path, const char *buf, size_t size,
 	fs = &rdpfs_response[completion_id].fs_inf;
 
 
-	rdpfs_response[completion_id].buffer = buf;
+	rdpfs_response[completion_id].buffer = (unsigned char*)buf;
 	rdpfs_response[completion_id].buffer_length = size;
 
 	rdpfs_request_write(completion_id, offset, size);
