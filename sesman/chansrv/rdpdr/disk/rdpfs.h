@@ -84,6 +84,8 @@ int APP_CC
 rdpfs_create(int device_id, int desired_access, int shared_access, int creation_disposition, int flags, const char* path);
 int APP_CC
 rdpfs_request_read(int completion_id, int device_id, int length, int offset);
+int APP_CC
+rdpfs_request_write(int completion_id, int offset, int length);
 void APP_CC
 rdpfs_query_volume_information(int completion_id, int device_id, int information, const char* query );
 void APP_CC

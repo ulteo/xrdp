@@ -509,6 +509,38 @@ rdpfs_request_read(int completion_id, int device_id, int length, int offset)
 }
 
 /*****************************************************************************/
+int APP_CC
+rdpfs_request_write(int completion_id, int offset, int length)
+{
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_request_write]: Begin");
+	struct stream* s;
+	make_stream(s);
+	init_stream(s, length + 56);
+
+	actions[completion_id].last_req = IRP_MJ_WRITE;
+
+	out_uint16_le(s, RDPDR_CTYP_CORE);
+	out_uint16_le(s, PAKID_CORE_DEVICE_IOREQUEST);
+	out_uint32_le(s, actions[completion_id].device);
+	out_uint32_le(s, actions[completion_id].file_id);
+	out_uint32_le(s, completion_id);                        /* completion id */
+	out_uint32_le(s, IRP_MJ_WRITE);                         /* major version */
+	out_uint32_le(s, 0);                                    /* minor version */
+
+	out_uint32_le(s, length);                               /* length */
+	out_uint64_le(s, offset);                               /* offset */
+	out_uint8s(s, 20);                                      /* padding */
+	out_uint8p(s, rdpfs_response[completion_id].buffer, length);
+
+	s_mark_end(s);
+	rdpfs_send(s);
+	free_stream(s);
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_request_write]: End");
+
+  return 0;
+}
+
+/*****************************************************************************/
 void APP_CC
 rdpfs_request_close(int completion_id, int device_id)
 {
@@ -818,7 +850,22 @@ rdpfs_process_read_response(int completion_id, struct stream* s)
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_read_response]");
 	in_uint32_le(s, length);
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_read_response] : %i return ",length );
-	log_hexdump(l_config, LOG_LEVEL_DEBUG, s->p, length );
+
+	g_memcpy(rdpfs_response[completion_id].buffer, s->p, length);
+	rdpfs_response[completion_id].buffer_length = length;
+	return 0;
+
+}
+
+/*****************************************************************************/
+int APP_CC
+rdpfs_process_write_response(int completion_id, struct stream* s)
+{
+	int length;
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_read_response]");
+	in_uint32_le(s, length);
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_read_response] : %i return ",length );
+
 	g_memcpy(rdpfs_response[completion_id].buffer, s->p, length);
 	rdpfs_response[completion_id].buffer_length = length;
 	return 0;
@@ -1118,14 +1165,8 @@ rdpfs_process_iocompletion(struct stream* s)
 		in_uint32_le(s, size);
 		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_iocompletion]: "
 				"%i octect written for the jobs %s",size, actions[completion_id].path);
-		offset = 1024* actions[completion_id].message_id;
-		size = g_file_size(actions[completion_id].path);
-		if(offset > size)
-		{
-			result = 0;//printer_process_close_io_request(completion_id);
-			break;
-		}
-		result = 0;//printer_process_write_io_request(completion_id, offset);
+		rdpfs_response[completion_id].buffer_length = size;
+		result = 0;
 		break;
 
 	case IRP_MJ_CLOSE:
