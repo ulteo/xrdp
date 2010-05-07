@@ -48,46 +48,6 @@ int DEFAULT_CC
 disk_dev_add(struct stream* s, int device_data_length, int device_id, char* dos_name);
 
 
-
-
-
-
-//int DEFAULT_CC
-//printer_dev_get_next_job();
-//int APP_CC
-//in_unistr(struct stream* s, char *string, int str_size, int in_len);
-//
-//
-//#define RDPDR_PRINTER_ANNOUNCE_FLAG_ASCII							0x00000001
-//#define RDPDR_PRINTER_ANNOUNCE_FLAG_DEFAULTPRINTER		0x00000002
-//#define RDPDR_PRINTER_ANNOUNCE_FLAG_NETWORKPRINTER		0x00000004
-//#define RDPDR_PRINTER_ANNOUNCE_FLAG_TSPRINTER					0x00000008
-//#define RDPDR_PRINTER_ANNOUNCE_FLAG_XPSFORMAT					0x00000010
-//
-//#define EVENT_SIZE  (sizeof (struct inotify_event))
-//#define BUF_LEN     (1024 * (EVENT_SIZE + 16))
-//
-//
-//struct printer_device
-//{
-//	int device_id;
-//	char printer_name[256];
-//	int watch;
-//};
-//
-//
-//int DEFAULT_CC
-//printer_dev_delete_job(char* jobs);
-//int APP_CC
-//printer_dev_del(int device_id);
-//int APP_CC
-//printer_dev_add(struct stream* s, int device_data_length,
-//								int device_id, char* dos_name);
-//int APP_CC
-//printer_dev_init_printer_socket( char* printer_name);
-//int APP_CC
-//printer_dev_get_printer_socket();
-
 #endif /* PRINTER_DEV_H_ */
 
 

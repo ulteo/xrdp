@@ -365,6 +365,7 @@ static int disk_dev_unlink(const char *path)
 		return -errno;
 	}
 	rdpfs_query_setinformation(completion_id, FileDispositionInformation, &fs);
+	rdpfs_wait_reply();
 	rdpfs_request_close(completion_id, disk->device_id);
 	rdpfs_wait_reply();
 
@@ -410,6 +411,7 @@ static int disk_dev_rmdir(const char *path)
 		return -errno;
 	}
 	rdpfs_query_setinformation(completion_id, FileDispositionInformation, &fs);
+	rdpfs_wait_reply();
 	rdpfs_request_close(completion_id, disk->device_id);
 	rdpfs_wait_reply();
 }
@@ -510,21 +512,62 @@ static int disk_dev_open(const char *path, struct fuse_file_info *fi)
 static int disk_dev_read(const char *path, char *buf, size_t size, off_t offset,
 		    struct fuse_file_info *fi)
 {
-	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_read");
-	int fd;
-	int res;
 
-	(void) fi;
-	fd = open(path, O_RDONLY);
-	if (fd == -1)
+	log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[disk_dev_read]"
+			" Path to read : %s", path);
+	log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[disk_dev_read]"
+			" Size to read : %i", size);
+	log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[disk_dev_read]"
+			" Read from : %i", offset);
+
+	int completion_id = 0;
+	struct disk_device* disk;
+	int attributes = 0;
+	int desired_access = 0;
+	int shared_access = 0;
+	char* rdp_path;
+	struct fs_info* fs;
+	int file_size;
+
+	disk = rdpfs_get_device_from_path(path);
+	if (disk == NULL)
+	{
+		log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[disk_dev_rmdir]:"
+					"Unable to get device from path : %s", path);
 		return -errno;
+	}
 
-	res = pread(fd, buf, size, offset);
-	if (res == -1)
-		res = -errno;
+	rdp_path = g_strdup(path);
+	g_str_replace_first(rdp_path, disk->dir_name, "");
+	g_str_replace_first(rdp_path, "//", "/");
 
-	close(fd);
-	return res;
+
+	attributes = FILE_SYNCHRONOUS_IO_NONALERT;
+	desired_access = GENERIC_READ|FILE_EXECUTE_ATTRIBUTES;
+	shared_access = FILE_SHARE_READ|FILE_SHARE_DELETE|FILE_SHARE_WRITE;
+	completion_id = rdpfs_create(disk->device_id, desired_access , shared_access,	FILE_OPEN, attributes, rdp_path);
+	rdpfs_wait_reply();
+
+	if( rdpfs_response[completion_id].request_status != 0 )
+	{
+		return -errno;
+	}
+
+	rdpfs_query_information(completion_id, disk->device_id, FileStandardInformation,path);
+	rdpfs_wait_reply();
+
+	fs = &rdpfs_response[completion_id].fs_inf;
+
+
+	rdpfs_response[completion_id].buffer = buf;
+
+	rdpfs_request_read(completion_id, disk->device_id, size, offset);
+	rdpfs_wait_reply();
+
+	rdpfs_request_close(completion_id, disk->device_id);
+	rdpfs_wait_reply();
+
+	return rdpfs_response[completion_id].buffer_length;
 }
 
 /************************************************************************/
@@ -552,12 +595,6 @@ static int disk_dev_write(const char *path, const char *buf, size_t size,
 static int disk_dev_statfs(const char *path, struct statvfs *stbuf)
 {
 	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_statfs");
-	int res;
-
-	res = statvfs(path, stbuf);
-	if (res == -1)
-		return -errno;
-
 	return 0;
 }
 

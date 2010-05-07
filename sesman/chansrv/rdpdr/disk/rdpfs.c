@@ -479,6 +479,34 @@ rdpfs_create(int device_id, int desired_access, int shared_access,
   return completion_id;
 }
 
+/*****************************************************************************/
+int APP_CC
+rdpfs_request_read(int completion_id, int device_id, int length, int offset)
+{
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_request_read]:");
+	struct stream* s;
+	make_stream(s);
+	init_stream(s,1024);
+
+	actions[completion_id].last_req = IRP_MJ_READ;
+
+	out_uint16_le(s, RDPDR_CTYP_CORE);
+	out_uint16_le(s, PAKID_CORE_DEVICE_IOREQUEST);
+	out_uint32_le(s, actions[completion_id].device);
+	out_uint32_le(s, actions[completion_id].file_id);
+	out_uint32_le(s, completion_id);                        /* completion id */
+	out_uint32_le(s, IRP_MJ_READ);                          /* major version */
+	out_uint32_le(s, 0);                                    /* minor version */
+
+	out_uint32_le(s, length);                               /* length */
+	out_uint64_le(s, offset);                               /* offset */
+	out_uint8s(s, 20);                                      /* padding */
+
+	s_mark_end(s);
+	rdpfs_send(s);
+	free_stream(s);
+  return 0;
+}
 
 /*****************************************************************************/
 void APP_CC
@@ -784,6 +812,21 @@ rdpfs_process_create_response(int completion_id, struct stream* s)
 
 /*****************************************************************************/
 int APP_CC
+rdpfs_process_read_response(int completion_id, struct stream* s)
+{
+	int length;
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_read_response]");
+	in_uint32_le(s, length);
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_read_response] : %i return ",length );
+	log_hexdump(l_config, LOG_LEVEL_DEBUG, s->p, length );
+	g_memcpy(rdpfs_response[completion_id].buffer, s->p, length);
+	rdpfs_response[completion_id].buffer_length = length;
+	return 0;
+
+}
+
+/*****************************************************************************/
+int APP_CC
 rdpfs_process_directory_response(int completion_id, struct stream* s)
 {
 	if(rdpfs_response[completion_id].request_status != 0)
@@ -1049,6 +1092,10 @@ rdpfs_process_iocompletion(struct stream* s)
 	{
 	case IRP_MJ_CREATE:
 		result = rdpfs_process_create_response(completion_id, s);
+		break;
+
+	case IRP_MJ_READ:
+		result = rdpfs_process_read_response(completion_id, s);
 		break;
 
 	case IRP_MJ_QUERY_VOLUME_INFORMATION:
