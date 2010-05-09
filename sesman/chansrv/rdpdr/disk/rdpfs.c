@@ -776,6 +776,54 @@ rdpfs_add(struct stream* s, int device_data_length,
   return disk_devices_count-1;
 }
 
+/************************************************************************/
+void APP_CC
+rdpfs_remove(int device_id)
+{
+	struct disk_device* device;
+	struct disk_device* last_device;
+
+	device = rdpfs_get_dir(device_id);
+	last_device = &disk_devices[disk_devices_count];
+
+	if (device->device_id = last_device->device_id)
+	{
+		device->device_id = 0;
+		device->dir_name[0] = 0;
+	}
+	else
+	{
+		device->device_id = last_device->device_id;
+		g_strcpy(device->dir_name, last_device->dir_name);
+	}
+	disk_devices_count--;
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_add]: "
+				"Succedd to remove disk");
+}
+
+/*****************************************************************************/
+int APP_CC
+rdpfs_list_remove(struct stream* s)
+{
+  int device_list_count, device_id;
+  int i;
+
+  log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_list_remove]: "
+  		"	new message: PAKID_CORE_DEVICELIST_REMOVE");
+  in_uint32_le(s, device_list_count);	/* DeviceCount */
+  log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_list_remove]: "
+		  "%i device(s) removed", device_list_count);
+  /* device list */
+  for( i=0 ; i<device_list_count ; i++)
+  {
+    in_uint32_le(s, device_id);
+    log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_list_remove]: "
+    		"device id to remove: %i", device_id);
+
+    rdpfs_remove(device_id);
+  }
+  return 0;
+}
 
 
 /*****************************************************************************/
@@ -1262,6 +1310,10 @@ rdpfs_process_message(struct stream* s, int length, int total_length)
     {
     case PAKID_CORE_DEVICELIST_ANNOUNCE:
     	result = rdpfs_list_announce(packet);
+    	disk_up = 1;
+      break;
+    case PAKID_CORE_DEVICELIST_REMOVE:
+    	result = rdpfs_list_remove(packet);
     	disk_up = 1;
       break;
     case PAKID_CORE_DEVICE_IOCOMPLETION:
