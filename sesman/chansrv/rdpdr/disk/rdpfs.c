@@ -1207,30 +1207,44 @@ rdpfs_process_iocompletion(struct stream* s)
 	switch(actions[completion_id].last_req)
 	{
 	case IRP_MJ_CREATE:
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_iocompletion]: "
+				"process IRP_MJ_CREATE response");
 		result = rdpfs_process_create_response(completion_id, s);
 		break;
 
 	case IRP_MJ_READ:
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_iocompletion]: "
+				"process IRP_MJ_READ response");
 		result = rdpfs_process_read_response(completion_id, s);
 		break;
 
 	case IRP_MJ_QUERY_VOLUME_INFORMATION:
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_iocompletion]: "
+				"process IRP_MJ_QUERY_VOLUME_INFORMATION response");
 		result = rdpfs_process_volume_information_response(completion_id, s);
 		break;
 
 	case IRP_MJ_QUERY_INFORMATION:
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_iocompletion]: "
+				"process IRP_MJ_QUERY_INFORMATION response");
 		result = rdpfs_process_information_response(completion_id, s);
 		break;
 
 	case IRP_MJ_SET_INFORMATION:
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_iocompletion]: "
+				"process IRP_MJ_SET_INFORMATION response");
 		result = rdpfs_process_setinformation_response(completion_id, s);
 		break;
 
 	case IRP_MN_QUERY_DIRECTORY:
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_iocompletion]: "
+				"process IRP_MN_QUERY_DIRECTORY response");
 		result = rdpfs_process_directory_response(completion_id, s);
 		break;
 
 	case IRP_MJ_WRITE:
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_iocompletion]: "
+				"process IRP_MJ_WRITE response");
 		in_uint32_le(s, size);
 		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_iocompletion]: "
 				"%i octect written for the jobs %s",size, actions[completion_id].path);
@@ -1239,6 +1253,8 @@ rdpfs_process_iocompletion(struct stream* s)
 		break;
 
 	case IRP_MJ_CLOSE:
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_iocompletion]: "
+				"process IRP_MJ_CLOSE response");
 		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_iocompletion]: "
 				"file '%s' closed",actions[completion_id].path);
 
