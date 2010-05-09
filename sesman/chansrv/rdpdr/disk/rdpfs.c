@@ -445,6 +445,8 @@ rdpfs_create(int device_id, int desired_access, int shared_access,
 	make_stream(s);
 	init_stream(s,1024);
 
+	if (action_index == 127)
+		action_index = 0;
 	completion_id = action_index;
 	action_index++;
 
