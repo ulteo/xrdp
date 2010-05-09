@@ -60,11 +60,14 @@ static int disk_dev_file_getattr(struct disk_device* disk, const char* path, str
 {
 	int i;
 	int completion_id = 0;
+	int status;
 
 	completion_id = rdpfs_create(disk->device_id, GENERIC_READ|FILE_EXECUTE_ATTRIBUTES,	FILE_SHARE_READ|FILE_SHARE_DELETE|FILE_SHARE_WRITE,	FILE_OPEN, FILE_SYNCHRONOUS_IO_NONALERT, path);
 	rdpfs_wait_reply();
-	if (rdpfs_response[completion_id].request_status == 0)
+	status = rdpfs_response[completion_id].request_status;
+	switch(status)
 	{
+	case STATUS_SUCCESS:
 		rdpfs_query_information(completion_id, disk->device_id, FileBasicInformation, path);
 		rdpfs_wait_reply();
 		rdpfs_query_information(completion_id, disk->device_id, FileStandardInformation,path);
@@ -72,10 +75,14 @@ static int disk_dev_file_getattr(struct disk_device* disk, const char* path, str
 		rdpfs_request_close(completion_id, disk->device_id);
 		rdpfs_wait_reply();
 		return rdpfs_convert_fs_to_stat(&rdpfs_response[completion_id].fs_inf, stbuf);
+
+	case STATUS_NO_SUCH_FILE:
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_file_getattr]: "
+					"file did not exist");
+		return -ENOENT;
+	default:
+		return -EIO;
 	}
-
-	return -ENOENT;
-
 }
 
 /************************************************************************/
