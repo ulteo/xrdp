@@ -214,7 +214,7 @@ struct stream
 #else
 #define in_uint64_le(s, v) \
 { \
-  (v) = *((unsigned long*)((s)->p)); \
+  (v) = *((uint64_t*)((s)->p)); \
   (s)->p += 8; \
 }
 #endif
