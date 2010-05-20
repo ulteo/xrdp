@@ -63,17 +63,17 @@ static int disk_dev_file_getattr(struct disk_device* disk, const char* path, str
 	int status;
 
 	completion_id = rdpfs_create(disk->device_id, GENERIC_READ|FILE_EXECUTE_ATTRIBUTES,	FILE_SHARE_READ|FILE_SHARE_DELETE|FILE_SHARE_WRITE,	FILE_OPEN, FILE_SYNCHRONOUS_IO_NONALERT, path);
-	rdpfs_wait_reply();
+	rdpfs_wait_reply(completion_id);
 	status = rdpfs_response[completion_id].request_status;
 	switch(status)
 	{
 	case STATUS_SUCCESS:
 		rdpfs_query_information(completion_id, disk->device_id, FileBasicInformation, path);
-		rdpfs_wait_reply();
+		rdpfs_wait_reply(completion_id);
 		rdpfs_query_information(completion_id, disk->device_id, FileStandardInformation,path);
-		rdpfs_wait_reply();
+		rdpfs_wait_reply(completion_id);
 		rdpfs_request_close(completion_id, disk->device_id);
-		rdpfs_wait_reply();
+		rdpfs_wait_reply(completion_id);
 		return rdpfs_convert_fs_to_stat(&rdpfs_response[completion_id].fs_inf, stbuf);
 
 	case STATUS_NO_SUCH_FILE:
@@ -205,7 +205,7 @@ static int disk_dev_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                                FILE_OPEN,
                                FILE_SYNCHRONOUS_IO_NONALERT|FILE_DIRECTORY_FILE,
                                rdp_path);
-	rdpfs_wait_reply();
+	rdpfs_wait_reply(completion_id);
 	g_sprintf(rdp_path, "%s*", rdp_path);
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_readdir]: "
 				"Request rdp path %s", rdp_path );
@@ -213,7 +213,7 @@ static int disk_dev_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
 	struct stat st;
 	rdpfs_query_directory(completion_id, disk->device_id, FileBothDirectoryInformation, rdp_path);
-	rdpfs_wait_reply();
+	rdpfs_wait_reply(completion_id);
 	if (rdpfs_response[completion_id].request_status == 0)
 	{
 		if (filler(buf, rdpfs_response[completion_id].fs_inf.filename, NULL, 0))
@@ -225,7 +225,7 @@ static int disk_dev_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	while( rdpfs_response[completion_id].request_status == 0 )
 	{
 		rdpfs_query_directory(completion_id, disk->device_id, FileBothDirectoryInformation, "");
-		rdpfs_wait_reply();
+		rdpfs_wait_reply(completion_id);
 		if (rdpfs_response[completion_id].request_status == 0)
 		{
 			log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_readdir]: "
@@ -277,14 +277,14 @@ static int disk_dev_mknod(const char *path, mode_t mode, dev_t rdev)
 
 	attributes = FILE_SYNCHRONOUS_IO_NONALERT |FILE_NON_DIRECTORY_FILE;
 	completion_id = rdpfs_create(disk->device_id, owner_perm,	other_perm,	FILE_CREATE, attributes, rdp_path);
-	rdpfs_wait_reply();
+	rdpfs_wait_reply(completion_id);
 
 	if( rdpfs_response[completion_id].request_status != 0 )
 	{
 		return -errno;
 	}
 	rdpfs_request_close(completion_id, disk->device_id);
-	rdpfs_wait_reply();
+	rdpfs_wait_reply(completion_id);
 
 	return 0;
 }
@@ -321,14 +321,14 @@ static int disk_dev_mkdir(const char *path, mode_t mode)
 
 	attributes = FILE_SYNCHRONOUS_IO_NONALERT |FILE_DIRECTORY_FILE;
 	completion_id = rdpfs_create(disk->device_id, owner_perm,	other_perm,	FILE_CREATE, attributes, rdp_path);
-	rdpfs_wait_reply();
+	rdpfs_wait_reply(completion_id);
 
 	if( rdpfs_response[completion_id].request_status != 0 )
 	{
 		return -errno;
 	}
 	rdpfs_request_close(completion_id, disk->device_id);
-	rdpfs_wait_reply();
+	rdpfs_wait_reply(completion_id);
 
 	return 0;
 }
@@ -365,16 +365,16 @@ static int disk_dev_unlink(const char *path)
 	desired_access = GENERIC_READ|FILE_EXECUTE_ATTRIBUTES;
 	shared_access = FILE_SHARE_READ|FILE_SHARE_DELETE|FILE_SHARE_WRITE;
 	completion_id = rdpfs_create(disk->device_id, desired_access , shared_access,	FILE_OPEN, attributes, rdp_path);
-	rdpfs_wait_reply();
+	rdpfs_wait_reply(completion_id);
 
 	if( rdpfs_response[completion_id].request_status != 0 )
 	{
 		return -errno;
 	}
 	rdpfs_query_setinformation(completion_id, FileDispositionInformation, &fs);
-	rdpfs_wait_reply();
+	rdpfs_wait_reply(completion_id);
 	rdpfs_request_close(completion_id, disk->device_id);
-	rdpfs_wait_reply();
+	rdpfs_wait_reply(completion_id);
 
 	return 0;
 }
@@ -411,16 +411,16 @@ static int disk_dev_rmdir(const char *path)
 	desired_access = GENERIC_READ|FILE_EXECUTE_ATTRIBUTES;
 	shared_access = FILE_SHARE_READ|FILE_SHARE_DELETE|FILE_SHARE_WRITE;
 	completion_id = rdpfs_create(disk->device_id, desired_access , shared_access,	FILE_OPEN, attributes, rdp_path);
-	rdpfs_wait_reply();
+	rdpfs_wait_reply(completion_id);
 
 	if( rdpfs_response[completion_id].request_status != 0 )
 	{
 		return -errno;
 	}
 	rdpfs_query_setinformation(completion_id, FileDispositionInformation, &fs);
-	rdpfs_wait_reply();
+	rdpfs_wait_reply(completion_id);
 	rdpfs_request_close(completion_id, disk->device_id);
-	rdpfs_wait_reply();
+	rdpfs_wait_reply(completion_id);
 }
 
 /************************************************************************/
@@ -522,16 +522,16 @@ static int disk_dev_truncate(const char *path, off_t size)
 	desired_access = GENERIC_READ|FILE_EXECUTE_ATTRIBUTES;
 	shared_access = FILE_SHARE_READ|FILE_SHARE_DELETE|FILE_SHARE_WRITE;
 	completion_id = rdpfs_create(disk->device_id, desired_access , shared_access,	FILE_OPEN, attributes, rdp_path);
-	rdpfs_wait_reply();
+	rdpfs_wait_reply(completion_id);
 
 	if( rdpfs_response[completion_id].request_status != 0 )
 	{
 		return -errno;
 	}
 	rdpfs_query_setinformation(completion_id, FileEndOfFileInformation, &fs);
-	rdpfs_wait_reply();
+	rdpfs_wait_reply(completion_id);
 	rdpfs_request_close(completion_id, disk->device_id);
-	rdpfs_wait_reply();
+	rdpfs_wait_reply(completion_id);
 
 	return 0;
 }
@@ -588,7 +588,7 @@ static int disk_dev_read(const char *path, char *buf, size_t size, off_t offset,
 	desired_access = GENERIC_READ|FILE_EXECUTE_ATTRIBUTES;
 	shared_access = FILE_SHARE_READ|FILE_SHARE_DELETE|FILE_SHARE_WRITE;
 	completion_id = rdpfs_create(disk->device_id, desired_access , shared_access,	FILE_OPEN, attributes, rdp_path);
-	rdpfs_wait_reply();
+	rdpfs_wait_reply(completion_id);
 
 	if( rdpfs_response[completion_id].request_status != 0 )
 	{
@@ -596,7 +596,7 @@ static int disk_dev_read(const char *path, char *buf, size_t size, off_t offset,
 	}
 
 	rdpfs_query_information(completion_id, disk->device_id, FileStandardInformation,path);
-	rdpfs_wait_reply();
+	rdpfs_wait_reply(completion_id);
 
 	fs = &rdpfs_response[completion_id].fs_inf;
 
@@ -604,10 +604,10 @@ static int disk_dev_read(const char *path, char *buf, size_t size, off_t offset,
 	rdpfs_response[completion_id].buffer = buf;
 
 	rdpfs_request_read(completion_id, disk->device_id, size, offset);
-	rdpfs_wait_reply();
+	rdpfs_wait_reply(completion_id);
 
 	rdpfs_request_close(completion_id, disk->device_id);
-	rdpfs_wait_reply();
+	rdpfs_wait_reply(completion_id);
 
 	return rdpfs_response[completion_id].buffer_length;
 }
@@ -650,7 +650,7 @@ static int disk_dev_write(const char *path, const char *buf, size_t size,
 	desired_access = GENERIC_WRITE|FILE_EXECUTE_ATTRIBUTES;
 	shared_access = FILE_SHARE_READ|FILE_SHARE_DELETE|FILE_SHARE_WRITE;
 	completion_id = rdpfs_create(disk->device_id, desired_access , shared_access,	FILE_OPEN, attributes, rdp_path);
-	rdpfs_wait_reply();
+	rdpfs_wait_reply(completion_id);
 
 	if( rdpfs_response[completion_id].request_status != 0 )
 	{
@@ -658,7 +658,7 @@ static int disk_dev_write(const char *path, const char *buf, size_t size,
 	}
 
 	rdpfs_query_information(completion_id, disk->device_id, FileStandardInformation,path);
-	rdpfs_wait_reply();
+	rdpfs_wait_reply(completion_id);
 
 	fs = &rdpfs_response[completion_id].fs_inf;
 
@@ -667,13 +667,13 @@ static int disk_dev_write(const char *path, const char *buf, size_t size,
 	rdpfs_response[completion_id].buffer_length = size;
 
 	rdpfs_request_write(completion_id, offset, size);
-	rdpfs_wait_reply();
+	rdpfs_wait_reply(completion_id);
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_write]:"
 				"try to write %i -> really write : %i", size, rdpfs_response[completion_id].buffer_length);
 
 	rdpfs_request_close(completion_id, disk->device_id);
-	rdpfs_wait_reply();
+	rdpfs_wait_reply(completion_id);
 
 	return rdpfs_response[completion_id].buffer_length;
 }

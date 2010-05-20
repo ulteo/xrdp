@@ -57,6 +57,8 @@ struct request_response
 	unsigned char *buffer;
 	int buffer_length;
 	int request_status;
+	pthread_cond_t reply_cond;
+	pthread_mutex_t mutex;
 } ;
 
 

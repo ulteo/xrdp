@@ -37,8 +37,6 @@ struct request_response rdpfs_response[128];
 static int action_index=0;
 static struct disk_device disk_devices[128];
 static int disk_devices_count = 0;
-pthread_cond_t reply_cond;
-pthread_mutex_t mutex;
 extern int disk_up;
 
 
@@ -242,9 +240,12 @@ rdpfs_receive(const char* data, int* length, int* total_length)
 
 /*****************************************************************************/
 void APP_CC
-rdpfs_wait_reply()
+rdpfs_wait_reply(int completion_id)
 {
-  if (pthread_cond_wait(&reply_cond, &mutex) != 0) {
+	pthread_mutex_t* mutex = &rdpfs_response[completion_id].mutex;
+	pthread_cond_t* reply_cond = &rdpfs_response[completion_id].reply_cond;
+
+  if (pthread_cond_wait(reply_cond, mutex) != 0) {
     perror("pthread_cond_timedwait() error");
 		log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[rdpfs_wait_reply]: "
 				"pthread_mutex_lock()");
@@ -398,11 +399,6 @@ int APP_CC
 rdpfs_open()
 {
 	int ret;
-	pthread_cond_init(&reply_cond, NULL);
-	pthread_mutex_init(&mutex, NULL);
-	log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[rdpfs_open]: "
-			"after cond init");
-
 	disk_sock = vchannel_open("disk");
 	if(disk_sock == ERROR)
 	{
@@ -453,6 +449,9 @@ rdpfs_create(int device_id, int desired_access, int shared_access,
 	actions[completion_id].device = device_id;
 	actions[completion_id].file_id = completion_id;
 	actions[completion_id].last_req = IRP_MJ_CREATE;
+
+	pthread_cond_init(&rdpfs_response[completion_id].reply_cond, NULL);
+	pthread_mutex_init(&rdpfs_response[completion_id].mutex, NULL);
 
 	g_strcpy(actions[completion_id].path, path);
 
@@ -1175,6 +1174,15 @@ rdpfs_process_information_response(int completion_id, struct stream* s)
 
 /*****************************************************************************/
 int APP_CC
+rdpfs_process_close_response(int completion_id)
+{
+	pthread_cond_destroy(&rdpfs_response[completion_id].reply_cond);
+	pthread_mutex_destroy(&rdpfs_response[completion_id].mutex);
+	//cleaning
+}
+
+/*****************************************************************************/
+int APP_CC
 rdpfs_process_iocompletion(struct stream* s)
 {
 	int device;
@@ -1267,7 +1275,7 @@ rdpfs_process_iocompletion(struct stream* s)
 				"last request %08x is invalid",actions[completion_id].last_req);
 		return -1;
 	}
-	pthread_cond_signal(&reply_cond);
+	pthread_cond_signal(&rdpfs_response[completion_id].reply_cond);
 	return result;
 }
 
