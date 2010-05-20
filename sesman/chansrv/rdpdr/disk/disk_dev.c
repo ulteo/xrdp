@@ -179,7 +179,7 @@ static int disk_dev_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		{
 			disk = rdpfs_get_device_by_index(i);
 			filler(buf, disk->dir_name , NULL, 0);
-			log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_readir]: "
+			log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_readdir]: "
 					"the device name is : %s", disk->dir_name);
 
 		}
