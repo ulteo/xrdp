@@ -10,7 +10,7 @@ Standards-Version: 3.8.3
 
 Package: xrdp
 Architecture: any
-Depends: ${shlibs:Depends}, python (>= 2.5)
+Depends: ${shlibs:Depends}, python (>= 2.5), tightvncserver
 Recommends: xfonts-base, xfonts-encodings
 Description: RDP server for Linux
  Xrdp is a RDP server for Linux. It provides remote display of a desktop and
