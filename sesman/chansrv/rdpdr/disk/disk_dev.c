@@ -418,28 +418,108 @@ static int disk_dev_rmdir(const char *path)
 
 /************************************************************************/
 static int disk_dev_rename(const char *from, const char *to)
-{
-	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_rename");
-	int res;
+ {
+	int completion_id = 0;
+	struct disk_device* disk;
+	int attributes = 0;
+	int desired_access = 0;
+	int shared_access = 0;
+	char* rdp_path;
+	struct fs_info fs;
 
-	res = rename(from, to);
-	if (res == -1)
-		return -errno;
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_rename]: "
+			"change from %s to %s", from, to);
 
-	return 0;
-}
+	disk = rdpfs_get_device_from_path(to);
+	if (disk == NULL)
+	{
+		log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[disk_dev_rename]:"
+					"Unable to get device from path : %s", from);
+ 		return -errno;
+	}
+
+	rdp_path = g_strdup(from);
+	g_str_replace_first(rdp_path, disk->dir_name, "");
+	g_str_replace_first(rdp_path, "//", "/");
+
+	g_strcpy(fs.filename, rdp_path);
+
+	attributes = FILE_SYNCHRONOUS_IO_NONALERT;
+	desired_access = GENERIC_READ|FILE_EXECUTE_ATTRIBUTES;
+	shared_access = FILE_SHARE_READ|FILE_SHARE_DELETE|FILE_SHARE_WRITE;
+	completion_id = rdpfs_create(disk->device_id, desired_access , shared_access,	FILE_OPEN, attributes, rdp_path);
+	rdpfs_wait_reply(completion_id);
+
+	if( rdpfs_response[completion_id].request_status != 0 )
+	{
+ 		return -errno;
+	}
+
+	rdp_path = g_strdup(to);
+	g_str_replace_first(rdp_path, disk->dir_name, "");
+	g_str_replace_first(rdp_path, "//", "/");
+
+	g_strcpy(fs.filename, rdp_path);
+
+	rdpfs_query_setinformation(completion_id, FileRenameInformation, &fs);
+	rdpfs_wait_reply(completion_id);
+	rdpfs_request_close(completion_id, disk->device_id);
+	rdpfs_wait_reply(completion_id);
+ 	return 0;
+ }
 
 /************************************************************************/
 static int disk_dev_chmod(const char *path, mode_t mode)
-{
-	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_chmod");
-	int res;
+ {
+	int completion_id = 0;
+	struct disk_device* disk;
+	int attributes = 0;
+	int desired_access = 0;
+	int shared_access = 0;
+	char* rdp_path;
+	struct fs_info* fs;
 
-	res = chmod(path, mode);
-	if (res == -1)
-		return -errno;
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_chmod]: "
+			"Path : %s", path);
 
-	return 0;
+	disk = rdpfs_get_device_from_path(path);
+	if (disk == NULL)
+	{
+		log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[disk_dev_chmod]:"
+					"Unable to get device from path : %s", path);
+ 		return -errno;
+	}
+
+	rdp_path = g_strdup(path);
+	g_str_replace_first(rdp_path, disk->dir_name, "");
+	g_str_replace_first(rdp_path, "//", "/");
+
+	//fs.file_size = size;
+
+	attributes = FILE_SYNCHRONOUS_IO_NONALERT;
+	desired_access = GENERIC_READ|FILE_EXECUTE_ATTRIBUTES;
+	shared_access = FILE_SHARE_READ|FILE_SHARE_DELETE|FILE_SHARE_WRITE;
+	completion_id = rdpfs_create(disk->device_id, desired_access , shared_access,	FILE_OPEN, attributes, rdp_path);
+	rdpfs_wait_reply(completion_id);
+
+	if( rdpfs_response[completion_id].request_status != 0 )
+	{
+ 		return -errno;
+	}
+	fs = rdpfs_cache_get_fs(path);
+	if (fs == NULL)
+	{
+		rdpfs_query_information(completion_id, disk->device_id, FileBasicInformation, rdp_path);
+		rdpfs_wait_reply(completion_id);
+		fs = &rdpfs_response[completion_id].fs_inf;
+	}
+	fs->file_attributes = mode;
+
+	rdpfs_query_setinformation(completion_id, FileBasicInformation, fs);
+	rdpfs_wait_reply(completion_id);
+	rdpfs_request_close(completion_id, disk->device_id);
+	rdpfs_wait_reply(completion_id);
+
 }
 
 /************************************************************************/

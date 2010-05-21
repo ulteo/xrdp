@@ -41,17 +41,6 @@ extern int disk_up;
 
 
 
-/* Convert seconds since 1970 to a filetime */
-static void
-seconds_since_1970_to_filetime(time_t seconds, uint32 * high, uint32 * low)
-{
-	unsigned long long ticks;
-
-	ticks = (seconds + 11644473600LL) * 10000000;
-	*low = (uint32) ticks;
-	*high = (uint32) (ticks >> 32);
-}
-
 /* Convert seconds since 1970 back to filetime */
 static time_t
 convert_1970_to_filetime(uint64_t ticks)
@@ -66,6 +55,22 @@ convert_1970_to_filetime(uint64_t ticks)
 
 }
 
+
+static uint64_t
+convert_filetime_to_1970(uint64_t ticks)
+{
+	ticks += 11644473600LL;
+	ticks *= 10000000;
+	return (ticks);
+
+}
+
+static int
+get_attributes_from_mode(int mode_t)
+{
+	return 0;
+
+}
 
 /* Output a string in Unicode */
 void
@@ -647,6 +652,8 @@ rdpfs_query_setinformation(int completion_id, int information, struct fs_info* f
 	struct stream* s;
 	int index;
 	int query_length;
+	uint64_t time;
+	int attributes;
 	make_stream(s);
 	init_stream(s,1024);
 
@@ -669,6 +676,17 @@ rdpfs_query_setinformation(int completion_id, int information, struct fs_info* f
 	case FileBasicInformation:
 		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_query_setinformation]: "
 				"set FileBasicInformation");
+		time = convert_filetime_to_1970(fs->create_access_time);
+		out_uint64_le(s, time);
+		time = convert_filetime_to_1970(fs->last_access_time);
+		out_uint64_le(s, time);
+		time = convert_filetime_to_1970(fs->last_write_time);
+		out_uint64_le(s, time);
+		time = convert_filetime_to_1970(fs->last_change_time);
+		out_uint64_le(s, time);
+		attributes = get_attributes_from_mode(fs->file_attributes);
+		out_uint32_le(s, attributes);
+		out_uint8s(s, 4);
 		break;
 
 	case FileDispositionInformation:
@@ -688,6 +706,11 @@ rdpfs_query_setinformation(int completion_id, int information, struct fs_info* f
 	case FileRenameInformation:
 		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_query_setinformation]: "
 				"set FileRenameInformation");
+		out_uint8(s, 0);                      /* replaceIf exist */
+		out_uint8s(s, 3);                     /* reserved */
+		out_uint8s(s, 4);                     /* rootDirectory must be set to 0 */
+		out_uint32_le(s, (strlen(fs->filename)+1)*2); /* PathLength */
+		rdp_out_unistr(s, (char*)fs->filename, (strlen(fs->filename)+1)*2);			/* Path */
 		break;
 
 	default:

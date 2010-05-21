@@ -34,10 +34,10 @@ struct disk_device
 
 struct fs_info
 {
-	long create_access_time;
-	long last_access_time;
-	long last_write_time;
-	long last_change_time;
+	uint64_t create_access_time;
+	uint64_t last_access_time;
+	uint64_t last_write_time;
+	uint64_t last_change_time;
 	int file_attributes;
 	long file_size;
 	long allocation_size;    /* number of occuped cluster */
