@@ -25,6 +25,15 @@
 
 
 
+const char* desktop_file_template = "[Desktop Entry]\n"
+		"Version=1.0\n"
+		"Type=Link\n"
+		"Name=%ShareName%\n"
+		"Comment=XRDP share\n"
+		"URL=%SharePath%\n"
+		"Icon=folder-remote\n";
+
+
 extern struct log_config *l_config;
 int  disk_sock;
 int rdpdr_sock;
@@ -40,7 +49,59 @@ static int disk_devices_count = 0;
 extern int disk_up;
 
 
+/*****************************************************************************/
+static int add_share_to_desktop(const char* share_name){
+	char* home_dir = g_getenv("HOME");
+	char desktop_file_path[256];
+	char share_path[256];
+	char file_content[1024];
+	int handle;
 
+	g_snprintf((char*)desktop_file_path, 256, "%s/Desktop", home_dir);
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[add_share_to_desktop]: "
+	        		"Desktop file path : %s", desktop_file_path);
+
+
+	g_mkdir(desktop_file_path);
+	if (g_file_exist(desktop_file_path) == 0){
+		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[add_share_to_desktop]: "
+		        		"Desktop already exist");
+		return 1;
+	}
+
+	g_snprintf((char*)desktop_file_path, 256, "%s/Desktop/%s.desktop", home_dir, share_name);
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[add_share_to_desktop]: "
+	        		"Desktop file path : %s", desktop_file_path);
+
+	if (g_file_exist(desktop_file_path) != 0)
+	{
+		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[add_share_to_desktop]: "
+		        		"Share already exist");
+		return 0;
+	}
+
+	g_snprintf(share_path, 256, "%s/rdp_drive/%s", home_dir, share_name);
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[add_share_to_desktop]: "
+		        		"Share path : %s", share_path);
+
+	g_strcpy(file_content, desktop_file_template);
+	g_str_replace_first(file_content, "%ShareName%", (char*)share_name);
+	g_str_replace_first(file_content, "%SharePath%", share_path);
+
+	handle = g_file_open(desktop_file_path);
+	if(handle < 0)
+	{
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[add_share_to_desktop]: "
+		        		"Unable to create : %s", desktop_file_path);
+		return 1;
+	}
+	g_file_write(handle, file_content, g_strlen(file_content));
+	g_file_close(handle);
+
+	return 0;
+}
+
+/*****************************************************************************/
 /* Convert seconds since 1970 back to filetime */
 static time_t
 convert_1970_to_filetime(uint64_t ticks)
@@ -55,7 +116,7 @@ convert_1970_to_filetime(uint64_t ticks)
 
 }
 
-
+/*****************************************************************************/
 static uint64_t
 convert_filetime_to_1970(uint64_t ticks)
 {
@@ -65,6 +126,7 @@ convert_filetime_to_1970(uint64_t ticks)
 
 }
 
+/*****************************************************************************/
 static int
 get_attributes_from_mode(int mode_t)
 {
@@ -72,6 +134,7 @@ get_attributes_from_mode(int mode_t)
 
 }
 
+/*****************************************************************************/
 /* Output a string in Unicode */
 void
 rdp_out_unistr(struct stream* s, char *string, int len)
@@ -797,6 +860,8 @@ rdpfs_add(struct stream* s, int device_data_length,
 	disk_devices_count++;
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_add]: "
 				"Succedd to add disk");
+
+	add_share_to_desktop(dos_name);
   return disk_devices_count-1;
 }
 
