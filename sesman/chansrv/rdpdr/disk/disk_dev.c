@@ -150,13 +150,6 @@ static int disk_dev_access(const char *path, int mask)
 }
 
 /************************************************************************/
-static int disk_dev_readlink(const char *path, char *buf, size_t size)
-{
-	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_readlink");
-	return 0;
-}
-
-/************************************************************************/
 static int disk_dev_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		       off_t offset, struct fuse_file_info *fi)
 {
@@ -424,38 +417,12 @@ static int disk_dev_rmdir(const char *path)
 }
 
 /************************************************************************/
-static int disk_dev_symlink(const char *from, const char *to)
-{
-	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_symlink");
-	int res;
-
-	res = symlink(from, to);
-	if (res == -1)
-		return -errno;
-
-	return 0;
-}
-
-/************************************************************************/
 static int disk_dev_rename(const char *from, const char *to)
 {
 	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_rename");
 	int res;
 
 	res = rename(from, to);
-	if (res == -1)
-		return -errno;
-
-	return 0;
-}
-
-/************************************************************************/
-static int disk_dev_link(const char *from, const char *to)
-{
-	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_link");
-	int res;
-
-	res = link(from, to);
 	if (res == -1)
 		return -errno;
 
@@ -478,13 +445,8 @@ static int disk_dev_chmod(const char *path, mode_t mode)
 /************************************************************************/
 static int disk_dev_chown(const char *path, uid_t uid, gid_t gid)
 {
-	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_chown");
-	int res;
-
-	res = lchown(path, uid, gid);
-	if (res == -1)
-		return -errno;
-
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_chown]: "
+				"Chown operation is not supported");
 	return 0;
 }
 
@@ -696,18 +658,6 @@ static int disk_dev_release(const char *path, struct fuse_file_info *fi)
 	return 0;
 }
 
-/************************************************************************/
-static int disk_dev_fsync(const char *path, int isdatasync,
-		     struct fuse_file_info *fi)
-{
-	/* Just a stub.	 This method is optional and can safely be left
-	   unimplemented */
-	log_message(l_config, LOG_LEVEL_DEBUG, "disk_dev_fsync");
-	(void) path;
-	(void) isdatasync;
-	(void) fi;
-	return 0;
-}
 
 /************************************************************************/
 static void* disk_dev_init()
@@ -786,15 +736,15 @@ static int disk_dev_removexattr(const char *path, const char *name)
 static struct fuse_operations disk_dev_oper = {
 	.getattr	= disk_dev_getattr,
 	.access		= disk_dev_access,
-	.readlink	= disk_dev_readlink,
+	.readlink	= NULL,
 	.readdir	= disk_dev_readdir,
 	.mknod		= disk_dev_mknod,
 	.mkdir		= disk_dev_mkdir,
-	.symlink	= disk_dev_symlink,
+	.symlink	= NULL,
 	.unlink		= disk_dev_unlink,
 	.rmdir		= disk_dev_rmdir,
 	.rename		= disk_dev_rename,
-	.link			= disk_dev_link,
+	.link			= NULL,
 	.chmod		= disk_dev_chmod,
 	.chown		= disk_dev_chown,
 	.truncate	= disk_dev_truncate,
@@ -803,7 +753,7 @@ static struct fuse_operations disk_dev_oper = {
 	.write		= disk_dev_write,
 	.statfs		= disk_dev_statfs,
 	.release	= disk_dev_release,
-	.fsync		= disk_dev_fsync,
+	.fsync		= NULL,
 	.init			= disk_dev_init,
 	.destroy	= disk_dev_destroy,
 #ifdef HAVE_SETXATTR
