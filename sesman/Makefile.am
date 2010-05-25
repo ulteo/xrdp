@@ -66,7 +66,6 @@ SUBDIRS = \
   sessvc \
   chansrv
 
-# must be tab below
 install-data-hook:
 	chmod 755 $(DESTDIR)$(sysconfdir)/xrdp/startwm.sh
 

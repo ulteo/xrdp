@@ -2,7 +2,8 @@
 Name: xrdp
 ###############################################
 
-#TODO: faire marcher les patch et les droits lp dans printer
+#TODO: les droits lp dans printer
+#TODO: améliorer le packaging global
 
 Summary: RDP server for Linux
 Version: 1.0
@@ -14,9 +15,8 @@ Packager: Samuel Bovée <samuel@ulteo.com>
 Group: Applications/System
 ExclusiveArch: i386 x86_64
 Buildroot: %{_tmppath}/%{name}-%{version}-root
-#Patch0: xrdp/debian/patches/00_check_running.patch
 BuildRequires: libtool, gcc, cups-devel, libxml2-devel, libX11-devel, libXfixes-devel, openssl-devel, pam-devel, pulseaudio-lib-devel, libtool-ltdl-devel
-Requires: python
+Requires: python, tightvnc, glibc, xorg-x11-libX11, xorg-x11-fonts, libcups2, cups-libs, libgnutls26, krb5, pam, libopenssl0_9_8, libxml2, zlib
 
 %description
 Xrdp is a RDP server for Linux. It provides remote display of a desktop and
@@ -32,15 +32,17 @@ cd ..
 svn up SOURCES/xrdp
 svn export --force SOURCES/xrdp BUILD
 
+
 %build
 ./autogen.sh --mandir=/usr/share/man
 make
+%{__python} setup.py build
 
 %install
 rm -fr $RPM_BUILD_ROOT
 make install DESTDIR=$RPM_BUILD_ROOT
+%{__python} setup.py install --prefix=%{_prefix} --root=%{buildroot} --record-rpm=INSTALLED_FILES
 sed -i '/^SESSION/c\SESSION="x-session-manager"' $RPM_BUILD_ROOT/etc/xrdp/startwm.sh
-chmod 755 $RPM_BUILD_ROOT/etc/xrdp/startwm.sh
 ln -sf /usr/lib/xrdp/librdpsnd.so.0.0.0 $RPM_BUILD_ROOT/usr/lib/pulse-0.9/modules/module-rdp-sink.so
 
 %clean
@@ -104,7 +106,7 @@ rm -rf /var/log/xrdp /var/spool/xrdp
 
 Summary: Seamless XRDP Shell
 Group: Applications/System
-Requires: xrdp
+Requires: xrdp, glibc, xorg-x11-libX11
 
 %description seamrdp
 Seamlessrdpshell is a rdp addon offering the possibility to have an
@@ -124,7 +126,7 @@ application without a desktop
 
 Summary: cups file converter to ps format
 Group: Applications/System
-Requires: xrdp, ghostscript, cups
+Requires: xrdp, python, ghostscript, cups
 
 %description printer
 Xrdpi-Printer convert a ps file from cups in ps
@@ -155,3 +157,17 @@ and WIN32 systems
 %config /etc/xrdp/rdpsnd.*
 /usr/lib/xrdp/librdpsnd.so*
 /usr/lib/pulse-0.9/modules/module-rdp-sink.so
+
+###########################################
+%package python
+###########################################
+
+Summary: Python API for XRDP
+Group: Applications/System
+Requires: xrdp, python
+
+%description python
+XRDP-Python is a Python wrapper for XRDP
+
+%files -f INSTALLED_FILES python
+%defattr(-,root,root)

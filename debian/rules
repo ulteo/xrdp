@@ -18,4 +18,3 @@ binary-install/xrdp:: DEB_DH_INSTALLINIT_ARGS := --onlyscripts
 install/xrdp:: 
 	STARTWM=$(CURDIR)/debian/tmp/etc/xrdp/startwm.sh; \
 	sed '/^SESSION/c\SESSIONS="x-session-manager"' $$STARTWM -i; \
-	chmod 755 $$STARTWM
