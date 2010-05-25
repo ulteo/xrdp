@@ -44,14 +44,6 @@ typedef struct pa_sink pa_sink;
 
 #define PA_MAX_INPUTS_PER_SINK 32
 
-typedef enum pa_sink_state {
-    PA_SINK_INIT,
-    PA_SINK_RUNNING,
-    PA_SINK_SUSPENDED,
-    PA_SINK_IDLE,
-    PA_SINK_UNLINKED
-} pa_sink_state_t;
-
 static inline pa_bool_t PA_SINK_OPENED(pa_sink_state_t x) {
     return x == PA_SINK_RUNNING || x == PA_SINK_IDLE;
 }

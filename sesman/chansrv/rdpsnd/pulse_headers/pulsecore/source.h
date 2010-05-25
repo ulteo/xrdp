@@ -46,14 +46,6 @@ typedef struct pa_source pa_source;
 
 #define PA_MAX_OUTPUTS_PER_SOURCE 32
 
-typedef enum pa_source_state {
-    PA_SOURCE_INIT,
-    PA_SOURCE_RUNNING,
-    PA_SOURCE_SUSPENDED,
-    PA_SOURCE_IDLE,
-    PA_SOURCE_UNLINKED
-} pa_source_state_t;
-
 static inline pa_bool_t PA_SOURCE_OPENED(pa_source_state_t x) {
     return x == PA_SOURCE_RUNNING || x == PA_SOURCE_IDLE;
 }
