@@ -1251,6 +1251,18 @@ g_chown(const char* filename, const char* user)
 	return chown(filename, uid, -1) ;
 }
 
+/*****************************************************************************/
+/* make possible creation of a file by creating missing dirs */
+int APP_CC
+g_make_access(const char* filename)
+{
+	if (g_mkdirs(filename) == 0)
+	{
+		return g_remove_dir(filename);
+	}
+	return 1;
+}
+
 
 /*****************************************************************************/
 /* returns error, always zero */

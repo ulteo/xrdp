@@ -150,6 +150,8 @@ int APP_CC
 g_mkdir(const char* dirname);
 int APP_CC
 g_mkdirs(const char* dirname);
+int APP_CC
+g_make_access();
 char* APP_CC
 g_get_current_dir(char* dirname, int maxlen);
 int APP_CC
