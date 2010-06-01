@@ -283,7 +283,10 @@ main(int argc, char** argv)
   char text[256];
   char pid_file[256];
 #endif
-
+  if(g_is_root() != 0){
+  	g_printf("Error, xrdp service must be start with root privilege\n");
+  	return 0;
+  }
   g_init();
   /* check compiled endian with actual endian */
   test = 1;

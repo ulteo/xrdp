@@ -645,6 +645,12 @@ main(int argc, char** argv)
   char text[256];
   char pid_file[256];
 
+  if(g_is_root() != 0){
+  	g_printf("Error, xrdp-sesman service must be start with root privilege\n");
+  	return 0;
+  }
+
+
   g_snprintf(pid_file, 255, "%s/xrdp-sesman.pid", XRDP_PID_PATH);
   if (1 == argc)
   {

@@ -96,6 +96,18 @@ g_init(void)
   setlocale(LC_CTYPE, "");
 }
 
+int APP_CC
+g_is_root(){
+	#if defined(_WIN32)
+		//not implemented
+		return 0;
+	#else
+	char* user = getenv("USER");
+	return strncmp(user, "root", g_strlen(user));
+	#endif
+
+}
+
 /*****************************************************************************/
 void APP_CC
 g_deinit(void)

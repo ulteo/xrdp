@@ -35,6 +35,8 @@ struct token
 
 void APP_CC
 g_init(void);
+int APP_CC
+g_is_root();
 void APP_CC
 g_deinit(void);
 void* APP_CC
