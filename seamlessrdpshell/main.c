@@ -89,22 +89,32 @@ handler(int sig)
 
 /*****************************************************************************/
 int
-spawn_app(char* application)
+spawn_app(char* cmdline)
 {
 	char* path = malloc(256);
+	char* application = NULL;
+	char* pos;
 	int pid;
 
 	pid = fork ();
 	int i;
 
-	for(i=0 ; i < strlen(application) ; i++)
+	for(i=0 ; i < strlen(cmdline) ; i++)
 	{
-		if(application[i] == '\n')
-			application[i] = '\0';
+		if(cmdline[i] == '\n')
+			cmdline[i] = '\0';
 	}
+	application = g_strdup(cmdline);
+	pos = strchr(application, ' ');
+	if (pos != NULL)
+	{
+		*pos = '\0';
+	}
+	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[spawn_app]: "
+			"Exec app %s",application);
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[spawn_app]: "
-			"Exec application %s",application);
+			"Exec application %s",cmdline);
 	if ( pid < 0 )
 	{
 		log_message(l_config, LOG_LEVEL_ERROR, "XHook[spawn_app]: "
@@ -125,11 +135,12 @@ spawn_app(char* application)
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[spawn_app]: "
 			"I 'm the processus child");
 	sprintf(path,"/usr/bin/%s",application);
+	g_free(application);
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[spawn_app]: "
 			" Path : '%s'",path);
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[spawn_app]: "
-			" Application name: '%s'",application);
-	execle( path, application, (char*)0, environ);
+			" Application name: '%s'",cmdline);
+	execle( path, cmdline, (char*)0, environ);
 	wait(&status);
 	exit(0);
 }
