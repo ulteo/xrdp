@@ -118,6 +118,7 @@ AC_CONFIG_FILES([Makefile
                  python/Makefile
                  seamlessrdpshell/Makefile
                  sesman/chansrv/rdpdr/Makefile
+                 sesman/chansrv/rdpsnd2/Makefile
                  sesman/chansrv/rdpdr/printer/Makefile
                  sesman/chansrv/rdpdr/disk/Makefile
 ])

@@ -1,12 +1,12 @@
 #!/usr/bin/make -f
 
-DEB_PYTHON_SYSTEM := pycentral
+DEB_PYTHON_SYSTEM := pysupport
 DEB_PYTHON_COMPILE_VERSION = 2.5
 DEB_PYTHON_MODULE_PACKAGES = xrdp-python
 
-include /usr/share/cdbs/1/class/python-distutils.mk
 include /usr/share/cdbs/1/class/autotools.mk
 include /usr/share/cdbs/1/rules/debhelper.mk
+include /usr/share/cdbs/1/class/python-distutils.mk
 
 DEB_SHLIBDEPS_INCLUDE_seamless-xrdp-shell := \
     $(CURDIR)/debian/xrdp/usr/lib/xrdp
@@ -15,6 +15,6 @@ DEB_DH_MAKESHLIBS_ARGS_xrdp-sound := --noscripts
 
 binary-install/xrdp:: DEB_DH_INSTALLINIT_ARGS := --onlyscripts
 
-install/xrdp:: 
+install/xrdp::
 	STARTWM=$(CURDIR)/debian/tmp/etc/xrdp/startwm.sh; \
 	sed '/^SESSION/c\SESSIONS="x-session-manager"' $$STARTWM -i; \

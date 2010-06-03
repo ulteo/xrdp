@@ -3,7 +3,7 @@ Section: x11
 Priority: extra
 Maintainer: Samuel Bovée <samuel@ulteo.com>
 Build-Depends: debhelper (>= 5), cdbs, quilt,
- python (>= 2.5), python-central, python-svn,
+ python (>= 2.5), python-support, python-svn,
  libxml2-dev, libx11-dev, libxfixes-dev, libssl-dev, libpam0g-dev, libpulse-dev,
  libcupsys2-dev | libcups2-dev, libltdl3-dev, libfuse-dev
 Standards-Version: 3.8.3
@@ -12,7 +12,7 @@ XB-Python-Version: ${python:Versions}
 
 Package: xrdp
 Architecture: any
-Depends: ${shlibs:Depends}, python (>= 2.5), tightvncserver
+Depends: ${shlibs:Depends}, ${python:Depends}, tightvncserver
 Recommends: xfonts-base, xfonts-encodings
 Description: RDP server for Linux
  Xrdp is a RDP server for Linux. It provides remote display of a desktop and
@@ -29,7 +29,7 @@ Description: Seamless XRDP Shell
 
 Package: xrdp-printer
 Architecture: all
-Depends: python (>= 2.5), xrdp, ghostscript, cupsys
+Depends: ${python:Depends}, xrdp, ghostscript, cupsys
 Description: cups file converter to ps format
  Xrdpi-Printer convert a ps file from cups in ps
 
@@ -44,6 +44,6 @@ Description: XRDP plugin for PulseAudio
 Package: xrdp-python
 Section: python
 Architecture: all
-Depends: xrdp, python (>= 2.5)
+Depends: xrdp, ${python:Depends}
 Description: Python API for XRDP
  XRDP-Python is a Python wrapper for XRDP
