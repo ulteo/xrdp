@@ -1148,7 +1148,7 @@ lib_mod_connect(struct vnc* v)
   }
   else
   {
-    v->server_msg(v, "error - problem connecting", 0);
+    v->server_msg(v, "Error while sending vnc cursor", 0);
   }
   return error;
 }
