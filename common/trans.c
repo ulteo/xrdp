@@ -189,14 +189,12 @@ trans_check_wait_objs(struct trans* self)
 int APP_CC
 trans_force_read_s(struct trans* self, struct stream* in_s, int size)
 {
-  int rv;
   int rcvd;
 
   if (self->status != TRANS_STATUS_UP)
   {
     return 1;
   }
-  rv = 0;
   while (size > 0)
   {
     rcvd = g_tcp_recv(self->sck, in_s->end, size, 0);
@@ -206,21 +204,23 @@ trans_force_read_s(struct trans* self, struct stream* in_s, int size)
       {
         if (!g_tcp_can_recv(self->sck, 10))
         {
-          /* check for term here */
+          /* error */
+          self->status = TRANS_STATUS_DOWN;
+          return 1;
         }
       }
       else
       {
         /* error */
         self->status = TRANS_STATUS_DOWN;
-        rv = 1;
+        return 1;
       }
     }
     else if (rcvd == 0)
     {
       /* error */
       self->status = TRANS_STATUS_DOWN;
-      rv = 1;
+      return 1;
     }
     else
     {
@@ -228,7 +228,7 @@ trans_force_read_s(struct trans* self, struct stream* in_s, int size)
       size -= rcvd;
     }
   }
-  return rv;
+  return 0;
 }
 
 /*****************************************************************************/
@@ -251,7 +251,6 @@ trans_force_write_s(struct trans* self, struct stream* out_s)
   {
     return 1;
   }
-  rv = 0;
   size = (int)(out_s->end - out_s->data);
   total = 0;
   while (total < size)
@@ -263,28 +262,31 @@ trans_force_write_s(struct trans* self, struct stream* out_s)
       {
         if (!g_tcp_can_send(self->sck, 10))
         {
-          /* check for term here */
+          /* error */
+          self->status = TRANS_STATUS_DOWN;
+          return 1;
         }
       }
       else
       {
         /* error */
         self->status = TRANS_STATUS_DOWN;
-        rv = 1;
+        return 1;
       }
     }
     else if (sent == 0)
     {
       /* error */
+    	g_writeln("Write: 0 sent\n");
       self->status = TRANS_STATUS_DOWN;
-      rv = 1;
+      return 1;
     }
     else
     {
       total = total + sent;
     }
   }
-  return rv;
+  return 0;
 }
 
 /*****************************************************************************/
