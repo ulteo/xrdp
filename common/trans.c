@@ -195,7 +195,7 @@ trans_force_read_s(struct trans* self, struct stream* in_s, int size)
   {
     return 1;
   }
-  while (size > 0)
+  while (size > 0 && self->status == TRANS_STATUS_UP)
   {
     rcvd = g_tcp_recv(self->sck, in_s->end, size, 0);
     if (rcvd == -1)
@@ -206,21 +206,21 @@ trans_force_read_s(struct trans* self, struct stream* in_s, int size)
         {
           /* error */
           self->status = TRANS_STATUS_DOWN;
-          return 1;
+          rv = 1;
         }
       }
       else
       {
         /* error */
         self->status = TRANS_STATUS_DOWN;
-        return 1;
+        rv = 1;
       }
     }
     else if (rcvd == 0)
     {
       /* error */
       self->status = TRANS_STATUS_DOWN;
-      return 1;
+      rv = 1;
     }
     else
     {
@@ -228,7 +228,7 @@ trans_force_read_s(struct trans* self, struct stream* in_s, int size)
       size -= rcvd;
     }
   }
-  return 0;
+  return rv;
 }
 
 /*****************************************************************************/
@@ -253,7 +253,7 @@ trans_force_write_s(struct trans* self, struct stream* out_s)
   }
   size = (int)(out_s->end - out_s->data);
   total = 0;
-  while (total < size)
+  while (total < size && self->status == TRANS_STATUS_UP)
   {
     sent = g_tcp_send(self->sck, out_s->data + total, size - total, 0);
     if (sent == -1)
@@ -264,29 +264,28 @@ trans_force_write_s(struct trans* self, struct stream* out_s)
         {
           /* error */
           self->status = TRANS_STATUS_DOWN;
-          return 1;
+          rv = 1;
         }
       }
       else
       {
         /* error */
         self->status = TRANS_STATUS_DOWN;
-        return 1;
+        rv = 1;
       }
     }
     else if (sent == 0)
     {
       /* error */
-    	g_writeln("Write: 0 sent\n");
       self->status = TRANS_STATUS_DOWN;
-      return 1;
+      rv = 1;
     }
     else
     {
       total = total + sent;
     }
   }
-  return 0;
+  return rv;
 }
 
 /*****************************************************************************/
