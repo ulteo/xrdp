@@ -12,7 +12,8 @@ debian/tmp/usr/lib/xrdp/libxrdp.so*
 debian/tmp/usr/lib/xrdp/libxup.so*
 debian/tmp/usr/lib/*.so*
 debian/tmp/usr/share/xrdp
-debian/tmp/usr/sbin
+debian/tmp/usr/sbin/xrdp*
+debian/tmp/usr/sbin/*rdpdr*
 debian/tmp/usr/bin/logoff
 debian/tmp/usr/bin/startapp
 debian/tmp/usr/bin/xrdp-genkeymap
