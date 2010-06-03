@@ -1124,32 +1124,32 @@ lib_mod_connect(struct vnc* v)
       error = 1;
     }
   }
-  if (error == 0)
-  {
-    /* set almost null cursor, this is the little dot cursor */
-    g_memset(cursor_data, 0, 32 * (32 * 3));
-    g_memset(cursor_data + (32 * (32 * 3) - 1 * 32 * 3), 0xff, 9);
-    g_memset(cursor_data + (32 * (32 * 3) - 2 * 32 * 3), 0xff, 9);
-    g_memset(cursor_data + (32 * (32 * 3) - 3 * 32 * 3), 0xff, 9);
-    g_memset(cursor_mask, 0xff, 32 * (32 / 8));
-#ifdef OLD_LOG_VERSION
-    v->server_msg(v, "sending cursor", 0);
-#endif
-    error = v->server_set_cursor(v, 3, 3, cursor_data, cursor_mask);
-  }
+//  if (error == 0)
+//  {
+//    /* set almost null cursor, this is the little dot cursor */
+//    g_memset(cursor_data, 0, 32 * (32 * 3));
+//    g_memset(cursor_data + (32 * (32 * 3) - 1 * 32 * 3), 0xff, 9);
+//    g_memset(cursor_data + (32 * (32 * 3) - 2 * 32 * 3), 0xff, 9);
+//    g_memset(cursor_data + (32 * (32 * 3) - 3 * 32 * 3), 0xff, 9);
+//    g_memset(cursor_mask, 0xff, 32 * (32 / 8));
+//#ifdef OLD_LOG_VERSION
+//    v->server_msg(v, "sending cursor", 0);
+//#endif
+//    error = v->server_set_cursor(v, 3, 3, cursor_data, cursor_mask);
+//  }
   free_stream(s);
   free_stream(pixel_format);
-  if (error == 0)
-  {
-#ifdef OLD_LOG_VERSION
-  	v->server_msg(v, "connection complete, connected ok", 0);
-#endif
-    lib_open_clip_channel(v);
-  }
-  else
-  {
-    v->server_msg(v, "Error while sending vnc cursor", 0);
-  }
+//  if (error == 0)
+//  {
+//#ifdef OLD_LOG_VERSION
+//  	v->server_msg(v, "connection complete, connected ok", 0);
+//#endif
+//    lib_open_clip_channel(v);
+//  }
+//  else
+//  {
+//    v->server_msg(v, "Error while sending vnc cursor", 0);
+//  }
   return error;
 }
 
