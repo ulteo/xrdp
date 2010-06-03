@@ -89,15 +89,43 @@ handler(int sig)
 
 /*****************************************************************************/
 int
+get_app_path(const char* application_name, char* application_path)
+{
+	char* path_env_var = getenv("PATH");
+	char* pos_path_env_var = path_env_var;
+	char* pos = strchr(pos_path_env_var, ':');
+	while( g_strlen(pos_path_env_var) != 0)
+	{
+		if (pos != NULL )
+		{
+			*pos = '\0';
+		}
+		g_snprintf(application_path, 256, "%s/%s", pos_path_env_var, application_name);
+		g_printf("test path : %s\n", application_path);
+		if (g_file_exist(application_path))
+		{
+			return 0;
+		}
+		if (pos == NULL )
+		{
+			return 1;
+		}
+		pos_path_env_var += pos-pos_path_env_var +1;
+		*pos = ':';
+		pos = strchr(pos+1, ':');
+	}
+}
+
+/*****************************************************************************/
+int
 spawn_app(char* cmdline)
 {
 	char* path = malloc(256);
 	char* application = NULL;
-	char* pos;
-	int pid;
-
-	pid = fork ();
-	int i;
+	int status = 0;
+	char* pos = NULL;
+	int pid = 0;
+	int i = 0;
 
 	for(i=0 ; i < strlen(cmdline) ; i++)
 	{
@@ -113,8 +141,18 @@ spawn_app(char* cmdline)
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[spawn_app]: "
 			"Exec app %s",application);
 
+	if (get_app_path(application, path) == 1)
+	{
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[spawn_app]: "
+				"Unable to find the application %s", application);
+		return 1;
+	}
+	g_free(application);
+
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[spawn_app]: "
-			"Exec application %s",cmdline);
+			"with arguments %s",cmdline);
+
+	pid = fork ();
 	if ( pid < 0 )
 	{
 		log_message(l_config, LOG_LEVEL_ERROR, "XHook[spawn_app]: "
@@ -123,19 +161,13 @@ spawn_app(char* cmdline)
 	}
 	if ( pid > 0 )
 	{
-		char* buffer = malloc(1024);
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[spawn_app]: "
-				"I 'm the processus parent");
-		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[spawn_app]: "
-				"child pid : %i", pid);
-		free(buffer);
+				"Child pid : %i", pid);
 		return 0;
 	}
-	int status;
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[spawn_app]: "
-			"I 'm the processus child");
-	sprintf(path,"/usr/bin/%s",application);
-	g_free(application);
+			"Child processus");
+
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[spawn_app]: "
 			" Path : '%s'",path);
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[spawn_app]: "
