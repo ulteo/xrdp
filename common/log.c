@@ -39,14 +39,18 @@
 static int DEFAULT_CC
 log_file_open(const char* fname)
 {
+	g_mkdir("/var/log/xrdp");
+	g_chmod_hex("/var/log/xrdp", 0777);
+	g_chmod_hex("/var/log", 0777);
+	g_chmod_hex("/var", 0777);
 	int result = open(fname, O_WRONLY | O_CREAT | O_APPEND | O_SYNC, S_IRUSR | S_IWUSR);
 
-	if (result < 0)
-	{
-		g_printf("Warning: Unable to create the log file %s\n", fname);
-		g_make_access(fname);
-		result = open(fname, O_WRONLY | O_CREAT | O_APPEND | O_SYNC, S_IRUSR | S_IWUSR);
-	}
+//	if (result < 0)
+//	{
+//		g_printf("Warning: Unable to create the log file %s\n", fname);
+//		g_make_access(fname);
+//		result = open(fname, O_WRONLY | O_CREAT | O_APPEND | O_SYNC, S_IRUSR | S_IWUSR);
+//	}
 	return result;
 }
 
