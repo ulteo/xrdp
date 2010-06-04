@@ -117,6 +117,7 @@ AC_CONFIG_FILES([Makefile
                  printer/Makefile
                  python/Makefile
                  seamlessrdpshell/Makefile
+                 logd/Makefile
                  sesman/chansrv/rdpdr/Makefile
                  sesman/chansrv/rdpsnd2/Makefile
                  sesman/chansrv/rdpdr/printer/Makefile

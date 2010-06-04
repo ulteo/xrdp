@@ -15,6 +15,7 @@ SUBDIRS = \
   genkeymap \
   printer \
   python \
+  logd \
   seamlessrdpshell
 
 EXTRA_DIST = \

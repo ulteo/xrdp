@@ -29,30 +29,6 @@
 
 #include "log.h"
 
-/**
- *
- * @brief Opens log file
- * @param fname log file name
- * @return see open(2) return values
- * 
- */
-static int DEFAULT_CC
-log_file_open(const char* fname)
-{
-	g_mkdir("/var/log/xrdp");
-	g_chmod_hex("/var/log/xrdp", 0777);
-	g_chmod_hex("/var/log", 0777);
-	g_chmod_hex("/var", 0777);
-	int result = open(fname, O_WRONLY | O_CREAT | O_APPEND | O_SYNC, S_IRUSR | S_IWUSR);
-
-//	if (result < 0)
-//	{
-//		g_printf("Warning: Unable to create the log file %s\n", fname);
-//		g_make_access(fname);
-//		result = open(fname, O_WRONLY | O_CREAT | O_APPEND | O_SYNC, S_IRUSR | S_IWUSR);
-//	}
-	return result;
-}
 
 /**
  *
@@ -118,10 +94,6 @@ log_lvl2str(int lvl, char* str)
 int DEFAULT_CC
 log_message(struct log_config* l_cfg, const unsigned int lvl, const char* msg, ...)
 {
-  if (l_cfg->enable_syslog  && (lvl > l_cfg->syslog_level))
-  {
-    return 0;
-  }
   if (lvl > l_cfg->log_level)
   {
     return 0;
@@ -130,6 +102,7 @@ log_message(struct log_config* l_cfg, const unsigned int lvl, const char* msg, .
   va_list ap;
   int len = 0;
   int rv;
+  int sock;
   time_t now_t;
   struct tm* now;
 
@@ -138,8 +111,8 @@ log_message(struct log_config* l_cfg, const unsigned int lvl, const char* msg, .
   {
     return LOG_ERROR_NO_CFG;
   }
-
-  if (0 > l_cfg->fd)
+  sock = g_unix_connect(LOGGING_FILE);
+  if (sock < 0)
   {
     return LOG_ERROR_FILE_NOT_OPEN;
   }
@@ -178,12 +151,6 @@ log_message(struct log_config* l_cfg, const unsigned int lvl, const char* msg, .
     #endif
   #endif
 
-  if (l_cfg->enable_syslog  && (lvl <= l_cfg->syslog_level))
-  {
-    /* log to syslog */
-    syslog(log_xrdp2syslog(lvl), buff + 20);
-  }
-
   if (lvl <= l_cfg->log_level)
   {
     /* log to console */
@@ -193,13 +160,14 @@ log_message(struct log_config* l_cfg, const unsigned int lvl, const char* msg, .
 #ifdef LOG_ENABLE_THREAD
     pthread_mutex_lock(&(l_cfg->log_lock));
 #endif
-    if(l_cfg->fd == 0)
+    if(sock == 0)
     {
     	g_printf("Enable to log in %s\n", l_cfg->log_file);
     }
     else
     {
-    	rv = g_file_write(l_cfg->fd, (char*)buff, g_strlen((char*)buff));
+    	rv = g_tcp_send(sock, (char*)buff, g_strlen((char*)buff), 0);
+    	g_tcp_close(sock);
     }
 #ifdef LOG_ENABLE_THREAD
     pthread_mutex_unlock(&(l_cfg->log_lock));
@@ -212,43 +180,9 @@ log_message(struct log_config* l_cfg, const unsigned int lvl, const char* msg, .
 int DEFAULT_CC
 log_start(struct log_config* l_cfg)
 {
-  if (0 == l_cfg)
-  {
-    return LOG_ERROR_MALLOC;
-  }
-
-  /* if logfile is NULL, we use a default logfile */
-  if (0 == l_cfg->log_file)
-  {
-    l_cfg->log_file = g_strdup("./myprogram.log");
-  }
-
-  /* if progname is NULL, we use a default name */
-  if (0 == l_cfg->program_name)
-  {
-    l_cfg->program_name = g_strdup("myprogram");
-  }
-
-  /* open file */
-  l_cfg->fd = log_file_open(l_cfg->log_file);
-
-  if (-1 == l_cfg->fd)
-  {
-    return LOG_ERROR_FILE_OPEN;
-  }
-
-  /* if syslog is enabled, open it */
-  if (l_cfg->enable_syslog)
-  {
-    openlog(l_cfg->program_name, LOG_CONS | LOG_PID, LOG_DAEMON);
-  }
-
-#ifdef LOG_ENABLE_THREAD
-  pthread_mutexattr_init(&(l_cfg->log_lock_attr));
-  pthread_mutex_init(&(l_cfg->log_lock), &(l_cfg->log_lock_attr));
-#endif
-
-  return LOG_STARTUP_OK;
+	if(g_file_exist(LOGGING_SOCKET))
+		return LOG_STARTUP_OK;
+	return LOG_ERROR_FILE_OPEN;
 }
 
 /******************************************************************************/

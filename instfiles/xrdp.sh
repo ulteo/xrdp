@@ -31,6 +31,11 @@ then
   echo "xrdp-sesman is not executable"
   exit 0
 fi
+if ! test -x $SBINDIR/xrdp-logd
+then
+  echo "xrdp-sesman is not executable"
+  exit 0
+fi
 if ! test -x $CFGDIR/startwm.sh
 then
   echo "startwm.sh is not executable"
@@ -39,8 +44,9 @@ fi
 
 xrdp_start()
 {
-  echo -n "Starting: xrdp and sesman . . "
+  echo -n "Starting: logd, xrdp and sesman . . "
   logoff all
+  $SBINDIR/xrdp-logd 1>>$LOG 2>&1
   $SBINDIR/xrdp 1>>$LOG 2>&1
   $SBINDIR/xrdp-sesman 1>>$LOG 2>&1
   echo "."
@@ -50,10 +56,11 @@ xrdp_start()
 
 xrdp_stop()
 {
-  echo -n "Stopping: xrdp and sesman . . "
+  echo -n "Stopping: logd, xrdp and sesman . . "
   logoff all
   $SBINDIR/xrdp-sesman --kill 1>>$LOG 
   $SBINDIR/xrdp --kill 1>>$LOG
+  $SBINDIR/xrdp-logd --kill 1>>$LOG
   echo "."
   return 0;
 }
@@ -70,13 +77,24 @@ is_xrdp_running()
 
 is_sesman_running()
 {
-  if [ -s /var/run/xrdp.pid ] && kill -0 $(cat /var/run/xrdp.pid) >/dev/null 2>&1
+  if [ -s /var/run/xrdp-sesman.pid ] && kill -0 $(cat /var/run/xrdp-sesman.pid) >/dev/null 2>&1
   then
     return 1;
   else
     return 0;
   fi
 }
+
+is_logd_running()
+{
+  if [ -s /var/run/xrdp-logd.pid ] && kill -0 $(cat /var/run/xrdp-logd.pid) >/dev/null 2>&1
+  then
+    return 1;
+  else
+    return 0;
+  fi
+}
+
 
 check_up()
 {
@@ -98,6 +116,15 @@ check_up()
       rm /var/run/xrdp.pid
     fi
   fi
+  # Cleanup : If xrdp-logd isn't running, but the pid exists, erase it.
+  is_logd_running
+  if test $? -eq 0
+  then
+    if test -e /var/run/xrdp-logd.pid
+    then
+      rm /var/run/xrdp-logd.pid
+    fi
+  fi
   return 0;
 }
 
@@ -116,6 +143,12 @@ case "$1" in
       echo "sesman is already loaded"
       exit 1
     fi
+    is_logd_running
+    if ! test $? -eq 0
+    then
+      echo "sesman is already loaded"
+      exit 1
+    fi
     xrdp_start
     ;;
   stop)
@@ -126,6 +159,11 @@ case "$1" in
       echo "xrdp is not loaded."
     fi
     is_sesman_running
+    if test $? -eq 0
+    then
+      echo "sesman is not loaded."
+    fi
+    is_logd_running
     if test $? -eq 0
     then
       echo "sesman is not loaded."

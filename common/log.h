@@ -43,6 +43,11 @@
 #define LOG_ERROR_NO_CFG        4
 #define LOG_ERROR_FILE_NOT_OPEN 5
 
+/* log file */
+#define LOGGING_SOCKET          "/var/spool/xrdp/logging"
+#define LOGGING_FILE            "/var/log/xrdp.log"
+
+
 /* enable threading */
 /*#define LOG_ENABLE_THREAD*/
 
