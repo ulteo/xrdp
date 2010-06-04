@@ -111,7 +111,7 @@ log_message(struct log_config* l_cfg, const unsigned int lvl, const char* msg, .
   {
     return LOG_ERROR_NO_CFG;
   }
-  sock = g_unix_connect(LOGGING_FILE);
+  sock = g_unix_connect(LOGGING_SOCKET);
   if (sock < 0)
   {
     return LOG_ERROR_FILE_NOT_OPEN;
@@ -180,6 +180,11 @@ log_message(struct log_config* l_cfg, const unsigned int lvl, const char* msg, .
 int DEFAULT_CC
 log_start(struct log_config* l_cfg)
 {
+	#ifdef LOG_ENABLE_THREAD
+		pthread_mutexattr_init(&(l_cfg->log_lock_attr));
+		pthread_mutex_init(&(l_cfg->log_lock), &(l_cfg->log_lock_attr));
+	#endif
+
 	if(g_file_exist(LOGGING_SOCKET))
 		return LOG_STARTUP_OK;
 	return LOG_ERROR_FILE_OPEN;
