@@ -25,14 +25,25 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
+static int log_fd = 0;
+static int log_socket = 0;
+static int running = 0;
 
+/*****************************************************************************/
+void DEFAULT_CC
+logd_shutdown(int sig)
+{
+	g_writeln("shutdown xrdp-logd daemon");
+	g_tcp_close(log_socket);
+	g_file_close(log_fd);
+	running = 0;
+}
 
+/*****************************************************************************/
 void APP_CC
 logd_main_loop()
 {
 	int client = 0;
-	int log_fd = 0;
-	int log_socket = 0;
 	char buffer[1024];
 	int count;
 
@@ -50,13 +61,13 @@ logd_main_loop()
 	if ( log_socket == 1)
 	{
 		g_writeln("Unable to create logging socket");
-		return 1;
+		return ;
 	}
 	if (log_fd < 0){
 		g_writeln("Unable to create logging instance\n");
 	}
-
-	while(1)
+	running = 1;
+	while(running)
 	{
 		client = g_wait_connection(log_socket);
 
@@ -189,6 +200,10 @@ main(int argc, char** argv)
 			g_exit(1);
 		}
 	}
+  g_signal_user_interrupt(logd_shutdown); /* SIGINT */
+  g_signal_kill(logd_shutdown); /* SIGKILL */
+  g_signal_terminate(logd_shutdown); /* SIGTERM */
+
 	pid = g_getpid();
 	logd_main_loop();
 	/* delete the xrdp-logd.pid file */
