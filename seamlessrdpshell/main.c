@@ -88,6 +88,48 @@ handler(int sig)
 }
 
 /*****************************************************************************/
+void
+get_app_args(const char* cmdline, struct list* args)
+{
+	char* args_string = g_strdup(cmdline);
+	char* pos_args_string = args_string;
+	char* pos = strchr(pos_args_string, ' ');
+
+	while( g_strlen(pos_args_string) != 0)
+	{
+		if (pos != NULL )
+		{
+			*pos = '\0';
+		}
+		if(g_strlen(pos_args_string) != 0)
+		{
+			list_add_item(args, (long)g_strdup(pos_args_string));
+		}
+	  if (pos == NULL )
+		{
+	  	g_free(args_string);
+	  	return;
+		}
+		pos_args_string += pos-pos_args_string +1;
+		if (pos[1] == '\"')
+		{
+			pos = strchr(pos+2, '\"');
+			if (pos == NULL)
+			{
+				g_free(args_string);
+				return;
+			}
+			pos++;
+		}
+		else
+		{
+			pos = strchr(pos+1, ' ');
+		}
+	}
+	g_free(args_string);
+}
+
+/*****************************************************************************/
 int
 get_app_path(const char* application_name, char* application_path)
 {
@@ -114,6 +156,7 @@ get_app_path(const char* application_name, char* application_path)
 		*pos = ':';
 		pos = strchr(pos+1, ':');
 	}
+	return 0;
 }
 
 /*****************************************************************************/
@@ -122,6 +165,7 @@ spawn_app(char* cmdline)
 {
 	char* path = malloc(256);
 	char* application = NULL;
+	struct list* args;
 	int status = 0;
 	char* pos = NULL;
 	int pid = 0;
@@ -147,6 +191,10 @@ spawn_app(char* cmdline)
 				"Unable to find the application %s", application);
 		return 1;
 	}
+	args = list_create();
+	args->auto_free = 1;
+	get_app_args(cmdline, args);
+
 	g_free(application);
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[spawn_app]: "
@@ -172,7 +220,8 @@ spawn_app(char* cmdline)
 			" Path : '%s'",path);
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[spawn_app]: "
 			" Application name: '%s'",cmdline);
-	execle( path, cmdline, (char*)0, environ);
+	execvp( path, (char**)args->items);
+	list_delete(args);
 	wait(&status);
 	exit(0);
 }
