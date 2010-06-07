@@ -1028,6 +1028,7 @@ xrdp_mm_send_disconnect(struct xrdp_mm* self)
   char* data = g_malloc(256,1);
   admin_socket = g_unix_connect("/var/spool/xrdp/xrdp_management");
   int size;
+  int res = 0;
 
   make_stream(s);
 	init_stream(s, 1024);
@@ -1037,6 +1038,10 @@ xrdp_mm_send_disconnect(struct xrdp_mm* self)
 	out_uint8p(s, data, size)
 	size = s->p - s->data;
 	size = g_tcp_send(admin_socket, s->data, size, 0);
+	if (res =! size)
+	{
+		g_writeln("Error while sending data");
+	}
 	free_stream(s);
   return 0;
 }

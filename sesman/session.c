@@ -536,6 +536,7 @@ session_start_fork(int width, int height, int bpp, char* username,
           list_dump_items(xserver_params);
           pp1 = (char**)xserver_params->items;
           g_execvp("Xvnc", pp1);
+          g_exit(0);
         }
         else if (type == SESMAN_SESSION_TYPE_XRDP)
         {
@@ -558,6 +559,7 @@ session_start_fork(int width, int height, int bpp, char* username,
           list_add_item(xserver_params, 0);
           pp1 = (char**)xserver_params->items;
           g_execvp("X11rdp", pp1);
+          g_exit(0);
         }
         else
         {
@@ -794,7 +796,6 @@ session_kill(int pid)
 {
   struct session_chain* tmp;
   struct session_chain* prev;
-
   /*THREAD-FIX require chain lock */
   lock_chain_acquire();
 

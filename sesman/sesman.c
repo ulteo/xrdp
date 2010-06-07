@@ -306,10 +306,17 @@ xml_receive_message(int client, xmlDocPtr* doc)
 {
   struct stream* s;
   int data_length;
-
+	int res = 0;
   make_stream(s);
 	init_stream(s, 1024);
-	g_tcp_recv(client, s->data, sizeof(int), 0);
+
+	res= g_tcp_recv(client, s->data, sizeof(int), 0);
+	if (res != sizeof(int))
+	{
+		log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[xml_received_message]: "
+				"Unable to read size header with error %s", strerror(g_get_errno()));
+		return 1;
+	}
 	in_uint32_be(s,data_length);
 	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[xml_received_message]: "
 			"data_length : %i", data_length);
@@ -319,7 +326,7 @@ xml_receive_message(int client, xmlDocPtr* doc)
 			"data : %s",s->data);
   *doc = xmlReadMemory(s->data, data_length, "noname.xml", NULL, 0);
   free_stream(s);
-  return data_length;
+  return 0;
 }
 
 
@@ -463,7 +470,11 @@ process_request(int client)
   xmlDocPtr doc;
 
   xmlInitParser();
-  xml_receive_message(client, &doc);
+  if (xml_receive_message(client, &doc) == 1)
+  {
+  	g_tcp_close(client);
+  	pthread_exit((void*) 1);
+  }
   if (xml_get_xpath(doc, "/request/@type", request_type) == 1)
   {
   	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[process_request]: "
