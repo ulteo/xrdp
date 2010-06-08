@@ -16,10 +16,6 @@ xrdp_logd_LDADD = \
   -lpthread \
   $(top_builddir)/common/libxrdp_common.la
 
-xrdp_logddir=$(bindir)
-xrdp_logd_DATA = \
-  xrdp-logd
-
 xrdp_logd_confdir=$(sysconfdir)/xrdp
 xrdp_logd_conf_DATA = \
   xrdp-log.conf
@@ -28,6 +24,5 @@ install-data-hook:
 	chmod 755 $(DESTDIR)$(sbindir)/xrdp-logd
 
 EXTRA_DIST = \
-  $(xrdp_logd_DATA) \
   $(xrdp_logd_conf_DATA)
 

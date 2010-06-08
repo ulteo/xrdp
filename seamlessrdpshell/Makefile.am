@@ -12,22 +12,20 @@ bin_PROGRAMS = \
 
 XHook_SOURCES = \
   main.c seamlessrdpshell.h \
-  xutils.c xutils.h 
+  xutils.c xutils.h
 
 XHook_LDADD = \
   -lX11 -lpthread \
   $(top_builddir)/vchannel/libxrdp_vchannel.la \
-  $(top_builddir)/common/libxrdp_common.la 
+  $(top_builddir)/common/libxrdp_common.la
 
 seamlessrdpshelldir=$(bindir)
-
 seamlessrdpshell_DATA = \
   seamlessrdpshell
 
 seamlessrdpshellconfdir=$(sysconfdir)/xrdp
-
 seamlessrdpshellconf_DATA = \
-  seamrdp.conf 
+  seamrdp.conf
 
 install-data-hook:
 	chmod 755 $(DESTDIR)$(bindir)/seamlessrdpshell
