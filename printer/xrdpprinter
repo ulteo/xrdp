@@ -49,8 +49,10 @@ CONF = {"ghostscript" : "/usr/bin/gs",
         "user" : pwd.getpwuid(os.getuid())[0],
         "group" : grp.getgrgid(os.getgid())[0],
         "umask"   : "077",
-        "type"    : "ps",
-	"printer" : "default"
+        "type"    : "pdf",
+        "printer" : "default",
+        "ps2pdf_ver" : "2.4",
+        "ps2pdf_cmd" : '%(ghostscript)s -q -dCompatibilityLevel=%(ps2pdf_ver)s -dNOPAUSE -dBATCH -dSAFER -sDEVICE=pdfwrite -sOutputFile="%(tmp_file)s" -dAutoRotatePages=/PageByPage -dAutoFilterColorImages=false -dColorImageFilter=/FlateEncode -dPDFSETTINGS=/prepress -c .setpdfwrite -f "%(spool_file)s"'
         }
 
 FILEKEYS = {"User" : "user",
@@ -66,9 +68,11 @@ class Transform:
     def __init__(self, psFile):
         self.psFile = psFile
 
-    def ps2ps(self, conf):
-        shutil.copyfile(self.psFile, conf["tmp_file"])
-        return True
+    def ps2pdf(self, conf):
+        cmd = conf["ps2pdf_cmd"]%(conf)
+        print cmd
+        system(cmd)
+        return  True
 
 def init():
     syslog.openlog("xrdp_printer")
@@ -215,7 +219,7 @@ def main():
     CONF["tmp_file"] = "%s.%s"%(CONF["spool_file"], CONF["type"])
 
     t = Transform(CONF["spool_file"])
-    t.ps2ps(CONF)
+    t.ps2pdf(CONF)
 
     system("chmod %d %s"%(777-int(CONF["umask"]), CONF["tmp_file"]))
     system("chgrp %s %s"%(CONF["group"],CONF["tmp_file"]))
