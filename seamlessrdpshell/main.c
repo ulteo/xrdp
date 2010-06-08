@@ -576,7 +576,7 @@ get_icon(Window win_in, Window win_out )
 			if(message_length >1000 || i == width * height -1)
 			{
 				count = sprintf(buffer_pos,"\n");
-				send_message(buffer, strlen(buffer));
+				send_message(buffer, message_length);
 
 				message_id++;
 				buffer_pos = buffer;
