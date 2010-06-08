@@ -505,6 +505,8 @@ rdpdr_process_message(struct stream* s, int length, int total_length)
     case PAKID_CORE_DEVICELIST_ANNOUNCE:
     	rdpdr_devicelist_announce(packet);
     	result = rdpdr_transmit(disk_sock, DATA_MESSAGE, packet->data, total_length);
+    	result = rdpdr_transmit(printer_sock, DATA_MESSAGE, packet->data, total_length);
+
       break;
     case PAKID_CORE_DEVICE_IOCOMPLETION:
     	in_uint32_le(packet, device_id);
@@ -516,6 +518,7 @@ rdpdr_process_message(struct stream* s, int length, int total_length)
         break;
     	}
     	result = rdpdr_transmit(disk_sock, DATA_MESSAGE, packet->data, total_length);
+    	result = rdpdr_transmit(printer_sock, DATA_MESSAGE, packet->data, total_length);
     	break;
     default:
       log_message(l_config, LOG_LEVEL_WARNING, "vchannel_rdpdr_channel[rdpdr_process_message]: "
@@ -626,14 +629,14 @@ rdpdr_launch_printer_manager(int display_num)
 	/* wait device */
 	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_launch_printer_manager]: "
 			"Waiting printer program");
-	disk_sock = g_wait_connection(sock);
-	if(disk_sock < 0 )
+	printer_sock = g_wait_connection(sock);
+	if(printer_sock < 0 )
 	{
 		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_[rdpdr_launch_printer_manager]: "
 				"Error while waiting xrdp_printer");
 		return 1;
 	}
-	if( rdpdr_process_channel_opening(disk_sock, "printer") == 1)
+	if( rdpdr_process_channel_opening(printer_sock, "printer") == 1)
 	{
 		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_[rdpdr_launch_printer_manager]: "
 						"Error while waiting channel to xrdp_printer");
@@ -729,7 +732,7 @@ rdpdr_init_devices()
 	}
   log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_init_devices]: "
   		"Activate all the device type");
-
+  rdpdr_launch_printer_manager(display_num);
   return rdpdr_launch_disk_manager(display_num);
 }
 
