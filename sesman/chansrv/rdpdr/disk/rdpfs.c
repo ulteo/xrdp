@@ -102,6 +102,34 @@ static int add_share_to_desktop(const char* share_name){
 }
 
 /*****************************************************************************/
+static int remove_share_from_desktop(const char* share_name){
+	char* home_dir = g_getenv("HOME");
+	char desktop_file_path[256];
+	char share_path[256];
+	char file_content[1024];
+	int handle;
+
+	g_snprintf((char*)desktop_file_path, 256, "%s/Desktop", home_dir);
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[add_share_to_desktop]: "
+	        		"Desktop file path : %s", desktop_file_path);
+
+	g_snprintf((char*)desktop_file_path, 256, "%s/Desktop/%s.desktop", home_dir, share_name);
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[add_share_to_desktop]: "
+	        		"Desktop file path : %s", desktop_file_path);
+
+	if (g_file_exist(desktop_file_path) != 0)
+	{
+		g_file_delete(desktop_file_path);
+		return 0;
+	}
+
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[add_share_to_desktop]: "
+			"Desktop file did not exixt");
+
+	return 1;
+}
+
+/*****************************************************************************/
 /* Convert seconds since 1970 back to filetime */
 static time_t
 convert_1970_to_filetime(uint64_t ticks)
@@ -493,6 +521,14 @@ rdpfs_open()
 int APP_CC
 rdpfs_close()
 {
+	struct disk_device* current_disk;
+	int i = 0;
+	for( i=0 ; i<disk_devices_count ; i++)
+	{
+		current_disk = &disk_devices[i];
+		rdpfs_remove(disk_devices->device_id);
+	}
+
 	vchannel_close(rdpdr_sock);
 	vchannel_close(disk_sock);
 }
@@ -874,7 +910,7 @@ rdpfs_remove(int device_id)
 
 	device = rdpfs_get_dir(device_id);
 	last_device = &disk_devices[disk_devices_count];
-
+	remove_share_from_desktop(device->dir_name);
 	if (device->device_id = last_device->device_id)
 	{
 		device->device_id = 0;
