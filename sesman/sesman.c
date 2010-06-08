@@ -640,7 +640,15 @@ admin_thread(void* param)
   	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[admin_thread]: "
 					"wait connection");
     int client = g_wait_connection(server);
-    tc_thread_create((void*)process_request, (void*)client);
+    if (client < 0)
+    {
+    	log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[process_request]: "
+							"Unable to get client from management socket [%s]", strerror(g_get_errno()));
+    }
+    else
+    {
+    	tc_thread_create((void*)process_request, (void*)client);
+    }
   }
 }
 
