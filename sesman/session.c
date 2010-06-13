@@ -54,6 +54,7 @@ static tbus g_sync_data;
 static tui8 g_sync_type;
 static int g_sync_result;
 
+
 /******************************************************************************/
 struct session_item* DEFAULT_CC
 session_get_bydata(char* name, int width, int height, int bpp)
@@ -772,8 +773,8 @@ session_destroy(char* username)
 			g_getuser_info(username, 0, &uid, 0, 0, 0);
 			if( uid == 0)
 			{
-				log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "Unable to kill root processus "
-						"or user did not exist");
+//				log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "Unable to kill root processus "
+//						"or user did not exist");
 				continue;
 			}
 			if(st.st_uid == uid)
@@ -798,7 +799,6 @@ session_kill(int pid)
   struct session_chain* prev;
   /*THREAD-FIX require chain lock */
   lock_chain_acquire();
-
   tmp=g_sessions;
   prev=0;
 
@@ -841,6 +841,7 @@ session_kill(int pid)
       }
       g_free(tmp);
       g_session_count--;
+      //g_waitpid(tmp->item->name);
       session_destroy(tmp->item->name);
       /*THREAD-FIX release chain lock */
       lock_chain_release();
@@ -1044,6 +1045,82 @@ session_get_by_display(int display)
   return 0;
 }
 
+void DEFAULT_CC
+session_monit()
+{
+	  struct session_chain* tmp;
+	  struct session_chain* prev;
+
+	  /*THREAD-FIX require chain lock */
+	  lock_chain_acquire();
+
+	  tmp=g_sessions;
+	  prev=0;
+  	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[session_monit]: "
+  			"Monitoring sessions");
+
+	  while (tmp != 0)
+	  {
+	    if (tmp->item == 0)
+	    {
+	      log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "sesman[session_monit]: "
+	      		"Session descriptor for is null");
+	      if (prev == 0)
+	      {
+	        /* prev does no exist, so it's the first element - so we set
+	           g_sessions */
+	        g_sessions = tmp->next;
+	      }
+	      else
+	      {
+	        prev->next = tmp->next;
+	      }
+	      /*THREAD-FIX release chain lock */
+	      lock_chain_release();
+	      return;
+	    }
+	    if (tmp->item->status == SESMAN_SESSION_STATUS_TO_DESTROY)
+	    {
+	      /* deleting the session */
+	      log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[session_monit]: "
+	      		"Cleanning session %d - user %s", tmp->item->display, tmp->item->name);
+	      g_sigterm(tmp->item->pid);
+	      if (g_testpid(tmp->item->pid) == tmp->item->pid)
+	      {
+	      	session_destroy(tmp->item->name);
+	      	g_free(tmp->item);
+		      if (prev == 0)
+		      {
+		        g_sessions = tmp->next;
+		        g_free(tmp);
+		        tmp = g_sessions;
+		      }
+		      else
+		      {
+		        prev->next = tmp->next;
+		        g_free(tmp);
+		        tmp = prev->next;
+		      }
+		      g_session_count--;
+		      continue;
+	      }
+	    }
+	    else
+	    {
+	    	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[session_monit]: "
+	    			"Inspect session %d - user %s - ", tmp->item->display, tmp->item->name);
+	    }
+	    /* go on */
+	    prev = tmp;
+	    tmp=tmp->next;
+	  }
+
+	  /*THREAD-FIX release chain lock */
+	  lock_chain_release();
+	  return ;
+}
+
+
 /******************************************************************************/
 int
 session_get_user_display(char* username)
@@ -1211,6 +1288,11 @@ session_update_status_by_user(char* user, int status)
     {
       /*THREAD-FIX release chain lock */
     	//char* str2 = session_get_status_string(tmp->item->status);
+    	if (tmp->item->status == SESMAN_SESSION_STATUS_TO_DESTROY)
+    	{
+        lock_chain_release();
+        return;
+    	}
       tmp->item->status = status;
       lock_chain_release();
       /*return tmp->item;*/

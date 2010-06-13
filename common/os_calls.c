@@ -2256,6 +2256,18 @@ g_waitpid(int pid)
 
 /*****************************************************************************/
 /* does not work in win32 */
+int APP_CC
+g_testpid(int pid)
+{
+#if defined(_WIN32)
+  return 0;
+#else
+  return waitpid(pid, 0, WNOHANG);
+#endif
+}
+
+/*****************************************************************************/
+/* does not work in win32 */
 void APP_CC
 g_clearenv(void)
 {

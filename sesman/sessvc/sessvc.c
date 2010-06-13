@@ -32,8 +32,12 @@
 #include "os_calls.h"
 #include "thread_calls.h"
 #include "arch.h"
+#include "parse.h"
 
 static int g_term = 0;
+static int wm_pid;
+static int x_pid;
+static int chansrv_pid;
 
 /*****************************************************************************/
 void DEFAULT_CC
@@ -41,6 +45,52 @@ term_signal_handler(int sig)
 {
   g_writeln("xrdp-sessvc: term_signal_handler: got signal %d", sig);
   g_term = 1;
+  g_sigterm(wm_pid);
+  g_waitpid(wm_pid);
+
+  g_sigterm(x_pid);
+  g_waitpid(x_pid);
+
+  g_sigterm(chansrv_pid);
+  g_waitpid(chansrv_pid);
+}
+
+/*****************************************************************************/
+int DEFAULT_CC
+send_disconnect(char* username)
+{
+	int admin_socket;
+	struct stream* s;
+	char* data;
+	int size;
+	int res = 0;
+	int rv = 0;
+
+	admin_socket = g_unix_connect("/var/spool/xrdp/xrdp_management");
+	if (admin_socket < 0)
+	{
+		g_writeln("xrdp-sessvc: Unable to connect to session manager, %s", strerror(g_get_errno()));
+		rv = 1;
+		return rv;
+	}
+	make_stream(s);
+	init_stream(s, 1024);
+	data = g_malloc(1024,1);
+	size = g_sprintf(data, "<request type=\"internal\" action=\"logoff\" username=\"%s\"/>",
+			username);
+	out_uint32_be(s,size);
+	out_uint8p(s, data, size);
+	size = s->p - s->data;
+	res = g_tcp_send(admin_socket, s->data, size, 0);
+	if (res != size)
+	{
+		g_writeln("Error while sending data %s",strerror(g_get_errno()));
+		rv = 1;
+	}
+	free_stream(s);
+	g_free(data);
+	g_tcp_close(admin_socket);
+	return rv;
 }
 
 /*****************************************************************************/
@@ -77,9 +127,6 @@ int DEFAULT_CC
 main(int argc, char** argv)
 {
   int ret;
-  int chansrv_pid;
-  int wm_pid;
-  int x_pid;
   int lerror;
   char exe_path[262];
   char *username;
@@ -146,5 +193,9 @@ main(int argc, char** argv)
     ret = g_waitpid(x_pid);
   }
   g_writeln("xrdp-sessvc: clean exit");
+  if (send_disconnect(username) != 0)
+  {
+  	g_writeln("xrdp-sessvc: Unable to send disconnect action");
+  }
   return 0;
 }
