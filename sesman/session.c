@@ -32,6 +32,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <signal.h>
+#include <config.h>
 //#include <time.h>
 
 
@@ -1079,7 +1080,8 @@ session_monit()
 	      lock_chain_release();
 	      return;
 	    }
-	    if (tmp->item->status == SESMAN_SESSION_STATUS_TO_DESTROY)
+	    if (tmp->item->status == SESMAN_SESSION_STATUS_TO_DESTROY ||
+	    		(tmp->item->status == SESMAN_SESSION_STATUS_DISCONNECTED && g_cfg->sess.kill_disconnected == 1))
 	    {
 	      /* deleting the session */
 	      log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[session_monit]: "
