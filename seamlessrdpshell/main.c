@@ -553,7 +553,11 @@ get_icon(Window win_in, Window win_out )
 
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_icon]: "
 				"new Icon : %i X %i\n",width, height);
-
+		if (width > 32)
+		{
+			k+= height*width;
+			continue;
+		}
 		buffer_pos = buffer;
 		count = sprintf(buffer, "SETICON,%i,%s,%i,%s,%i,%i,", message_id,window_id,message_id,"RGBA",width,height );
 
@@ -673,21 +677,26 @@ void create_window(Window win_out){
 	get_window_pid(display, proper_win, &pid);
 	get_parent_window(display, proper_win, &parent_id);
 
-  if(parent_id != 0)
-  {
-    parent_id = -1;
-  }
-  if(type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_POPUP_MENU",False))
-  {
-    parent_id = -1;
-  }
-  if(parent_id == 0 && type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_NORMAL", False))
-  {
-    flags = SEAMLESSRDP_NORMAL;
-  }
   if(win_in == 0)
   {
     win_in = win_out;
+  }
+  flags = SEAMLESSRDP_NORMAL;
+  g_writeln("Windows type : %s", XGetAtomName(display, type));
+  if (type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_DROPDOWN_MENU",False) ||
+  		type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_TOOLTIP",False) ||
+  		type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_UTILITY",False) ||
+  		type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_DIALOG",False)  ||
+  		type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_POPUP_MENU",False))
+  {
+      flags = SEAMLESS_CREATE_POPUP;
+      parent_id = -1;
+  }
+  if(type == XInternAtom(display, "_NET_WM_STATE_MODAL", False))
+  {
+  	flags |= SEAMLESSRDP_CREATE_MODAL;
+  	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[synchronize]: "
+  			"%i is a modal windows", proper_win);
   }
 
   sprintf(window_id, "0x%08x",(int)win_out);
@@ -696,9 +705,15 @@ void create_window(Window win_out){
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[create_window]: "
 			"Application title : %s", name);
 
+	while(g_str_replace_first(name, ",", "_") == 0);
+	while(g_str_replace_first(name, " ", "_") == 0);
+
 	sprintf(buffer, "TITLE,%i,%s,%s,0x%08x\n", message_id,window_id,name,0 );
 	send_message(buffer, strlen(buffer));
-	get_icon( win_in, win_out);
+	if (! (flags & SEAMLESS_CREATE_POPUP))
+	{
+		get_icon( win_in, win_out);
+	}
 
 	sprintf(buffer, "POSITION,%i,%s,%i,%i,%i,%i,0x%08x\n", message_id,window_id, attributes.x,attributes.y,attributes.width,attributes.height,0 );
 	send_message(buffer, strlen(buffer));
