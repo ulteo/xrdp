@@ -755,9 +755,15 @@ xrdp_mm_process_login_response(struct xrdp_mm* self, struct stream* s)
 #ifdef OLD_LOG_VERSION
     xrdp_wm_log_msg(self->wm, "Failed to open session, verify the username and the password");
 #else
-    xrdp_wm_log_error(self->wm, "Failed to open session");
-    xrdp_wm_log_error(self->wm, "verify the username");
-    xrdp_wm_log_error(self->wm, "and the password");
+    int msg_len = 0;
+    char* msg;
+    hexdump(s->p, 35);
+    in_uint16_be(s, msg_len);
+    msg = g_malloc(msg_len, 0);
+    in_uint8a(s, msg, msg_len);
+
+    xrdp_wm_log_error(self->wm, msg);
+    g_free(msg);
 #endif
   }
   self->delete_sesman_trans = 1;

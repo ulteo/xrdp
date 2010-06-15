@@ -52,7 +52,6 @@ scp_v0_process(struct SCP_CONNECTION* c, struct SCP_SESSION* s)
     else
     {
       LOG_DBG(&(g_cfg->log), "pre auth");
-      printf("v0\n");
       if (1 == access_login_allowed(s->username))
       {
         log_message(&(g_cfg->log), LOG_LEVEL_INFO, "granted TS access to user %s", s->username);
@@ -80,7 +79,7 @@ scp_v0_process(struct SCP_CONNECTION* c, struct SCP_SESSION* s)
     {
       auth_end(data);
       data = 0;
-      scp_v0s_deny_connection(c);
+      scp_v0s_deny_connection(c, "You are not allow to start \nsession");
     }
     else
     {
@@ -89,7 +88,7 @@ scp_v0_process(struct SCP_CONNECTION* c, struct SCP_SESSION* s)
   }
   else
   {
-    scp_v0s_deny_connection(c);
+    scp_v0s_deny_connection(c, "Your username or \nyour password is invalid");
   }
 }
 

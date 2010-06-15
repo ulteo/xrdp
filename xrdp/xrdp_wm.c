@@ -1507,11 +1507,22 @@ xrdp_wm_log_error(struct xrdp_wm* self, char* msg)
   int h;
   int xoffset;
   int yoffset;
-  char* p;
+  char* return_pos;
   char* msg_copy = msg;
 
   self->screen->bg_color = self->white;
+	return_pos = strchr(msg_copy, '\n');
+  while( return_pos != 0 )
+  {
+  	*return_pos = 0;
+    list_add_item(self->log, (long)g_strdup(msg_copy));
+
+    *return_pos = '\n';
+    msg_copy += (return_pos + 1 - msg_copy);
+    return_pos = strchr(msg_copy, '\n');
+  }
   list_add_item(self->log, (long)g_strdup(msg_copy));
+
   if (self->log_wnd == 0)
   {
     w = 200;
@@ -1537,7 +1548,7 @@ xrdp_wm_log_error(struct xrdp_wm* self, char* msg)
     self->log_wnd->bg_color = self->grey;
     self->log_wnd->left = xoffset;
     self->log_wnd->top = yoffset;
-    set_string(&(self->log_wnd->caption1), "Connection Log");
+    set_string(&(self->log_wnd->caption1), "Connection error");
     // ok button
     but = xrdp_bitmap_create(60, 25, self->screen->bpp, WND_TYPE_BUTTON, self);
     list_insert_item(self->log_wnd->child_list, 0, (long)but);

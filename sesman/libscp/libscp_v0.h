@@ -71,7 +71,7 @@ scp_v0s_allow_connection(struct SCP_CONNECTION* c, SCP_DISPLAY d);
  *
  */
 enum SCP_SERVER_STATES_E 
-scp_v0s_deny_connection(struct SCP_CONNECTION* c);
+scp_v0s_deny_connection(struct SCP_CONNECTION* c, const char* msg);
 
 #endif
 

@@ -305,13 +305,16 @@ scp_v0s_allow_connection(struct SCP_CONNECTION* c, SCP_DISPLAY d)
 
 /******************************************************************************/
 enum SCP_SERVER_STATES_E
-scp_v0s_deny_connection(struct SCP_CONNECTION* c)
+scp_v0s_deny_connection(struct SCP_CONNECTION* c, const char* msg)
 {
-  out_uint32_be(c->out_s, 0);  /* version */
-  out_uint32_be(c->out_s, 14); /* size */
-  out_uint16_be(c->out_s, 3);  /* cmd */
-  out_uint16_be(c->out_s, 0);  /* data */
-  out_uint16_be(c->out_s, 0);  /* data */
+  int msg_len = g_strlen(msg)+1;
+  out_uint32_be(c->out_s, 0);                  /* version */
+  out_uint32_be(c->out_s, 16 + msg_len);       /* size */
+  out_uint16_be(c->out_s, 3);                  /* cmd */
+  out_uint16_be(c->out_s, 0);                  /* data */
+  out_uint16_be(c->out_s, 0);                  /* data */
+  out_uint16_be(c->out_s, msg_len);            /* msg len */
+  out_uint8p(c->out_s, msg, msg_len);          /* msg */
   s_mark_end(c->out_s);
 
   if (0 != scp_tcp_force_send(c->in_sck, c->out_s->data, c->out_s->end - c->out_s->data))
