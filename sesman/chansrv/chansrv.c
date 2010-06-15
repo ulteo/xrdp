@@ -696,29 +696,6 @@ chan_init()
   	g_printf("chansrv[chan_init]: Error, display is zero\n");
     g_exit(1);
   }
-  /* logging directory */
-  g_mkdir(log_conf.log_file);
-  if (g_directory_exist(log_conf.log_file) == 0)
-  {
-  	g_printf("chansrv[chan_init]: Unable to create %s\n", log_conf.log_file);
-  	g_exit(1);
-  }
-  g_sprintf(file_string, "%s/%i", log_conf.log_file, g_display_num);
-  if (g_remove_dirs(file_string) == 0)
-  {
-  	g_printf("chansrv[chan_init]: Error, enable to remove %s\n", file_string);
-  	g_exit(1);
-  }
-  g_mkdir(file_string);
-  if (g_directory_exist(file_string) == 0)
-  {
-  	g_printf("chansrv[chan_init]: Unable to create %s\n", file_string);
-  	g_exit(1);
-  }
-  g_chown(file_string, username);
-  g_printf("username : %s\n",username);
-  g_sprintf(file_string, "%s/%s", file_string, "chansrv.log");
-  log_conf.log_file = (char*)g_strdup(file_string);
 
   /* spool directory */
   g_sprintf(file_string, "%s/%i", CHAN_SPOOL_DIR, g_display_num);
