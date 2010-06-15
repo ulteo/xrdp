@@ -905,9 +905,11 @@ main(int argc, char** argv)
   g_snprintf(text, 255, "xrdp_sesman_%8.8x_main_sync", g_pid);
   g_sync_event = g_create_wait_obj(text);
 
+  scp_init_mutex();
   tc_thread_create(admin_thread, 0);
   tc_thread_create(monit_thread, 0);
   sesman_main_loop();
+  scp_remove_mutex();
 
   /* clean up PID file on exit */
   if (daemon)

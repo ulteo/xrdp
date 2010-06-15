@@ -28,6 +28,19 @@
 #include "sesman.h"
 
 extern struct config_sesman* g_cfg; /* in sesman.c */
+static tbus session_creation_lock;
+
+void DEFAULT_CC
+scp_init_mutex()
+{
+	session_creation_lock = tc_mutex_create();
+}
+
+void DEFAULT_CC
+scp_remove_mutex()
+{
+	tc_mutex_delete(session_creation_lock);
+}
 
 /******************************************************************************/
 void DEFAULT_CC
@@ -37,17 +50,26 @@ scp_v0_process(struct SCP_CONNECTION* c, struct SCP_SESSION* s)
   tbus data;
   struct session_item* s_item;
 
+  tc_mutex_lock(session_creation_lock);
   data = auth_userpass(s->username, s->password);
 
   if (data)
   {
-    s_item = session_get_bydata(s->username, s->width, s->height, s->bpp);
+    s_item = session_get_bydata(s->username);
     if (s_item != 0)
     {
       display = s_item->display;
       auth_end(data);
-      session_update_status_by_user(s->username, SESMAN_SESSION_STATUS_ACTIVE);
-      /* don't set data to null here */
+      if (s_item->status == SESMAN_SESSION_STATUS_TO_DESTROY)
+      {
+      	log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "Session for user %s is in destroy, unable to initialize a new session");
+      	scp_v0s_deny_connection(c, "Your last session is currently \nended, retry later");
+      }
+      else
+      {
+      	session_update_status_by_user(s->username, SESMAN_SESSION_STATUS_ACTIVE);
+      	log_message(&(g_cfg->log), LOG_LEVEL_INFO, "switch from status DISCONNECTED to ACTIVE");
+      }
     }
     else
     {
@@ -79,6 +101,7 @@ scp_v0_process(struct SCP_CONNECTION* c, struct SCP_SESSION* s)
     {
       auth_end(data);
       data = 0;
+      log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "User %s are not allow to start session", s->username);
       scp_v0s_deny_connection(c, "You are not allow to start \nsession");
     }
     else
@@ -88,7 +111,9 @@ scp_v0_process(struct SCP_CONNECTION* c, struct SCP_SESSION* s)
   }
   else
   {
-    scp_v0s_deny_connection(c, "Your username or \nyour password is invalid");
+    log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "User %s failed to authenticate", s->username);
+  	scp_v0s_deny_connection(c, "Your username or \nyour password is invalid");
   }
+  tc_mutex_unlock(session_creation_lock);
 }
 
