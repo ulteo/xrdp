@@ -334,7 +334,7 @@ config_read_sessions(int file, struct config_sessions* se, struct list* param_n,
   se->max_idle_time=0;
   se->max_disc_time=0;
   se->kill_disconnected=0;
-  se->monitoring_delay=2;
+  se->monitoring_delay=2000;
 
   file_read_section(file, SESMAN_CFG_SESSIONS, param_n, param_v);
   for (i = 0; i < param_n->count; i++)
