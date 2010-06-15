@@ -757,11 +757,10 @@ xrdp_mm_process_login_response(struct xrdp_mm* self, struct stream* s)
 #else
     int msg_len = 0;
     char* msg;
-    hexdump(s->p, 35);
+
     in_uint16_be(s, msg_len);
     msg = g_malloc(msg_len, 0);
     in_uint8a(s, msg, msg_len);
-
     xrdp_wm_log_error(self->wm, msg);
     g_free(msg);
 #endif
