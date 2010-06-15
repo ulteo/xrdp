@@ -61,6 +61,7 @@
 #define SESMAN_CFG_SESS_KILL_DISC    "KillDisconnected"
 #define SESMAN_CFG_SESS_IDLE_LIMIT   "IdleTimeLimit"
 #define SESMAN_CFG_SESS_DISC_LIMIT   "DisconnectedTimeLimit"
+#define SESMAN_CFG_SESS_MONIT_DELAY  "MonitoringDelay"
 
 /**
  *
@@ -122,6 +123,12 @@ struct config_sessions
    * @brief enables automatic killing of disconnected session
    */
   int kill_disconnected;
+  /**
+   * @var monitoring_delay
+   * @brief delay to check session status
+   */
+  int monitoring_delay;
+
 };
 
 /**

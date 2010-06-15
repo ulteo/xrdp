@@ -707,7 +707,7 @@ monit_thread(void* param)
 {
   while(1)
   {
-  	g_sleep(2000);
+  	g_sleep(g_cfg->sess.monitoring_delay);
   	session_monit();
   }
 }
