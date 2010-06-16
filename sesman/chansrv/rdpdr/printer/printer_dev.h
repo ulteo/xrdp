@@ -26,7 +26,7 @@
 #include "os_calls.h"
 #include "parse.h"
 
-#define PPD_FILE 		"/usr/share/ppd/PostscriptColor.ppd"
+#define PPD_FILE 		"/usr/share/cups/model/PostscriptColor.ppd.gz"
 #define DEVICE_URI	"xrdpprinter:"
 #define SPOOL_DIR		"/var/spool/xrdp_printer/"
 #define LP_SPOOL_DIR "/var/spool/xrdp_printer/SPOOL"
