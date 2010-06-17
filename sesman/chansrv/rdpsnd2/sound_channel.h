@@ -60,7 +60,12 @@ int init_channel();
 #define	RDP7						0x06
 
 /* sound format */
-#define WAVE_FORMAT_PCM	0x01
+#define WAVE_FORMAT_PCM      0x0001
+#define WAVE_FORMAT_ADPC     0x0002
+#define WAVE_FORMAT_ALAW     0x0006
+#define WAVE_FORMAT_MSG723   0x0042
+#define WAVE_FORMAT_GSM610   0x0031
+#define WAVE_FORMAT_MULAW    0x0007
 
 
 /* sound possible control */
