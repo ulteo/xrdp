@@ -1,5 +1,6 @@
 AM_CFLAGS = \
-  `pkg-config --cflags libpulse-simple`
+  `pkg-config --cflags libpulse-simple` \
+  -DXRDP_CFG_PATH=\"${sysconfdir}/xrdp\"
 
 INCLUDES = \
   -I$(top_srcdir)/common \

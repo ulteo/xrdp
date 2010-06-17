@@ -31,6 +31,11 @@ static RD_WAVEFORMATEX formats[MAX_FORMATS];
 static int format_index = 0;
 static block_count = 0;
 int completion_count=0;
+extern int pulseaudio_pid;
+extern struct log_config* l_config;
+static pthread_cond_t reply_cond;
+static pthread_mutex_t mutex;
+
 
 /*****************************************************************************/
 int vchannel_sound_send(struct stream* s, int update_size){
@@ -45,11 +50,11 @@ int vchannel_sound_send(struct stream* s, int update_size){
   rv = vchannel_send(sndrdp_channel, s->data, size);
   if (rv != 0)
   {
-  	printf("module-rdp[vchannel_sound_send]: "
-    		"Enable to send message\n");
+		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpsnd[vchannel_sound_send]: "
+    		"Enable to send message");
   }
-  printf("module-rdp[vchannel_sound_send]: "
-    		"Send message of size : %i\n",size);
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[vchannel_sound_send]: "
+    		"Send message of size : %i",size);
   return rv;
 }
 
@@ -57,8 +62,8 @@ int vchannel_sound_send(struct stream* s, int update_size){
 int APP_CC
 vchannel_sound_send_training()
 {
-	printf("module-rdp[vchannel_sound_send_training]: "
-			"Send sound training\n");
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[vchannel_sound_send_training]: "
+			"Send sound training");
 	struct stream* s;
 	make_stream(s);
 	init_stream(s, 1024);
@@ -78,8 +83,8 @@ vchannel_sound_send_training()
 int APP_CC
 vchannel_sound_send_wave_info(int timestamp, int len, char* data)
 {
-	printf("module-rdp[vchannel_sound_send_wave_info]: "
-			"Send wave information\n");
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[vchannel_sound_send_wave_info]: "
+			"Send wave information");
 	char *p = data;
 	struct stream* s;
 	make_stream(s);
@@ -111,6 +116,7 @@ vchannel_sound_send_wave_info(int timestamp, int len, char* data)
 	s_mark_end(s);
 	vchannel_sound_send(s, 0);
 	free_stream(s);
+	vchannel_sound_wait_reply();
 
 }
 
@@ -118,8 +124,8 @@ vchannel_sound_send_wave_info(int timestamp, int len, char* data)
 int APP_CC
 vchannel_sound_send_next_wave_info(int len, char* data)
 {
-	printf("module-rdp[vchannel_sound_send_next_wave_info]: "
-			"Send wave information\n");
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[vchannel_sound_send_next_wave_info]: "
+			"Send wave information");
 	char *p = data;
 	struct stream* s;
 
@@ -136,8 +142,8 @@ vchannel_sound_send_next_wave_info(int len, char* data)
 int APP_CC
 vchannel_sound_send_format_and_version(void)
 {
-	printf("module-rdp[vchannel_sound_send_format_and_version]: "
-			"Send available server format and version\n");
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[main]: "
+			"Send available server format and version");
 	struct stream* s;
 	make_stream(s);
 	init_stream(s, 1024);
@@ -174,8 +180,8 @@ vchannel_sound_send_format_and_version(void)
 int APP_CC
 vchannel_sound_process_client_format(struct stream* s)
 {
-	printf("module-rdp[vchannel_sound_process_client_format]: "
-			"Register client format\n");
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[vchannel_sound_process_client_format]: "
+			"Register client format");
 	RD_WAVEFORMATEX *format;
 	int dwFlags;
 	int dwVolume;
@@ -198,19 +204,19 @@ vchannel_sound_process_client_format(struct stream* s)
 
 	if (dwFlags & TSSNDCAPS_ALIVE == 0)
 	{
-		printf("module-rdp[vchannel_sound_process_client_format]: "
-				"The client did not to use audio channel\n");
+		log_message(l_config, LOG_LEVEL_WARNING, "vchannel_rdpsnd[vchannel_sound_process_client_format]: "
+				"The client did not to use audio channel");
 	}
 	if (dwFlags & TSSNDCAPS_VOLUME == 0)
 	{
-		printf("module-rdp[vchannel_sound_process_client_format]: "
-				"The client can not control volume\n");
+		log_message(l_config, LOG_LEVEL_WARNING, "vchannel_rdpsnd[vchannel_sound_process_client_format]: "
+				"The client can not control volume");
 		dwVolume = 0;
 	}
 	if (dwFlags & TSSNDCAPS_PITCH == 0)
 	{
-		printf("module-rdp[vchannel_sound_process_client_format]: "
-				"The client can not control pitch\n");
+		log_message(l_config, LOG_LEVEL_WARNING, "vchannel_rdpsnd[vchannel_sound_process_client_format]: "
+				"The client can not control pitch");
 		/* TODO interprete the pitch value */
 		dwPitch = 0;
 	}
@@ -232,15 +238,15 @@ vchannel_sound_process_client_format(struct stream* s)
 	}
 	if( wDGramPort == 0)
 	{
-		printf("module-rdp[vchannel_sound_process_client_format]: "
-				"Client do not use UDP transport layer\n");
+		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpsnd[vchannel_sound_process_client_format]: "
+				"Client do not use UDP transport layer");
 		vchannel_sound_send_training();
 	}
 	else
 	{
 		/* if datagram is present, add Quality Mode PDU */
-		printf("module-rdp[vchannel_sound_process_client_format]: "
-				"UDP transfert is not supported\n");
+		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpsnd[vchannel_sound_process_client_format]: "
+				"UDP transfert is not supported");
 	}
 	return 0;
 }
@@ -249,13 +255,13 @@ vchannel_sound_process_client_format(struct stream* s)
 int APP_CC
 vchannel_sound_process_training_message(struct stream* s)
 {
-	printf("module-rdp[sound_process_training_message]: \n");
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[vchannel_sound_process_training_message]: ");
 	int training_value;
 	in_uint16_le(s, training_value);
 
 	if (training_value != TRAINING_VALUE)
 	{
-		printf("module-rdp[sound_process_training_message]: "
+		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpsnd[vchannel_sound_process_training_message]: "
 				"The training value returned is invalid : %02x\n",training_value);
 	}
 	return 0;
@@ -275,12 +281,12 @@ vchannel_sound_process_message(struct stream* s, int length, int total_length)
 
   if(length != total_length)
   {
-  	printf("module-rdp[vchannel_sound_process_message]: "
-  			"Packet is fragmented\n");
+		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[vchannel_sound_process_message]: "
+  			"Packet is fragmented");
   	if(is_fragmented_packet == 0)
   	{
-    	printf("module-rdp[vchannel_sound_process_message]: "
-  				"packet is fragmented : first part\n");
+  		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[vchannel_sound_process_message]: "
+  				"packet is fragmented : first part");
   		is_fragmented_packet = 1;
   		fragment_size = length;
   		make_stream(splitted_packet);
@@ -294,14 +300,14 @@ vchannel_sound_process_message(struct stream* s, int length, int total_length)
   		fragment_size += length;
   		if (fragment_size == total_length )
   		{
-  	  	printf("module-rdp[vchannel_sound_process_message]: "
-    				"Packet is fragmented : last part\n");
+    		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[vchannel_sound_process_message]: "
+    				"Packet is fragmented : last part");
   			packet = splitted_packet;
   		}
   		else
   		{
-  	  	printf("module-rdp[vchannel_sound_process_message]: "
-    				"Packet is fragmented : next part\n");
+    		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[vchannel_sound_process_message]: "
+    				"Packet is fragmented : next part");
   			return 0;
   		}
   	}
@@ -314,34 +320,36 @@ vchannel_sound_process_message(struct stream* s, int length, int total_length)
   in_uint8(packet, unused);
   in_uint16_le(s, msg_size);
 
-	printf("module-rdp[vchannel_sound_process_message]: "
-  		"Msg_type=0x%01x\n", msg_type);
-	printf("module-rdp[vchannel_sound_process_message]: "
-	  		"msg_size=%i\n", msg_size);
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[vchannel_sound_process_message]: "
+  		"Msg_type=0x%01x", msg_type);
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[vchannel_sound_process_message]: "
+	  		"msg_size=%i", msg_size);
 
 	switch (msg_type)
 	{
 	case SNDC_FORMATS:
-  	printf("module-rdp[vchannel_sound_process_message]: "
-	  		"SNDC_FORMATS message\n");
+		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[vchannel_sound_process_message]: "
+	  		"SNDC_FORMATS message");
 		result = vchannel_sound_process_client_format(s);
 		break;
 
 	case SNDC_TRAINING:
-  	printf("module-rdp[vchannel_sound_process_message]: "
-	  		"SNDC_TRANING message\n");
+		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[vchannel_sound_process_message]: "
+	  		"SNDC_TRANING message");
 		result = vchannel_sound_process_training_message(s);
 		break;
 
 	case SNDC_WAVECONFIRM:
-  	printf("module-rdp[vchannel_sound_process_message]: "
-  			"SNDC_WAVECONFIRM\n");
+		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[vchannel_sound_process_message]: "
+  			"SNDC_WAVECONFIRM");
   	completion_count--;
+  	pthread_cond_signal(&reply_cond);
+
 		break;
 
 	default:
-  	printf("module-rdp[vchannel_sound_process_message]: "
-				"unknown message %02x\n", msg_type);
+		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[vchannel_sound_process_message]: "
+				"unknown message %02x", msg_type);
 		result = 1;
 	}
 	if(is_fragmented_packet == 1)
@@ -363,10 +371,13 @@ vchannel_sound_process_message(struct stream* s, int length, int total_length)
 int APP_CC
 vchannel_sound_init(void)
 {
-	printf("module-rdp[vchannel_sound_init]: "
-			"Init sound channel\n");
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[vchannel_sound_init]: "
+			"Init sound channel");
 	g_rdpsnd_chan_id = 1;
 	vchannel_sound_send_format_and_version();
+	pthread_cond_init(&reply_cond, NULL);
+	pthread_mutex_init(&mutex, NULL);
+
   return 0;
 }
 
@@ -374,10 +385,25 @@ vchannel_sound_init(void)
 int APP_CC
 vchannel_sound_deinit(void)
 {
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[vchannel_sound_deinit]: ");
+	pthread_cond_destroy(&reply_cond);
+	pthread_mutex_destroy(&mutex);
+
+	g_sigterm(pulseaudio_pid);
 	g_exit(0);
 	return 0;
 }
 
+/*****************************************************************************/
+void APP_CC
+vchannel_sound_wait_reply()
+{
+  if (pthread_cond_wait(&reply_cond, &mutex) != 0) {
+		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpsnd[vchannel_sound_wait_reply]: "
+    "pthread_cond_timedwait() error [%s]", strerror(errno));
+    return;
+  }
+}
 
 
 /*****************************************************************************/
@@ -388,33 +414,33 @@ void *thread_vchannel_process (void * arg)
 	int length;
 	int total_length;
 
-	printf("module-rdp[thread_vchannel_process]: "
-			"Init vchannel main loop thread\n");
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[thread_vchannel_process]: "
+			"Init vchannel main loop thread");
 	vchannel_sound_init();
 
 	while(1){
 		make_stream(s);
 		init_stream(s, 1600);
-		printf("module-rdp[thread_vchannel_process]: "
-				"Prepare to receive \n");
+		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[thread_vchannel_process]: "
+				"Prepare to receive ");
 
 		rv = vchannel_receive(sndrdp_channel, s->data, &length, &total_length);
 		switch(rv)
 		{
 		case ERROR:
-			printf("module-rdp[thread_vchannel_process]: "
-					"Invalid message\n");
+			log_message(l_config, LOG_LEVEL_WARNING, "vchannel_rdpsnd[thread_vchannel_process]: "
+					"Invalid message");
 			free_stream(s);
 			vchannel_close(sndrdp_channel);
 			pthread_exit ((void*) 1);
 			break;
 		case STATUS_CONNECTED:
-			printf("module-rdp[thread_vchannel_process]: "
-					"Status connected\n");
+			log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[thread_vchannel_process]: "
+					"Status connected");
 			break;
 		case STATUS_DISCONNECTED:
-			printf("module-rdp[thread_vchannel_process]: "
-					"Status disconnected\n");
+			log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[thread_vchannel_process]: "
+					"Status disconnected");
 			vchannel_sound_deinit();
 			break;
 		default:
@@ -437,16 +463,16 @@ int init_channel()
 
 	if (vchannel_init() == ERROR)
 	{
-		printf("module-rdp[init_channel]: "
-				"Enable to init channel system\n");
+		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpsnd[init_channel]: "
+				"Unable to init channel system");
 		return 1;
 	}
 
 	sndrdp_channel = vchannel_open("rdpsnd");
 	if( sndrdp_channel == ERROR)
 	{
-		printf("module-rdp[init_channel]: "
-				"Error while connecting to vchannel provider\n");
+		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpsnd[init_channel]: "
+				"Error while connecting to vchannel provider");
 		return 1;
 	}
 }

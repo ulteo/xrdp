@@ -50,39 +50,22 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
+#include <log.h>
 
 #include <pulse/simple.h>
 #include <pulse/error.h>
+#include <os_calls.h>
+#include <list.h>
 #include "sound_channel.h"
-#define BUFSIZE 1024
 
 extern int completion_count;
+struct log_config* l_config;
+int pulseaudio_pid;
 
 void sound_process(const void *data, size_t size) {
-    void *state = NULL;
-    int write_type = 0;
-    int packet_id=0;
+  	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[sound_process]: "
+  			"Process sound trame of size %i", size);
 
-    /* If something is connected to our monitor source, we have to
-     * pass valid data to it */
-    void *p;
-    int current_size=0;
-    printf("module-rdp[pa_sink_process]: "
-    		"Send wave Frame \n");
-
-    if (completion_count > 20)
-    {
-//      while (length > 0) {
-//      	pa_sink_render(s, length, &chunk);
-//      	p = pa_memblock_acquire(chunk.memblock);
-//      	pa_memblock_release(chunk.memblock);
-//      	pa_memblock_unref(chunk.memblock);
-//      	pa_assert(chunk.length <= length);
-//      	length -= chunk.length;
-//      }
-
-    	return;
-    }
     int stamp = 0;
     vchannel_sound_send_wave_info(stamp, size, data);
 }
@@ -90,66 +73,231 @@ void sound_process(const void *data, size_t size) {
 /*****************************************************************************/
 void *thread_sound_process (void * arg)
 {
+	char* buffer;
   int error;
+  int block_size;
 	static const pa_sample_spec ss = {
       .format = PA_SAMPLE_S16LE,
       .rate = 44100,
       .channels = 2
   };
+
   pa_simple *s = NULL;
+  block_size = pa_bytes_per_second(&ss) / 20; /* 50 ms */
+  if (block_size <= 0)
+      block_size = pa_frame_size(&ss);
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[thread_sound_process]: "
+			" Block size : %i", block_size);
+
+  buffer = g_malloc(block_size, 0);
 
   /* Create the recording stream */
-  if (!(s = pa_simple_new(NULL, "vchannel_rdpsnd", PA_STREAM_RECORD, NULL, "record", &ss, NULL, NULL, &error))) {
-      fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(error));
-      goto finish;
+  s = pa_simple_new(NULL, "vchannel_rdpsnd", PA_STREAM_RECORD, NULL, "record", &ss, NULL, NULL, &error);
+  while (s == 0) {
+  	g_sleep(1000);
+  	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[thread_sound_process]: "
+  			"Unable to connect to pulseaudio server, next retry in one second");
+    s = pa_simple_new(NULL, "vchannel_rdpsnd", PA_STREAM_RECORD, NULL, "record", &ss, NULL, NULL, &error);
   }
-  printf("begining the main loop\n");
+
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[thread_sound_process]: "
+			"Beginning the main loop");
   for (;;) {
-      uint8_t buf[BUFSIZE];
-
       /* Record some data ... */
-      if (pa_simple_read(s, buf, sizeof(buf), &error) < 0) {
-          fprintf(stderr, __FILE__": pa_simple_read() failed: %s\n", pa_strerror(error));
-          goto finish;
+      if (pa_simple_read(s, buffer, block_size, &error) < 0) {
+      	log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpsnd[thread_sound_process]: "
+      			"pa_simple_read() failed: %s", pa_strerror(error));
+      	goto finish;
       }
-
-      /* And write it to STDOUT */
-      sound_process(buf, sizeof(buf));
+      sound_process(buffer , block_size);
   }
+
+
   finish:
       if (s)
           pa_simple_free(s);
-
+  g_free(buffer);
 	pthread_exit (0);
 }
 
+/*****************************************************************************/
+int start_pulseaudio()
+{
+	struct list *args;
+	int status = 0;
+	char* pa_config_path[256];
 
+	log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpsnd[start_pulseaudio]: "
+			"Starting pulseaudio");
 
+	args = list_create();
+	args->auto_free = 1;
+	pulseaudio_pid = fork ();
+	if ( pulseaudio_pid < 0 )
+	{
+		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpsnd[start_pulseaudio]: "
+				"Failed to fork [%s]",strerror(errno));
+		g_exit(-1);
+	}
+	if ( pulseaudio_pid > 0 )
+	{
+		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[start_pulseaudio]: "
+				"Child pid : %i", pulseaudio_pid);
+		return 0;
+	}
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[start_pulseaudio]: "
+			"Child processus");
+
+	g_snprintf((char*)pa_config_path, 256, "%s/%s", XRDP_CFG_PATH, "rdpsnd.pa");
+	list_add_item(args, (tbus)strdup("pulseaudio"));
+	list_add_item(args, (tbus)strdup("-nF"));
+	list_add_item(args, (tbus)strdup((const char*)pa_config_path));
+	execvp( "/usr/bin/pulseaudio", (char**)args->items);
+
+	list_delete(args);
+	wait(&status);
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[start_pulseaudio]: "
+			"Failed to start pulseaudio");
+	g_exit(0);
+}
+
+int
+sndchannel_init()
+{
+  char filename[256];
+  char log_filename[256];
+  struct list* names;
+  struct list* values;
+  char* name;
+  char* value;
+  int index;
+  int display_num;
+  int res;
+
+  display_num = g_get_display_num_from_display(g_strdup(g_getenv("DISPLAY")));
+	if(display_num == 0)
+	{
+		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpsnd[sndchannel_init]: "
+				"XHook[XHook_init]: Display must be different of 0");
+		return ERROR;
+	}
+	l_config = g_malloc(sizeof(struct log_config), 1);
+	l_config->program_name = "XHook";
+	l_config->log_file = 0;
+	l_config->fd = 0;
+	l_config->log_level = LOG_LEVEL_DEBUG;
+	l_config->enable_syslog = 0;
+	l_config->syslog_level = LOG_LEVEL_DEBUG;
+
+  names = list_create();
+  names->auto_free = 1;
+  values = list_create();
+  values->auto_free = 1;
+  g_snprintf(filename, 255, "%s/seamrdp.conf", XRDP_CFG_PATH);
+  if (file_by_name_read_section(filename, SND_CFG_GLOBAL, names, values) == 0)
+  {
+    for (index = 0; index < names->count; index++)
+    {
+      name = (char*)list_get_item(names, index);
+      value = (char*)list_get_item(values, index);
+      if (0 == g_strcasecmp(name, SND_CFG_NAME))
+      {
+        if( g_strlen(value) > 1)
+        {
+        	l_config->program_name = (char*)g_strdup(value);
+        }
+      }
+    }
+  }
+  if (file_by_name_read_section(filename, SND_CFG_LOGGING, names, values) == 0)
+  {
+    for (index = 0; index < names->count; index++)
+    {
+      name = (char*)list_get_item(names, index);
+      value = (char*)list_get_item(values, index);
+      if (0 == g_strcasecmp(name, SND_CFG_LOG_DIR))
+      {
+      	l_config->log_file = (char*)g_strdup(value);
+      }
+      if (0 == g_strcasecmp(name, SND_CFG_LOG_LEVEL))
+      {
+      	l_config->log_level = log_text2level(value);
+      }
+      if (0 == g_strcasecmp(name, SND_CFG_LOG_ENABLE_SYSLOG))
+      {
+      	l_config->enable_syslog = log_text2bool(value);
+      }
+      if (0 == g_strcasecmp(name, SND_CFG_LOG_SYSLOG_LEVEL))
+      {
+      	l_config->syslog_level = log_text2level(value);
+      }
+    }
+  }
+  if( g_strlen(l_config->log_file) > 1 && g_strlen(l_config->program_name) > 1)
+  {
+  	g_snprintf(log_filename, 256, "%s/%i/%s.log",
+  			l_config->log_file,	display_num, l_config->program_name);
+  	l_config->log_file = (char*)g_strdup(log_filename);
+  }
+  list_delete(names);
+  list_delete(values);
+  res = log_start(l_config);
+
+	if( res != LOG_STARTUP_OK)
+	{
+		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpsnd[sndchannel_init]: "
+				"Unable to start log system[%i]", res);
+		return res;
+	}
+  else
+  {
+  	return LOG_STARTUP_OK;
+  }
+}
+
+/*****************************************************************************/
 int main(int argc, char*argv[]) {
     /* The sample type to use */
 		pthread_t vchannel_thread;
 		pthread_t sound_thread;
     int ret = 1;
 
+  	l_config = g_malloc(sizeof(struct log_config), 1);
+  	if (sndchannel_init() != LOG_STARTUP_OK)
+  	{
+  		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpsnd[main]: "
+  				"Enable to init log system");
+  		g_free(l_config);
+  		return 1;
+  	}
+  	if (vchannel_init() == ERROR)
+  	{
+  		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpsnd[main]: "
+  				"Enable to init channel system\n");
+  		g_free(l_config);
+  		return 1;
+  	}
     init_channel();
-    printf("module-rdp[pa_init]: "
+    start_pulseaudio();
+
+		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[main]: "
     		"Create virtual channel thread\n");
   	if (pthread_create (&sound_thread, NULL, thread_sound_process, (void*)0) < 0)
   	{
-  		printf( "rdpdr_printer[main]: "
+  		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[main]: "
   				"Pthread_create error for thread : spool_thread");
   		return 1;
   	}
 
     if (pthread_create (&vchannel_thread, NULL, thread_vchannel_process, (void*)0) < 0)
   	{
-  		printf("rdpdr_printer[main]: "
+  		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[main]: "
   				"Pthread_create error for thread : vchannel_thread\n");
   		return 1;
   	}
 
-  	(void)pthread_join (vchannel_thread, &ret);
-  	(void)pthread_join (sound_thread, &ret);
+  	(void)pthread_join (vchannel_thread, (void*)&ret);
+  	(void)pthread_join (sound_thread, (void*)&ret);
 
 
   	return 0;

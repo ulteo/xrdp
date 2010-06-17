@@ -28,6 +28,16 @@ int init_channel();
 
 #define ERROR -1
 
+/* config constant */
+#define SND_CFG_GLOBAL						"Globals"
+#define SND_CFG_NAME							"Name"
+#define SND_CFG_LOGGING						"Logging"
+#define SND_CFG_LOG_DIR						"LogDir"
+#define SND_CFG_LOG_LEVEL					"LogLevel"
+#define SND_CFG_LOG_ENABLE_SYSLOG	"EnableSyslog"
+#define SND_CFG_LOG_SYSLOG_LEVEL	"SyslogLevel"
+
+
 #define SOUND_FORMAT_NUMBER		3
 /* Msg type */
 #define SNDC_CLOSE						0x01
