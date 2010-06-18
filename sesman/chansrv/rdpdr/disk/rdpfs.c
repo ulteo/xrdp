@@ -110,11 +110,11 @@ static int remove_share_from_desktop(const char* share_name){
 	int handle;
 
 	g_snprintf((char*)desktop_file_path, 256, "%s/Desktop", home_dir);
-	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[add_share_to_desktop]: "
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[remove_share_to_desktop]: "
 	        		"Desktop file path : %s", desktop_file_path);
 
 	g_snprintf((char*)desktop_file_path, 256, "%s/Desktop/%s.desktop", home_dir, share_name);
-	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[add_share_to_desktop]: "
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[remove_share_to_desktop]: "
 	        		"Desktop file path : %s", desktop_file_path);
 
 	if (g_file_exist(desktop_file_path) != 0)
@@ -123,7 +123,7 @@ static int remove_share_from_desktop(const char* share_name){
 		return 0;
 	}
 
-	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[add_share_to_desktop]: "
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[remove_share_to_desktop]: "
 			"Desktop file did not exixt");
 
 	return 1;
