@@ -107,7 +107,7 @@ rdpdr_transmit(int sock, int type, char* mess, int length)
   	if (rv != length)
   	{
   		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr[rdpdr_transmit]: "
-  				"error while sending the message:");
+  				"Error while sending the message:");
   		return 1;
   	}
   	temp_size+=1600;
@@ -504,11 +504,8 @@ rdpdr_process_message(struct stream* s, int length, int total_length)
 
     case PAKID_CORE_DEVICELIST_ANNOUNCE:
     	rdpdr_devicelist_announce(packet);
-    	result = rdpdr_transmit(disk_sock, DATA_MESSAGE, packet->data, total_length);
-    	result = rdpdr_transmit(printer_sock, DATA_MESSAGE, packet->data, total_length);
-
-      break;
     case PAKID_CORE_DEVICE_IOCOMPLETION:
+    case PAKID_CORE_DEVICELIST_REMOVE:
     	in_uint32_le(packet, device_id);
     	device_sock = rdpdr_get_socket_from_device_id(device_id);
     	if (device_sock == -1)
@@ -517,8 +514,7 @@ rdpdr_process_message(struct stream* s, int length, int total_length)
         		"Unknow device, failed to redirect message");
         break;
     	}
-    	result = rdpdr_transmit(disk_sock, DATA_MESSAGE, packet->data, total_length);
-    	result = rdpdr_transmit(printer_sock, DATA_MESSAGE, packet->data, total_length);
+    	result = rdpdr_transmit(device_sock, DATA_MESSAGE, packet->data, total_length);
     	break;
     default:
       log_message(l_config, LOG_LEVEL_WARNING, "vchannel_rdpdr_channel[rdpdr_process_message]: "
@@ -833,9 +829,10 @@ int rdpdr_deinit()
 	status[0] = STATUS_DISCONNECTED;
 	rdpdr_transmit(disk_sock, SETUP_MESSAGE, status, 1);
 	rdpdr_transmit(printer_sock, SETUP_MESSAGE, status, 1);
-	vchannel_close(rdpdr_sock);
 	g_tcp_close(printer_sock);
 	g_tcp_close(disk_sock);
+	vchannel_close(rdpdr_sock);
+
 	return 0;
 }
 
