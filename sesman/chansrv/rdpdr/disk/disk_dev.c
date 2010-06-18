@@ -759,7 +759,7 @@ static void* disk_dev_init()
 static void disk_dev_destroy(void *private_data)
 {
 	(void)private_data;
-	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_destroy]: ");
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_destroy]");
 	pthread_cancel(vchannel_thread);
 	pthread_join(vchannel_thread, NULL);
 	g_exit(0);

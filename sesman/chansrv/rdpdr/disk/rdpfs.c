@@ -522,11 +522,12 @@ int APP_CC
 rdpfs_close()
 {
 	struct disk_device* current_disk;
-	int i = 0;
-	for( i=0 ; i<disk_devices_count ; i++)
+
+	while (disk_devices_count != 0)
 	{
-		current_disk = &disk_devices[i];
-		rdpfs_remove(disk_devices->device_id);
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_open]: "
+				"Remove device with id= %i", disk_devices[0].device_id);
+		rdpfs_remove(disk_devices[0].device_id);
 	}
 
 	vchannel_close(rdpdr_sock);
@@ -893,12 +894,11 @@ rdpfs_add(struct stream* s, int device_data_length,
 {
 	disk_devices[disk_devices_count].device_id = device_id;
 	g_strcpy(disk_devices[disk_devices_count].dir_name, dos_name);
-	disk_devices_count++;
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_add]: "
-				"Succedd to add disk");
+				"Succedd to add disk %s", disk_devices[disk_devices_count].dir_name);
 
 	add_share_to_desktop(dos_name);
-  return disk_devices_count-1;
+	return disk_devices_count++;
 }
 
 /************************************************************************/
@@ -909,20 +909,24 @@ rdpfs_remove(int device_id)
 	struct disk_device* last_device;
 
 	device = rdpfs_get_dir(device_id);
-	last_device = &disk_devices[disk_devices_count];
+	last_device = &disk_devices[disk_devices_count-1];
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_remove]: "
+				"Removing disk %s with id=%i", device->dir_name, device->device_id);
+
 	remove_share_from_desktop(device->dir_name);
-	if (device->device_id = last_device->device_id)
+	if (device->device_id == last_device->device_id)
 	{
-		device->device_id = 0;
+		device->device_id = -1;
 		device->dir_name[0] = 0;
 	}
 	else
 	{
+		device->dir_name[0] = 0;
 		device->device_id = last_device->device_id;
 		g_strcpy(device->dir_name, last_device->dir_name);
 	}
 	disk_devices_count--;
-	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_add]: "
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_remove]: "
 				"Succedd to remove disk");
 }
 
@@ -937,7 +941,7 @@ rdpfs_list_remove(struct stream* s)
   		"	new message: PAKID_CORE_DEVICELIST_REMOVE");
   in_uint32_le(s, device_list_count);	/* DeviceCount */
   log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_list_remove]: "
-		  "%i device(s) removed", device_list_count);
+		  "%i device(s) to remove", device_list_count);
   /* device list */
   for( i=0 ; i<device_list_count ; i++)
   {
@@ -992,16 +996,16 @@ rdpfs_list_announce(struct stream* s)
     log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_list_announce]: "
 					"Add disk device");
     p = s->p;
-    handle = 0;
+
     handle = rdpfs_add(s, device_data_length, device_id, dos_name);
     s->p = p + device_data_length;
-    if (handle != 1)
+    if (handle < 0)
     {
-    	rdpfs_list_reply(handle);
+      log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_list_announce]: "
+      		"Unable to add printer device");
     	continue;
     }
-    log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_list_announce]: "
-    		"Unable to add printer device");
+  	rdpfs_list_reply(handle);
   }
   return 0;
 }
