@@ -35,6 +35,7 @@ extern int pulseaudio_pid;
 extern struct log_config* l_config;
 static pthread_cond_t reply_cond;
 static pthread_mutex_t mutex;
+RD_WAVEFORMATEX server_format;
 
 
 /*****************************************************************************/
@@ -162,14 +163,14 @@ vchannel_sound_send_format_and_version(void)
 	out_uint8(s, 0);												/* bPad: unused */
 	/* sound formats table */
 	/* format 1 */
-	out_uint16_le(s, WAVE_FORMAT_PCM); 			/* wFormatTag */
-	out_uint16_le(s, 2); 										/* nChannels */
-	out_uint32_le(s, 44100); 								/* nSamplesPerSec */
-	out_uint32_le(s, 88200); 								/* nAvgBytesPerSec */
-	out_uint16_le(s, 4);		 								/* nBlockAlign */
-	out_uint16_le(s, 16);		 								/* wBitsPerSample */
-	out_uint16_le(s, 0);		 								/* cbSize */
-	//out_uint16_le(s, RDP51); 								/* data */
+	out_uint16_le(s, WAVE_FORMAT_PCM); 			          /* wFormatTag */
+	out_uint16_le(s, server_format.nChannels);        /* nChannels */
+	out_uint32_le(s, server_format.nSamplesPerSec); 	/* nSamplesPerSec */
+	out_uint32_le(s, server_format.nAvgBytesPerSec); 	/* nAvgBytesPerSec */
+	out_uint16_le(s, server_format.nBlockAlign);		 	/* nBlockAlign */
+	out_uint16_le(s, server_format.wBitsPerSample);		/* wBitsPerSample */
+	out_uint16_le(s, 0);		 								          /* cbSize */
+	//out_uint16_le(s, RDP51); 								        /* data */
 	s_mark_end(s);
 	vchannel_sound_send(s, 1);
 	free_stream(s);

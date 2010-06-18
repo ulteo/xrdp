@@ -59,6 +59,7 @@
 #include "sound_channel.h"
 
 extern int completion_count;
+extern RD_WAVEFORMATEX server_format;
 struct log_config* l_config;
 int pulseaudio_pid;
 
@@ -76,16 +77,22 @@ void *thread_sound_process (void * arg)
 	char* buffer;
   int error;
   int block_size;
-	static const pa_sample_spec ss = {
-      .format = PA_SAMPLE_S16LE,
-      .rate = 44100,
-      .channels = 2
-  };
-
+  pa_sample_spec ss;
+  if (server_format.wBitsPerSample == 16)
+  {
+    ss.format = PA_SAMPLE_S16LE;
+  }
+  else
+  {
+    ss.format = PA_SAMPLE_U8;
+  }
+  ss.channels = server_format.nChannels;
+  ss.rate = server_format.nSamplesPerSec;
   pa_simple *s = NULL;
   block_size = pa_bytes_per_second(&ss) / 20; /* 50 ms */
   if (block_size <= 0)
       block_size = pa_frame_size(&ss);
+  server_format.nAvgBytesPerSec = block_size;
 	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[thread_sound_process]: "
 			" Block size : %i", block_size);
 
@@ -155,9 +162,9 @@ int start_pulseaudio()
 	execvp( "/usr/bin/pulseaudio", (char**)args->items);
 
 	list_delete(args);
-	wait(&status);
 	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[start_pulseaudio]: "
 			"Failed to start pulseaudio");
+	wait(&status);
 	g_exit(0);
 }
 
@@ -177,8 +184,8 @@ sndchannel_init()
   display_num = g_get_display_num_from_display(g_strdup(g_getenv("DISPLAY")));
 	if(display_num == 0)
 	{
-		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpsnd[sndchannel_init]: "
-				"XHook[XHook_init]: Display must be different of 0");
+		g_printf( "vchannel_rdpsnd[sndchannel_init]: "
+				"Display must be different of 0");
 		return ERROR;
 	}
 	l_config = g_malloc(sizeof(struct log_config), 1);
@@ -193,7 +200,7 @@ sndchannel_init()
   names->auto_free = 1;
   values = list_create();
   values->auto_free = 1;
-  g_snprintf(filename, 255, "%s/seamrdp.conf", XRDP_CFG_PATH);
+  g_snprintf(filename, 255, "%s/rdpsnd.conf", XRDP_CFG_PATH);
   if (file_by_name_read_section(filename, SND_CFG_GLOBAL, names, values) == 0)
   {
     for (index = 0; index < names->count; index++)
@@ -233,6 +240,31 @@ sndchannel_init()
       }
     }
   }
+  if (file_by_name_read_section(filename, SND_CFG_FORMAT, names, values) == 0)
+  {
+  	server_format.nChannels = 2;
+  	server_format.nSamplesPerSec = 44100;
+  	server_format.wBitsPerSample = 16;
+    for (index = 0; index < names->count; index++)
+    {
+      name = (char*)list_get_item(names, index);
+      value = (char*)list_get_item(values, index);
+      if (0 == g_strcasecmp(name, SND_CFG_NUMBER_CHANNEL))
+      {
+      	server_format.nChannels = g_atoi(value);
+      }
+      if (0 == g_strcasecmp(name, SND_CFG_RATE))
+      {
+      	server_format.nSamplesPerSec = g_atoi(value);
+      }
+      if (0 == g_strcasecmp(name, SND_CFG_BIT_PER_SAMPLE))
+      {
+      	server_format.wBitsPerSample = g_atoi(value);
+      }
+      server_format.nAvgBytesPerSec = 2 * server_format.nSamplesPerSec;
+      server_format.nBlockAlign = server_format.wBitsPerSample/4;
+    }
+  }
   if( g_strlen(l_config->log_file) > 1 && g_strlen(l_config->program_name) > 1)
   {
   	g_snprintf(log_filename, 256, "%s/%i/%s.log",
@@ -265,8 +297,7 @@ int main(int argc, char*argv[]) {
   	l_config = g_malloc(sizeof(struct log_config), 1);
   	if (sndchannel_init() != LOG_STARTUP_OK)
   	{
-  		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpsnd[main]: "
-  				"Enable to init log system");
+  		g_printf("vchannel_rdpsnd[main]: Enable to init log system\n");
   		g_free(l_config);
   		return 1;
   	}

@@ -36,6 +36,10 @@ int init_channel();
 #define SND_CFG_LOG_LEVEL					"LogLevel"
 #define SND_CFG_LOG_ENABLE_SYSLOG	"EnableSyslog"
 #define SND_CFG_LOG_SYSLOG_LEVEL	"SyslogLevel"
+#define SND_CFG_FORMAT						"SoundFormat"
+#define SND_CFG_NUMBER_CHANNEL		"NumberOfChannel"
+#define SND_CFG_BIT_PER_SAMPLE		"BitsPerSample"
+#define SND_CFG_RATE							"Rate"
 
 
 #define SOUND_FORMAT_NUMBER		3
