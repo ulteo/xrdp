@@ -126,6 +126,7 @@ user_channel_launch_server_channel(char* channel_name)
 	char channel_file_conf[256];
 	char channel_launcher_path[256];
 	char* channel_program_name;
+	char channel_program_path[256];
 	char* channel_program_arguments;
 	char* channel_type;
 	char* display_string;
@@ -150,9 +151,11 @@ user_channel_launch_server_channel(char* channel_name)
 				"Channel conf file for %s is not correct", channel_name);
 		return 1;
 	}
-
+	g_snprintf(channel_program_path, 256, "%s/%s", XRDP_SBIN_PATH, channel_program_name);
 	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_launch_server_channel]: "
 			"Channel app name for %s: %s", channel_name, channel_program_name);
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_launch_server_channel]: "
+			"Channel app path for %s: %s", channel_name, channel_program_path);
 	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_launch_server_channel]: "
 				"Channel type for %s: %s", channel_name, channel_type);
 	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_launch_server_channel]: "
@@ -174,11 +177,10 @@ user_channel_launch_server_channel(char* channel_name)
 				"Launching the channel application %s ", CHANNEL_LAUNCHER_NAME);
 	  channel_params = list_create();
 	  channel_params->auto_free = 1;
-
 	  display_string = g_getenv("DISPLAY");
 	  /* building parameters */
 	  list_add_item(channel_params, (long)g_strdup(channel_launcher_path));
-	  list_add_item(channel_params, (long)g_strdup(channel_program_name));
+	  list_add_item(channel_params, (long)g_strdup(channel_program_path));
 	  list_add_item(channel_params, (long)g_strdup(channel_program_arguments));
 	  list_add_item(channel_params, (long)g_strdup(username));
 	  list_add_item(channel_params, (long)g_strdup(display_string));
