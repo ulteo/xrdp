@@ -41,6 +41,7 @@ int init_channel();
 #define SND_CFG_BIT_PER_SAMPLE		"BitsPerSample"
 #define SND_CFG_RATE							"Rate"
 
+#define MAX_SOUND_SENDED      5
 
 #define SOUND_FORMAT_NUMBER		3
 /* Msg type */

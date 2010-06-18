@@ -399,6 +399,11 @@ vchannel_sound_deinit(void)
 void APP_CC
 vchannel_sound_wait_reply()
 {
+	completion_count++;
+	if (completion_count < MAX_SOUND_SENDED )
+	{
+		return;
+	}
   if (pthread_cond_wait(&reply_cond, &mutex) != 0) {
 		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpsnd[vchannel_sound_wait_reply]: "
     "pthread_cond_timedwait() error [%s]", strerror(errno));
