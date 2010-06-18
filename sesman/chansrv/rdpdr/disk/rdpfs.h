@@ -26,6 +26,8 @@
 #include "vchannel.h"
 #include <sys/stat.h>
 
+#define MAX_SHARE 128
+
 struct disk_device
 {
 	int device_id;

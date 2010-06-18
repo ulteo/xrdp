@@ -44,7 +44,7 @@ static struct stream* splitted_packet;
 static Action actions[128];
 struct request_response rdpfs_response[128];
 static int action_index=0;
-static struct disk_device disk_devices[128];
+static struct disk_device disk_devices[MAX_SHARE];
 static int disk_devices_count = 0;
 extern int disk_up;
 
@@ -892,6 +892,13 @@ int APP_CC
 rdpfs_add(struct stream* s, int device_data_length,
 								int device_id, char* dos_name)
 {
+	if (disk_devices_count == MAX_SHARE)
+	{
+		log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[disk_dev_add]: "
+				"Failed to add disk %s, max number of share reached",
+				disk_devices[disk_devices_count].dir_name);
+		return -1;
+	}
 	disk_devices[disk_devices_count].device_id = device_id;
 	g_strcpy(disk_devices[disk_devices_count].dir_name, dos_name);
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_add]: "
