@@ -56,7 +56,7 @@ extern struct request_response rdpfs_response[128];
  */
 
 /************************************************************************/
-static int disk_dev_file_getattr(struct disk_device* disk, const char* path, struct stat *stbuf)
+static struct fs_info* disk_dev_file_getattr(struct disk_device* disk, const char* path, struct stat *stbuf, int *error)
 {
 	int i;
 	int completion_id = 0;
@@ -74,14 +74,16 @@ static int disk_dev_file_getattr(struct disk_device* disk, const char* path, str
 		rdpfs_wait_reply(completion_id);
 		rdpfs_request_close(completion_id, disk->device_id);
 		rdpfs_wait_reply(completion_id);
-		return rdpfs_convert_fs_to_stat(&rdpfs_response[completion_id].fs_inf, stbuf);
+		return &rdpfs_response[completion_id].fs_inf;
 
 	case STATUS_NO_SUCH_FILE:
 		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_file_getattr]: "
 					"file did not exist");
-		return -ENOENT;
+		*error = -ENOENT;
+		return NULL;
 	default:
-		return -EIO;
+		*error = -EIO;
+		return NULL;
 	}
 }
 
@@ -91,6 +93,7 @@ static int disk_dev_getattr(const char *path, struct stat *stbuf)
 	struct disk_device *disk;
 	char* rdp_path;
 	struct fs_info* fs;
+	int error;
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_getattr]: "
 				"getattr on %s", path);
@@ -129,14 +132,19 @@ static int disk_dev_getattr(const char *path, struct stat *stbuf)
 		{
 			log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_getattr]: "
 					"request (disk_dev_volume_getattr)");
-			return disk_dev_file_getattr(disk, "", stbuf);
+			fs = disk_dev_file_getattr(disk, "", stbuf, &error);
 		}
-
-		return disk_dev_file_getattr(disk, rdp_path+1, stbuf);
+		else
+		{
+			fs = disk_dev_file_getattr(disk, rdp_path+1, stbuf, &error);
+		}
+		if (fs == NULL)
+		{
+			return error;
+		}
+		rdpfs_cache_add_fs(g_strdup(path), fs);
 	}
 
-	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_getattr]: "
-			"%s is in cache", rdp_path);
 	return rdpfs_convert_fs_to_stat(fs, stbuf);
 }
 
@@ -597,11 +605,11 @@ static int disk_dev_read(const char *path, char *buf, size_t size, off_t offset,
 		    struct fuse_file_info *fi)
 {
 
-	log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[disk_dev_read]: "
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_read]: "
 			"Path to read : %s", path);
-	log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[disk_dev_read]: "
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_read]: "
 			"Size to read : %i", size);
-	log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[disk_dev_read]: "
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_read]: "
 			"Read from : %i", offset);
 
 	int completion_id = 0;
@@ -659,11 +667,11 @@ static int disk_dev_write(const char *path, const char *buf, size_t size,
 		     off_t offset, struct fuse_file_info *fi)
 {
 
-	log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[disk_dev_write]: "
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_write]: "
 			" Path to write : %s", path);
-	log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[disk_dev_write]: "
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_write]: "
 			" Size to write : %i", size);
-	log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[disk_dev_write]: "
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_write]: "
 			" Write from : %i", offset);
 
 	int completion_id = 0;

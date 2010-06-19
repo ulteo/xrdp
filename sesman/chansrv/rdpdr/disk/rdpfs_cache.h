@@ -28,7 +28,8 @@
 
 #define RDPFS_CACHE_VOLUME_SIZE 30
 #define RDPFS_CACHE_FS_SIZE 256
-
+/* time after the cache became invalid in second*/
+#define RDPFS_CACHE_FS_TIME_EXPIRE 5
 
 struct rdpfs_direntry_cache
 {

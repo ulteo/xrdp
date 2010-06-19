@@ -84,12 +84,8 @@ void APP_CC
 rdpfs_cache_add_fs(const char* path, struct fs_info* fs_inf)
 {
 	struct fs_info* fs;
-	 log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[rdpfs_send]: "
-	    		"1");
 	/* test if present */
 	fs = (struct fs_info*)getFromHashMap(direntry_cache.fs_map, path);
-	 log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[rdpfs_send]: "
-	    		"2");
 
 	if( fs == NULL)
 	{
@@ -108,6 +104,7 @@ rdpfs_cache_add_fs(const char* path, struct fs_info* fs_inf)
 	fs->nlink = fs_inf->nlink;
 	strncpy(fs->filename, fs_inf->filename, 256);
 	strncpy(fs->key, path, 256);
+	fs->time_stamp = g_time1();
 
 	addToHashMap(direntry_cache.fs_map, path, fs);
 	rdpfs_update_fs_cache_index();
@@ -119,7 +116,22 @@ rdpfs_cache_add_fs(const char* path, struct fs_info* fs_inf)
 struct fs_info*
 rdpfs_cache_get_fs(const char* fs_name)
 {
-	return (struct fs_info*)getFromHashMap(direntry_cache.fs_map, fs_name);
+	struct fs_info* temp = (struct fs_info*)getFromHashMap(direntry_cache.fs_map, fs_name);
+	int time;
+	if (temp == NULL)
+	{
+		return NULL;
+	}
+	time = g_time1()-temp->time_stamp;
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_cache_get_fs]: "
+	    		"Cached value have been updated %i second ago", time);
+	if (time > RDPFS_CACHE_FS_TIME_EXPIRE)
+	{
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_cache_get_fs]: "
+				"Cached value expired");
+		return NULL;
+	}
+	return temp;
 }
 
 /************************************************************************/

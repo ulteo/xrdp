@@ -48,6 +48,8 @@ struct fs_info
 	int is_dir;
 	char filename[256];
 	char key[256];
+	/* for cache */
+	int time_stamp;
 };
 
 
