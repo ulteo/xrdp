@@ -620,6 +620,7 @@ static int disk_dev_read(const char *path, char *buf, size_t size, off_t offset,
 	char* rdp_path;
 	struct fs_info* fs;
 	int file_size;
+	int size_to_read;
 
 	disk = rdpfs_get_device_from_path(path);
 	if (disk == NULL)
@@ -653,6 +654,7 @@ static int disk_dev_read(const char *path, char *buf, size_t size, off_t offset,
 
 	rdpfs_response[completion_id].buffer = buf;
 
+	size_to_read = size > MAX_SIZE ? MAX_SIZE : size;
 	rdpfs_request_read(completion_id, disk->device_id, size, offset);
 	rdpfs_wait_reply(completion_id);
 
@@ -682,6 +684,7 @@ static int disk_dev_write(const char *path, const char *buf, size_t size,
 	char* rdp_path;
 	struct fs_info* fs;
 	int file_size;
+	int size_to_write;
 
 	disk = rdpfs_get_device_from_path(path);
 	if (disk == NULL)
@@ -715,6 +718,8 @@ static int disk_dev_write(const char *path, const char *buf, size_t size,
 
 	rdpfs_response[completion_id].buffer = (unsigned char*)buf;
 	rdpfs_response[completion_id].buffer_length = size;
+
+	size_to_write = size > MAX_SIZE ? MAX_SIZE : size;
 
 	rdpfs_request_write(completion_id, offset, size);
 	rdpfs_wait_reply(completion_id);

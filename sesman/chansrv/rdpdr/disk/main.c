@@ -170,8 +170,6 @@ void *thread_vchannel_process (void * arg)
 }
 
 
-
-
 /*****************************************************************************/
 int main(int argc, char** argv, char** environ)
 {

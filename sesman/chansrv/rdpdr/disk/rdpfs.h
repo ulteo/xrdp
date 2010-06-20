@@ -27,6 +27,7 @@
 #include <sys/stat.h>
 
 #define MAX_SHARE 128
+#define MAX_SIZE	3000
 
 struct disk_device
 {

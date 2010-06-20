@@ -47,6 +47,7 @@ static int action_index=0;
 static struct disk_device disk_devices[MAX_SHARE];
 static int disk_devices_count = 0;
 extern int disk_up;
+static tbus send_mutex;
 
 
 /*****************************************************************************/
@@ -311,7 +312,10 @@ rdp_in_unistr(struct stream* s, char *string, int str_size, int in_len)
 int APP_CC
 rdpfs_send(struct stream* s){
   int rv;
-  int length = (int)(s->end - s->data);
+  int length;
+
+	tc_mutex_lock(send_mutex);
+	length = (int)(s->end - s->data);
 
   rv = vchannel_send(rdpdr_sock, s->data, length);
   if (rv != 0)
@@ -322,6 +326,7 @@ rdpfs_send(struct stream* s){
   log_message(l_config, LOG_LEVEL_DEBUG_PLUS, "rdpdr_disk[rdpfs_send]: "
 				"send message: ");
   log_hexdump(l_config, LOG_LEVEL_DEBUG_PLUS, (unsigned char*)s->data, length );
+  tc_mutex_unlock(send_mutex);
 
   return rv;
 }
@@ -514,6 +519,7 @@ rdpfs_open()
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_open]: "
 			"Initialise the rdpfs cache");
 	rdpfs_cache_init();
+	send_mutex = tc_mutex_create();
 	return 0;
 }
 
@@ -532,6 +538,7 @@ rdpfs_close()
 
 	vchannel_close(rdpdr_sock);
 	vchannel_close(disk_sock);
+	//TODO mutex cond realease
 }
 
 /*****************************************************************************/
