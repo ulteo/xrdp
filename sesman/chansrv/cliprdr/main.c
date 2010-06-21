@@ -92,6 +92,36 @@ handler(int sig)
 }
 
 /*****************************************************************************/
+void cliprdr_send_capability()
+{
+	/* this message is ignored by rdp applet */
+	struct stream* s;
+
+	make_stream(s);
+	init_stream(s,1024);
+
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_send_capability]:");
+	/* clip header */
+	out_uint16_le(s, CB_CLIP_CAPS);                        /* msg type */
+	out_uint16_le(s, 0x00);                                /* msg flag */
+	out_uint32_le(s, 0);                                   /* msg size */
+	/* we only support one capability for now */
+	out_uint16_le(s, 1);                                   /* cCapabilitiesSets */
+	out_uint8s(s, 16);                                     /* pad */
+	/* CLIPRDR_CAPS_SET */
+	out_uint16_le(s, CB_CAPSTYPE_GENERAL);                 /* capabilitySetType */
+	out_uint16_le(s, 92);                                  /* lengthCapability */
+	out_uint32_le(s, CB_CAPS_VERSION_1);                   /* version */
+	out_uint32_le(s, 0);                                   /* general flags */
+
+
+	s_mark_end(s);
+	cliprdr_send(s);
+	free_stream(s);
+
+}
+
+/*****************************************************************************/
 void cliprdr_send_ready()
 {
 	struct stream* s;
@@ -105,6 +135,29 @@ void cliprdr_send_ready()
 	out_uint16_le(s, 0x00);                                /* msg flag */
 	out_uint32_le(s, 0);                                   /* msg size */
 
+	s_mark_end(s);
+	cliprdr_send(s);
+	free_stream(s);
+
+}
+
+/*****************************************************************************/
+void cliprdr_send_format_list()
+{
+	struct stream* s;
+
+	make_stream(s);
+	init_stream(s,1024);
+
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_send_format_list_response]:");
+	/* clip header */
+	out_uint16_le(s, CB_FORMAT_LIST);                      /* msg type */
+	out_uint16_le(s, 0);                                   /* msg flag */
+	out_uint32_le(s, 0);                                   /* msg size */
+	/* we only send one format */
+	out_uint32_le(s, 1);                                   /* Format Id */
+	out_uint8(s, "CF_TEXT");
+	out_uint8s(s, 24);
 	s_mark_end(s);
 	cliprdr_send(s);
 	free_stream(s);
@@ -183,7 +236,13 @@ void cliprdr_process_message(struct stream* s){
 		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[process_message]: "
 				"Client capabilities announce");
 		cliprdr_process_format_list(s, msg_flags, msg_size);
+		cliprdr_send_format_list();
 		break;
+	case CB_FORMAT_LIST_RESPONSE :
+		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[process_message]: "
+				"Client capabilities response");
+		break;
+
 	default:
 		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[process_message]: "
 				"Unknow message type : %i", msg_type);
@@ -229,7 +288,6 @@ void *thread_Xvent_process (void * arg)
 	log_message(l_config, LOG_LEVEL_DEBUG, "cliprdr[thread_Xvent_process]: "
 				"Begin the event loop ");
 
-	running = 1;
 	while (running) {
 		cliprdr_get_clip_data();
 		g_sleep(1000);
@@ -251,7 +309,9 @@ void *thread_vchannel_process (void * arg)
 
 	signal(SIGCHLD, handler);
 	cliprdr_send_ready();
-	while(1){
+	cliprdr_send_capability();
+
+	while(running){
 		make_stream(s);
 		init_stream(s, 1600);
 
@@ -403,6 +463,7 @@ int main(int argc, char** argv, char** environ)
 	XSynchronize(display, 1);
 	XSetErrorHandler(error_handler);
 
+	running = 1;
 
 	if (pthread_create (&Xevent_thread, NULL, thread_Xvent_process, (void*)0) < 0)
 	{

@@ -65,5 +65,20 @@
 
 #define SHORT_FORMAT_NAME_SIZE      32
 
+/* clipboard type */
+#define CB_CAPSTYPE_GENERAL         0x0001
+
+/* clipboard version */
+#define CB_CAPS_VERSION_1           0x00000001
+#define CB_CAPS_VERSION_2           0x00000002
+
+
+/* clipboard general flags */
+#define CB_USE_LONG_FORMAT_NAMES    0x00000002
+#define CB_STREAM_FILECLIP_ENABLED  0x00000004
+#define CB_FILECLIP_NO_FILE_PATHS   0x00000008
+#define CB_CAN_LOCK_CLIPDATA        0x00000010
+
+
 
 #endif /* CLIPRDR_H_ */
