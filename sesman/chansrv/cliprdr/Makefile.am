@@ -8,28 +8,23 @@ INCLUDES = \
   -I$(top_srcdir)/vchannel
 
 bin_PROGRAMS = \
-  XHook
+  vchannel_cliprdr
 
-XHook_SOURCES = \
-  main.c \
+vchannel_cliprdr_SOURCES = \
+  main.c cliprdr.h \
   xutils.c xutils.h 
+  
 
-XHook_LDADD = \
+vchannel_cliprdr_LDADD = \
   -lX11 -lpthread \
   $(top_builddir)/vchannel/libxrdp_vchannel.la \
   $(top_builddir)/common/libxrdp_common.la 
 
-seamlessrdpshelldir=$(bindir)
+cliprdrsysconfdir=$(sysconfdir)/xrdp
 
-seamlessrdpshell_DATA = \
-  seamlessrdpshell
-
-seamlessrdpshellconfdir=$(sysconfdir)/xrdp
-
-seamlessrdpshellconf_DATA = \
-  seamrdp.conf 
+cliprdrsysconf_DATA = \
+  cliprdr.conf 
 
 EXTRA_DIST = \
-  $(seamlessrdpshell_DATA) \
-  $(seamlessrdpshellsysconf_DATA)
+  $(cliprdrsysconf_DATA)
 
