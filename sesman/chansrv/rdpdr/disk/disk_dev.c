@@ -699,6 +699,11 @@ static int disk_dev_write(const char *path, const char *buf, size_t size,
 	char* rdp_path;
 	struct fs_info* fs;
 	int file_size;
+	int current_size = 0;
+	int current_offset = offset;
+	int size_write = 1;
+	int chunk_size_to_write;
+	int size_to_write = size;
 
 	disk = rdpfs_get_device_from_path(path);
 	if (disk == NULL)
@@ -733,8 +738,20 @@ static int disk_dev_write(const char *path, const char *buf, size_t size,
 	rdpfs_response[completion_id].buffer = (unsigned char*)buf;
 	rdpfs_response[completion_id].buffer_length = size;
 
-	rdpfs_request_write(completion_id, offset, size);
-	rdpfs_wait_reply(completion_id);
+
+	rdpfs_response[completion_id].buffer = buf;
+	while (size_to_write != 0)
+	{
+		chunk_size_to_write = size_to_write > MAX_SIZE ? MAX_SIZE : size_to_write;
+
+		rdpfs_request_write(completion_id, current_offset, chunk_size_to_write);
+		rdpfs_wait_reply(completion_id);
+
+		size_write = rdpfs_response[completion_id].buffer_length;
+		current_offset += size_write;
+		rdpfs_response[completion_id].buffer += size_write;
+		size_to_write -= size_write;
+	}
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_write]:"
 				"try to write %i -> really write : %i", size, rdpfs_response[completion_id].buffer_length);
