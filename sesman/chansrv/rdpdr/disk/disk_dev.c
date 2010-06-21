@@ -619,8 +619,11 @@ static int disk_dev_read(const char *path, char *buf, size_t size, off_t offset,
 	int shared_access = 0;
 	char* rdp_path;
 	struct fs_info* fs;
-	int file_size;
-	int size_to_read;
+	int current_size = 0;
+	int current_offset = offset;
+	int size_read = 1;
+	int chunk_size_to_read;
+	int size_to_read = size;
 
 	disk = rdpfs_get_device_from_path(path);
 	if (disk == NULL)
@@ -651,17 +654,29 @@ static int disk_dev_read(const char *path, char *buf, size_t size, off_t offset,
 
 	fs = &rdpfs_response[completion_id].fs_inf;
 
-
 	rdpfs_response[completion_id].buffer = buf;
+	while (size_to_read != 0)
+	{
+		chunk_size_to_read = size_to_read > MAX_SIZE ? MAX_SIZE : size_to_read;
 
-	size_to_read = size > MAX_SIZE ? MAX_SIZE : size;
-	rdpfs_request_read(completion_id, disk->device_id, size, offset);
-	rdpfs_wait_reply(completion_id);
+		rdpfs_request_read(completion_id, disk->device_id, chunk_size_to_read, current_offset);
+		rdpfs_wait_reply(completion_id);
+
+		size_read = rdpfs_response[completion_id].buffer_length;
+		current_offset += size_read;
+		rdpfs_response[completion_id].buffer += size_read;
+		size_to_read -= size_read;
+		if (size_read != chunk_size_to_read)
+		{
+			//file end
+			break;
+		}
+	}
 
 	rdpfs_request_close(completion_id, disk->device_id);
 	rdpfs_wait_reply(completion_id);
 
-	return rdpfs_response[completion_id].buffer_length;
+	return size - size_to_read;
 }
 
 /************************************************************************/
@@ -684,7 +699,6 @@ static int disk_dev_write(const char *path, const char *buf, size_t size,
 	char* rdp_path;
 	struct fs_info* fs;
 	int file_size;
-	int size_to_write;
 
 	disk = rdpfs_get_device_from_path(path);
 	if (disk == NULL)
@@ -718,8 +732,6 @@ static int disk_dev_write(const char *path, const char *buf, size_t size,
 
 	rdpfs_response[completion_id].buffer = (unsigned char*)buf;
 	rdpfs_response[completion_id].buffer_length = size;
-
-	size_to_write = size > MAX_SIZE ? MAX_SIZE : size;
 
 	rdpfs_request_write(completion_id, offset, size);
 	rdpfs_wait_reply(completion_id);
