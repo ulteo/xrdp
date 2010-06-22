@@ -134,7 +134,7 @@ int start_pulseaudio()
 	int status = 0;
 	char* pa_config_path[256];
 
-	log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpsnd[start_pulseaudio]: "
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[start_pulseaudio]: "
 			"Starting pulseaudio");
 
 	args = list_create();
