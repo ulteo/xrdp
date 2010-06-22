@@ -538,6 +538,7 @@ rdpfs_close()
 
 	vchannel_close(rdpdr_sock);
 	vchannel_close(disk_sock);
+	g_exit(0);
 	//TODO mutex cond realease
 }
 
