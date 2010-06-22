@@ -127,6 +127,7 @@ int disk_deinit()
 						"unmounting drive");
 	rdpfs_close();
 	fuse_unmount(mount_point);
+	g_exit(0);
 
 }
 
