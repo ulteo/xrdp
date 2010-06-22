@@ -509,12 +509,12 @@ rdpdr_process_message(struct stream* s, int length, int total_length)
     	break;
 
     case PAKID_CORE_DEVICELIST_ANNOUNCE:
+    case PAKID_CORE_DEVICELIST_REMOVE:
     	rdpdr_devicelist_announce(packet);
     	result = rdpdr_transmit(disk_sock, DATA_MESSAGE, packet->data, total_length);
     	result = rdpdr_transmit(printer_sock, DATA_MESSAGE, packet->data, total_length);
     	break;
     case PAKID_CORE_DEVICE_IOCOMPLETION:
-    case PAKID_CORE_DEVICELIST_REMOVE:
     	in_uint32_le(packet, device_id);
     	device_sock = rdpdr_get_socket_from_device_id(device_id);
     	if (device_sock == -1)

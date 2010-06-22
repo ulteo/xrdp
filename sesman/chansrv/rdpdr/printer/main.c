@@ -420,6 +420,8 @@ printer_process_message(struct stream* s, int length, int total_length)
   {
     switch (packetId)
     {
+    case PAKID_CORE_DEVICELIST_REMOVE:
+    	break;
     case PAKID_CORE_DEVICELIST_ANNOUNCE:
     	result = printer_devicelist_announce(packet);
       break;
