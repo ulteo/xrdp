@@ -192,6 +192,8 @@ rdpdr_get_socket_from_device_id(int device_id)
 {
 	int i;
 	int device_type;
+  log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_get_socket_from_device_id]: "
+				"Device id : %i", device_id);
 	for(i=0 ; i<device_count ; i++)
 	{
 		if(device_list[i].device_id == device_id)
@@ -200,9 +202,13 @@ rdpdr_get_socket_from_device_id(int device_id)
 			switch(device_type)
 			{
 			case RDPDR_DTYP_PRINT:
+			  log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_get_socket_from_device_id]: "
+							"Device id : %i is a printer", device_id);
 				return printer_sock;
 
 			case RDPDR_DTYP_FILESYSTEM:
+			  log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_get_socket_from_device_id]: "
+							"Device id : %i is a file-system", device_id);
 				return disk_sock;
 
 				default:
