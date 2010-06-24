@@ -786,6 +786,7 @@ session_destroy(char* username)
 		}
 		g_sleep(30);
 	}
+	g_free(dir);
 	return 0;
 }
 
@@ -1010,6 +1011,7 @@ session_get_by_display(int display)
   if (0 == dummy)
   {
     log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "internal error", display);
+    g_free(dummy);
     return 0;
   }
 
@@ -1025,6 +1027,7 @@ session_get_by_display(int display)
                   "display %d is null!", display);
       /*THREAD-FIX release chain lock */
       lock_chain_release();
+      g_free(dummy);
       return 0;
     }
     if (tmp->item->display == display)
@@ -1040,6 +1043,7 @@ session_get_by_display(int display)
   }
   /*THREAD-FIX release chain lock */
   lock_chain_release();
+  g_free(dummy);
   return 0;
 }
 
@@ -1315,7 +1319,7 @@ struct session_item*
 session_list_session(int* count)
 {
   struct session_chain* tmp;
-  struct session_item* sess = g_malloc(sizeof(struct session_item)*15,0);
+  struct session_item* sess = g_malloc(sizeof(struct session_item),0);
   *count = 0;
   /*THREAD-FIX require chain lock */
   lock_chain_acquire();

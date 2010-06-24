@@ -98,5 +98,6 @@ scp_process_start(void* sck)
   g_tcp_close(scon.in_sck);
   free_stream(scon.in_s);
   free_stream(scon.out_s);
+  log_message(&(g_cfg->log), LOG_LEVEL_ALWAYS, "session destroy");
   return 0;
 }

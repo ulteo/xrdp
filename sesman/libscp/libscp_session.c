@@ -43,6 +43,7 @@ scp_session_create()
   if (0 == s)
   {
     log_message(s_log, LOG_LEVEL_WARNING, "[session:%d] session create: malloc error", __LINE__);
+    g_free(s);
     return 0;
   }
   return s;

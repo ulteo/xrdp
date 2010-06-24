@@ -29,6 +29,11 @@
 #include "thread_calls.h"
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
+#include <libxml/tree.h>
+#include <libxml/xinclude.h>
+#include <libxml/xmlIO.h>
+
+
 
 
 int g_sck;
@@ -165,11 +170,13 @@ xml_get_xpath(xmlDocPtr doc, char* xpath, char* value)
 	keyword = xmlNodeListGetString(doc, nodeset->nodeTab[0]->xmlChildrenNode, 1);
 	if( keyword == 0)
 	{
+		xmlXPathFreeObject(xpathObj);
 		log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[xml_get_xpath]: "
 				"Unable to get keyword");
 		return 1;
 	}
 	g_strcpy(value, (const char*)keyword);
+	xmlXPathFreeObject(xpathObj);
 	xmlFree(keyword);
 	return 0;
 }
@@ -213,19 +220,26 @@ xml_send_error(int client, const char* message)
 	xmlNodePtr node;
 	struct stream* s;
 	int buff_size, size;
+	xmlChar* version;
+	xmlChar* error;
+	xmlChar* msg;
 
-	doc = xmlNewDoc(xmlCharStrdup("1.0"));
+
+	version = xmlCharStrdup("1.0");
+	doc = xmlNewDoc(version);
 	if (doc == NULL)
 	{
 		log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[xml_send_error]: "
 				"Unable to create the document");
+		xmlFree(version);
 		return 0;
 	}
+	error = xmlCharStrdup("error");
+	msg = xmlCharStrdup(message);
 	doc->encoding = xmlCharStrdup("UTF-8");
-	node = xmlNewNode(NULL, xmlCharStrdup("error"));
-	xmlNodeSetContent(node, xmlCharStrdup(message));
+	node = xmlNewNode(NULL, error);
+	xmlNodeSetContent(node, msg);
 	xmlDocSetRootElement(doc, node);
-
 
 	xmlDocDumpFormatMemory(doc, &xmlbuff, &buff_size, 1);
 	log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[xml_send_error]: "
@@ -246,7 +260,11 @@ xml_send_error(int client, const char* message)
 				"Unable to send xml response: %s, cause: %s", xmlbuff, strerror(g_get_errno()));
 	}
   free_stream(s);
+  xmlFreeDoc(doc);
 	xmlFree(xmlbuff);
+	xmlFree(version);
+	xmlFree(error);
+	xmlFree(msg);
 	return buff_size;
 }
 
@@ -325,14 +343,15 @@ xml_send_key_value(int client, char* username, char* key, char* value)
 
 
 /************************************************************************/
-int DEFAULT_CC
-xml_receive_message(int client, xmlDocPtr* doc)
+xmlDocPtr DEFAULT_CC
+xml_receive_message(int client)
 {
   struct stream* s;
   int data_length;
 	int res = 0;
   make_stream(s);
 	init_stream(s, 1024);
+	xmlDocPtr doc;
 
 	if (g_tcp_can_recv(client, 10))
 	{
@@ -342,14 +361,14 @@ xml_receive_message(int client, xmlDocPtr* doc)
 	{
 		log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[xml_receive_message]: "
 				"Unable to receive xml message, cause %s", strerror(g_get_errno()));
-		return 1;
+		return NULL;
 	}
 
 	if (res != sizeof(int))
 	{
 		log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[xml_received_message]: "
 				"Unable to read size header with error %s", strerror(g_get_errno()));
-		return 1;
+		return NULL;
 	}
 	in_uint32_be(s,data_length);
 	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[xml_received_message]: "
@@ -358,9 +377,9 @@ xml_receive_message(int client, xmlDocPtr* doc)
   s->data[data_length] = 0;
   log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[xml_received_message]: "
 			"data : %s",s->data);
-  *doc = xmlReadMemory(s->data, data_length, "noname.xml", NULL, 0);
+  doc = xmlReadMemory(s->data, data_length, "noname.xml", NULL, 0);
   free_stream(s);
-  return 0;
+  return doc;
 }
 
 
@@ -372,13 +391,18 @@ send_sessions(int client)
   xmlNodePtr node, node2, node3;
   xmlDocPtr doc;
   int count, i;
+  xmlChar* version;
+  xmlChar* encoding;
+  xmlChar* s_node;
+  xmlChar* s_node2;
 
   log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[send_sessions]: "
 			"request for sessions list");
 	sess = (struct session_item*)session_list_session(&count);
 	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[send_sessions]: "
 			"%i count sessions",count);
-	doc = xmlNewDoc(xmlCharStrdup("1.0"));
+	version = xmlCharStrdup("1.0");
+	doc = xmlNewDoc(version);
 	if (doc ==NULL)
 	{
 		log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[send_sessions]: "
@@ -386,22 +410,45 @@ send_sessions(int client)
 		return 1;
 	}
 	doc->encoding = xmlCharStrdup("UTF-8");
-	node = xmlNewNode(NULL, xmlCharStrdup("response"));
-	node2 = xmlNewNode(NULL, xmlCharStrdup("sessions"));
+	s_node = xmlCharStrdup("response");
+	node = xmlNewNode(NULL, s_node);
+	s_node2 = xmlCharStrdup("sessions");
+	node2 = xmlNewNode(NULL, s_node2);
 	xmlAddChild(node, node2);
 	char prop[128];
+
 	for ( i=0 ; i<count ; i++)
 	{
 		g_sprintf(prop, "%i", sess[i].display);
-		node3 = xmlNewNode(NULL, xmlCharStrdup("session"));
-		xmlSetProp(node3, xmlCharStrdup("id"), xmlCharStrdup(prop) );
-		xmlSetProp(node3, xmlCharStrdup("username"), xmlCharStrdup(sess[i].name) );
-		xmlSetProp(node3, xmlCharStrdup("status"), xmlCharStrdup(session_get_status_string(sess[i].status)) );
+		xmlChar* s_session = xmlCharStrdup("session");
+		xmlChar* s_id = xmlCharStrdup("id");
+		xmlChar* s_id_value = xmlCharStrdup(prop);
+		xmlChar* s_username = xmlCharStrdup("username");
+		xmlChar* s_username_value = xmlCharStrdup(sess[i].name);
+		xmlChar* s_status = xmlCharStrdup("status");
+		xmlChar* s_status_value = xmlCharStrdup(session_get_status_string(sess[i].status));
+
+		node3 = xmlNewNode(NULL, s_session);
+		xmlSetProp(node3, s_id, s_id_value );
+		xmlSetProp(node3, s_username,  s_username_value);
+		xmlSetProp(node3, s_status, s_status_value );
 		xmlAddChild(node2, node3);
+		xmlFree(s_session);
+		xmlFree(s_id);
+		xmlFree(s_id_value);
+		xmlFree(s_username);
+		xmlFree(s_username_value);
+		xmlFree(s_status);
+		xmlFree(s_status_value);
 	}
 	xmlAddChild(node, node2);
 	xmlDocSetRootElement(doc, node);
 	xml_send_info(client, doc);
+
+	xmlFree(version);
+	xmlFree(s_node);
+	xmlFree(s_node2);
+	g_free(sess);
 	xmlFreeDoc(doc);
 	return 0;
 }
@@ -413,6 +460,15 @@ send_session(int client, int session_id)
   struct session_item* sess = 0;
   xmlNodePtr node, node2;
   xmlDocPtr doc;
+  xmlChar* version;
+  xmlChar* response;
+  xmlChar* session;
+  xmlChar* id;
+  xmlChar* id_value;
+  xmlChar* username;
+  xmlChar* username_value;
+  xmlChar* status;
+  xmlChar* status_value;
 
   log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[send_session]: "
 			"request for session\n");
@@ -422,28 +478,50 @@ send_session(int client, int session_id)
   	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[send_session]: "
 				"the session %i did not exist",session_id);
     xml_send_error(client, "the session id of the request did not exist");
-    g_tcp_close(client);
-    pthread_exit( (void*) 1);
+    return 1;
   }
-	doc = xmlNewDoc(xmlCharStrdup("1.0"));
+  version = xmlCharStrdup("1.0");
+	doc = xmlNewDoc(version);
 	if (doc ==NULL)
 	{
 		log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[send_session]: "
 				"Unable to create the document");
+		g_free(sess);
 		return 1;
 	}
 	doc->encoding = xmlCharStrdup("UTF-8");
-	node = xmlNewNode(NULL, xmlCharStrdup("response"));
+	response = xmlCharStrdup("response");
+	session = xmlCharStrdup("session");
+	node = xmlNewNode(NULL, response);
+	node2 = xmlNewNode(NULL, session);
 	char prop[128];
 	g_sprintf(prop, "%i", sess[0].display);
-	node2 = xmlNewNode(NULL, xmlCharStrdup("session"));
-	xmlSetProp(node2, xmlCharStrdup("id"), xmlCharStrdup(prop) );
-	xmlSetProp(node2, xmlCharStrdup("username"), xmlCharStrdup(sess[0].name) );
-	xmlSetProp(node2, xmlCharStrdup("status"), xmlCharStrdup(session_get_status_string(sess[0].status)) );
+	id = xmlCharStrdup("id");
+	id_value = xmlCharStrdup(prop);
+	username = xmlCharStrdup("id");
+	username_value = xmlCharStrdup(sess[0].name);
+	status = xmlCharStrdup("status");
+	status_value = xmlCharStrdup(session_get_status_string(sess[0].status));
+
+	xmlSetProp(node2, id, id_value);
+	xmlSetProp(node2, username, username_value);
+	xmlSetProp(node2, status, status_value );
 	xmlAddChild(node, node2);
 	xmlDocSetRootElement(doc, node);
 	xml_send_info(client, doc);
+
+	xmlFree(id);
+	xmlFree(id_value);
+	xmlFree(username);
+	xmlFree(username_value);
+	xmlFree(status);
+	xmlFree(status_value);
+	xmlFree(response);
+	xmlFree(session);
+	xmlFree(version);
+
 	xmlFreeDoc(doc);
+	g_free(sess);
 	return 0;
 }
 
@@ -452,51 +530,99 @@ send_session(int client, int session_id)
 int DEFAULT_CC
 send_logoff(int client, int session_id)
 {
-  struct session_item* sess = 0;
+  struct session_item* sess;
   xmlNodePtr node, node2;
   xmlDocPtr doc;
+  xmlChar* version;
+  xmlChar* response;
+  xmlChar* session;
+  xmlChar* username;
+  xmlChar* username_value;
+  xmlChar* id;
+  xmlChar* id_value;
+  xmlChar* status;
+  xmlChar* status_value;
+
+
 	char prop[128];
 	int display;
 
 	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[send_logoff]: "
-			"request session %i logoff",session_id);
+			"request session %i logoff", session_id);
 	sess = session_get_by_display(session_id);
   if( sess == NULL)
   {
     log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[send_logoff]: "
         "The session %i did not exist", session_id);
     xml_send_error(client, "the session id of the request did not exist");
-    g_tcp_close(client);
-    pthread_exit( (void*) 1);
+    return 1;
   }
 
 	session_update_status_by_user(sess->name, SESMAN_SESSION_STATUS_TO_DESTROY);
-	doc = xmlNewDoc(xmlCharStrdup("1.0"));
-	if (doc ==NULL)
+	version = xmlCharStrdup("1.0");
+	doc = xmlNewDoc(version);
+	if (doc == NULL)
 	{
 		log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[send_logoff]: "
 				"Unable to create the document");
+		g_free(sess);
+		xmlFree(version);
+		xmlFreeDoc(doc);
 		return 1;
 	}
 	doc->encoding = xmlCharStrdup("UTF-8");
-	node = xmlNewNode(NULL, xmlCharStrdup("response"));
-	node2 = xmlNewNode(NULL, xmlCharStrdup("session"));
+	response = xmlCharStrdup("response");
+	session = xmlCharStrdup("session");
+	node = xmlNewNode(NULL, response);
+	node2 = xmlNewNode(NULL, session);
 	sprintf(prop, "%i", display);
-	node2 = xmlNewNode(NULL, xmlCharStrdup("session"));
-	xmlSetProp(node2, xmlCharStrdup("id"), xmlCharStrdup(prop) );
-	xmlSetProp(node2, xmlCharStrdup("username"), xmlCharStrdup(sess->name) );
-	xmlSetProp(node2, xmlCharStrdup("status"), xmlCharStrdup("CLOSED") );
+
+	id = xmlCharStrdup("id");
+	id_value = xmlCharStrdup(prop);
+	username = xmlCharStrdup("username");
+	username_value = xmlCharStrdup(sess->name);
+	status = xmlCharStrdup("status");
+	status_value = xmlCharStrdup("CLOSED");
+	xmlSetProp(node2, id, id_value);
+	xmlSetProp(node2, username, username_value);
+	xmlSetProp(node2, status, status_value);
 	xmlAddChild(node, node2);
 	xmlDocSetRootElement(doc, node);
 	xml_send_info(client, doc);
 
 	xmlFreeDoc(doc);
+	xmlFree(version);
+	xmlFree(response);
+	xmlFree(session);
+	xmlFree(username);
+	xmlFree(username_value);
+	xmlFree(id);
+	xmlFree(id_value);
+	xmlFree(status);
+	xmlFree(status_value);
+	g_free(sess);
 	return 0;
 }
 
 
+int close_management_connection(xmlDocPtr doc, int socket)
+{
+	if (doc != NULL)
+	{
+		xmlFreeDoc(doc);
+	}
+	g_tcp_close(socket);
+  xmlCleanupParser();
+  xmlCleanupMemory();
+
+  return 1;
+}
+
+
+
+
 /************************************************************************/
-THREAD_RV THREAD_CC
+int
 process_request(int client)
 {
   int session_id;
@@ -506,24 +632,26 @@ process_request(int client)
   xmlDocPtr doc;
 
   xmlInitParser();
-  if (xml_receive_message(client, &doc) == 1)
+  doc = xml_receive_message(client);
+  if ( doc == NULL)
   {
-  	g_tcp_close(client);
-  	pthread_exit((void*) 1);
+  	return close_management_connection(NULL, client);
   }
+
   if (xml_get_xpath(doc, "/request/@type", request_type) == 1)
   {
   	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[process_request]: "
   			"Unable to get the request type");
   	xml_send_error(client, "Unable to get the request type");
-  	pthread_exit((void*) 1);
+  	return close_management_connection(doc, client);
   }
+
   if (xml_get_xpath(doc, "/request/@action", request_action) == 1)
   {
   	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[process_request]: "
 				"Unable to get the request action");
   	xml_send_error(client, "Unable to get the request type");
-  	pthread_exit((void*) 1);
+  	return close_management_connection(doc, client);
   }
   log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[process_request]: "
 				"Request_type : '%s' ", request_type);
@@ -536,14 +664,16 @@ process_request(int client)
     {
     	xml_send_error(client, "For session request type only"
     			"the list action is supported");
-    	g_tcp_close(client);
-    	pthread_exit((void*) 1);
+    	return close_management_connection(doc, client);
     }
     send_sessions(client);
-    xmlFreeDoc(doc);
-    g_tcp_close(client);
-  	pthread_exit((void*) 0);
+    //xml_send_error(client,"test");
+  	return close_management_connection(doc, client);
   }
+
+
+
+
   if( g_strcmp(request_type, "session") == 0)
   {
     if (xml_get_xpath(doc, "/request/@id", session_id_string) == 1)
@@ -551,8 +681,7 @@ process_request(int client)
     	log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[process_request]: "
 						"Unable to get the request session id");
     	xml_send_error(client, "Unable to get the request session id");
-      g_tcp_close(client);
-    	pthread_exit((void*) 1);
+    	return close_management_connection(doc, client);
     }
     session_id = g_atoi(session_id_string);
     if(session_id == 0)
@@ -560,24 +689,20 @@ process_request(int client)
     	log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[process_request]: "
 						"%i is not a numeric value", session_id);
       xml_send_error(client, "Unable to convert the session id");
-      g_tcp_close(client);
-      pthread_exit((void*) 1);
+    	return close_management_connection(doc, client);
     }
     if( g_strcmp(request_action, "status") == 0)
     {
     	send_session(client, session_id);
-    	g_tcp_close(client);
-    	pthread_exit((void*) 0);
+    	return close_management_connection(doc, client);
     }
     if( g_strcmp(request_action, "logoff") == 0)
     {
     	send_logoff(client, session_id);
-    	g_tcp_close(client);
-    	pthread_exit((void*) 0);
+    	return close_management_connection(doc, client);
     }
   	xml_send_error(client, "Unknown message for session");
-  	g_tcp_close(client);
-  	pthread_exit((void*) 1);
+  	return close_management_connection(doc, client);
   }
   if( g_strcmp(request_type, "internal") == 0)
   {
@@ -589,12 +714,10 @@ process_request(int client)
       	log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[process_request]: "
 							"Unable to get the username\n");
       	xml_send_error(client, "Unable to get the username");
-      	g_tcp_close(client);
-      	pthread_exit((void*) 1);
+      	return close_management_connection(doc, client);
       }
   		session_update_status_by_user(username, SESMAN_SESSION_STATUS_DISCONNECTED);
-  		g_tcp_close(client);
-    	pthread_exit((void*) 0);
+    	return close_management_connection(doc, client);
   	}
   	if( g_strcmp(request_action, "logoff") == 0)
   	{
@@ -603,16 +726,13 @@ process_request(int client)
       	log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[process_request]: "
 							"Unable to get the username\n");
       	xml_send_error(client, "Unable to get the username");
-      	g_tcp_close(client);
-      	pthread_exit((void*) 1);
+      	return close_management_connection(doc, client);
       }
   		session_update_status_by_user(username, SESMAN_SESSION_STATUS_TO_DESTROY);
-  		g_tcp_close(client);
-    	pthread_exit((void*) 0);
+    	return close_management_connection(doc, client);
   	}
   	xml_send_error(client, "Unknown message for internal");
-  	g_tcp_close(client);
-  	pthread_exit((void*) 1);
+  	return close_management_connection(doc, client);
   }
   if( g_strcmp(request_type, "user_conf") == 0)
   {
@@ -624,16 +744,14 @@ process_request(int client)
     	log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[process_request]: "
 						"Unable to get the username\n");
     	xml_send_error(client, "Unable to get the username");
-    	g_tcp_close(client);
-    	pthread_exit((void*) 1);
+    	return close_management_connection(doc, client);
     }
     if (xml_get_xpath(doc, "/request/@key", key) == 1)
     {
     	log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[process_request]: "
     			"Unable to get the key in the request");
     	xml_send_error(client, "Unable to get the key in the request");
-    	g_tcp_close(client);
-    	pthread_exit((void*) 1);
+    	return close_management_connection(doc, client);
     }
   	if( g_strcmp(request_action, "set") == 0)
   	{
@@ -642,8 +760,7 @@ process_request(int client)
       	log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[process_request]: "
 							"Unable to get the value int the request\n");
       	xml_send_error(client, "Unable to get the value in the request");
-      	g_tcp_close(client);
-      	pthread_exit((void*) 1);
+      	return close_management_connection(doc, client);
       }
   		if (session_set_user_pref(username, key, value) == 0 )
   		{
@@ -653,8 +770,7 @@ process_request(int client)
   		{
   			xml_send_error(client, "Unable to set preference");
   		}
-  		g_tcp_close(client);
-    	pthread_exit((void*) 0);
+    	return close_management_connection(doc, client);
   	}
 
   	if( g_strcmp(request_action, "get") == 0)
@@ -667,16 +783,13 @@ process_request(int client)
   		{
   			xml_send_error(client, "Unable to get preference");
   		}
-  		g_tcp_close(client);
-    	pthread_exit((void*) 0);
+    	return close_management_connection(doc, client);
   	}
   	xml_send_error(client, "Unknown message for internal");
-  	g_tcp_close(client);
-  	pthread_exit((void*) 1);
+  	return close_management_connection(doc, client);
   }
 	xml_send_error(client, "Unknown message");
-	g_tcp_close(client);
-	pthread_exit((void*) 1);
+	return close_management_connection(doc, client);
 }
 
 
@@ -697,7 +810,8 @@ admin_thread(void* param)
     }
     else
     {
-    	tc_thread_create((void*)process_request, (void*)client);
+    	//tc_thread_create((void*)process_request, (void*)client);
+    	process_request(client);
     }
   }
 }
