@@ -33,10 +33,10 @@ echo "privilege : ${PRIVILEGE}"
 
 if [ "${PRIVILEGE}" = "root" ]; then
 	echo "${APPLICATION}"
-	export DISPLAY=:${DISPLAY} && ${APPLICATION}
+	export DISPLAY=${DISPLAY} && ${APPLICATION}
 else
 	echo "su - ${PRIVILEGE} -c '${APPLICATION}'"
-	su - ${PRIVILEGE} -c "export DISPLAY=:${DISPLAY} && ${APPLICATION}"
+	su - ${PRIVILEGE} -c "export DISPLAY=${DISPLAY} && ${APPLICATION}"
 fi
 
 echo "fin"
