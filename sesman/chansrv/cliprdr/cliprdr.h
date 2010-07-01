@@ -37,6 +37,8 @@
 #define CLIPRDR_CFG_LOG_ENABLE_SYSLOG	"EnableSyslog"
 #define CLIPRDR_CFG_LOG_SYSLOG_LEVEL	"SyslogLevel"
 
+#define MAX_TARGETS 8
+
 
 /* socket constant */
 #define ERROR	-1
@@ -79,6 +81,26 @@
 #define CB_FILECLIP_NO_FILE_PATHS   0x00000008
 #define CB_CAN_LOCK_CLIPDATA        0x00000010
 
+
+#ifndef CF_TEXT
+#define CF_TEXT         1
+#define CF_BITMAP       2
+#define CF_METAFILEPICT 3
+#define CF_SYLK         4
+#define CF_DIF          5
+#define CF_TIFF         6
+#define CF_OEMTEXT      7
+#define CF_DIB          8
+#define CF_PALETTE      9
+#define CF_PENDATA      10
+#define CF_RIFF         11
+#define CF_WAVE         12
+#define CF_UNICODETEXT  13
+#define CF_ENHMETAFILE  14
+#define CF_HDROP        15
+#define CF_LOCALE       16
+#define CF_MAX          17
+#endif
 
 
 #endif /* CLIPRDR_H_ */

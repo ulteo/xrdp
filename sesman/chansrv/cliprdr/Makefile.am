@@ -7,7 +7,7 @@ INCLUDES = \
   -I$(top_srcdir)/common \
   -I$(top_srcdir)/vchannel
 
-bin_PROGRAMS = \
+sbin_PROGRAMS = \
   vchannel_cliprdr
 
 vchannel_cliprdr_SOURCES = \

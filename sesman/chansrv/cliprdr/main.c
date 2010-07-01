@@ -39,18 +39,40 @@
 /* external function declaration */
 extern char** environ;
 
-static pthread_mutex_t mutex;
-static int message_id;
 static Display* display;
 static int cliprdr_channel;
 struct log_config* l_config;
 static Window wclip;
 static int running;
-
+pthread_cond_t reply_cond;
+pthread_mutex_t mutex;
 
 /* Atoms of the two X selections we're dealing with: CLIPBOARD (explicit-copy) and PRIMARY (selection-copy) */
-static Atom clipboard_atom, primary_atom;
+static Atom clipboard_atom;
+static Atom primary_atom;
+static Atom targets_atom;
+static Atom timestamp_atom;
+static Atom format_string_atom;
+static Atom format_utf8_string_atom;
+static Atom format_unicode_atom;
+static Atom xrdp_clipboard;
+static Atom targets[MAX_TARGETS];
+static int num_targets;
+static char* clipboard_data = 0;
+static int clipboard_size;
 
+/*****************************************************************************/
+void APP_CC
+cliprdr_wait_reply()
+{
+
+  if (pthread_cond_wait(&reply_cond, &mutex) != 0) {
+    perror("pthread_cond_timedwait() error");
+		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_cliprdr[cliprdr_wait_reply]: "
+				"pthread_mutex_lock()");
+    return;
+  }
+}
 
 /*****************************************************************************/
 int
@@ -153,11 +175,13 @@ void cliprdr_send_format_list()
 	/* clip header */
 	out_uint16_le(s, CB_FORMAT_LIST);                      /* msg type */
 	out_uint16_le(s, 0);                                   /* msg flag */
-	out_uint32_le(s, 0);                                   /* msg size */
+	out_uint32_le(s, 72);                                  /* msg size */
 	/* we only send one format */
-	out_uint32_le(s, 1);                                   /* Format Id */
-	out_uint8(s, "CF_TEXT");
-	out_uint8s(s, 24);
+	out_uint32_le(s, CF_TEXT);                             /* Format Id */
+	out_uint8s(s, 32);
+	out_uint32_le(s, CF_UNICODETEXT);                      /* Format Id */
+	out_uint8s(s, 32);
+
 	s_mark_end(s);
 	cliprdr_send(s);
 	free_stream(s);
@@ -184,6 +208,46 @@ void cliprdr_send_format_list_response()
 
 }
 
+/*****************************************************************************/
+void cliprdr_send_data_request()
+{
+	struct stream* s;
+
+	make_stream(s);
+	init_stream(s,1024);
+
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_send_data_request]:");
+	/* clip header */
+	out_uint16_le(s, CB_FORMAT_DATA_REQUEST);              /* msg type */
+	out_uint16_le(s, 0);                                   /* msg flag */
+	out_uint32_le(s, 1);                                   /* msg size */
+	out_uint32_le(s, CF_TEXT);                             /* we want CF_TEXT */
+
+	s_mark_end(s);
+	cliprdr_send(s);
+	free_stream(s);
+
+}
+
+/*****************************************************************************/
+void cliprdr_send_data(int request_type)
+{
+	struct stream* s;
+
+	make_stream(s);
+	init_stream(s,1024);
+
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_send_data]:");
+	/* clip header */
+	out_uint16_le(s, CB_FORMAT_DATA_RESPONSE);             /* msg type */
+	out_uint16_le(s, 0);                                   /* msg flag */
+	out_uint32_le(s, clipboard_size);                      /* msg size */
+	out_uint8p(s, clipboard_data, clipboard_size);
+	s_mark_end(s);
+	cliprdr_send(s);
+	free_stream(s);
+
+}
 
 
 
@@ -195,56 +259,123 @@ int cliprdr_process_format_list(struct stream* s, int msg_flags, int size)
 	/* long format announce */
 	if (msg_flags == CB_ASCII_NAMES)
 	{
-		log_message(l_config, LOG_LEVEL_WARNING, "vchannel_rdpdr[cliprdr_process_format_list]: "
+		log_message(l_config, LOG_LEVEL_WARNING, "vchannel_cliprdr[cliprdr_process_format_list]: "
 				"Long format list is not yet supported");
 		return 1;
 	}
 
 	/* short format announce */
 	format_number = size / 36;
-	log_message(l_config, LOG_LEVEL_WARNING, "vchannel_rdpdr[cliprdr_process_format_list]: "
+	log_message(l_config, LOG_LEVEL_WARNING, "vchannel_cliprdr[cliprdr_process_format_list]: "
 			"%i formats announced", format_number);
 
 	s->p = s->end;
 
 	cliprdr_send_format_list_response();
+	log_message(l_config, LOG_LEVEL_WARNING, "vchannel_cliprdr[cliprdr_process_format_list]: "
+			"get the clipboard");
+	XSetSelectionOwner(display, clipboard_atom, wclip, CurrentTime);
+	if (XGetSelectionOwner(display, clipboard_atom) != wclip)
+	{
+		log_message(l_config, LOG_LEVEL_WARNING, "vchannel_cliprdr[cliprdr_process_format_list]: "
+				"Unable to set clipboard owner");
+	}
+	return 0;
+}
+
+
+/*****************************************************************************/
+int cliprdr_process_data_request(struct stream* s, int msg_flags, int size)
+{
+	int request_type = 0;
+	if (clipboard_data == 0)
+	{
+		log_message(l_config, LOG_LEVEL_WARNING, "vchannel_cliprdr[cliprdr_process_data_request]: "
+				"No clipboard data");
+		return 1;
+	}
+
+	in_uint32_le(s, request_type);
+	log_message(l_config, LOG_LEVEL_WARNING, "vchannel_cliprdr[cliprdr_process_data_request]: "
+			"Request for data of type %i", request_type);
+	cliprdr_send_data(request_type);
+	return 0;
+}
+
+/*****************************************************************************/
+int cliprdr_process_data_request_response(struct stream* s, int msg_flags, int size)
+{
+	if (msg_flags == CB_RESPONSE_FAIL)
+	{
+		log_message(l_config, LOG_LEVEL_WARNING, "vchannel_cliprdr[cliprdr_process_data_request_response]: "
+				"Unable to get clipboard data");
+		return 1;
+	}
+	log_hexdump(l_config, LOG_LEVEL_DEBUG_PLUS, (unsigned char*)s->p, size);
+	if (XGetSelectionOwner(display, clipboard_atom) != wclip)
+	{
+		log_message(l_config, LOG_LEVEL_WARNING, "vchannel_cliprdr[cliprdr_process_data_request_response]: "
+				"Xrpd is not the owner of the selection");
+		return 1;
+	}
+	if (clipboard_data != 0)
+	{
+		g_free(clipboard_data);
+	}
+	clipboard_data = g_malloc(size, 1);
+	g_memcpy(clipboard_data, s->p, size);
+	clipboard_size = size;
 	return 0;
 }
 
 
 /*****************************************************************************/
 void cliprdr_process_message(struct stream* s){
-	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[process_message]: "
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[process_message]: "
 			"New message for clipchannel");
 	int msg_type;
 	int msg_flags;
 	int msg_size;
 
 	in_uint16_le(s, msg_type);
-	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[process_message]: "
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[process_message]: "
 			"Message type : %04x", msg_type);
 	in_uint16_le(s, msg_flags);
-	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[process_message]: "
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[process_message]: "
 			"Message flags : %04x", msg_flags);
 	in_uint32_le(s, msg_size);
-	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[process_message]: "
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[process_message]: "
 			"Message size : %i", msg_size);
 
 	switch (msg_type)
 	{
 	case CB_FORMAT_LIST :
-		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[process_message]: "
-				"Client capabilities announce");
+		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[process_message]: "
+				"Client format list announce");
 		cliprdr_process_format_list(s, msg_flags, msg_size);
-		cliprdr_send_format_list();
+		//cliprdr_send_format_list();
+		break;
+
+	case CB_FORMAT_DATA_RESPONSE :
+		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[process_message]: "
+				"Client data request response");
+		cliprdr_process_data_request_response(s, msg_flags, msg_size);
+		pthread_cond_signal(&reply_cond);
+
 		break;
 	case CB_FORMAT_LIST_RESPONSE :
-		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[process_message]: "
-				"Client capabilities response");
+		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[process_message]: "
+				"Client format list response");
+		break;
+
+	case CB_FORMAT_DATA_REQUEST :
+		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[process_message]: "
+				"Client data request");
+		cliprdr_process_data_request(s, msg_flags, msg_size);
 		break;
 
 	default:
-		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[process_message]: "
+		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[process_message]: "
 				"Unknow message type : %i", msg_type);
 
 	}
@@ -252,32 +383,155 @@ void cliprdr_process_message(struct stream* s){
 
 /*****************************************************************************/
 static void
-cliprdr_get_clip_data()
+cliprdr_clear_selection(XEvent* e)
 {
-	Window clipboard_owner;
+	Window newOwner = XGetSelectionOwner(e->xselectionclear.display, clipboard_atom);
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[clear_selection]: "
+			"New windows owner : %i", (int)newOwner);
+
+	XConvertSelection(e->xselectionclear.display, clipboard_atom, XA_STRING, xrdp_clipboard, wclip, CurrentTime);
+  XSync (e->xselectionclear.display, False);
+}
+
+/*****************************************************************************/
+static void
+cliprdr_get_clipboard(XEvent* e)
+{
 	Atom type;
-	int format;
-	unsigned long len, bytes_left;
+	unsigned long len, bytes_left, dummy;
+	int format, result;
 	unsigned char *data;
 
-	clipboard_owner = XGetSelectionOwner(display, clipboard_atom);
-	if(clipboard_owner!=0)
-	{
-		XConvertSelection(display,clipboard_atom,XA_STRING,XA_PRIMARY,clipboard_owner,CurrentTime);
-		XGetWindowProperty(display,clipboard_owner,primary_atom,0,10000000L,0,XA_STRING,&type,&format,&len,&bytes_left,&data);
-		//get_property(display, primary_owner,"TARGETS", &nitems, (unsigned char**)&data);
-		printf("clipboard data : %s\n", data);
-	}
 
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_get_clipboard]: "
+			"New owner %i", e->xselection.requestor);
+
+	XGetWindowProperty (e->xselection.display,
+											e->xselection.requestor,
+											e->xselection.property,
+											0, 0,
+											False,
+											AnyPropertyType,
+											&type,
+											&format,
+											&len, &bytes_left,
+											&data);
+
+	// DATA is There
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_get_clipboard]: "
+			"Data type : %s\n", XGetAtomName(e->xselection.display, e->xselection.property));
+
+	if (bytes_left > 0)
+	{
+		result = XGetWindowProperty (	e->xselection.display,
+																	e->xselection.requestor,
+																	e->xselection.property,
+																	0, bytes_left,
+																	0,
+																	XA_STRING,
+																	&type,
+																	&format,
+																	&len, &dummy, &data);
+		if (result == Success)
+		{
+			log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_get_clipboard]: "
+					"New data in clipboard: %s", data);
+
+			if (clipboard_data == 0){
+				log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_get_clipboard]: "
+						"Update internal clipboard");
+				clipboard_data = malloc(bytes_left);
+				memcpy(clipboard_data, data, bytes_left);
+				clipboard_size = bytes_left;
+			}
+			else
+			{
+				free(clipboard_data);
+				clipboard_data = malloc(bytes_left);
+				memcpy(clipboard_data, data, bytes_left);
+				clipboard_size = bytes_left;
+				log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_get_clipboard]: "
+						"Send format list");
+				cliprdr_send_format_list();
+			}
+
+		}
+		else
+		{
+			log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_get_clipboard]: "
+					"Failed to get clipboard content");
+		}
+		XFree (data);
+	}
+	XSetSelectionOwner(e->xselection.display, clipboard_atom, wclip, CurrentTime);
 }
+
+/*****************************************************************************/
+static void
+cliprdr_process_selection_request(XEvent* e)
+{
+	XSelectionRequestEvent *req;
+	XEvent respond;
+	req=&(e->xselectionrequest);
+	if (req->target == XA_STRING)
+	{
+		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_process_selection_request]: "
+				"Update data with %s", clipboard_data);
+		cliprdr_send_data_request();
+		cliprdr_wait_reply();
+		XChangeProperty (req->display,
+			req->requestor,
+			req->property,
+			XA_STRING,
+			8,
+			PropModeReplace,
+			(unsigned char*) clipboard_data,
+			clipboard_size);
+		respond.xselection.property=req->property;
+	}
+	else if (req->target == targets_atom)
+	{
+		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_process_selection_request]: "
+				"Targets : '%s'", XGetAtomName(req->display, req->property));
+		XChangeProperty (req->display, req->requestor, req->property, XA_ATOM, 32, PropModeReplace, (unsigned char*)targets, 1);
+		respond.xselection.property=req->property;
+	}
+	else // Strings only please
+	{
+		printf ("No String %i\n",
+			(int)req->target);
+		respond.xselection.property= None;
+	}
+	respond.xselection.type= SelectionNotify;
+	respond.xselection.display= req->display;
+	respond.xselection.requestor= req->requestor;
+	respond.xselection.selection=req->selection;
+	respond.xselection.target= req->target;
+	respond.xselection.time = req->time;
+	XSendEvent (req->display, req->requestor,0,0,&respond);
+	XFlush (req->display);
+}
+
+
 
 /*****************************************************************************/
 void *thread_Xvent_process (void * arg)
 {
 	Window root_windows;
+	XEvent ev;
 
   primary_atom = XInternAtom(display, "PRIMARY", False);
 	clipboard_atom = XInternAtom(display, "CLIPBOARD", False);
+	targets_atom = XInternAtom(display, "TARGETS", False);
+	timestamp_atom = XInternAtom(display, "TIMESTAMP", False);
+	format_string_atom = XInternAtom(display, "STRING", False);
+	format_utf8_string_atom = XInternAtom(display, "UTF8_STRING", False);
+	format_unicode_atom = XInternAtom(display, "text/unicode", False);
+	xrdp_clipboard = XInternAtom(display,"XRDP_CLIPBOARD", False);
+
+
+	num_targets = 0;
+	targets[num_targets++] = XA_STRING;
 
 	root_windows = DefaultRootWindow(display);
 	log_message(l_config, LOG_LEVEL_DEBUG, "cliprdr[thread_Xvent_process]: "
@@ -289,8 +543,33 @@ void *thread_Xvent_process (void * arg)
 				"Begin the event loop ");
 
 	while (running) {
-		cliprdr_get_clip_data();
-		g_sleep(1000);
+		XNextEvent (display, &ev);
+		switch (ev.type)
+		{
+
+		case SelectionClear :
+			log_message(l_config, LOG_LEVEL_DEBUG, "cliprdr[thread_Xvent_process]: "
+						"XSelectionClearEvent");
+			cliprdr_clear_selection(&ev);
+			break;
+
+		case SelectionRequest :
+			log_message(l_config, LOG_LEVEL_DEBUG, "cliprdr[thread_Xvent_process]: "
+						"XSelectionRequestEvent");
+			cliprdr_process_selection_request(&ev);
+			break;
+
+		case SelectionNotify :
+			log_message(l_config, LOG_LEVEL_DEBUG, "cliprdr[thread_Xvent_process]: "
+						"SelectionNotify");
+			cliprdr_get_clipboard(&ev);
+			break;
+
+		default:
+			log_message(l_config, LOG_LEVEL_DEBUG, "cliprdr[thread_Xvent_process]: "
+						"event type :  %i", ev.type);
+			break;
+		}
 	}
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "cliprdr[thread_Xvent_process]: "
@@ -318,7 +597,7 @@ void *thread_vchannel_process (void * arg)
 		rv = vchannel_receive(cliprdr_channel, s->data, &length, &total_length);
 		if( rv == ERROR )
 		{
-			log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr[thread_vchannel_process]: "
+			log_message(l_config, LOG_LEVEL_ERROR, "vchannel_cliprdr[thread_vchannel_process]: "
 					"Invalid message");
 			vchannel_close(cliprdr_channel);
 			pthread_exit ((void*)1);
@@ -326,16 +605,17 @@ void *thread_vchannel_process (void * arg)
 		switch(rv)
 		{
 		case ERROR:
-			log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr[thread_vchannel_process]: "
+			log_message(l_config, LOG_LEVEL_ERROR, "vchannel_cliprdr[thread_vchannel_process]: "
 					"Invalid message");
 			break;
 		case STATUS_CONNECTED:
-			log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[thread_vchannel_process]: "
+			log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[thread_vchannel_process]: "
 					"Status connected");
 			break;
 		case STATUS_DISCONNECTED:
-			log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[thread_vchannel_process]: "
+			log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[thread_vchannel_process]: "
 					"Status disconnected");
+			running = 0;
 			break;
 		default:
 			cliprdr_process_message(s);
@@ -439,8 +719,9 @@ int main(int argc, char** argv, char** environ)
 		return 1;
 	}
 
+	pthread_cond_init(&reply_cond, NULL);
 	pthread_mutex_init(&mutex, NULL);
-	message_id = 0;
+
 	cliprdr_channel = vchannel_open("cliprdr");
 	if( cliprdr_channel == ERROR)
 	{
