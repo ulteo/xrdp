@@ -597,6 +597,71 @@ get_icon(Window win_in, Window win_out )
 }
 
 /*****************************************************************************/
+int is_window_resizable(Display* display, Window w)
+{
+	unsigned char* data;
+	Atom     actual_type;
+	int      actual_format;
+	unsigned long     nitems;
+	unsigned long     bytes;
+	Atom atom = 0;
+	int i;
+	int status;
+
+	status = XGetWindowProperty(
+			display,
+			w,
+			XInternAtom(display, "_NET_WM_ALLOWED_ACTIONS", True),
+			0,
+			(~0L),
+			False,
+			AnyPropertyType,
+			&actual_type,
+			&actual_format,
+			&nitems,
+			&bytes,
+			&data);
+
+    if(status != 0){
+		return 0;
+    }
+    if(nitems == 0){
+    	return 0;
+    }
+
+  	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[is_window_resizable]: "
+					"%i action allowed founded",(int)nitems);
+    for(i = 0; i<nitems ; i++)
+    {
+    	atom = (Atom) \
+    			( \
+    					(*((unsigned char*) data+0) << 0) | \
+    					(*((unsigned char*) data + 1) << 8) | \
+    					(*((unsigned char*) data+ 2) << 16) | \
+    					(*((unsigned char*) data+ 3) << 24) \
+    			); \
+    	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[is_window_resizable]: "
+					"Atom state : %i",(int)atom);
+    	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[is_window_resizable]: "
+    					"Windows state : %s[%i]\n",XGetAtomName(display, atom),(int)atom);
+	    if(atom == XInternAtom(display, "_NET_WM_ACTION_MAXIMIZE_HORZ", True))
+	    {
+	      log_message(l_config, LOG_LEVEL_DEBUG, "XHook[is_window_resizable]: "
+	  					"window %i is resizable",(int)w);
+	    	return 0;
+	    }
+	    if(atom == XInternAtom(display, "_NET_WM_ACTION_MAXIMIZE_VERT", True))
+	    {
+	    	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[is_window_resizable]: "
+	    			"window %i is resizable",(int)w);
+	    	return 0;
+	    }
+		data+=sizeof(Atom);
+    }
+    return 1;
+}
+
+/*****************************************************************************/
 void create_window(Window win_out){
 	char* window_id = malloc(11);;
 	char* buffer = malloc(1024);
@@ -682,7 +747,8 @@ void create_window(Window win_out){
     win_in = win_out;
   }
   flags = SEAMLESSRDP_NORMAL;
-  g_writeln("Windows type : %s", XGetAtomName(display, type));
+	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[create_window]: "
+			"Windows type : %s", XGetAtomName(display, type));
   if (type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_DROPDOWN_MENU",False) ||
   		type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_TOOLTIP",False) ||
   		type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_UTILITY",False) ||
@@ -695,8 +761,14 @@ void create_window(Window win_out){
   if(type == XInternAtom(display, "_NET_WM_STATE_MODAL", False))
   {
   	flags |= SEAMLESSRDP_CREATE_MODAL;
-  	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[synchronize]: "
+  	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[create_window]: "
   			"%i is a modal windows", proper_win);
+  }
+  if(is_window_resizable(display, proper_win) == 1)
+  {
+  	flags |= SEAMLESS_CREATE_FIXEDSIZE;
+  	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[create_window]: "
+  			"Windows %i is not resizable", proper_win);
   }
 
   sprintf(window_id, "0x%08x",(int)win_out);
@@ -705,8 +777,8 @@ void create_window(Window win_out){
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[create_window]: "
 			"Application title : %s", name);
 
-	while(g_str_replace_first(name, ",", "_") == 0);
-	while(g_str_replace_first(name, " ", "_") == 0);
+	while(g_str_replace_first((char*)name, ",", "_") == 0);
+	while(g_str_replace_first((char*)name, " ", "_") == 0);
 
 	sprintf(buffer, "TITLE,%i,%s,%s,0x%08x\n", message_id,window_id,name,0 );
 	send_message(buffer, strlen(buffer));
