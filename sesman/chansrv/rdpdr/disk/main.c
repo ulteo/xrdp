@@ -174,18 +174,14 @@ void *thread_vchannel_process (void * arg)
 /*****************************************************************************/
 int main(int argc, char** argv, char** environ)
 {
+	int fuse_group = 0;
+	int ok = 0;
 	l_config = g_malloc(sizeof(struct log_config), 1);
 	if (argc != 2)
 	{
 		g_printf("Usage : rdpdr_disk USERNAME\n");
 		return 1;
 	}
-	if ( g_getuser_info(argv[1], 0, 0, 0, 0, 0) == 1)
-	{
-		g_printf("The username '%s' did not exist\n", argv[1]);
-	}
-	g_strncpy(username, argv[1], sizeof(username));
-
 	//decrease_right
 
 	if (disk_init() != LOG_STARTUP_OK)
@@ -194,6 +190,27 @@ int main(int argc, char** argv, char** environ)
 		g_free(l_config);
 		return 1;
 	}
+
+	if ( g_getuser_info(argv[1], 0, 0, 0, 0, 0) == 1)
+	{
+		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[main]: "
+				"The username '%s' did not exist\n", argv[1]);
+	}
+	g_strncpy(username, argv[1], sizeof(username));
+	g_getgroup_info("fuse", &fuse_group);
+	if (g_check_user_in_group(username, fuse_group, &ok) == 1)
+	{
+		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[main]: "
+				"Error while testing if user %s is member of fuse group", username);
+		return 1;
+	}
+	if (ok == 0)
+	{
+		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[main]: "
+				"User %s is not allow to use fuse", username);
+		return 1;
+	}
+
 	if (vchannel_init() == ERROR)
 	{
 		g_printf("rdpdr_disk[main]: Enable to init channel system\n");
