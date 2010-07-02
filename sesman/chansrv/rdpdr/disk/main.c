@@ -226,6 +226,6 @@ int main(int argc, char** argv, char** environ)
 					"Unable to open a connection to RDP filesystem");
 	}
 
-	g_sprintf(mount_point, "/home/%s/rdp_drive", username);
+	g_sprintf(mount_point, "/home/%s/.rdp_drive", username);
 	return fuse_run();
 }
