@@ -25,7 +25,13 @@ Architecture: any
 Depends: ${shlibs:Depends}, xrdp
 Description: Seamless XRDP Shell
  Seamlessrdpshell is a rdp addon offering the possibility to have an
- application without a desktop
+ application without a desktop.
+
+Package: xrdp-disk
+Architecture: any
+Depends: ${shlibs:Depends}, xrdp, fuse-utils
+Description: XRDP disk manager
+ XRDP channel for fuse that mounting USB disk and user home directory.
 
 Package: xrdp-printer
 Architecture: all
@@ -44,6 +50,6 @@ Description: XRDP plugin for PulseAudio
 Package: xrdp-python
 Section: python
 Architecture: all
-Depends: xrdp, ${python:Depends}
+Depends: ${python:Depends}, xrdp
 Description: Python API for XRDP
  XRDP-Python is a Python wrapper for XRDP
