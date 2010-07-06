@@ -33,9 +33,10 @@
 #include <sys/stat.h>
 #include <signal.h>
 #include <config.h>
+#include <unistd.h>
 //#include <time.h>
 
-
+#define X_LOG_PREFIX "/tmp/X_"
 extern tbus g_sync_event;
 extern unsigned char g_fixedkey[8];
 extern struct config_sesman* g_cfg; /* in sesman.c */
@@ -381,6 +382,7 @@ session_start_fork(int width, int height, int bpp, char* username,
   char depth[32];
   char screen[32];
   char text[256];
+  char x_log_file_path[256];
   char passwd_file[256];
   char** pp1;
   struct session_chain* temp;
@@ -440,6 +442,15 @@ session_start_fork(int width, int height, int bpp, char* username,
   	default_shell[0] = 0;
   	program = 0;
   }
+
+  g_snprintf(x_log_file_path, sizeof(x_log_file_path), "%s%i.log", X_LOG_PREFIX, display);
+  g_file_delete(x_log_file_path);
+	if (g_file_exist(x_log_file_path))
+	{
+		log_message(&(g_cfg->log), LOG_LEVEL_ERROR,"sesman[session_start_fork]: "
+				"Unable to delete last X log file %s", x_log_file_path);
+		g_exit(0);
+	}
 
   wmpid = 0;
   pid = g_fork();
@@ -509,10 +520,20 @@ session_start_fork(int width, int height, int bpp, char* username,
       }
       else if (xpid == 0) /* child */
       {
+        int x_log_file;
         env_set_user(username, passwd_file, display);
         env_check_password_file(passwd_file, password);
         if (type == SESMAN_SESSION_TYPE_XVNC)
         {
+          x_log_file = g_file_open(x_log_file_path);
+          if (x_log_file < 0)
+          {
+            log_message(&(g_cfg->log), LOG_LEVEL_ERROR,"sesman[session_start_fork]: "
+            		"Unable to create last X log file %s", x_log_file_path);
+            g_exit(0);
+          }
+          g_file_close(STDERR_FILENO);
+          dup2(x_log_file, STDERR_FILENO);
           xserver_params = list_create();
           xserver_params->auto_free = 1;
           /* these are the must have parameters */
@@ -535,6 +556,8 @@ session_start_fork(int width, int height, int bpp, char* username,
           list_dump_items(xserver_params);
           pp1 = (char**)xserver_params->items;
           g_execvp("Xvnc", pp1);
+          log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "Xvnc did not exist");
+
           g_exit(0);
         }
         else if (type == SESMAN_SESSION_TYPE_XRDP)
