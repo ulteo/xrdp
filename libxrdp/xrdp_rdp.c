@@ -278,11 +278,11 @@ xrdp_rdp_send_data(struct xrdp_rdp* self, struct stream* s,
   out_uint16_le(s, self->mcs_channel);
   out_uint32_le(s, self->share_id);
   out_uint8(s, 0);
-  out_uint8(s, 1);
-  out_uint16_le(s, len - 14);
+  out_uint8(s, 1);                            /* stream priority: channel send optimization */
+  out_uint16_le(s, len - 14);                 /* uncompressed length */
   out_uint8(s, data_pdu_type);
-  out_uint8(s, 0);
-  out_uint16_le(s, 0);
+  out_uint8(s, 0);                            /* compression type */
+  out_uint16_le(s, 0);                        /* compressed length */
   if (xrdp_sec_send(self->sec_layer, s, MCS_GLOBAL_CHANNEL) != 0)
   {
     DEBUG(("out xrdp_rdp_send_data error"));
