@@ -263,6 +263,12 @@
 #define RDP_MPPC_FLUSH                 0x80
 #define RDP_MPPC_DICT_SIZE             8192
 
+/* compression type */
+#define PACKET_COMPR_TYPE_8K           0x0
+#define PACKET_COMPR_TYPE_64K          0x200
+#define PACKET_COMPR_TYPE_RDP6         0x400
+#define PACKET_COMPR_TYPE_RDP61        0x400
+
 /* Keymap flags */
 #define MapRightShiftMask              (1 << 0)
 #define MapLeftShiftMask               (1 << 1)
