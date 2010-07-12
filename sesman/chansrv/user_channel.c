@@ -74,7 +74,6 @@ user_channel_get_channel_app_property(const char* channel_file_conf, const char*
       {
         if( g_strlen(value) > 1)
         {
-        	printf("totot : %s\n", value);
         	return value;
         }
       }
@@ -102,7 +101,7 @@ user_channel_transmit(int socket, int type, char* mess, int length, int total_le
   if (rv != 9)
   {
     log_message(&log_conf, LOG_LEVEL_ERROR, "chansrv[user_channel_transmit]: "
-    		"error while sending the header");
+    		"Error while sending the header");
     free_stream(header);
     return rv;
   }
@@ -114,7 +113,7 @@ user_channel_transmit(int socket, int type, char* mess, int length, int total_le
   if (rv != length)
   {
     log_message(&log_conf, LOG_LEVEL_ERROR, "chansrv[user_channel_transmit]: "
-    		"error while sending the message: %s", mess);
+    		"Error while sending the message: %s", mess);
   }
 	return rv;
 }
@@ -387,7 +386,7 @@ user_channel_process_channel_opening(int channel_index, int client)
 	if ( size < 1)
 	{
 		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_process_channel_opening]: "
-				"enable to get information on the opening channel");
+				"Unable to get information on the opening channel");
 		g_tcp_close(client);
 		free_stream(s);
 		return 0;
@@ -468,11 +467,12 @@ user_channel_check_wait_objs(void)
 						"New data from channel '%s'",user_channels[i].channel_name);
 				make_stream(header);
 				init_stream(header, 5);
+
 				size = g_tcp_recv(sock, header->data, 5, 0);
 				if ( size != 5)
 				{
 					log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
-							"channel %s closed : \n",user_channels[i].channel_name);
+							"Channel %s closed : [%s]",user_channels[i].channel_name, strerror());
 					g_tcp_close(sock);
 					user_channels[i].client_channel_count = 0;
 					user_channels[i].client_channel_socket[0] = 0;
@@ -489,7 +489,7 @@ user_channel_check_wait_objs(void)
 				}
 				in_uint32_be(header, data_length);
 				log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
-						"data_length : %i\n", data_length);
+						"Data_length : %i\n", data_length);
 				free_stream(header);
 
 				make_stream(s);
@@ -504,12 +504,12 @@ user_channel_check_wait_objs(void)
 				}
 				//s->data[data_length] = 0;
 				log_message(&log_conf, LOG_LEVEL_DEBUG_PLUS, "chansrv[user_channel_check_wait_objs]: "
-						"data:");
+						"Data:");
 				log_hexdump(&log_conf, LOG_LEVEL_DEBUG_PLUS, s->data, data_length);
 				if( user_channels[i].channel_id == -1)
 				{
 					log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
-							"client channel is not opened");
+							"Client channel is not opened");
 					free_stream(s);
 					return 0 ;
 				}
