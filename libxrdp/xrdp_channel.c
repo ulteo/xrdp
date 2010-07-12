@@ -98,7 +98,7 @@ xrdp_channel_send(struct xrdp_channel* self, struct stream* s, int channel_id,
   {
     flags |= CHANNEL_FLAG_SHOW_PROTOCOL;
   }
-  out_uint32_le(s, flags);
+  out_uint32_le(s, flags);                 /* contain compressed flags */
   if (xrdp_sec_send(self->sec_layer, s, channel->chanid) != 0)
   {
     return 1;
