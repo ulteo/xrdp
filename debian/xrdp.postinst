@@ -1,7 +1,6 @@
 #!/bin/sh
 
 groupadd tsusers
-chgrp tsusers /var/log/xrdp
 chgrp tsusers /var/spool/xrdp
 
 #DEBHELPER#

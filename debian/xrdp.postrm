@@ -2,6 +2,6 @@
 
 groupdel tsusers
 
-rm -rf /var/log/xrdp /var/spool/xrdp
+rm -rf /var/spool/xrdp
 
 #DEBHELPER#
