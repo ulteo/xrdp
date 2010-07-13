@@ -111,6 +111,7 @@
 #define RDP_DATA_PDU_BELL              34
 #define RDP_DATA_PDU_LOGON             38
 #define RDP_DATA_PDU_FONT2             39
+#define RDP_DATA_PDU_TYPE2_FONTMAP     40
 #define RDP_DATA_PDU_DISCONNECT        47
 
 #define RDP_CTL_REQUEST_CONTROL        1
