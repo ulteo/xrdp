@@ -21,6 +21,7 @@
 */
 
 #include "libxrdp.h"
+#include "xrdp_mppc.h"
 
 /* some compilers need unsigned char to avoid warnings */
 static tui8 g_unknown1[172] =
@@ -142,6 +143,7 @@ xrdp_rdp_create(struct xrdp_session* session, struct trans* trans)
   self->client_info.cache2_size = 1024;
   self->client_info.cache3_entries = 262;
   self->client_info.cache3_size = 4096;
+  self->compressor = mppc_init(TYPE_64K);
   DEBUG(("out xrdp_rdp_create"));
   return self;
 }
@@ -155,6 +157,7 @@ xrdp_rdp_delete(struct xrdp_rdp* self)
     return;
   }
   xrdp_sec_delete(self->sec_layer);
+  mppc_dinit(self->compressor);
   g_free(self);
 }
 
@@ -268,21 +271,59 @@ int APP_CC
 xrdp_rdp_send_data(struct xrdp_rdp* self, struct stream* s,
                    int data_pdu_type)
 {
-  int len;
+  int uncompressed_length = 0;
+  int compression_type = 0;
+  int compressed_length = 0;
 
   DEBUG(("in xrdp_rdp_send_data"));
   s_pop_layer(s, rdp_hdr);
-  len = s->end - s->p;
-  out_uint16_le(s, len);
+  uncompressed_length = s->end - s->p;
+
+  if (data_pdu_type != RDP_DATA_PDU_CONTROL &&
+  		data_pdu_type != RDP_DATA_PDU_SYNCHRONISE &&
+  		data_pdu_type != RDP_DATA_PDU_TYPE2_FONTMAP &&
+  		self->client_info.rdp_compression == 1 &&
+  		self->compressor)
+  {
+  	struct stream *compressed_stream = 0;
+  	int old_size = s->size;
+  	s->size = uncompressed_length - 18;
+  	s->p+=18;
+
+  	compression_type = MPPC_COMPRESSED | TYPE_64K;
+  	compressed_stream = (struct stream*)mppc_compress(self->compressor, s, &compression_type);
+
+  	compressed_length = compressed_stream->size;
+  	if (self->compressor == 0)
+  	{
+  		DEBUG(("Error while compressing\n"));
+  		return 1;
+  	}
+  	if (compressed_stream != 0)
+  	{
+  		g_memcpy(s->p, compressed_stream->data, compressed_stream->size);
+  		free_stream(compressed_stream);
+  	}
+  	else
+  	{
+  	  compression_type = 0;
+  	  compressed_length = 0;
+  		DEBUG(("data not compressed"));
+  	}
+  	s->size = old_size;
+  	s->p -= 18;
+  }
+  out_uint16_le(s, uncompressed_length);
   out_uint16_le(s, 0x10 | RDP_PDU_DATA);
   out_uint16_le(s, self->mcs_channel);
   out_uint32_le(s, self->share_id);
   out_uint8(s, 0);
   out_uint8(s, 1);                            /* stream priority: channel send optimization */
-  out_uint16_le(s, len - 14);                 /* uncompressed length */
+  out_uint16_le(s, uncompressed_length - 18);      /* uncompressed length */
   out_uint8(s, data_pdu_type);
-  out_uint8(s, 0);                            /* compression type */
-  out_uint16_le(s, 0);                        /* compressed length */
+  out_uint8(s, compression_type);             /* compression type */
+  out_uint16_le(s, compressed_length+18);        /* compressed length */
+
   if (xrdp_sec_send(self->sec_layer, s, MCS_GLOBAL_CHANNEL) != 0)
   {
     DEBUG(("out xrdp_rdp_send_data error"));
@@ -976,7 +1017,7 @@ xrdp_rdp_send_unknown1(struct xrdp_rdp* self)
   }
   out_uint8a(s, g_unknown1, 172);
   s_mark_end(s);
-  if (xrdp_rdp_send_data(self, s, 0x28) != 0)
+  if (xrdp_rdp_send_data(self, s, RDP_DATA_PDU_TYPE2_FONTMAP) != 0)
   {
     free_stream(s);
     return 1;

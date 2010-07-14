@@ -12,8 +12,9 @@ pkglib_LTLIBRARIES = \
   libxrdp.la
 
 libxrdp_la_SOURCES = \
-  libxrdp.c libxrdp.h libxrdpinc.h \
+  libxrdp.c libxrdp.h libxrdpinc.h xrdp_mppc.h\
   xrdp_channel.c \
+  xrdp_mppc.c \
   xrdp_iso.c \
   xrdp_mcs.c \
   xrdp_orders.c \

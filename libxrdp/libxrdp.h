@@ -37,6 +37,7 @@
 #include "file.h"
 #include "libxrdpinc.h"
 #include "file_loc.h"
+#include "xrdp_mppc.h"
 
 /* tcp */
 struct xrdp_tcp
@@ -117,6 +118,7 @@ struct xrdp_rdp
   int share_id;
   int mcs_channel;
   struct xrdp_client_info client_info;
+  struct xrdp_compressor* compressor;
 };
 
 /* state */
