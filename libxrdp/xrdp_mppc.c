@@ -19,6 +19,7 @@
  **/
 
 #include "xrdp_mppc.h"
+#include "defines.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

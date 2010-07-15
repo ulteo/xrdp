@@ -283,7 +283,7 @@ xrdp_rdp_send_data(struct xrdp_rdp* self, struct stream* s,
   		data_pdu_type != RDP_DATA_PDU_SYNCHRONISE &&
   		data_pdu_type != RDP_DATA_PDU_TYPE2_FONTMAP &&
   		self->client_info.rdp_compression == 1 &&
-  		self->compressor)
+  		self->compressor != 0)
   {
   	struct stream *compressed_stream = 0;
   	int old_size = s->size;
