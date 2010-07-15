@@ -3,12 +3,11 @@ Section: x11
 Priority: extra
 Maintainer: Samuel Bovée <samuel@ulteo.com>
 Build-Depends: debhelper (>= 5), cdbs, quilt,
- python (>= 2.5), python-support, python-svn,
+ python (>= 2.6), python-central, python-svn,
  libxml2-dev, libx11-dev, libxfixes-dev, libssl-dev, libpam0g-dev, libpulse-dev,
  libcupsys2-dev | libcups2-dev, libltdl3-dev, libfuse-dev
 Standards-Version: 3.8.3
 XS-Python-Version: >= 2.5
-XB-Python-Version: ${python:Versions}
 
 Package: xrdp
 Architecture: any
