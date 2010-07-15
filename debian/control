@@ -50,5 +50,6 @@ Package: xrdp-python
 Section: python
 Architecture: all
 Depends: ${python:Depends}, xrdp
+XB-Python-Version: ${python:Versions}
 Description: Python API for XRDP
  XRDP-Python is a Python wrapper for XRDP
