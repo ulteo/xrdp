@@ -279,6 +279,8 @@ xrdp_rdp_send_data(struct xrdp_rdp* self, struct stream* s,
   s_pop_layer(s, rdp_hdr);
   uncompressed_length = s->end - s->p;
 
+  //temporary invalidate compression
+  self->client_info.rdp_compression == 0;
   if (data_pdu_type != RDP_DATA_PDU_CONTROL &&
   		data_pdu_type != RDP_DATA_PDU_SYNCHRONISE &&
   		data_pdu_type != RDP_DATA_PDU_TYPE2_FONTMAP &&
