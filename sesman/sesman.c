@@ -353,16 +353,7 @@ xml_receive_message(int client)
 	init_stream(s, 1024);
 	xmlDocPtr doc;
 
-	if (g_tcp_can_recv(client, 10))
-	{
-		res= g_tcp_recv(client, s->data, sizeof(int), 0);
-	}
-	else
-	{
-		log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[xml_receive_message]: "
-				"Unable to receive xml message, cause %s", strerror(g_get_errno()));
-		return NULL;
-	}
+	res= g_tcp_recv(client, s->data, sizeof(int), 0);
 
 	if (res != sizeof(int))
 	{
