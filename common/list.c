@@ -35,6 +35,7 @@ list_create(void)
   self = (struct list*)g_malloc(sizeof(struct list), 1);
   self->grow_by = 10;
   self->alloc_size = 10;
+  self->count = 0;
   self->items = (tbus*)g_malloc(sizeof(tbus) * 10, 1);
   return self;
 }
