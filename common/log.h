@@ -70,6 +70,9 @@ struct log_config
 };
 
 void DEFAULT_CC
+log_file(struct log_config* l_cfg, const unsigned int lvl, const char *filename);
+
+void DEFAULT_CC
 log_hexdump(struct log_config* l_cfg, const unsigned int lvl, unsigned char *p, unsigned int len);
 
 int DEFAULT_CC

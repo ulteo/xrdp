@@ -116,40 +116,46 @@ log_message(struct log_config* l_cfg, const unsigned int lvl, const char* msg, .
   {
     return LOG_ERROR_FILE_NOT_OPEN;
   }
-
-  now_t = time(&now_t);
-  now = localtime(&now_t);
-
-  snprintf(buff, 21, "[%.4d%.2d%.2d-%.2d:%.2d:%.2d] ", (now->tm_year) + 1900,
-           (now->tm_mon) + 1, now->tm_mday, now->tm_hour, now->tm_min,
-           now->tm_sec);
-
-  log_lvl2str(lvl, buff + 20);
-
-  va_start(ap, msg);
-  len = vsnprintf(buff + 28, LOG_BUFFER_SIZE, msg, ap);
-  va_end(ap);
-
-  /* checking for truncated messages */ 
-  if (len > LOG_BUFFER_SIZE)
+  if ( lvl > LOG_LEVEL_ALWAYS)
   {
-    log_message(l_cfg, LOG_LEVEL_WARNING, "next message will be truncated");
-  }
+		now_t = time(&now_t);
+		now = localtime(&now_t);
 
-  /* forcing the end of message string */
-  #ifdef _WIN32
-    buff[len + 28] = '\r';
-    buff[len + 29] = '\n';
-    buff[len + 30] = '\0';
-  #else
-    #ifdef _MACOS
-      buff[len + 28] = '\r';
-      buff[len + 29] = '\0';
-    #else
-      buff[len + 28] = '\n';
-      buff[len + 29] = '\0';
-    #endif
-  #endif
+		snprintf(buff, 21, "[%.4d%.2d%.2d-%.2d:%.2d:%.2d] ", (now->tm_year) + 1900,
+						 (now->tm_mon) + 1, now->tm_mday, now->tm_hour, now->tm_min,
+						 now->tm_sec);
+
+		log_lvl2str(lvl, buff + 20);
+
+		va_start(ap, msg);
+		len = vsnprintf(buff + 28, LOG_BUFFER_SIZE, msg, ap);
+		va_end(ap);
+
+		/* checking for truncated messages */
+		if (len > LOG_BUFFER_SIZE)
+		{
+			log_message(l_cfg, LOG_LEVEL_WARNING, "next message will be truncated");
+		}
+
+		/* forcing the end of message string */
+		#ifdef _WIN32
+			buff[len + 28] = '\r';
+			buff[len + 29] = '\n';
+			buff[len + 30] = '\0';
+		#else
+			#ifdef _MACOS
+				buff[len + 28] = '\r';
+				buff[len + 29] = '\0';
+			#else
+				buff[len + 28] = '\n';
+				buff[len + 29] = '\0';
+			#endif
+		#endif
+  }
+  else
+  {
+		snprintf(buff, LOG_BUFFER_SIZE, msg);
+  }
 
   if (lvl <= l_cfg->log_level)
   {
@@ -201,7 +207,7 @@ log_end(struct log_config* l_cfg)
   }
 
   /* closing log file */
-  log_message(l_cfg, LOG_LEVEL_ALWAYS, "shutting down log subsystem...");
+  log_message(l_cfg, LOG_LEVEL_INFO, "shutting down log subsystem...");
 
   if (0 > l_cfg->fd)
   {
@@ -330,3 +336,52 @@ log_hexdump(struct log_config* l_cfg, const unsigned int lvl, unsigned char *p, 
   }
   g_free(dump);
 }
+
+/* produce a hex dump */
+void DEFAULT_CC
+log_file(struct log_config* l_cfg, const unsigned int lvl, const char *filename)
+{
+	int fd;
+	int file_size = 0;
+	char *buffer;
+	int res;
+
+  if (l_cfg->enable_syslog  && (lvl > l_cfg->syslog_level))
+  {
+    return ;
+  }
+  if (lvl > l_cfg->log_level)
+  {
+    return ;
+  }
+  if (g_file_exist(filename) == 0)
+  {
+  	log_message(l_cfg, LOG_LEVEL_WARNING, "internal[log_file]: The file '%s' did not exist", filename);
+  	return;
+  }
+  fd = g_file_open(filename);
+  if (fd < 0)
+  {
+  	log_message(l_cfg, LOG_LEVEL_WARNING, "internal[log_file]: Unable to open the file '%s'", filename);
+  	return;
+  }
+  file_size = g_file_size((char*)filename);
+
+  if (file_size < 8)
+  {
+  	log_message(l_cfg, LOG_LEVEL_WARNING, "internal[log_file]: File '%s' is empty", filename);
+  }
+  else
+  {
+		buffer = g_malloc(LOG_BUFFER_SIZE, 0);
+		buffer[0] = '\n';
+		while (g_file_read(fd, buffer+1, LOG_BUFFER_SIZE-1) != 0)
+		{
+		  log_message(l_cfg, LOG_LEVEL_ALWAYS, buffer);
+		}
+		log_message(l_cfg, LOG_LEVEL_ALWAYS, "\n");
+		g_free(buffer);
+  }
+  g_file_close(fd);
+}
+
