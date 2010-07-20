@@ -55,6 +55,7 @@ struct xrdp_client_info
   char program[256];
   char directory[256];
   int rdp_compression;
+  int use_compression;
   int rdp_autologin;
   int crypt_level; /* 1, 2, 3 = low, medium, high */
   int channel_code; /* 0 = no channels 1 = channels */

@@ -93,6 +93,15 @@ xrdp_rdp_read_config(struct xrdp_client_info* client_info)
         client_info->use_bitmap_comp = 1;
       }
     }
+    else if (g_strcasecmp(item, "use_compression") == 0)
+    {
+      if (g_strcasecmp(value, "yes") == 0 ||
+          g_strcasecmp(value, "true") == 0 ||
+          g_strcasecmp(value, "1") == 0)
+      {
+        client_info->use_compression = 1;
+      }
+    }
     else if (g_strcasecmp(item, "crypt_level") == 0)
     {
       if (g_strcasecmp(value, "low") == 0)
@@ -280,11 +289,12 @@ xrdp_rdp_send_data(struct xrdp_rdp* self, struct stream* s,
   uncompressed_length = s->end - s->p;
 
   //temporary invalidate compression
-  self->client_info.rdp_compression == 0;
+  self->client_info.rdp_compression = 0;
+  self->client_info.bitmap_cache_persist_enable = 0;
   if (data_pdu_type != RDP_DATA_PDU_CONTROL &&
   		data_pdu_type != RDP_DATA_PDU_SYNCHRONISE &&
   		data_pdu_type != RDP_DATA_PDU_TYPE2_FONTMAP &&
-  		self->client_info.rdp_compression == 1 &&
+  		self->client_info.use_compression == 1 &&
   		self->compressor != 0)
   {
   	struct stream *compressed_stream = 0;
