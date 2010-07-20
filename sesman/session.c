@@ -187,7 +187,7 @@ session_start_sessvc(int xpid, int wmpid, long data)
   g_execvp(exe_path, ((char**)sessvc_params->items));
 
   /* should not get here */
-  log_message(&(g_cfg->log), LOG_LEVEL_ALWAYS,
+  log_message(&(g_cfg->log), LOG_LEVEL_ERROR,
               "error starting xrdp-sessvc - pid %d - xpid=%s - wmpid=%s",
               g_getpid(), xpid_str, wmpid_str);
 
@@ -293,9 +293,10 @@ get_kbcode(int keylayout)
 
 /******************************************************************************/
 static int APP_CC
-wait_for_xserver(int display)
+wait_for_xserver(int display, int can_log)
 {
   int i;
+  char x_log_file_path[256];
 
   /* give X a bit to start */
   /* wait up to 10 secs for x server to start */
@@ -305,10 +306,15 @@ wait_for_xserver(int display)
     i++;
     if (i > 200)
     {
-      log_message(&(g_cfg->log), LOG_LEVEL_ERROR,
-                  "X server for display %d startup timeout",
-                  display);
-      break;
+    	if (can_log)
+    	{
+				g_snprintf(x_log_file_path, sizeof(x_log_file_path), "%s%i.log", X_LOG_PREFIX, display);
+				log_message(&(g_cfg->log), LOG_LEVEL_ERROR,
+										"X server for display %d startup timeout",
+										display);
+				log_file(&(g_cfg->log), LOG_LEVEL_ERROR, x_log_file_path);
+    	}
+      return 1;
     }
     g_sleep(250);
   }
@@ -449,7 +455,7 @@ session_start_fork(int width, int height, int bpp, char* username,
 	{
 		log_message(&(g_cfg->log), LOG_LEVEL_ERROR,"sesman[session_start_fork]: "
 				"Unable to delete last X log file %s", x_log_file_path);
-		g_exit(0);
+		return 0;
 	}
 
   wmpid = 0;
@@ -469,7 +475,10 @@ session_start_fork(int width, int height, int bpp, char* username,
     }
     else if (wmpid == 0) /* child (child sesman) xserver */
     {
-      wait_for_xserver(display);
+      if (wait_for_xserver(display, 1) == 1)
+      {
+      	g_exit(0);
+      }
       env_set_user(username, 0, display);
       if (x_server_running(display))
       {
@@ -497,7 +506,7 @@ session_start_fork(int width, int height, int bpp, char* username,
         log_message(&(g_cfg->log), LOG_LEVEL_INFO,"sesman[session_start_fork]: "
 							"default shell : '%s'",default_shell);
 				g_execlp3(text, g_cfg->default_wm, default_shell);
-				log_message(&(g_cfg->log), LOG_LEVEL_ALWAYS,"error starting user "
+				log_message(&(g_cfg->log), LOG_LEVEL_ERROR,"error starting user "
             		"wm for user %s - pid %d", username, g_getpid());
             /* logging parameters */
         log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "errno: %d, "
@@ -553,10 +562,10 @@ session_start_fork(int width, int height, int bpp, char* username,
 
           /* make sure it ends with a zero */
           list_add_item(xserver_params, 0);
-          list_dump_items(xserver_params);
+          //list_dump_items(xserver_params);
           pp1 = (char**)xserver_params->items;
           g_execvp("Xvnc", pp1);
-          log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "Xvnc did not exist");
+          log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "Xvnc did not exist on the system");
 
           g_exit(0);
         }
@@ -585,13 +594,13 @@ session_start_fork(int width, int height, int bpp, char* username,
         }
         else
         {
-          log_message(&(g_cfg->log), LOG_LEVEL_ALWAYS, "bad session type - "
+          log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "bad session type - "
                       "user %s - pid %d", username, g_getpid());
           g_exit(1);
         }
 
         /* should not get here */
-        log_message(&(g_cfg->log), LOG_LEVEL_ALWAYS, "error starting X server "
+        log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "error starting X server "
                     "- user %s - pid %d", username, g_getpid());
 
         /* logging parameters */
@@ -610,7 +619,10 @@ session_start_fork(int width, int height, int bpp, char* username,
       }
       else /* parent (child sesman)*/
       {
-        wait_for_xserver(display);
+        if (wait_for_xserver(display, 0) == 1)
+        {
+        	g_exit(0);
+        }
         g_snprintf(text, 255, "%d", display);
         g_setenv("XRDP_SESSVC_DISPLAY", text, 1);
         g_snprintf(text, 255, ":%d.0", display);
@@ -622,6 +634,13 @@ session_start_fork(int width, int height, int bpp, char* username,
   }
   else /* parent sesman process */
   {
+    if (wait_for_xserver(display, 0) == 1)
+    {
+      g_free(temp);
+      log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "xrdp-sesman[session_start_fork]: ",
+                            "X server on display %s for the user '%s' did not respond", display, username);
+      return 1;
+    }
     temp->item->pid = pid;
     temp->item->display = display;
     temp->item->width = width;
@@ -696,7 +715,7 @@ session_sync_start(void)
                                      g_sync_data, g_sync_type, g_sync_domain,
                                      g_sync_program, g_sync_directory, g_sync_keylayout);
   lock_sync_sem_release();
-  return 0;
+  return g_sync_result;
 }
 
 /******************************************************************************/
