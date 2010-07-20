@@ -1,0 +1,12 @@
+docs/man/logoff.1
+docs/man/startapp.1
+docs/man/xrdp-chansrv.1
+docs/man/xrdp-genkeymap.1
+docs/man/xrdp-keygen.1
+docs/man/xrdp-sesadmin.1
+docs/man/xrdp-sessvc.1
+docs/man/xrdp-sestest.1
+docs/man/vchannel_rdpdr.1
+docs/man/rdpdr_printer.1
+docs/man/rdpdr_disk.1
+docs/man/xrdp-channel-launcher.1
