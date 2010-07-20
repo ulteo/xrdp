@@ -982,7 +982,7 @@ main(int argc, char** argv)
   g_signal_user_interrupt(sig_sesman_shutdown); /* SIGINT  */
   g_signal_kill(sig_sesman_shutdown); /* SIGKILL */
   g_signal_terminate(sig_sesman_shutdown); /* SIGTERM */
-  //g_signal_child_stop(sig_sesman_session_end); /* SIGCHLD */
+  g_signal_child_stop(sig_sesman_session_end); /* SIGCHLD */
 #endif
 #if 0
   thread_sighandler_start();
