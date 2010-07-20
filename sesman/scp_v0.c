@@ -102,7 +102,7 @@ scp_v0_process(struct SCP_CONNECTION* c, struct SCP_SESSION* s)
       auth_end(data);
       data = 0;
       log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "User %s are not allow to start session", s->username);
-      scp_v0s_deny_connection(c, "You are not allow to start \nsession");
+      scp_v0s_deny_connection(c, "Unable to launch the session\nPlease contact\nyour administrator\n");
     }
     else
     {

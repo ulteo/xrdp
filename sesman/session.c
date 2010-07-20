@@ -639,7 +639,7 @@ session_start_fork(int width, int height, int bpp, char* username,
       g_free(temp);
       log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "xrdp-sesman[session_start_fork]: ",
                             "X server on display %s for the user '%s' did not respond", display, username);
-      return 1;
+      return 0;
     }
     temp->item->pid = pid;
     temp->item->display = display;
