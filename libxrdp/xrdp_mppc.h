@@ -65,12 +65,14 @@ struct xrdp_compressor
 {
 	int type;
 
-	char *historyBuffer;
+	struct compressed_stream outputBuffer;
 	int historyOffset;
 	int historyBuffer_size;
-
-	struct compressed_stream outputBuffer;
+	char* historyBuffer;
+	int dictSize;
 	int srcLength;
+
+	struct list** histTab;
 	/* for binary operation */
 	int walker;
 	int walker_len;
