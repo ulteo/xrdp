@@ -93,11 +93,11 @@ scp_process_start(void* sck)
       log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "libscp internal error occurred.");
       break;
     default:
-      log_message(&(g_cfg->log), LOG_LEVEL_ALWAYS, "unknown return from scp_vXs_accept()");
+      log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "unknown return from scp_vXs_accept()");
   }
   g_tcp_close(scon.in_sck);
   free_stream(scon.in_s);
   free_stream(scon.out_s);
-  log_message(&(g_cfg->log), LOG_LEVEL_ALWAYS, "session destroy");
+  log_message(&(g_cfg->log), LOG_LEVEL_INFO, "session destroy");
   return 0;
 }

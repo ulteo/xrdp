@@ -989,7 +989,7 @@ main(int argc, char** argv)
 #endif
 
   /* start program main loop */
-  log_message(&(g_cfg->log), LOG_LEVEL_ALWAYS,
+  log_message(&(g_cfg->log), LOG_LEVEL_INFO,
               "starting sesman with pid %d", g_pid);
 
   /* make sure the /tmp/.X11-unix directory exist */
