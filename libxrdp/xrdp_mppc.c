@@ -108,6 +108,7 @@ void historyFlush(struct xrdp_compressor* compressor)
 struct xrdp_compressor*
 mppc_init(int new_type)
 {
+	int i = 0;
 	int dictSize;
 	struct xrdp_compressor* compressor;
 	compressor = malloc(sizeof(struct xrdp_compressor));
