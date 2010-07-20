@@ -335,6 +335,7 @@ config_read_sessions(int file, struct config_sessions* se, struct list* param_n,
   se->max_disc_time=0;
   se->kill_disconnected=0;
   se->monitoring_delay=2000;
+  se->x_session_timeout=5000;
 
   file_read_section(file, SESMAN_CFG_SESSIONS, param_n, param_v);
   for (i = 0; i < param_n->count; i++)
@@ -359,6 +360,10 @@ config_read_sessions(int file, struct config_sessions* se, struct list* param_n,
     if (0 == g_strcasecmp(buf, SESMAN_CFG_SESS_MONIT_DELAY))
     {
       se->monitoring_delay=g_atoi((char*)list_get_item(param_v, i));
+    }
+    if (0 == g_strcasecmp(buf, SESMAN_CFG_SESS_MONIT_DELAY))
+    {
+      se->x_session_timeout=g_atoi((char*)list_get_item(param_v, i));
     }
   }
 

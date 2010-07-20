@@ -300,11 +300,12 @@ wait_for_xserver(int display, int can_log)
 
   /* give X a bit to start */
   /* wait up to 10 secs for x server to start */
+  int x_waiting_step = (g_cfg->sess.x_session_timeout / 250);
   i = 0;
   while (!x_server_running(display))
   {
     i++;
-    if (i > 200)
+    if (i > x_waiting_step)
     {
     	if (can_log)
     	{

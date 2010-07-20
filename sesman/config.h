@@ -62,6 +62,7 @@
 #define SESMAN_CFG_SESS_IDLE_LIMIT   "IdleTimeLimit"
 #define SESMAN_CFG_SESS_DISC_LIMIT   "DisconnectedTimeLimit"
 #define SESMAN_CFG_SESS_MONIT_DELAY  "MonitoringDelay"
+#define SESMAN_CFG_SESS_X_TIMEOUT    "XserverTimeout"
 
 /**
  *
@@ -128,6 +129,12 @@ struct config_sessions
    * @brief delay to check session status
    */
   int monitoring_delay;
+
+  /**
+   * @var x_session_timeout
+   * @brief delay to check if Xserver is started
+   */
+  int x_session_timeout;
 
 };
 
