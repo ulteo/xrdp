@@ -289,7 +289,6 @@ xrdp_rdp_send_data(struct xrdp_rdp* self, struct stream* s,
   uncompressed_length = s->end - s->p;
 
   //temporary invalidate compression
-  self->client_info.rdp_compression = 0;
   self->client_info.bitmap_cache_persist_enable = 0;
   if (data_pdu_type != RDP_DATA_PDU_CONTROL &&
   		data_pdu_type != RDP_DATA_PDU_SYNCHRONISE &&
