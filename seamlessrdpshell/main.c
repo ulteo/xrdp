@@ -677,6 +677,9 @@ void create_window(Window win_out){
 	unsigned char *name;
 	int flags = 0;
 	int pid;
+	Atom* states;
+	unsigned long nstates;
+	int i;
 
 	name = '\0';
 
@@ -756,14 +759,20 @@ void create_window(Window win_out){
   		type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_POPUP_MENU",False))
   {
       flags = SEAMLESS_CREATE_POPUP;
-      parent_id = -1;
+      //parent_id = -1;
   }
-  if(type == XInternAtom(display, "_NET_WM_STATE_MODAL", False))
-  {
-  	flags |= SEAMLESSRDP_CREATE_MODAL;
-  	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[create_window]: "
-  			"%i is a modal windows", proper_win);
-  }
+
+
+	get_window_state(display, proper_win, &states, &nstates);
+
+	for (i = 0; i < nstates; i++) {
+		if(states[i] == XInternAtom(display, "_NET_WM_STATE_MODAL", False)) {
+			flags |= SEAMLESSRDP_CREATE_MODAL;
+			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[create_window]: "
+				"%i is a modal windows", proper_win);
+		}
+	}
+
   if(is_window_resizable(display, proper_win) == 1)
   {
   	flags |= SEAMLESS_CREATE_FIXEDSIZE;

@@ -20,6 +20,7 @@
 
 #include "xutils.h"
 #include <log.h>
+#include <stdlib.h>
 
 extern struct log_config* l_config;
 
@@ -138,6 +139,43 @@ int get_window_name(Display* display, Window w, unsigned char** name)
   log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_name]: "
 				" windows name : %s\n",*name);
   return True;
+}
+
+
+int get_window_state(Display* display, Window w, Atom** atoms, unsigned long* nitems)
+{
+	unsigned char* data;
+	int status;
+	int i;
+
+	status = get_property(display, w, "_NET_WM_STATE", nitems, &data);
+	if (status != 0) {
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_state]: "
+			"Unable to get window state");
+		return 1;
+	}
+	if(*nitems == 0) {
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_state]: "
+			"No window state");
+		return 0;
+	}
+
+	*atoms = malloc(sizeof(Atom) * *nitems);
+
+	for (i = 0; i < *nitems; i++) {
+		(*atoms)[i] = (Atom) \
+		( \
+			(*((unsigned char*) data+0) << 0) | \
+			(*((unsigned char*) data + 1) << 8) | \
+			(*((unsigned char*) data+ 2) << 16) | \
+			(*((unsigned char*) data+ 3) << 24) \
+		);
+
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_state]: "
+			"Window state : %s", XGetAtomName(display, (*atoms)[i]));
+	}
+
+	return 0;
 }
 
 

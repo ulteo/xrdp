@@ -35,6 +35,8 @@ get_in_window(Display* display,  Window w);
 int
 get_window_name(Display* display, Window w, unsigned char** name);
 int
+get_window_state(Display* display, Window w, Atom** atoms, unsigned long* nitems);
+int
 get_window_type(Display* display, Window w, Atom* atom);
 int
 get_window_pid(Display* display, Window w, int* pid);
