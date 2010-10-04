@@ -266,13 +266,13 @@ int cliprdr_process_format_list(struct stream* s, int msg_flags, int size)
 
 	/* short format announce */
 	format_number = size / 36;
-	log_message(l_config, LOG_LEVEL_WARNING, "vchannel_cliprdr[cliprdr_process_format_list]: "
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_process_format_list]: "
 			"%i formats announced", format_number);
 
 	s->p = s->end;
 
 	cliprdr_send_format_list_response();
-	log_message(l_config, LOG_LEVEL_WARNING, "vchannel_cliprdr[cliprdr_process_format_list]: "
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_process_format_list]: "
 			"get the clipboard");
 	XSetSelectionOwner(display, clipboard_atom, wclip, CurrentTime);
 	if (XGetSelectionOwner(display, clipboard_atom) != wclip)
