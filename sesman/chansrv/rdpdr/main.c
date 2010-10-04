@@ -266,11 +266,11 @@ rdpdr_confirm_clientID_request()
 int APP_CC
 rdpdr_clientID_confirm(struct stream* s)
 {
-    log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr_channel[rdpdr_process_message]: new message: PAKID_CORE_CLIENTID_CONFIRM");
+    log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr_channel[rdpdr_clientID_confirm]: new message: PAKID_CORE_CLIENTID_CONFIRM");
     in_uint16_le(s, vers_major);
     in_uint32_le(s, vers_minor);
     in_uint32_le(s, client_id);
-    log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr_channel[rdpdr_process_message]: version : %i:%i, client_id : %i", vers_major, vers_minor, client_id);
+    log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr_channel[rdpdr_clientID_confirm]: version : %i:%i, client_id : %i", vers_major, vers_minor, client_id);
     return 0;
 }
 
@@ -278,26 +278,26 @@ rdpdr_clientID_confirm(struct stream* s)
 int APP_CC
 rdpdr_client_name(struct stream* s)
 {
-  log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr_channel[rdpdr_process_message]: new message: PAKID_CORE_CLIENT_NAME");
+  log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr_channel[rdpdr_client_name]: new message: PAKID_CORE_CLIENT_NAME");
   int hostname_size;
   in_uint32_le(s, use_unicode);
   in_uint32_le(s, hostname_size);   /* flag not use */
   in_uint32_le(s, hostname_size);
   if (hostname_size < 1)
   {
-    log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr_channel[rdpdr_process_message]: no hostname specified");
+    log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr_channel[rdpdr_client_name]: no hostname specified");
     return 1;
   }
   if (use_unicode == 1)
   {
-    log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr_channel[rdpdr_process_message]: unicode is used");
+    log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr_channel[rdpdr_client_name]: unicode is used");
     rdpdr_in_unistr(s, hostname, sizeof(hostname), hostname_size);
   }
   else
   {
     in_uint8a(s, hostname, hostname_size);
   }
-  log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr_channel[rdpdr_process_message]: hostname : '%s'",hostname);
+  log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr_channel[rdpdr_client_name]: hostname : '%s'",hostname);
   if (g_strlen(hostname) >0)
   {
     rdpdr_confirm_clientID_request();
