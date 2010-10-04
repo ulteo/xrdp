@@ -34,6 +34,9 @@
 #include <signal.h>
 #include <config.h>
 #include <unistd.h>
+#include <sys/mount.h>
+
+
 //#include <time.h>
 
 #define X_LOG_PREFIX "/tmp/X_"
@@ -777,6 +780,57 @@ session_is_tagged(int pid)
 
 }
 
+int DEFAULT_CC
+session_unmount_drive(char* username)
+{
+	char path[1024];
+	char user_dir[1024];
+
+	if (username == NULL || username[0] == 0)
+	{
+		log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "Unable to destroy session for an empty user");
+		return 1;
+	}
+
+	g_getuser_info(username, 0, 0, 0, user_dir, 0);
+
+	if (user_dir == NULL || user_dir[0] == NULL)
+	{
+		log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "Unable to destroy session for an user without homedir ");
+		return 1;
+	}
+
+	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "Verify mounted drive for user %s on %s", username, user_dir);
+	snprintf(path, 1024, "%s/%s", user_dir, RDPDRIVE_NAME );
+	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "Try to unmount the path %s", path);
+
+	if ( umount(path) != 0 )
+	{
+		if (errno != EINVAL )
+		{
+			log_message(&(g_cfg->log), LOG_LEVEL_INFO, "Drive %s is not mounted", path);
+
+		}
+		else
+		{
+			log_message(&(g_cfg->log), LOG_LEVEL_INFO, "Force unmounting drive %s", path);
+			if (umount2(path, MNT_FORCE) != 0)
+			{
+				log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "Failed to unmount drive %s", path);
+			}
+		}
+	}
+	g_sleep(100);
+	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "Remove mount point: %s", path);
+	g_remove_dirs(path);
+	if (g_directory_exist(path))
+	{
+		log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "Failed to remove mount point: %s %s", path, strerror(errno));
+		return 1;
+	}
+	return 0;
+}
+
 
 /******************************************************************************/
 int DEFAULT_CC
@@ -789,6 +843,14 @@ session_destroy(char* username)
 	struct stat st;
 	int i;
 	DIR *dir;
+
+	if (username == NULL || username[0] == 0)
+	{
+		log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "Unable to destroy session for an empty user");
+		return 1;
+	}
+
+	session_unmount_drive(username);
 
 	dir = opendir("/proc" );
 	if( dir == NULL)
@@ -827,7 +889,7 @@ session_destroy(char* username)
 				}
 			}
 		}
-		g_sleep(30);
+		g_sleep(100);
 	}
 	g_free(dir);
 	return 0;

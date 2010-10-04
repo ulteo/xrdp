@@ -53,6 +53,9 @@
 #define XRDP_SOCKET_PATH  			"/var/spool/xrdp/"
 #define MANAGEMENT_SOCKET_NAME  "/var/spool/xrdp/xrdp_management"
 
+#define RDPDRIVE_NAME    ".rdp_drive"
+
+
 int DEFAULT_CC
 session_destroy(char* username);
 

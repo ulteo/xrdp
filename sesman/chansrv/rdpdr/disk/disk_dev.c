@@ -894,8 +894,8 @@ fuse_run()
 	g_mkdir(mount_point);
 	if( g_directory_exist(mount_point) == 0)
 	{
-		log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[main]: "
-				"Unable to initialize the mount point");
+		log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[fuse_run]: "
+				"Unable to initialize the mount point : %s", mount_point);
 	}
 
 	umask(0);

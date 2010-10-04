@@ -228,7 +228,7 @@ int main(int argc, char** argv, char** environ)
 					"Unable to open a connection to RDP filesystem");
 	}
 
-	g_sprintf(mount_point, "%s/%s/%s", home_dir, username, RDPDRIVE_NAME);
+	g_sprintf(mount_point, "%s/%s", home_dir, RDPDRIVE_NAME);
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[main]: "
 				"Rdpdrive is located on %s", mount_point);
