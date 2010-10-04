@@ -29,6 +29,8 @@
 #define MAX_SHARE 128
 #define MAX_SIZE	6000
 
+#define RDPDRIVE_NAME    ".rdp_drive"
+
 struct disk_device
 {
 	int device_id;

@@ -176,6 +176,8 @@ int main(int argc, char** argv, char** environ)
 {
 	int fuse_group = 0;
 	int ok = 0;
+	char* home_dir = g_getenv("HOME");
+
 	l_config = g_malloc(sizeof(struct log_config), 1);
 	if (argc != 2)
 	{
@@ -226,6 +228,10 @@ int main(int argc, char** argv, char** environ)
 					"Unable to open a connection to RDP filesystem");
 	}
 
-	g_sprintf(mount_point, "/home/%s/.rdp_drive", username);
+	g_sprintf(mount_point, "%s/%s/%s", home_dir, username, RDPDRIVE_NAME);
+
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[main]: "
+				"Rdpdrive is located on %s", mount_point);
+
 	return fuse_run();
 }

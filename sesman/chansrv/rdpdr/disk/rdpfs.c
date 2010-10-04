@@ -81,7 +81,7 @@ static int add_share_to_desktop(const char* share_name){
 		return 0;
 	}
 
-	g_snprintf(share_path, 256, "%s/.rdp_drive/%s", home_dir, share_name);
+	g_snprintf(share_path, 256, "%s/%s/%s", home_dir, RDPDRIVE_NAME, share_name);
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[add_share_to_desktop]: "
 		        		"Share path : %s", share_path);
 
