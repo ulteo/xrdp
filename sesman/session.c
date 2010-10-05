@@ -922,6 +922,7 @@ session_kill(int pid)
     if (tmp->item->pid == pid)
     {
       /* deleting the session */
+      session_destroy(tmp->item->name);
       log_message(&(g_cfg->log), LOG_LEVEL_INFO, "session %d - user %s - "
                   "terminated", tmp->item->pid, tmp->item->name);
       g_free(tmp->item);
@@ -938,7 +939,6 @@ session_kill(int pid)
       g_free(tmp);
       g_session_count--;
       //g_waitpid(tmp->item->name);
-      session_destroy(tmp->item->name);
       /*THREAD-FIX release chain lock */
       lock_chain_release();
       return SESMAN_SESSION_KILL_OK;
