@@ -93,6 +93,101 @@ if test "x${prefix}" = "xNONE" ; then
    localstatedir="/var";
 fi
 
+
+# iconv library
+have_iconv="no"
+AC_ARG_WITH([iconv-link],
+   AC_HELP_STRING([--with-iconv-link=ICONV_LINK], [explicitly specify an iconv link option]),
+   [
+    LIBS="$withval $LIBS"
+    have_iconv="yes"
+   ])
+
+AC_MSG_CHECKING(for explicit iconv link options)
+if test "x${iconv_libs}" = "x" ; then
+   AC_MSG_RESULT([no explicit iconv link option])
+else
+   AC_MSG_RESULT([$iconv_libs])
+fi
+
+if test "x${have_iconv}" = "xno" ; then
+   AC_CHECK_HEADERS([iconv.h], [have_iconv="yes"])
+
+   if test "x${have_iconv}" = "xyes" ; then
+      AC_MSG_CHECKING([whether iconv() is in libc])
+      
+      AC_LINK_IFELSE(
+         [AC_LANG_PROGRAM(
+             [[
+#include <stdlib.h>
+#include <iconv.h>
+             ]],
+             [[
+iconv_t ic;
+size_t count = iconv(ic, NULL, NULL, NULL, NULL);
+             ]])],
+         [have_iconv="yes"],
+         [have_iconv="no"])
+
+      AC_MSG_RESULT([${have_iconv}])
+   fi
+
+   if test "x${have_iconv}" = "xno" ; then
+      AC_MSG_CHECKING([whether iconv() is in libiconv.a])
+
+      LIBS_save="${LIBS}"
+      LIBS="-liconv $LIBS"
+      AC_LINK_IFELSE(
+         [AC_LANG_PROGRAM(
+             [[
+#include <stdlib.h>
+#include <iconv.h>
+             ]],
+             [[
+iconv_t ic;
+size_t count;
+count = iconv(ic, NULL, NULL, NULL, NULL);
+             ]])],
+         [have_iconv="yes"],
+         [
+          have_iconv="no"
+          LIBS=${LIBS_save}
+         ])
+
+      AC_MSG_RESULT([${have_iconv}])
+   fi
+
+   if test "x${have_iconv}" = "xno" ; then
+      AC_MSG_CHECKING([whether iconv() is in libiconv_plug.a])
+
+      LIBS_save="${LIBS}"
+      LIBS="-liconv_plug $LIBS"
+      AC_LINK_IFELSE(
+         [AC_LANG_PROGRAM(
+             [[
+#include <stdlib.h>
+#include <iconv.h>
+             ]],
+             [[
+iconv_t ic;
+size_t count = iconv(ic, NULL, NULL, NULL, NULL);
+             ]])],
+         [have_iconv="yes"],
+         [
+          have_iconv="no"
+          LIBS=${LIBS_save}
+         ])
+
+      AC_MSG_RESULT([${have_iconv}])
+   fi
+fi
+
+if test "x${have_iconv}" = "xyes" ; then
+   AC_DEFINE([HAVE_ICONV], [1], [Set to 1 if iconv library is installed])
+fi
+
+
+
 AC_CONFIG_FILES([Makefile
                  common/Makefile
                  vchannel/Makefile
