@@ -300,6 +300,25 @@ rdpdr_send_server_capability()
 }
 
 /*****************************************************************************/
+void APP_CC
+rdpdr_send_server_logon()
+{
+  struct stream* s;
+
+  log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_send_server_capability]: "
+				"Send init message");
+  /*server announce*/
+  make_stream(s);
+  init_stream(s, 256);
+  out_uint16_le(s, RDPDR_CTYP_CORE);
+  out_uint16_le(s, PAKID_CORE_USER_LOGGEDON);
+
+  s_mark_end(s);
+  rdpdr_send(s);
+  free_stream(s);
+}
+
+/*****************************************************************************/
 int APP_CC
 rdpdr_confirm_clientID_request()
 {
@@ -558,11 +577,12 @@ rdpdr_process_message(struct stream* s, int length, int total_length)
 
     case PAKID_CORE_CLIENT_NAME :
     	result =  rdpdr_client_name(packet);
+    	rdpdr_send_server_capability();
     	break;
 
     case PAKID_CORE_CLIENT_CAPABILITY:
     	result = rdpdr_client_capability(packet);
-    	rdpdr_send_server_capability();
+    	rdpdr_send_server_logon();
     	break;
 
     case PAKID_CORE_DEVICELIST_ANNOUNCE:
