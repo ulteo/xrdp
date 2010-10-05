@@ -244,6 +244,62 @@ rdpdr_send_init(void)
 }
 
 /*****************************************************************************/
+void APP_CC
+rdpdr_send_server_capability()
+{
+  struct stream* s;
+
+  log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_send_server_capability]: "
+				"Send init message");
+  /*server announce*/
+  make_stream(s);
+  init_stream(s, 256);
+  out_uint16_le(s, RDPDR_CTYP_CORE);
+  out_uint16_le(s, PAKID_CORE_SERVER_CAPABILITY);
+  out_uint16_le(s, 5);                    /* Number of capabilities */
+  out_uint16_le(s, 0x0);                  /* Padding */
+  /* general capability */
+  out_uint16_le(s, CAP_GENERAL_TYPE);     /* type */
+  out_uint16_le(s, 0x002c);               /* length */
+  out_uint32_le(s, GENERAL_CAPABILITY_VERSION_02);			/* version */
+  out_uint32_le(s, OS_TYPE_WINNT);
+  out_uint32_le(s, 0x00);
+  out_uint16_le(s, 0x0001);               /* major */
+  out_uint16_le(s, 0x000c);               /* minor */
+  out_uint32_le(s, 0x0000ffff);
+  out_uint32_le(s, 0x00000000);
+  out_uint32_le(s, 0x00000007);
+  out_uint32_le(s, 0x00000000);
+  out_uint32_le(s, 0x00000000);
+  out_uint32_le(s, 0x00000002);
+
+  /* printer capabilities */
+  out_uint16_le(s, CAP_PRINTER_TYPE);
+  out_uint16_le(s, 0x0008);
+  out_uint32_le(s, PRINT_CAPABILITY_VERSION_01);
+
+  /* port capabilities */
+  out_uint16_le(s, CAP_PORT_TYPE);
+  out_uint16_le(s, 0x0008);
+  out_uint32_le(s, PORT_CAPABILITY_VERSION_01);
+
+  /* drive capabilities */
+  out_uint16_le(s, CAP_DRIVE_TYPE);
+  out_uint16_le(s, 0x0008);
+  out_uint32_le(s, DRIVE_CAPABILITY_VERSION_02);
+
+  /* smartcard capabilities */
+  out_uint16_le(s, CAP_SMARTCARD_TYPE);
+  out_uint16_le(s, 0x0008);
+  out_uint32_le(s, SMARTCARD_CAPABILITY_VERSION_01);
+
+
+  s_mark_end(s);
+  rdpdr_send(s);
+  free_stream(s);
+}
+
+/*****************************************************************************/
 int APP_CC
 rdpdr_confirm_clientID_request()
 {
@@ -506,6 +562,7 @@ rdpdr_process_message(struct stream* s, int length, int total_length)
 
     case PAKID_CORE_CLIENT_CAPABILITY:
     	result = rdpdr_client_capability(packet);
+    	rdpdr_send_server_capability();
     	break;
 
     case PAKID_CORE_DEVICELIST_ANNOUNCE:
