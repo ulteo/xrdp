@@ -79,6 +79,8 @@ rdpfs_get_dir(int device_id);
 int APP_CC
 rdpfs_add(struct stream* s, int device_data_length,
 								int device_id, char* dos_name);
+void APP_CC
+rdpfs_remove(int device_id);
 struct disk_device* APP_CC
 rdpfs_get_device_from_path(const char* path);
 int APP_CC

@@ -874,7 +874,7 @@ rdpfs_query_directory(int completion_id, int device_id, int information, const c
 
 /*****************************************************************************/
 int APP_CC
-rdpfs_list_reply(int handle)
+rdpfs_list_reply(int handle, int status)
 {
   struct stream* s;
   log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_list_reply]:"
@@ -886,6 +886,7 @@ rdpfs_list_reply(int handle)
   out_uint16_le(s, 0x1);  							/* major version */
   out_uint16_le(s, RDP5);							/* minor version */
   out_uint32_le(s, client_id);							/* client ID */
+
   s_mark_end(s);
 
   g_sleep(10);
@@ -1017,9 +1018,10 @@ rdpfs_list_announce(struct stream* s)
     {
       log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_list_announce]: "
       		"Unable to add disk device");
+      rdpfs_list_reply(0, STATUS_INVALID_PARAMETER);
     	continue;
     }
-  	rdpfs_list_reply(handle);
+  	rdpfs_list_reply(handle, STATUS_SUCCESS);
   }
   return 0;
 }
