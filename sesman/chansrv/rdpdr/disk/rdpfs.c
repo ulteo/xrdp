@@ -1016,7 +1016,7 @@ rdpfs_list_announce(struct stream* s)
     if (handle < 0)
     {
       log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_list_announce]: "
-      		"Unable to add printer device");
+      		"Unable to add disk device");
     	continue;
     }
   	rdpfs_list_reply(handle);
