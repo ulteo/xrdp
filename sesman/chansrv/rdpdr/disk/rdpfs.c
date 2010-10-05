@@ -942,7 +942,7 @@ rdpfs_remove(int device_id)
 	}
 	disk_devices_count--;
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_remove]: "
-				"Succedd to remove disk");
+				"Succeed to remove disk");
 }
 
 /*****************************************************************************/
