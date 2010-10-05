@@ -53,6 +53,8 @@
 #define XRDP_SOCKET_PATH  			"/var/spool/xrdp/"
 #define MANAGEMENT_SOCKET_NAME  "/var/spool/xrdp/xrdp_management"
 
+#define UMOUNT_UTILS            "/bin/umount"
+
 #define RDPDRIVE_NAME    ".rdp_drive"
 
 
