@@ -785,6 +785,7 @@ session_unmount_drive(char* username)
 {
 	char path[1024];
 	char user_dir[1024];
+	int pid = 0;
 
 	if (username == NULL || username[0] == 0)
 	{
@@ -804,30 +805,21 @@ session_unmount_drive(char* username)
 	snprintf(path, 1024, "%s/%s", user_dir, RDPDRIVE_NAME );
 	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "Try to unmount the path %s", path);
 
-	if ( umount(path) != 0 )
+	pid = g_fork();
+	if (pid == 0)
 	{
-		if (errno != EINVAL )
-		{
-			log_message(&(g_cfg->log), LOG_LEVEL_INFO, "Drive %s is not mounted", path);
+		//child process
+		g_execlp3(UMOUNT_UTILS, UMOUNT_UTILS, path);
+		g_exit(0);
+	}
 
-		}
-		else
-		{
-			log_message(&(g_cfg->log), LOG_LEVEL_INFO, "Force unmounting drive %s", path);
-			if (umount2(path, MNT_FORCE) != 0)
-			{
-				log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "Failed to unmount drive %s", path);
-			}
-		}
-	}
-	g_sleep(100);
-	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "Remove mount point: %s", path);
-	g_remove_dirs(path);
-	if (g_directory_exist(path))
-	{
-		log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "Failed to remove mount point: %s %s", path, strerror(errno));
-		return 1;
-	}
+//	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "Remove mount point: %s", path);
+//	g_remove_dirs(path);
+//	if (g_directory_exist(path))
+//	{
+//		log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "Failed to remove mount point: %s %s", path, strerror(errno));
+//		return 1;
+//	}
 	return 0;
 }
 
