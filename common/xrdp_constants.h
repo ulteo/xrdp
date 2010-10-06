@@ -23,6 +23,10 @@
 #if !defined(XRDP_CONSTANTS_H)
 #define XRDP_CONSTANTS_H
 
+#define DEFAULT_CODEPAGE     "UTF-8"
+#define WINDOWS_CODEPAGE     "UTF-16LE"
+
+
 /* TCP port for Remote Desktop Protocol */
 #define TCP_PORT_RDP                   3389
 

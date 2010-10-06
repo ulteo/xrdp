@@ -34,7 +34,7 @@
 struct disk_device
 {
 	int device_id;
-	char dir_name[256];
+	char dir_name[1024];
 };
 
 struct fs_info
