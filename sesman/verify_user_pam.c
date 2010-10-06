@@ -37,8 +37,8 @@ extern struct config_sesman* g_cfg;
 
 struct t_user_pass
 {
-  char user[256];
-  char pass[256];
+  char user[256] = {0};
+  char pass[256] = {0};
 };
 
 struct t_auth_info
@@ -107,7 +107,7 @@ auth_userpass(char* user, char* pass)
 {
   int error;
   struct t_auth_info* auth_info;
-  char service_name[256];
+  char service_name[256] = {0};
   int status;
 
   get_service_name(service_name);
@@ -154,7 +154,7 @@ auth_start_session(long in_val, int in_display)
 {
   struct t_auth_info* auth_info;
   int error;
-  char display[256];
+  char display[256] = {0};
 
   g_sprintf(display, ":%d", in_display);
   auth_info = (struct t_auth_info*)in_val;
@@ -222,8 +222,8 @@ auth_set_env(long in_val)
   struct t_auth_info* auth_info;
   char** pam_envlist;
   char** pam_env;
-  char item[256];
-  char value[256];
+  char item[256] = {0};
+  char value[256] = {0};
   int eq_pos;
 
   auth_info = (struct t_auth_info*)in_val;
