@@ -739,7 +739,6 @@ static int disk_dev_write(const char *path, const char *buf, size_t size,
 	rdpfs_response[completion_id].buffer_length = size;
 
 
-	rdpfs_response[completion_id].buffer = buf;
 	while (size_to_write != 0)
 	{
 		chunk_size_to_write = size_to_write > MAX_SIZE ? MAX_SIZE : size_to_write;
