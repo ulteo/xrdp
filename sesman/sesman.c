@@ -367,7 +367,7 @@ xml_receive_message(int client)
 			"data_length : %i", data_length);
 	free_stream(s);
 	make_stream(s);
-	init_stream(s, data_length);
+	init_stream(s, data_length + 1);
 
   g_tcp_recv(client, s->data, data_length, 0);
   s->data[data_length] = 0;
