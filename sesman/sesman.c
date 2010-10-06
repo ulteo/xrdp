@@ -471,7 +471,7 @@ send_session(int client, int session_id)
 	sess = session_get_by_display(session_id);
   if( sess == NULL)
   {
-  	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[send_session]: "
+  	log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[send_session]: "
 				"the session %i did not exist",session_id);
     xml_send_error(client, "the session id of the request did not exist");
     return 1;
