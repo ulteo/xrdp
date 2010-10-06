@@ -53,7 +53,7 @@ static tbus send_mutex;
 /*****************************************************************************/
 static int add_share_to_desktop(const char* share_name){
 	char* home_dir = g_getenv("HOME");
-	char desktop_file_path[256];
+	char desktop_file_path[1024];
 	char share_path[256];
 	char file_content[1024];
 	int handle;
@@ -70,7 +70,7 @@ static int add_share_to_desktop(const char* share_name){
 		return 1;
 	}
 
-	g_snprintf((char*)desktop_file_path, 256, "%s/Desktop/%s.desktop", home_dir, share_name);
+	g_snprintf((char*)desktop_file_path, sizeof(desktop_file_path), "%s/Desktop/%s.desktop", home_dir, share_name);
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[add_share_to_desktop]: "
 	        		"Desktop file path : %s", desktop_file_path);
 
@@ -81,7 +81,7 @@ static int add_share_to_desktop(const char* share_name){
 		return 0;
 	}
 
-	g_snprintf(share_path, 256, "%s/%s/%s", home_dir, RDPDRIVE_NAME, share_name);
+	g_snprintf(share_path, sizeof(desktop_file_path), "%s/%s/%s", home_dir, RDPDRIVE_NAME, share_name);
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[add_share_to_desktop]: "
 		        		"Share path : %s", share_path);
 
@@ -105,16 +105,16 @@ static int add_share_to_desktop(const char* share_name){
 /*****************************************************************************/
 static int remove_share_from_desktop(const char* share_name){
 	char* home_dir = g_getenv("HOME");
-	char desktop_file_path[256];
-	char share_path[256];
+	char desktop_file_path[1024];
+	char share_path[1024];
 	char file_content[1024];
 	int handle;
 
-	g_snprintf((char*)desktop_file_path, 256, "%s/Desktop", home_dir);
+	g_snprintf((char*)desktop_file_path, sizeof(desktop_file_path), "%s/Desktop", home_dir);
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[remove_share_to_desktop]: "
 	        		"Desktop file path : %s", desktop_file_path);
 
-	g_snprintf((char*)desktop_file_path, 256, "%s/Desktop/%s.desktop", home_dir, share_name);
+	g_snprintf((char*)desktop_file_path, sizeof(desktop_file_path), "%s/Desktop/%s.desktop", home_dir, share_name);
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[remove_share_to_desktop]: "
 	        		"Desktop file path : %s", desktop_file_path);
 
@@ -162,151 +162,6 @@ get_attributes_from_mode(int mode_t)
 	return 0;
 
 }
-
-/*****************************************************************************/
-/* Output a string in Unicode */
-void
-rdp_out_unistr(struct stream* s, char *string, int len)
-{
-#ifdef HAVE_ICONV
-	size_t ibl = strlen(string), obl = len + 2;
-	static iconv_t iconv_h = (iconv_t) - 1;
-	char *pin = string, *pout = (char *) s->p;
-
-	memset(pout, 0, len + 4);
-
-	if (g_iconv_works)
-	{
-		if (iconv_h == (iconv_t) - 1)
-		{
-			size_t i = 1, o = 4;
-			if ((iconv_h = iconv_open(WINDOWS_CODEPAGE, g_codepage)) == (iconv_t) - 1)
-			{
-				warning("rdp_out_unistr: iconv_open[%s -> %s] fail %p\n",
-					g_codepage, WINDOWS_CODEPAGE, iconv_h);
-
-				g_iconv_works = False;
-				rdp_out_unistr(s, string, len);
-				return;
-			}
-			if (iconv(iconv_h, (ICONV_CONST char **) &pin, &i, &pout, &o) ==
-			    (size_t) - 1)
-			{
-				iconv_close(iconv_h);
-				iconv_h = (iconv_t) - 1;
-				warning("rdp_out_unistr: iconv(1) fail, errno %d\n", errno);
-
-				g_iconv_works = False;
-				rdp_out_unistr(s, string, len);
-				return;
-			}
-			pin = string;
-			pout = (char *) s->p;
-		}
-
-		if (iconv(iconv_h, (ICONV_CONST char **) &pin, &ibl, &pout, &obl) == (size_t) - 1)
-		{
-			iconv_close(iconv_h);
-			iconv_h = (iconv_t) - 1;
-			warning("rdp_out_unistr: iconv(2) fail, errno %d\n", errno);
-
-			g_iconv_works = False;
-			rdp_out_unistr(s, string, len);
-			return;
-		}
-
-		s->p += len + 2;
-
-	}
-	else
-#endif
-	{
-		int i = 0, j = 0;
-
-		len += 2;
-
-		while (i < len)
-		{
-			s->p[i++] = string[j++];
-			s->p[i++] = 0;
-		}
-
-		s->p += len;
-	}
-}
-
-/*****************************************************************************/
-int APP_CC
-rdp_in_unistr(struct stream* s, char *string, int str_size, int in_len)
-{
-#ifdef HAVE_ICONV
-  size_t ibl = in_len, obl = str_size - 1;
-  char *pin = (char *) s->p, *pout = string;
-  static iconv_t iconv_h = (iconv_t) - 1;
-
-  if (g_iconv_works)
-  {
-    if (iconv_h == (iconv_t) - 1)
-    {
-      if ((iconv_h = iconv_open(g_codepage, WINDOWS_CODEPAGE)) == (iconv_t) - 1)
-      {
-        log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[printer_dev_in_unistr]: "
-        		"Iconv_open[%s -> %s] fail %p",
-					WINDOWS_CODEPAGE, g_codepage, iconv_h);
-        g_iconv_works = False;
-        return rdp_in_unistr(s, string, str_size, in_len);
-      }
-    }
-
-    if (iconv(iconv_h, (ICONV_CONST char **) &pin, &ibl, &pout, &obl) == (size_t) - 1)
-    {
-      if (errno == E2BIG)
-      {
-        log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[printer_dev_in_unistr]: "
-							"Server sent an unexpectedly long string, truncating");
-      }
-      else
-      {
-        iconv_close(iconv_h);
-        iconv_h = (iconv_t) - 1;
-        log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[printer_dev_in_unistr]: "
-							"Iconv fail, errno %d\n", errno);
-        g_iconv_works = False;
-        return rdpdr_in_unistr(s, string, str_size, in_len);
-      }
-    }
-
-    /* we must update the location of the current STREAM for future reads of s->p */
-    s->p += in_len;
-    *pout = 0;
-    return pout - string;
-  }
-  else
-#endif
-  {
-    int i = 0;
-    int len = in_len / 2;
-    int rem = 0;
-
-    if (len > str_size - 1)
-    {
-      log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[printer_dev_in_unistr]: "
-						"server sent an unexpectedly long string, truncating");
-      len = str_size - 1;
-      rem = in_len - 2 * len;
-    }
-    while (i < len)
-    {
-      in_uint8a(s, &string[i++], 1);
-      in_uint8s(s, 1);
-    }
-    in_uint8s(s, rem);
-    string[len] = 0;
-    return len;
-  }
-}
-
-
 
 /*****************************************************************************/
 int APP_CC
@@ -584,7 +439,7 @@ rdpfs_create(int device_id, int desired_access, int shared_access,
 	out_uint32_le(s, creation_disposition);									/* Disposition */
 	out_uint32_le(s, flags);																/* CreateOptions */
 	out_uint32_le(s, (strlen(path)+1)*2);										/* PathLength */
-	rdp_out_unistr(s, (char*)path, (strlen(path)+1)*2);			/* Path */
+	uni_rdp_out_str(s, (char*)path, (strlen(path)+1)*2);			/* Path */
 
 	s_mark_end(s);
 	rdpfs_send(s);
@@ -817,7 +672,7 @@ rdpfs_query_setinformation(int completion_id, int information, struct fs_info* f
 		out_uint8s(s, 3);                     /* reserved */
 		out_uint8s(s, 4);                     /* rootDirectory must be set to 0 */
 		out_uint32_le(s, (strlen(fs->filename)+1)*2); /* PathLength */
-		rdp_out_unistr(s, (char*)fs->filename, (strlen(fs->filename)+1)*2);			/* Path */
+		uni_rdp_out_str(s, (char*)fs->filename, (strlen(fs->filename)+1)*2);			/* Path */
 		break;
 
 	default:
@@ -863,7 +718,7 @@ rdpfs_query_directory(int completion_id, int device_id, int information, const c
 	out_uint8(s, 1);                                      /* path is considered ? */
 	out_uint32_le(s, query_length);                       /* length */
 	out_uint8s(s, 23);                                    /* padding */
-	rdp_out_unistr(s, (char*)query, query_length);     /* query */
+	uni_rdp_out_str(s, (char*)query, query_length);     /* query */
 
 	s_mark_end(s);
 	rdpfs_send(s);
@@ -898,7 +753,7 @@ rdpfs_list_reply(int handle, int status)
 /************************************************************************/
 int APP_CC
 rdpfs_add(struct stream* s, int device_data_length,
-								int device_id, char* dos_name)
+								int device_id, char* device_name)
 {
 	if (disk_devices_count == MAX_SHARE)
 	{
@@ -908,11 +763,11 @@ rdpfs_add(struct stream* s, int device_data_length,
 		return -1;
 	}
 	disk_devices[disk_devices_count].device_id = device_id;
-	g_strcpy(disk_devices[disk_devices_count].dir_name, dos_name);
+	g_strcpy(disk_devices[disk_devices_count].dir_name, device_name);
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_add]: "
 				"Succedd to add disk %s", disk_devices[disk_devices_count].dir_name);
 
-	add_share_to_desktop(dos_name);
+	add_share_to_desktop(device_name);
 	return disk_devices_count++;
 }
 
@@ -976,18 +831,23 @@ rdpfs_list_announce(struct stream* s)
 {
   int device_list_count, device_id, device_type, device_data_length;
   int i;
-  char dos_name[9] = {0};
+  int j;
+  char device_name[1024] ;
+  char unicode_device_name[2048] ;
   int handle;
   char* p;
+  int str_length;
 
   log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_list_announce]: "
   		"	new message: PAKID_CORE_DEVICELIST_ANNOUNCE");
   in_uint32_le(s, device_list_count);	/* DeviceCount */
   log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_list_announce]: "
 		  "%i device(s) declared", device_list_count);
+
   /* device list */
   for( i=0 ; i<device_list_count ; i++)
   {
+    g_memset(device_name, 0, 1024);
     in_uint32_le(s, device_type);
     log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_list_announce]: "
     		"device type: %i", device_type);
@@ -995,12 +855,27 @@ rdpfs_list_announce(struct stream* s)
     log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_list_announce]: "
   		  "device id: %i", device_id);
 
-    in_uint8a(s,dos_name,8)
+    in_uint8a(s, device_name, 8)
     log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_list_announce]: "
-  		  "dos name: '%s'", dos_name);
+  		  "dos name: '%s'", device_name);
     in_uint32_le(s, device_data_length);
     log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_list_announce]: "
   		  "data length: %i", device_data_length);
+
+    p = s->p;
+
+    in_uint8a(s, device_name, device_data_length)
+    if(device_data_length > 2)
+    {
+    	for (j = 0; j < 2 * device_data_length ; j++)
+    	{
+    		unicode_device_name[2*j] = device_name[j];
+    		log_message(l_config, LOG_LEVEL_DEBUG,"current charactere %c",device_name[j]);
+    		unicode_device_name[2*j+1] = 0;
+    	}
+    	s->p = unicode_device_name;
+    	str_length = uni_rdp_in_str(s, device_name, sizeof(device_name), device_data_length*2);
+    }
 
     if (device_type !=  RDPDR_DTYP_FILESYSTEM)
     {
@@ -1010,9 +885,9 @@ rdpfs_list_announce(struct stream* s)
     }
     log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_list_announce]: "
 					"Add disk device");
-    p = s->p;
 
-    handle = rdpfs_add(s, device_data_length, device_id, dos_name);
+
+    handle = rdpfs_add(s, device_data_length, device_id, device_name);
     s->p = p + device_data_length;
     if (handle < 0)
     {
@@ -1151,7 +1026,7 @@ rdpfs_process_directory_response(int completion_id, struct stream* s)
 			"message : ");
 	log_hexdump(l_config, LOG_LEVEL_DEBUG, s->p, filename_length);
 
-	rdp_in_unistr(s, file_response->filename, sizeof(file_response->filename), filename_length);
+	uni_rdp_in_str(s, file_response->filename, sizeof(file_response->filename), filename_length);
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_volume_information_response]: "
 						"IRP_MJ_QUERY_DIRECTORY response : get filename : %s", file_response->filename);
 
@@ -1208,7 +1083,7 @@ rdpfs_process_volume_information_response(int completion_id, struct stream* s)
 			log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[rdpfs_process_iocompletion]: "
 					"IRP_MJ_QUERY_VOLUME_INFORMATION response : Xrdp did not support object file system");
 		}
-		rdp_in_unistr(s, rep->fs_inf.filename, sizeof(rep->fs_inf.filename), label_length);
+		uni_rdp_in_str(s, rep->fs_inf.filename, sizeof(rep->fs_inf.filename), label_length);
 		break;
 
 	case FileFsSizeInformation:
