@@ -1,10 +1,5 @@
-m4_define([uovdxrdp_version_major], [99])
-m4_define([uovdxrdp_version_minor], [99])
-m4_define([uovdxrdp_version_build], [~trunk+svn@REVISION@])
-m4_define([uovdxrdp_version], [uovdxrdp_version_major().uovdxrdp_version_minor()uovdxrdp_version_build()])
-
 AC_PREREQ(2.59)
-AC_INIT([xrdp], [uovdxrdp_version], [http://bugs.ulteo.com])
+AC_INIT([xrdp], [@VERSION@], [http://bugs.ulteo.com])
 AM_CONFIG_HEADER(config_ac.h:config_ac-h.in)
 AM_INIT_AUTOMAKE([1.6 foreign])
 AC_PROG_CC

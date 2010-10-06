@@ -1,31 +1,27 @@
 #!/bin/bash
 
 # check needed tools
-tools=( aclocal libtoolize autoheader autoconf automake libtool )
-for tool in "${tools[@]}"; do
-  which $tool > /dev/null
-  if ! test $? -eq 0
-  then
-    echo "error, install $tool"
-    exit 1
-  fi
+tools="aclocal libtoolize autoheader autoconf automake libtool"
+for tool in $tools; do
+  which $tool > /dev/null || (echo "error, install $tool" && exit 1)
 done
 
-# build configure.in using svn revno
-if [ -d .svn ]; then
-  revision=$(LC_ALL=C svn info . | awk '/^Revision: / {printf "%05d\n", $2}')
+# get version
+if [ -n "$OVD_VERSION" ]; then
+    version="$OVD_VERSION"
 else
-  revision=0
+    if [ -d .svn ]; then
+      revision=$(LC_ALL=C svn info . | awk '/^Revision: / {printf "%05d\n", $2}')
+    else
+      revision=0
+    fi
+    version="99.99.svn$revision"
 fi
-sed -e "s/@REVISION@/${revision}/g" < configure.ac.in > configure.in
-sed -e "s/@REVISION@/${revision}/g" < setup.py.in > setup.py
 
-# ????
-CONFIG_PATH=$PWD/sesman/tools/config.c
-if [ ! -e $CONFIG_PATH ]; then
-  echo "# create sesman/tools/config.c link #"
-  ln -s ../config.c $CONFIG_PATH
-fi
+sed -e "s/@VERSION@/${version}/g" < configure.ac.in > configure.ac
+sed -e "s/@VERSION@/${version}/g" < setup.py.in > setup.py
+
+ln -sfT ../config.c $PWD/sesman/tools/config.c # Why this need ?
 
 autoreconf -fvi
 ./configure $@
