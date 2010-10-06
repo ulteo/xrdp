@@ -783,8 +783,8 @@ session_is_tagged(int pid)
 int DEFAULT_CC
 session_unmount_drive(char* username)
 {
-	char path[1024];
-	char user_dir[1024];
+	char path[1024] = {0};
+	char user_dir[1024] = {0};
 	int pid = 0;
 
 	if (username == NULL || username[0] == 0)
@@ -828,12 +828,12 @@ session_unmount_drive(char* username)
 int DEFAULT_CC
 session_destroy(char* username)
 {
-	int pid;
-	int uid;
-	char path[1024];
-	struct dirent *dir_entry;
+	int pid = 0;
+	int uid = 0;
+	char path[1024] = {0};
+	struct dirent *dir_entry = NULL;
 	struct stat st;
-	int i;
+	int i = 0;
 	DIR *dir;
 
 	if (username == NULL || username[0] == 0)
@@ -861,6 +861,7 @@ session_destroy(char* username)
 				continue;
 			}
 			g_sprintf(path, "%s/%s", "/proc", dir_entry->d_name);
+			st.st_uid = 0;
 			if( stat(path, &st) == -1 )
 			{
 				continue;
