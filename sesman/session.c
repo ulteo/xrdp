@@ -1416,8 +1416,11 @@ struct session_item*
 session_list_session(int* count)
 {
   struct session_chain* tmp;
-  struct session_item* sess = g_malloc(sizeof(struct session_item),0);
+  struct session_item* sess = g_malloc(sizeof(struct session_item) * g_session_count, 0);
+  struct session_item* current_item = NULL;
+
   *count = 0;
+  current_item = sess;
   /*THREAD-FIX require chain lock */
   lock_chain_acquire();
   tmp = g_sessions;
@@ -1425,7 +1428,9 @@ session_list_session(int* count)
   {
 	  log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[session_list_session]: "
 					"name : %s",tmp->item->name);
-	  g_memcpy(&sess[*count], tmp->item, sizeof(struct session_item));
+	  g_memcpy(current_item, tmp->item, sizeof(struct session_item));
+	  current_item++;
+
 	  tmp=tmp->next;
 	  *count += 1;
   }
