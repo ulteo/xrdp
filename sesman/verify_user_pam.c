@@ -37,8 +37,8 @@ extern struct config_sesman* g_cfg;
 
 struct t_user_pass
 {
-  char user[256] = {0};
-  char pass[256] = {0};
+  char user[256];
+  char pass[256];
 };
 
 struct t_auth_info
