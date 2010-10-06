@@ -192,8 +192,9 @@ xml_send_info(int client, xmlDocPtr doc)
 	xmlDocDumpFormatMemory(doc, &xmlbuff, &buff_size, 1);
 	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[xml_send_info]: "
 			"data send : %s\n",xmlbuff);
+
 	make_stream(s);
-	init_stream(s, 1024);
+	init_stream(s, buff_size + 6);
 	out_uint32_be(s,buff_size);
 	out_uint8p(s, xmlbuff, buff_size)
 	size = s->p - s->data;
@@ -246,7 +247,7 @@ xml_send_error(int client, const char* message)
 			"data send : %s",xmlbuff);
 
 	make_stream(s);
-	init_stream(s, 1024);
+	init_stream(s, buff_size);
 	out_uint32_be(s,buff_size);
 	out_uint8p(s, xmlbuff, buff_size)
 	size = s->p - s->data;
@@ -295,7 +296,7 @@ xml_send_success(int client, char* message)
 			"data send : %s\n",xmlbuff);
 
 	make_stream(s);
-	init_stream(s, 1024);
+	init_stream(s, buff_size + 6);
 	out_uint32_be(s,buff_size);
 	out_uint8p(s, xmlbuff, buff_size)
 	size = s->p - s->data;
@@ -364,6 +365,10 @@ xml_receive_message(int client)
 	in_uint32_be(s,data_length);
 	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[xml_received_message]: "
 			"data_length : %i", data_length);
+	free_stream(s);
+	make_stream(s);
+	init_stream(s, data_length);
+
   g_tcp_recv(client, s->data, data_length, 0);
   s->data[data_length] = 0;
   log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[xml_received_message]: "
