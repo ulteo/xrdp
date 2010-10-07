@@ -473,16 +473,19 @@ send_session(int client, int session_id)
   {
   	log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[send_session]: "
 				"the session %i did not exist",session_id);
-    xml_send_error(client, "the session id of the request did not exist");
-    return 1;
+//    xml_send_error(client, "the session id of the request did not exist");
+//    return 1;
   }
   version = xmlCharStrdup("1.0");
 	doc = xmlNewDoc(version);
-	if (doc ==NULL)
+	if (doc == NULL)
 	{
 		log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[send_session]: "
 				"Unable to create the document");
-		g_free(sess);
+		if (sess != NULL)
+		{
+			g_free(sess);
+		}
 		return 1;
 	}
 	doc->encoding = xmlCharStrdup("UTF-8");
@@ -490,34 +493,42 @@ send_session(int client, int session_id)
 	session = xmlCharStrdup("session");
 	node = xmlNewNode(NULL, response);
 	node2 = xmlNewNode(NULL, session);
-	char prop[128];
-	g_sprintf(prop, "%i", sess[0].display);
-	id = xmlCharStrdup("id");
-	id_value = xmlCharStrdup(prop);
-	username = xmlCharStrdup("id");
-	username_value = xmlCharStrdup(sess[0].name);
-	status = xmlCharStrdup("status");
-	status_value = xmlCharStrdup(session_get_status_string(sess[0].status));
 
-	xmlSetProp(node2, id, id_value);
-	xmlSetProp(node2, username, username_value);
-	xmlSetProp(node2, status, status_value );
-	xmlAddChild(node, node2);
+	if (sess != NULL)
+	{
+		char prop[128];
+		g_sprintf(prop, "%i", sess[0].display);
+		id = xmlCharStrdup("id");
+		id_value = xmlCharStrdup(prop);
+		username = xmlCharStrdup("id");
+		username_value = xmlCharStrdup(sess[0].name);
+		status = xmlCharStrdup("status");
+		status_value = xmlCharStrdup(session_get_status_string(sess[0].status));
+
+		xmlSetProp(node2, id, id_value);
+		xmlSetProp(node2, username, username_value);
+		xmlSetProp(node2, status, status_value );
+		xmlAddChild(node, node2);
+	}
+
 	xmlDocSetRootElement(doc, node);
 	xml_send_info(client, doc);
 
-	xmlFree(id);
-	xmlFree(id_value);
-	xmlFree(username);
-	xmlFree(username_value);
-	xmlFree(status);
-	xmlFree(status_value);
 	xmlFree(response);
 	xmlFree(session);
 	xmlFree(version);
 
 	xmlFreeDoc(doc);
-	g_free(sess);
+	if (sess != NULL)
+	{
+		xmlFree(id);
+		xmlFree(id_value);
+		xmlFree(username);
+		xmlFree(username_value);
+		xmlFree(status);
+		xmlFree(status_value);
+		g_free(sess);
+	}
 	return 0;
 }
 
