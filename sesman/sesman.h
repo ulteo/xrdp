@@ -56,9 +56,10 @@
 #define UMOUNT_UTILS            "/bin/umount"
 
 #define RDPDRIVE_NAME    ".rdp_drive"
+#define GVFSDRIVE_NAME   ".gvfs"
 
 
 int DEFAULT_CC
-session_destroy(char* username);
+session_destroy(struct session_item* sess);
 
 #endif

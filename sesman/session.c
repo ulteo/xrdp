@@ -388,19 +388,20 @@ session_start_fork(int width, int height, int bpp, char* username,
   int wmpid;
   int xpid;
   int i;
-  char geometry[32];
-  char depth[32];
-  char screen[32];
-  char text[256];
-  char x_log_file_path[256];
-  char passwd_file[256];
+  char geometry[32] = {0};
+  char depth[32] = {0};
+  char screen[32] = {0};
+  char text[256] = {0};
+  char x_log_file_path[256] = {0};
+  char passwd_file[256] = {0};
   char** pp1;
   struct session_chain* temp;
   struct list* xserver_params=0;
   time_t ltime;
   struct tm stime;
   char* kb_util = "/usr/bin/setxkbmap";
-  char default_shell[256];
+  char default_shell[256] = {0};
+  char user_dir[1024] = {0};
 
   /* check to limit concurrent sessions */
   if (g_session_count >= g_cfg->sess.max_sessions)
@@ -451,6 +452,13 @@ session_start_fork(int width, int height, int bpp, char* username,
 					"user can not override his shell");
   	default_shell[0] = 0;
   	program = 0;
+  }
+
+  g_getuser_info(username, 0, 0, 0, user_dir, 0);
+  if (user_dir == NULL || user_dir[0] == 0)
+  {
+    log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "Unable to create session for an user without homedir ");
+    return 1;
   }
 
   g_snprintf(x_log_file_path, sizeof(x_log_file_path), "%s%i.log", X_LOG_PREFIX, display);
@@ -652,6 +660,7 @@ session_start_fork(int width, int height, int bpp, char* username,
     temp->item->bpp = bpp;
     temp->item->data = data;
     g_strncpy(temp->item->name, username, 255);
+    g_strncpy(temp->item->homedir, user_dir, sizeof(temp->item->homedir));
 
     ltime = g_time1();
     localtime_r(&ltime, &stime);
@@ -781,28 +790,41 @@ session_is_tagged(int pid)
 }
 
 int DEFAULT_CC
-session_unmount_drive(char* username)
+session_unmount_drive(struct session_item* sess)
 {
 	char path[1024] = {0};
 	char user_dir[1024] = {0};
 	int pid = 0;
 
-	if (username == NULL || username[0] == 0)
+	if (sess == NULL)
+	{
+		log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "Unable to destroy an empty session");
+		return 1;
+	}
+	if (sess->name == NULL || sess->name[0] == 0)
 	{
 		log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "Unable to destroy session for an empty user");
 		return 1;
 	}
-
-	g_getuser_info(username, 0, 0, 0, user_dir, 0);
-
-	if (user_dir == NULL || user_dir[0] == NULL)
+	if (sess->homedir == NULL || sess->homedir[0] == 0)
 	{
-		log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "Unable to destroy session for an user without homedir ");
+		log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "User '%' dont have a userdir", sess->name);
 		return 1;
 	}
 
-	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "Verify mounted drive for user %s on %s", username, user_dir);
-	snprintf(path, 1024, "%s/%s", user_dir, RDPDRIVE_NAME );
+	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "Verify mounted drive for user %s on %s", sess->name, sess->homedir);
+	g_snprintf(path, 1024, "%s/%s", sess->homedir, RDPDRIVE_NAME );
+	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "Try to unmount the path %s", path);
+
+	pid = g_fork();
+	if (pid == 0)
+	{
+		//child process
+		g_execlp3(UMOUNT_UTILS, UMOUNT_UTILS, path);
+		g_exit(0);
+	}
+
+	g_snprintf(path, 1024, "%s/%s", sess->homedir, GVFSDRIVE_NAME );
 	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "Try to unmount the path %s", path);
 
 	pid = g_fork();
@@ -826,7 +848,7 @@ session_unmount_drive(char* username)
 
 /******************************************************************************/
 int DEFAULT_CC
-session_destroy(char* username)
+session_destroy(struct session_item* sess)
 {
 	int pid = 0;
 	int uid = 0;
@@ -836,13 +858,19 @@ session_destroy(char* username)
 	int i = 0;
 	DIR *dir;
 
-	if (username == NULL || username[0] == 0)
+	if (sess == NULL)
+	{
+		log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "Unable to destroy a NULL session");
+		return 1;
+	}
+
+	if (sess->name == NULL || sess->name[0] == 0)
 	{
 		log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "Unable to destroy session for an empty user");
 		return 1;
 	}
 
-	session_unmount_drive(username);
+	session_unmount_drive(sess);
 
 	dir = opendir("/proc" );
 	if( dir == NULL)
@@ -866,7 +894,7 @@ session_destroy(char* username)
 			{
 				continue;
 			}
-			g_getuser_info(username, 0, &uid, 0, 0, 0);
+			g_getuser_info(sess->name, 0, &uid, 0, 0, 0);
 			if( uid == 0)
 			{
 //				log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "Unable to kill root processus "
@@ -923,7 +951,7 @@ session_kill(int pid)
     if (tmp->item->pid == pid)
     {
       /* deleting the session */
-      session_destroy(tmp->item->name);
+      session_destroy(tmp->item);
       log_message(&(g_cfg->log), LOG_LEVEL_INFO, "session %d - user %s - "
                   "terminated", tmp->item->pid, tmp->item->name);
       g_free(tmp->item);
@@ -1007,7 +1035,7 @@ session_kill_by_display(int display)
       }
       g_free(tmp);
       g_session_count--;
-      session_destroy(tmp->item->name);
+      session_destroy(tmp->item);
       /*THREAD-FIX release chain lock */
       lock_chain_release();
       return SESMAN_SESSION_KILL_OK;
@@ -1188,7 +1216,7 @@ session_monit()
 	      g_sigterm(tmp->item->pid);
 	      if (g_testpid(tmp->item->pid) == tmp->item->pid)
 	      {
-	      	session_destroy(tmp->item->name);
+	      	session_destroy(tmp->item);
 	      	g_free(tmp->item);
 		      if (prev == 0)
 		      {
