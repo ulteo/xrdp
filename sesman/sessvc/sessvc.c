@@ -159,8 +159,8 @@ main(int argc, char** argv)
     g_snprintf(exe_path, 261, "%s/xrdp-chansrv", XRDP_SBIN_PATH);
     g_execlp3(exe_path, "xrdp-chansrv", username);
     /* should not get here */
-    g_writeln("xrdp-sessvc: g_execvp failed");
-    return 1;
+    g_writeln("xrdp-sessvc: g_execvp failed: %s ", strerror(g_get_errno()));
+    g_exit(1);
   }
   lerror = 0;
   /* wait for window manager to get done */
