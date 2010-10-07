@@ -134,7 +134,7 @@ sig_handler_thread(void* arg)
   /* building the signal wait mask... */
   sigemptyset(&waitmask);
   sigaddset(&waitmask, SIGHUP);
-  sigaddset(&waitmask, SIGCHLD);
+//  sigaddset(&waitmask, SIGCHLD);
   sigaddset(&waitmask, SIGTERM);
   sigaddset(&waitmask, SIGKILL);
   sigaddset(&waitmask, SIGINT);
@@ -155,11 +155,11 @@ sig_handler_thread(void* arg)
         LOG_DBG(&(g_cfg->log), "sesman received SIGHUP", 0);
         //return 0;
         break;
-      case SIGCHLD:
-        /* a session died */
-        LOG_DBG(&(g_cfg->log), "sesman received SIGCHLD", 0);
-        sig_sesman_session_end(SIGCHLD);
-        break;
+//      case SIGCHLD:
+//        /* a session died */
+//        LOG_DBG(&(g_cfg->log), "sesman received SIGCHLD", 0);
+//        sig_sesman_session_end(SIGCHLD);
+//        break;
       case SIGINT:
         /* we die */
         LOG_DBG(&(g_cfg->log), "sesman received SIGINT", 0);
