@@ -611,7 +611,8 @@ int close_management_connection(xmlDocPtr doc, int socket)
   xmlCleanupParser();
   xmlCleanupMemory();
 
-  return 1;
+  pthread_exit(NULL);
+  //return 1;
 }
 
 
@@ -806,8 +807,8 @@ admin_thread(void* param)
     }
     else
     {
-    	//tc_thread_create((void*)process_request, (void*)client);
-    	process_request(client);
+    	tc_thread_create((void*)process_request, (void*)client);
+    	//process_request(client);
     }
   }
 }
