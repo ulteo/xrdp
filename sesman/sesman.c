@@ -283,7 +283,7 @@ xml_send_success(int client, char* message)
 	if (doc == NULL)
 	{
 		log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[xml_send_success]: "
-				"Unable to create the document\n");
+				"Unable to create the document");
 		return 0;
 	}
 	doc->encoding = xmlCharStrdup("UTF-8");
@@ -293,7 +293,7 @@ xml_send_success(int client, char* message)
 
 	xmlDocDumpFormatMemory(doc, &xmlbuff, &buff_size, 1);
 	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[xml_send_success]: "
-			"Data send : %s\n", xmlbuff);
+			"Data send : %s", xmlbuff);
 
 	make_stream(s);
 	init_stream(s, buff_size + 6);
