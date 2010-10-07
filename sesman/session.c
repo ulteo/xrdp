@@ -951,7 +951,7 @@ session_kill(int pid)
       /* deleting the session */
       session_destroy(tmp->item);
       log_message(&(g_cfg->log), LOG_LEVEL_INFO, "session %d - user %s - "
-                  "terminated", tmp->item->pid, tmp->item->name);
+                  "terminated", tmp->item->display, tmp->item->name);
       g_free(tmp->item);
       if (prev == 0)
       {
