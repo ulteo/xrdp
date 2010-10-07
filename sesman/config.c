@@ -361,7 +361,7 @@ config_read_sessions(int file, struct config_sessions* se, struct list* param_n,
     {
       se->monitoring_delay=g_atoi((char*)list_get_item(param_v, i));
     }
-    if (0 == g_strcasecmp(buf, SESMAN_CFG_SESS_MONIT_DELAY))
+    if (0 == g_strcasecmp(buf, SESMAN_CFG_SESS_X_TIMEOUT))
     {
       se->x_session_timeout=g_atoi((char*)list_get_item(param_v, i));
     }
