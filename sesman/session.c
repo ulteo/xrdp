@@ -870,8 +870,6 @@ session_destroy(struct session_item* sess)
 		return 1;
 	}
 
-	session_unmount_drive(sess);
-
 	dir = opendir("/proc" );
 	if( dir == NULL)
 	{
@@ -1415,6 +1413,10 @@ session_update_status_by_user(char* user, int status)
 
     if (g_strcmp(user, tmp->item->name) == 0)
     {
+    	if (status == SESMAN_SESSION_STATUS_TO_DESTROY)
+    	{
+    		session_unmount_drive(tmp->item);
+    	}
       /*THREAD-FIX release chain lock */
     	//char* str2 = session_get_status_string(tmp->item->status);
     	if (tmp->item->status == SESMAN_SESSION_STATUS_TO_DESTROY)
