@@ -739,7 +739,7 @@ session_test_line(int fd, int *file_pos)
 	char buffer[1024] = {0};
 	char* p;
 	size = g_file_read(fd, buffer, 1024);
-	if( size == 0)
+	if( size < 1)
 	{
 		return -1;
 	}
@@ -771,7 +771,7 @@ session_is_tagged(int pid)
 	size = g_sprintf(environ_filename, "/proc/%i/environ",pid);
 	environ_filename[size] = 0;
 	fd = g_file_open(environ_filename);
-	if( fd == 0)
+	if( fd < 1)
 	{
 		return 1;
 	}
