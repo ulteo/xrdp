@@ -292,8 +292,8 @@ xml_send_success(int client, char* message)
 	xmlDocSetRootElement(doc, node);
 
 	xmlDocDumpFormatMemory(doc, &xmlbuff, &buff_size, 1);
-	log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[xml_send_success]: "
-			"data send : %s\n",xmlbuff);
+	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[xml_send_success]: "
+			"Data send : %s\n",xmlbuff);
 
 	make_stream(s);
 	init_stream(s, buff_size + 6);
@@ -306,7 +306,7 @@ xml_send_success(int client, char* message)
 	}
 	else
 	{
-		log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[xml_send_success]: "
+		log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[xml_send_success]: "
 				"Unable to send xml response: %s, cause: %s", xmlbuff, strerror(g_get_errno()));
 	}
   free_stream(s);
