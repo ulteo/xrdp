@@ -736,7 +736,7 @@ int APP_CC
 session_test_line(int fd, int *file_pos)
 {
 	int size;
-	char buffer[1024];
+	char buffer[1024] = {0};
 	char* p;
 	size = g_file_read(fd, buffer, 1024);
 	if( size == 0)
