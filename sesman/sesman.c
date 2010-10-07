@@ -247,7 +247,7 @@ xml_send_error(int client, const char* message)
 			"data send : %s",xmlbuff);
 
 	make_stream(s);
-	init_stream(s, buff_size);
+	init_stream(s, buff_size + 6);
 	out_uint32_be(s,buff_size);
 	out_uint8p(s, xmlbuff, buff_size)
 	size = s->p - s->data;
