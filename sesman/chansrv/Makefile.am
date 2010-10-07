@@ -31,8 +31,7 @@ channel_launcher_DATA = \
 
 SUBDIRS = \
   rdpdr \
-  rdpsnd2 \
-  cliprdr
+  rdpsnd2 
 
 install-data-hook:
 	chmod 755 $(DESTDIR)$(sbindir)/xrdp-channel-launcher
