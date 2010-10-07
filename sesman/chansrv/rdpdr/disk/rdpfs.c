@@ -738,9 +738,8 @@ rdpfs_list_reply(int handle, int status)
   init_stream(s, 256);
   out_uint16_le(s, RDPDR_CTYP_CORE);
   out_uint16_le(s, PAKID_CORE_DEVICE_REPLY);
-  out_uint16_le(s, 0x1);  							/* major version */
-  out_uint16_le(s, RDP5);							/* minor version */
-  out_uint32_le(s, client_id);							/* client ID */
+  out_uint32_le(s, 0x1);  							/* device_id */
+  out_uint32_le(s, status);  						/* device_ */
 
   s_mark_end(s);
 
