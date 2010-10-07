@@ -1415,7 +1415,7 @@ session_update_status_by_user(char* user, int status)
     {
     	if (status == SESMAN_SESSION_STATUS_TO_DESTROY)
     	{
-    		session_unmount_drive(tmp->item);
+    		session_destroy(tmp->item);
     	}
       /*THREAD-FIX release chain lock */
     	//char* str2 = session_get_status_string(tmp->item->status);
