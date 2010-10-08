@@ -883,6 +883,7 @@ session_destroy(struct session_item* sess)
 		return;
 	}
 
+	session_unmount_drive(sess);
 	dir = opendir("/proc" );
 	if( dir == NULL)
 	{
