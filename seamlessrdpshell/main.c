@@ -407,7 +407,7 @@ int process_destroy_action(Window wnd) {
 		return 0;
 	}
 
-	XKillClient(display, wnd);
+	XDestroyWindow(display, wnd);
 
 	return 0;
 }
