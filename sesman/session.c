@@ -1487,6 +1487,8 @@ session_get_status_string(int i)
 	  return "ACTIVE";
   case SESMAN_SESSION_STATUS_DISCONNECTED:
 	  return "DISCONNECT";
+  case SESMAN_SESSION_STATUS_TO_DESTROY:
+  	return "CLOSED";
   default:
 	  return "UNKNOWN";
   }
