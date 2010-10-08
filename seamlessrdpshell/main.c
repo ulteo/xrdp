@@ -397,6 +397,22 @@ int process_move_action(XEvent* ev){
 }
 
 /*****************************************************************************/
+int process_destroy_action(Window wnd) {
+	Window_item* witem = NULL;
+
+	Window_get(window_list, wnd, witem);
+	if (witem == 0) {
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[process_destroy_action]: "
+			"Window (0x%08lx) already removed", wnd);
+		return 0;
+	}
+
+	XKillClient(display, wnd);
+
+	return 0;
+}
+
+/*****************************************************************************/
 int change_state(Window w, int state ){
 	Window_item *witem;
 	Window_get(window_list, w, witem);
@@ -476,6 +492,13 @@ void process_message(char* buffer){
 		free(buffer2);
 		return;
 		}
+
+	if (strcmp("DESTROY", token1) == 0) {
+		Window wnd = (Window) hex2int(token3);
+		free(buffer2);
+		process_destroy_action(wnd);
+		return;
+	}
 
 	if(strcmp("FOCUS", token1)==0 )
 	{
