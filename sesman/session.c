@@ -755,7 +755,7 @@ session_test_line(int fd, int *file_pos)
 	}
 	else
 	{
-		*file_pos += g_strlen(buffer)+1;
+		*file_pos += size;
 	}
 	return 1;
 }
