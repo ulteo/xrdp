@@ -404,12 +404,15 @@ session_start_fork(int width, int height, int bpp, char* username,
   char user_dir[1024] = {0};
 
   /* check to limit concurrent sessions */
+  lock_chain_acquire();
   if (g_session_count >= g_cfg->sess.max_sessions)
   {
     log_message(&(g_cfg->log), LOG_LEVEL_INFO, "max concurrent session limit "
                 "exceeded. login for user %s denied", username);
+    lock_chain_release();
     return 0;
   }
+  lock_chain_release();
 
   temp = (struct session_chain*)g_malloc(sizeof(struct session_chain), 0);
   if (temp == 0)
@@ -677,7 +680,9 @@ session_start_fork(int width, int height, int bpp, char* username,
 
     temp->next=g_sessions;
     g_sessions=temp;
+    lock_chain_acquire();
     g_session_count++;
+    lock_chain_release();
   }
   return display;
 }
@@ -869,6 +874,14 @@ session_destroy(struct session_item* sess)
 		log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "Unable to destroy session for an empty user");
 		return 1;
 	}
+	g_getuser_info(sess->name, 0, &uid, 0, 0, 0);
+	if( uid == 0)
+	{
+//    log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "Unable to kill root processus "
+//                "or user did not exist");
+
+		return;
+	}
 
 	dir = opendir("/proc" );
 	if( dir == NULL)
@@ -890,13 +903,6 @@ session_destroy(struct session_item* sess)
 			st.st_uid = 0;
 			if( stat(path, &st) == -1 )
 			{
-				continue;
-			}
-			g_getuser_info(sess->name, 0, &uid, 0, 0, 0);
-			if( uid == 0)
-			{
-//				log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "Unable to kill root processus "
-//						"or user did not exist");
 				continue;
 			}
 			if(st.st_uid == uid)
@@ -921,7 +927,7 @@ session_kill(int pid)
   struct session_chain* tmp;
   struct session_chain* prev;
   /*THREAD-FIX require chain lock */
-  lock_chain_acquire();
+  //lock_chain_acquire();
   tmp=g_sessions;
   prev=0;
 
@@ -1056,7 +1062,7 @@ session_sigkill_all()
   struct session_chain* tmp;
 
   /*THREAD-FIX require chain lock */
-  lock_chain_acquire();
+//  lock_chain_acquire();
 
   tmp=g_sessions;
 
@@ -1077,7 +1083,7 @@ session_sigkill_all()
   }
 
   /*THREAD-FIX release chain lock */
-  lock_chain_release();
+//  lock_chain_release();
 }
 
 /******************************************************************************/
@@ -1140,7 +1146,7 @@ session_get_by_display(int display)
   }
 
   /*THREAD-FIX require chain lock */
-  lock_chain_acquire();
+//  lock_chain_acquire();
 
   tmp = g_sessions;
   while (tmp != 0)
@@ -1150,7 +1156,7 @@ session_get_by_display(int display)
       log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "session descriptor for "
                   "display %d is null!", display);
       /*THREAD-FIX release chain lock */
-      lock_chain_release();
+//      lock_chain_release();
       g_free(dummy);
       return 0;
     }
@@ -1158,7 +1164,7 @@ session_get_by_display(int display)
     {
       /*THREAD-FIX release chain lock */
       g_memcpy(dummy, tmp->item, sizeof(struct session_item));
-      lock_chain_release();
+//      lock_chain_release();
       /*return tmp->item;*/
       return dummy;
     }
@@ -1166,7 +1172,7 @@ session_get_by_display(int display)
     tmp=tmp->next;
   }
   /*THREAD-FIX release chain lock */
-  lock_chain_release();
+//  lock_chain_release();
   g_free(dummy);
   return 0;
 }
@@ -1178,13 +1184,12 @@ session_monit()
 	  struct session_chain* prev;
 
 	  /*THREAD-FIX require chain lock */
-	  lock_chain_acquire();
+//	  lock_chain_acquire();
 
 	  tmp=g_sessions;
 	  prev=0;
   	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[session_monit]: "
   			"Monitoring sessions");
-
 	  while (tmp != 0)
 	  {
 	    if (tmp->item == 0)
@@ -1202,7 +1207,7 @@ session_monit()
 	        prev->next = tmp->next;
 	      }
 	      /*THREAD-FIX release chain lock */
-	      lock_chain_release();
+//	      lock_chain_release();
 	      return;
 	    }
 	    if (tmp->item->status == SESMAN_SESSION_STATUS_TO_DESTROY ||
@@ -1243,7 +1248,7 @@ session_monit()
 	  }
 
 	  /*THREAD-FIX release chain lock */
-	  lock_chain_release();
+//	  lock_chain_release();
 	  return ;
 }
 
@@ -1271,6 +1276,7 @@ session_get_user_display(char* username)
 
     if (g_strcmp(username, tmp->item->name)==0)
     {
+    	lock_chain_release();
       return tmp->item->display;
     }
 
@@ -1453,7 +1459,7 @@ session_list_session(int* count)
   *count = 0;
   current_item = sess;
   /*THREAD-FIX require chain lock */
-  lock_chain_acquire();
+//  lock_chain_acquire();
   tmp = g_sessions;
   while (tmp != 0)
   {
@@ -1467,7 +1473,7 @@ session_list_session(int* count)
   }
 
   /*THREAD-FIX release chain lock */
-  lock_chain_release();
+//  lock_chain_release();
   return sess;
 }
 

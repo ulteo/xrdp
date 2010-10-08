@@ -60,7 +60,11 @@ sig_sesman_shutdown(int sig)
   log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, " - getting signal %d pid %d", sig, g_getpid());
   g_set_wait_obj(g_term_event);
   g_tcp_close(g_sck);
+
+  lock_chain_acquire();
   session_sigkill_all();
+  lock_chain_release();
+
   sig_sesman_cleanup();
   g_snprintf(pid_file, 255, "%s/xrdp-sesman.pid", XRDP_PID_PATH);
   g_file_delete(pid_file);
@@ -112,7 +116,9 @@ sig_sesman_session_end(int sig)
   pid = g_waitchild();
   if (pid > 0)
   {
+    lock_chain_acquire();
     session_kill(pid);
+    lock_chain_release();
   }
 }
 

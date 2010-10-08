@@ -394,7 +394,11 @@ send_sessions(int client)
 
   log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[send_sessions]: "
 			"request for sessions list");
+
+	lock_chain_acquire();
 	sess = (struct session_item*)session_list_session(&count);
+	lock_chain_release();
+
 	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[send_sessions]: "
 			"%i count sessions",count);
 	version = xmlCharStrdup("1.0");
@@ -468,7 +472,11 @@ send_session(int client, int session_id)
 
   log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[send_session]: "
 			"request for session\n");
-	sess = session_get_by_display(session_id);
+
+  lock_chain_acquire();
+  sess = session_get_by_display(session_id);
+  lock_chain_release();
+
   if( sess == NULL)
   {
   	log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[send_session]: "
@@ -556,7 +564,11 @@ send_logoff(int client, int session_id)
 
 	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[send_logoff]: "
 			"request session %i logoff", session_id);
+
+	lock_chain_acquire();
 	sess = session_get_by_display(session_id);
+  lock_chain_release();
+
   if( sess == NULL)
   {
     log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[send_logoff]: "
@@ -830,7 +842,9 @@ monit_thread(void* param)
   while(1)
   {
   	g_sleep(g_cfg->sess.monitoring_delay);
+  	lock_chain_acquire();
   	session_monit();
+  	lock_chain_release();
   }
 }
 
@@ -999,7 +1013,7 @@ main(int argc, char** argv)
   g_signal_user_interrupt(sig_sesman_shutdown); /* SIGINT  */
   g_signal_kill(sig_sesman_shutdown); /* SIGKILL */
   g_signal_terminate(sig_sesman_shutdown); /* SIGTERM */
-  g_signal_child_stop(sig_sesman_session_end); /* SIGCHLD */
+//  g_signal_child_stop(sig_sesman_session_end); /* SIGCHLD */
 #endif
 #if 0
   thread_sighandler_start();
