@@ -22,6 +22,28 @@
 
 #include "sesman.h"
 
+//#define DEBUG
+
+
+#ifdef DEBUG
+  #define lock_chain_acquire() \
+    g_printf("BEFORE AQUIRE %s[%i] \n",__FILE__, __LINE__); \
+    lock_chain_acquire2(); \
+    g_printf("AQUIRE %s[%i] \n",__FILE__, __LINE__);
+  #define lock_chain_release()\
+    g_printf("RELEASE %s[%i] \n",__FILE__, __LINE__); \
+    lock_chain_release2(); \
+    g_printf("AFTER RELEASE %s[%i] \n",__FILE__, __LINE__);
+
+
+#else
+  #define lock_chain_acquire() \
+    lock_chain_acquire2();
+
+  #define lock_chain_release()\
+    lock_chain_release2();
+#endif
+
 /**
  *
  * @brief initializes all the locks
@@ -44,7 +66,7 @@ lock_deinit(void);
  *
  */
 void APP_CC
-lock_chain_acquire(void);
+lock_chain_acquire2(void);
 
 /**
  *
@@ -52,7 +74,7 @@ lock_chain_acquire(void);
  *
  */
 void APP_CC
-lock_chain_release(void);
+lock_chain_release2(void);
 
 /**
  *

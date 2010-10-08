@@ -52,7 +52,7 @@ lock_deinit(void)
 
 /******************************************************************************/
 void APP_CC
-lock_chain_acquire(void)
+lock_chain_acquire2(void)
 {
   /* lock the chain */
   LOG_DBG(&(g_cfg->log), "lock_chain_acquire()");
@@ -61,7 +61,7 @@ lock_chain_acquire(void)
 
 /******************************************************************************/
 void APP_CC
-lock_chain_release(void)
+lock_chain_release2(void)
 {
   /* unlock the chain */
   LOG_DBG(&(g_cfg->log), "lock_chain_release()");
