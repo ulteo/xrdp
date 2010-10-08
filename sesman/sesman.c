@@ -631,7 +631,7 @@ int close_management_connection(xmlDocPtr doc, int socket)
 		xmlFreeDoc(doc);
 	}
 	g_tcp_close(socket);
-  xmlCleanupParser();
+//  xmlCleanupParser();
   xmlCleanupMemory();
 
   pthread_exit(NULL);
