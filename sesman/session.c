@@ -678,9 +678,9 @@ session_start_fork(int width, int height, int bpp, char* username,
     temp->item->type=type;
     temp->item->status=SESMAN_SESSION_STATUS_ACTIVE;
 
+    lock_chain_acquire();
     temp->next=g_sessions;
     g_sessions=temp;
-    lock_chain_acquire();
     g_session_count++;
     lock_chain_release();
   }
