@@ -822,24 +822,35 @@ session_unmount_drive(struct session_item* sess)
 	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "Try to unmount the path %s", path);
 
 	pid = g_fork();
+	if (pid == -1)
+	{
+		log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "Unable to start unmount %s [%s]", path, strerror(errno));
+		return 1;
+	}
 	if (pid == 0)
 	{
 		//child process
 		g_execlp3(UMOUNT_UTILS, UMOUNT_UTILS, path);
 		g_exit(0);
 	}
+	g_waitpid(pid);
 
 	g_snprintf(path, 1024, "%s/%s", sess->homedir, GVFSDRIVE_NAME );
 	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "Try to unmount the path %s", path);
 
 	pid = g_fork();
+	if (pid == -1)
+	{
+		log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "Unable to start unmount %s [%s]", path, strerror(errno));
+		return 1;
+	}
 	if (pid == 0)
 	{
 		//child process
 		g_execlp3(UMOUNT_UTILS, UMOUNT_UTILS, path);
 		g_exit(0);
 	}
-
+	g_waitpid(pid);
 //	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "Remove mount point: %s", path);
 //	g_remove_dirs(path);
 //	if (g_directory_exist(path))
