@@ -888,14 +888,14 @@ session_destroy(struct session_item* sess)
 	}
 
 	session_unmount_drive(sess);
-	dir = opendir("/proc" );
-	if( dir == NULL)
-	{
-		return 0;
-	}
 
 	for(i=0 ; i<2 ; i++)
 	{
+		dir = opendir("/proc" );
+		if( dir == NULL)
+		{
+			return 0;
+		}
 		while ((dir_entry = readdir(dir)) != NULL)
 		{
 			if( 	 (g_strcmp(dir_entry->d_name, ".") == 0)
@@ -919,9 +919,10 @@ session_destroy(struct session_item* sess)
 				}
 			}
 		}
+		closedir(dir);
 		g_sleep(100);
 	}
-	g_free(dir);
+	//g_free(dir);
 	return 0;
 }
 
