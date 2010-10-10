@@ -66,24 +66,17 @@ session_get_bydata(char* name)
 {
   struct session_chain* tmp;
 
-  /*THREAD-FIX require chain lock */
-  lock_chain_acquire();
-
   tmp = g_sessions;
 
   while (tmp != 0)
   {
     if (g_strncmp(name, tmp->item->name, 255) == 0)
     {
-      /*THREAD-FIX release chain lock */
-      lock_chain_release();
       return tmp->item;
     }
     tmp = tmp->next;
   }
 
-  /*THREAD-FIX release chain lock */
-  lock_chain_release();
   return 0;
 }
 

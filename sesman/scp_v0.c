@@ -60,7 +60,7 @@ scp_v0_process(struct SCP_CONNECTION* c, struct SCP_SESSION* s)
     tc_mutex_unlock(session_creation_lock);
     return;
   }
-
+  lock_chain_acquire();
   s_item = session_get_bydata(s->username);
   if (s_item != 0)
   {
@@ -79,10 +79,11 @@ scp_v0_process(struct SCP_CONNECTION* c, struct SCP_SESSION* s)
   	}
 
     auth_end(data);
+    lock_chain_release();
     tc_mutex_unlock(session_creation_lock);
     return;
   }
-
+  lock_chain_release();
   log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "No session already started for the user %s", s->username);
   if (access_login_allowed(s->username) == 0)
   {
