@@ -631,8 +631,6 @@ int close_management_connection(xmlDocPtr doc, int socket)
 		xmlFreeDoc(doc);
 	}
 	g_tcp_close(socket);
-//  xmlCleanupParser();
-  xmlCleanupMemory();
 
   pthread_exit(NULL);
   //return 1;
@@ -651,7 +649,6 @@ process_request(int client)
   char session_id_string[12];
   xmlDocPtr doc;
 
-  xmlInitParser();
   doc = xml_receive_message(client);
   if ( doc == NULL)
   {
@@ -817,7 +814,9 @@ THREAD_RV THREAD_CC
 admin_thread(void* param)
 {
   int server = g_create_unix_socket(MANAGEMENT_SOCKET_NAME);
-	g_chmod_hex(MANAGEMENT_SOCKET_NAME, 0xFFFF);
+  g_chmod_hex(MANAGEMENT_SOCKET_NAME, 0xFFFF);
+
+  xmlInitParser();
   while(1)
   {
   	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[admin_thread]: "
