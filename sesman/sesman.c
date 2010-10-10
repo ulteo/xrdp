@@ -504,14 +504,14 @@ send_session(int client, int session_id)
 
 	if (sess != NULL)
 	{
-		char prop[128];
-		g_sprintf(prop, "%i", sess[0].display);
+		char prop[128] = {0};
+		g_sprintf(prop, "%i", sess->display);
 		id = xmlCharStrdup("id");
 		id_value = xmlCharStrdup(prop);
 		username = xmlCharStrdup("id");
-		username_value = xmlCharStrdup(sess[0].name);
+		username_value = xmlCharStrdup(sess->name);
 		status = xmlCharStrdup("status");
-		status_value = xmlCharStrdup(session_get_status_string(sess[0].status));
+		status_value = xmlCharStrdup(session_get_status_string(sess->status));
 
 		xmlSetProp(node2, id, id_value);
 		xmlSetProp(node2, username, username_value);
