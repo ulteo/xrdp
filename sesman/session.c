@@ -743,9 +743,14 @@ session_test_line(int fd, int *file_pos)
 	{
 		return -1;
 	}
-
 	buffer[size] = 0;
+
 	endline = strchr(buffer, '\0');
+	if (endline == NULL || endline == buffer)
+	{
+		return -1;
+	}
+
 	if( g_strstr(buffer, XRDP_TAG ) != NULL)
 	{
 		return 0;
@@ -768,7 +773,6 @@ session_is_tagged(int pid)
 	int file_pos = 0;
 	int res;
 	int size;
-	static int i=3;
 
 	size = g_sprintf(environ_filename, "/proc/%i/environ",pid);
 	environ_filename[size] = 0;
@@ -784,7 +788,11 @@ session_is_tagged(int pid)
 			g_file_close(fd);
 			return 0;
 		}
-		g_file_seek(fd, file_pos);
+
+		if (g_file_seek(fd, file_pos) < 0)
+		{
+			break;
+		}
 	}
 	g_file_close(fd);
 	return 1;
