@@ -1594,9 +1594,9 @@ xrdp_orders_send_raw_bitmap(struct xrdp_orders* self,
       if (Bpp == 3)
       {
         pixel = GETPIXEL32(data, j, i, width);
-        out_uint8(self->out_s, pixel >> 16);
-        out_uint8(self->out_s, pixel >> 8);
         out_uint8(self->out_s, pixel);
+        out_uint8(self->out_s, pixel >> 8);
+        out_uint8(self->out_s, pixel >> 16);
       }
       else if (Bpp == 2)
       {
