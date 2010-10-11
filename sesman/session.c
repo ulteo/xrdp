@@ -733,22 +733,26 @@ session_sync_start(void)
 int APP_CC
 session_test_line(int fd, int *file_pos)
 {
-	int size;
+	int size = 0;
 	char buffer[1024] = {0};
-	char* p;
+	char* p = NULL;
+	char* endline = NULL;
+
 	size = g_file_read(fd, buffer, 1024);
-	if( size < 1)
+	if( size < XRDP_TAG_LEN)
 	{
 		return -1;
 	}
+
 	buffer[size] = 0;
-	if( g_strstr(buffer, "XRDP_PROCESS" ) != NULL)
+	endline = strchr(buffer, '\0');
+	if( g_strstr(buffer, XRDP_TAG ) != NULL)
 	{
 		return 0;
 	}
 	else
 	{
-		*file_pos += size;
+		*file_pos += endline + 1 - buffer;
 	}
 	return 1;
 }

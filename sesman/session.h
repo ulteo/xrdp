@@ -50,6 +50,9 @@
 #define XRDP_USER_PREF_DIRECTORY		"/var/cache/xrdp/user_pref"
 #define XRDP_TEMP_DIR								"/var/cache/xrdp"
 
+#define XRDP_TAG                    "XRDP_PROCESS"
+#define XRDP_TAG_LEN                12
+
 struct session_date
 {
   tui16 year;
