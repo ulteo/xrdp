@@ -269,7 +269,7 @@ printer_process_iocompletion(struct stream* s)
 
 /*****************************************************************************/
 int APP_CC
-printer_device_list_reply(int handle)
+printer_device_list_reply(int device_id, int status)
 {
   struct stream* s;
   log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_printer[printer_device_list_reply]:"
@@ -278,9 +278,8 @@ printer_device_list_reply(int handle)
   init_stream(s, 256);
   out_uint16_le(s, RDPDR_CTYP_CORE);
   out_uint16_le(s, PAKID_CORE_DEVICE_REPLY);
-  out_uint16_le(s, 0x1);  							/* major version */
-  out_uint16_le(s, RDP5);							/* minor version */
-  out_uint32_le(s, client_id);							/* client ID */
+  out_uint32_le(s, device_id);          /* device_id */
+  out_uint32_le(s, status);             /* status */
   s_mark_end(s);
 
   g_sleep(10);
@@ -337,11 +336,12 @@ printer_devicelist_announce(struct stream* s)
     	device_list[device_count].device_id = device_id;
     	device_list[device_count].device_type = RDPDR_DTYP_PRINT;
     	device_count++;
-    	printer_device_list_reply(handle);
+    	printer_device_list_reply(handle, STATUS_SUCCESS);
     	continue;
     }
     log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_printer[printer_devicelist_announce]: "
     		"Unable to add printer device");
+    printer_device_list_reply(handle, STATUS_INVALID_PARAMETER);
   }
   return 0;
 }

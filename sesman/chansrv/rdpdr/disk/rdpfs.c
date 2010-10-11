@@ -729,7 +729,7 @@ rdpfs_query_directory(int completion_id, int device_id, int information, const c
 
 /*****************************************************************************/
 int APP_CC
-rdpfs_list_reply(int handle, int status)
+rdpfs_list_reply(int device_id, int status)
 {
   struct stream* s;
   log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_list_reply]:"
@@ -738,8 +738,8 @@ rdpfs_list_reply(int handle, int status)
   init_stream(s, 256);
   out_uint16_le(s, RDPDR_CTYP_CORE);
   out_uint16_le(s, PAKID_CORE_DEVICE_REPLY);
-  out_uint32_le(s, 0x1);  							/* device_id */
-  out_uint32_le(s, status);  						/* device_ */
+  out_uint32_le(s, device_id);          /* device_id */
+  out_uint32_le(s, status);             /* status */
 
   s_mark_end(s);
 
@@ -895,7 +895,7 @@ rdpfs_list_announce(struct stream* s)
       rdpfs_list_reply(0, STATUS_INVALID_PARAMETER);
     	continue;
     }
-  	rdpfs_list_reply(handle, STATUS_SUCCESS);
+  	rdpfs_list_reply(device_id, STATUS_SUCCESS);
   }
   return 0;
 }
