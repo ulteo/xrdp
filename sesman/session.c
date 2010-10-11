@@ -1436,6 +1436,7 @@ session_update_status_by_user(char* user, int status)
     {
     	if (status == SESMAN_SESSION_STATUS_TO_DESTROY)
     	{
+    		//TODO work on a copy
     		session_destroy(tmp->item);
     	}
       /*THREAD-FIX release chain lock */
