@@ -73,7 +73,7 @@ scp_v0_process(struct SCP_CONNECTION* c, struct SCP_SESSION* s)
   	}
   	else
   	{
-  		session_update_status_by_user(s->username, SESMAN_SESSION_STATUS_ACTIVE);
+  		s_item->status = SESMAN_SESSION_STATUS_ACTIVE;
   		log_message(&(g_cfg->log), LOG_LEVEL_INFO, "switch from status DISCONNECTED to ACTIVE");
     	scp_v0s_allow_connection(c, display);
   	}
