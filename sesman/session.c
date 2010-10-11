@@ -239,7 +239,6 @@ session_get_aval_display_from_chain(void)
   int display;
 
   display = 10;
-  lock_chain_acquire();
   while ((display - 10) <= g_cfg->sess.max_sessions)
   {
     if (!session_is_display_in_chain(display))
@@ -252,7 +251,6 @@ session_get_aval_display_from_chain(void)
     }
     display++;
   }
-  lock_chain_release();
   return 0;
 }
 
@@ -397,15 +395,12 @@ session_start_fork(int width, int height, int bpp, char* username,
   char user_dir[1024] = {0};
 
   /* check to limit concurrent sessions */
-  lock_chain_acquire();
   if (g_session_count >= g_cfg->sess.max_sessions)
   {
     log_message(&(g_cfg->log), LOG_LEVEL_INFO, "max concurrent session limit "
                 "exceeded. login for user %s denied", username);
-    lock_chain_release();
     return 0;
   }
-  lock_chain_release();
 
   temp = (struct session_chain*)g_malloc(sizeof(struct session_chain), 0);
   if (temp == 0)
@@ -721,10 +716,12 @@ session_start(int width, int height, int bpp, char* username, char* password,
 int APP_CC
 session_sync_start(void)
 {
+  lock_chain_acquire();
   g_sync_result = session_start_fork(g_sync_width, g_sync_height, g_sync_bpp,
                                      g_sync_username, g_sync_password,
                                      g_sync_data, g_sync_type, g_sync_domain,
                                      g_sync_program, g_sync_directory, g_sync_keylayout);
+  lock_chain_release();
   lock_sync_sem_release();
   return g_sync_result;
 }
