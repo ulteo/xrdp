@@ -891,7 +891,6 @@ session_destroy(struct session_item* sess)
 		return;
 	}
 
-	session_unmount_drive(sess);
 
 	for(i=0 ; i<2 ; i++)
 	{
@@ -926,6 +925,7 @@ session_destroy(struct session_item* sess)
 		closedir(dir);
 		g_sleep(100);
 	}
+	session_unmount_drive(sess);
 	//g_free(dir);
 	return 0;
 }
