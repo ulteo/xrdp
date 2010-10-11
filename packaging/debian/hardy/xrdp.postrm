@@ -2,6 +2,6 @@
 
 getent group tsusers >/dev/null && groupdel tsusers
 
-rm -rf /var/spool/xrdp
+rm -rf /var/spool/xrdp/*
 
 #DEBHELPER#
