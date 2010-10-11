@@ -1093,7 +1093,7 @@ session_sigkill_all()
     }
     else
     {
-      g_sigterm(tmp->item->pid);
+      session_destroy(tmp->item);
     }
 
     /* go on */
