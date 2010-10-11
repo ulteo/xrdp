@@ -427,14 +427,14 @@ rdpdr_client_capability(struct stream* s)
     log_message(l_config, LOG_LEVEL_WARNING, "vchannel_rdpdr_channel[rdpdr_client_capability]: "
     		"only RDP5 is supported");
   }
-  in_uint16_le(s, temp);	/* oiCode1 */
+  in_uint32_le(s, temp);	/* oiCode1 */
   if (temp != RDPDR_IRP_MJ_ALL)
   {
     log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr_channel[rdpdr_client_capability]: "
 	      		"client did not support all the IRP operation");
     return 1;
   }
-  in_uint16_le(s, ignored);			/* oiCode2(unused) */
+  in_uint32_le(s, ignored);			/* oiCode2(unused) */
   in_uint32_le(s, ignored);			/* extendedPDU(unused) */
   in_uint32_le(s, ignored);			/* extraFlags1 */
   in_uint32_le(s, ignored);			/* extraFlags2 */
