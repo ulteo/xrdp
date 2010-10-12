@@ -584,7 +584,7 @@ printer_dev_add(struct stream* s, int device_data_length,
 	printer_devices[printer_devices_count].device_id = device_id;
 	g_strcpy(printer_devices[printer_devices_count].printer_name, printer_name);
 	printer_devices_count++;
-  return g_time1();
+  return 0;
 }
 
 /************************************************************************/
