@@ -330,17 +330,17 @@ printer_devicelist_announce(struct stream* s)
     p = s->p;
     handle = printer_dev_add(s, device_data_length, device_id, dos_name);
     s->p = p + device_data_length;
-    if (handle != 1)
+    if (handle == 0)
     {
     	device_list[device_count].device_id = device_id;
     	device_list[device_count].device_type = RDPDR_DTYP_PRINT;
     	device_count++;
-    	printer_device_list_reply(handle, STATUS_SUCCESS);
+    	printer_device_list_reply(device_id, STATUS_SUCCESS);
     	continue;
     }
     log_message(l_config, LOG_LEVEL_WARN, "rdpdr_printer[printer_devicelist_announce]: "
     		"Unable to add printer device");
-    printer_device_list_reply(handle, STATUS_INVALID_PARAMETER);
+    printer_device_list_reply(device_id, STATUS_INVALID_PARAMETER);
   }
   return 0;
 }
