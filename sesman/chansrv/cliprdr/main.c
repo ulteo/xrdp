@@ -35,6 +35,7 @@
 #include <file.h>
 #include "cliprdr.h"
 #include "xutils.h"
+#include "uni_rdp.h"
 
 /* external function declaration */
 extern char** environ;
@@ -221,7 +222,7 @@ void cliprdr_send_data_request()
 	out_uint16_le(s, CB_FORMAT_DATA_REQUEST);              /* msg type */
 	out_uint16_le(s, 0);                                   /* msg flag */
 	out_uint32_le(s, 1);                                   /* msg size */
-	out_uint32_le(s, CF_TEXT);                             /* we want CF_TEXT */
+	out_uint32_le(s, CF_UNICODETEXT);                      /* we want CF_UNICODE */
 
 	s_mark_end(s);
 	cliprdr_send(s);
@@ -233,16 +234,22 @@ void cliprdr_send_data_request()
 void cliprdr_send_data(int request_type)
 {
 	struct stream* s;
+	int uni_clipboard_len = (clipboard_size+1)*2;
+	int packet_len = uni_clipboard_len + 12;
+	char* temp;
 
 	make_stream(s);
-	init_stream(s,1024);
+	init_stream(s,packet_len);
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_send_data]:");
 	/* clip header */
 	out_uint16_le(s, CB_FORMAT_DATA_RESPONSE);             /* msg type */
 	out_uint16_le(s, 0);                                   /* msg flag */
-	out_uint32_le(s, clipboard_size);                      /* msg size */
-	out_uint8p(s, clipboard_data, clipboard_size);
+	out_uint32_le(s, uni_clipboard_len);                   /* msg size */
+	temp = s->p;
+	uni_rdp_out_str(s, clipboard_data, uni_clipboard_len);
+
+
 	s_mark_end(s);
 	cliprdr_send(s);
 	free_stream(s);
@@ -323,8 +330,8 @@ int cliprdr_process_data_request_response(struct stream* s, int msg_flags, int s
 		g_free(clipboard_data);
 	}
 	clipboard_data = g_malloc(size, 1);
-	g_memcpy(clipboard_data, s->p, size);
-	clipboard_size = size;
+	clipboard_size = uni_rdp_in_str(s, clipboard_data, size, size);
+
 	return 0;
 }
 
@@ -440,15 +447,15 @@ cliprdr_get_clipboard(XEvent* e)
 			if (clipboard_data == 0){
 				log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_get_clipboard]: "
 						"Update internal clipboard");
-				clipboard_data = malloc(bytes_left);
-				memcpy(clipboard_data, data, bytes_left);
+				clipboard_data = g_malloc(bytes_left+4, 1);
+				g_memcpy(clipboard_data, data, bytes_left);
 				clipboard_size = bytes_left;
 			}
 			else
 			{
-				free(clipboard_data);
-				clipboard_data = malloc(bytes_left);
-				memcpy(clipboard_data, data, bytes_left);
+				g_free(clipboard_data);
+				clipboard_data = g_malloc(bytes_left+4, 1);
+				g_memcpy(clipboard_data, data, bytes_left);
 				clipboard_size = bytes_left;
 				log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_get_clipboard]: "
 						"Send format list");
@@ -473,7 +480,7 @@ cliprdr_process_selection_request(XEvent* e)
 	XSelectionRequestEvent *req;
 	XEvent respond;
 	req=&(e->xselectionrequest);
-	if (req->target == XA_STRING)
+	if (req->target == format_utf8_string_atom)
 	{
 		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_process_selection_request]: "
 				"Update data with %s", clipboard_data);
@@ -482,7 +489,7 @@ cliprdr_process_selection_request(XEvent* e)
 		XChangeProperty (req->display,
 			req->requestor,
 			req->property,
-			XA_STRING,
+			format_utf8_string_atom,
 			8,
 			PropModeReplace,
 			(unsigned char*) clipboard_data,
@@ -531,7 +538,7 @@ void *thread_Xvent_process (void * arg)
 
 
 	num_targets = 0;
-	targets[num_targets++] = XA_STRING;
+	targets[num_targets++] = format_utf8_string_atom;
 
 	root_windows = DefaultRootWindow(display);
 	log_message(l_config, LOG_LEVEL_DEBUG, "cliprdr[thread_Xvent_process]: "
