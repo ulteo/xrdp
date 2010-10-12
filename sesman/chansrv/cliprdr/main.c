@@ -694,7 +694,6 @@ cliprdr_init()
 	}
   else
   {
-  	g_printf("vchannel[vchannel_init]: Invalid channel configuration file : %s\n", filename);
   	return LOG_STARTUP_OK;
   }
   return 0;
