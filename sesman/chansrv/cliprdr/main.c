@@ -303,7 +303,7 @@ int cliprdr_process_data_request(struct stream* s, int msg_flags, int size)
 	}
 
 	in_uint32_le(s, request_type);
-	log_message(l_config, LOG_LEVEL_WARNING, "vchannel_cliprdr[cliprdr_process_data_request]: "
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_process_data_request]: "
 			"Request for data of type %i", request_type);
 	cliprdr_send_data(request_type);
 	return 0;
