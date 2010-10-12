@@ -212,5 +212,6 @@ AC_CONFIG_FILES([Makefile
                  sesman/chansrv/rdpsnd2/Makefile
                  sesman/chansrv/rdpdr/printer/Makefile
                  sesman/chansrv/rdpdr/disk/Makefile
+                 sesman/chansrv/cliprdr/Makefile
 ])
 AC_OUTPUT
