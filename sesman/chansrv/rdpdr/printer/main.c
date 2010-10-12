@@ -338,7 +338,7 @@ printer_devicelist_announce(struct stream* s)
     	printer_device_list_reply(handle, STATUS_SUCCESS);
     	continue;
     }
-    log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_printer[printer_devicelist_announce]: "
+    log_message(l_config, LOG_LEVEL_WARN, "rdpdr_printer[printer_devicelist_announce]: "
     		"Unable to add printer device");
     printer_device_list_reply(handle, STATUS_INVALID_PARAMETER);
   }
