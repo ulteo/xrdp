@@ -441,7 +441,7 @@ cliprdr_get_clipboard(XEvent* e)
 																	&len, &dummy, &data);
 		if (result == Success)
 		{
-			log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_get_clipboard]: "
+			log_message(l_config, LOG_LEVEL_DEBUG_PLUS, "vchannel_cliprdr[cliprdr_get_clipboard]: "
 					"New data in clipboard: %s", data);
 
 			if (clipboard_data == 0){
