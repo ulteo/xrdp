@@ -59,6 +59,8 @@
 #define GVFSDRIVE_NAME   ".gvfs"
 
 
+void DEFAULT_CC
+sesman_stop(void);
 int DEFAULT_CC
 session_destroy(struct session_item* sess);
 

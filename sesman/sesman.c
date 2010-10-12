@@ -44,8 +44,18 @@ struct config_sesman* g_cfg; /* defined in config.h */
 #define XML_HEADER "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
 tbus g_term_event = 0;
 tbus g_sync_event = 0;
+int stop = 0;
 
 extern int g_thread_sck; /* in thread.c */
+
+
+
+void DEFAULT_CC
+sesman_stop(void)
+{
+	stop = 1;
+}
+
 
 /******************************************************************************/
 /**
@@ -838,13 +848,24 @@ admin_thread(void* param)
 THREAD_RV THREAD_CC
 monit_thread(void* param)
 {
-  while(1)
+  char pid_file[256];
+
+  while (stop == 0)
   {
   	g_sleep(g_cfg->sess.monitoring_delay);
   	lock_chain_acquire();
   	session_monit();
   	lock_chain_release();
   }
+	session_sigkill_all();
+
+	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[monit_thread]: remove XRDP temp dir");
+	g_remove_dirs(XRDP_TEMP_DIR);
+
+	g_snprintf(pid_file, 255, "%s/xrdp-sesman.pid", XRDP_PID_PATH);
+	g_file_delete(pid_file);
+	g_exit(1);
+
 }
 
 
