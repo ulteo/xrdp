@@ -27,7 +27,6 @@
 #include "printer_dev.h"
 
 
-static int client_id;
 static int is_fragmented_packet = 0;
 static int fragment_size;
 static struct stream* splitted_packet;
@@ -533,7 +532,7 @@ printer_init()
 }
 
 /*****************************************************************************/
-int printer_deinit()
+void printer_deinit()
 {
 	char status[1];
 	int i;
