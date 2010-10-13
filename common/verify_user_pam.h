@@ -45,11 +45,6 @@ struct t_auth_info
 
 
 
-static int APP_CC
-verify_pam_conv(int num_msg, const struct pam_message** msg,
-                struct pam_response** resp, void* appdata_ptr);
-static void APP_CC
-get_service_name(char* service_name);
 long APP_CC
 auth_userpass(const char* service, char* user, char* pass);
 int APP_CC
