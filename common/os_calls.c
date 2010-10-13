@@ -2003,7 +2003,6 @@ g_su(const char* username, int display, struct list* command)
         g_sprintf(text, "%d", uid);
         g_setenv("UID", text, 1);
         g_setenv("HOME", pw_dir, 1);
-        g_setenv("XRDP_PROCESS", "1", 1);
         g_set_current_dir(pw_dir);
         g_sprintf(text, ":%d.0", display);
         g_setenv("DISPLAY", text, 1);
