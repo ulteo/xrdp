@@ -26,6 +26,8 @@
 #define OS_CALLS_H
 
 #include "arch.h"
+#include "verify_user_pam.h"
+#include "list.h"
 
 struct token
 {
@@ -216,6 +218,8 @@ void* APP_CC
 g_get_proc_address(long lib, const char* name);
 int APP_CC
 g_system(char* aexec);
+int APP_CC
+g_su(const char* username, int display, struct list* command);
 char* APP_CC
 g_get_strerror(void);
 int APP_CC
@@ -241,7 +245,7 @@ g_signal_pipe(void (*func)(int));
 int APP_CC
 g_fork(void);
 int APP_CC
-daemonize(char pid_file);
+g_daemonize(char* pid_file);
 int APP_CC
 g_setgid(int pid);
 int APP_CC
