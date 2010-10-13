@@ -64,6 +64,7 @@
 #include <locale.h>
 
 #include "os_calls.h"
+#include "verify_user_pam.h"
 #include "arch.h"
 
 /* for clearenv() */
@@ -1950,6 +1951,74 @@ g_system(char* aexec)
 #else
   return system(aexec);
 #endif
+}
+
+/*****************************************************************************/
+/* does not work in win32 */
+int APP_CC
+su(const char* username, int display, const char* command)
+{
+  int pid = 0;
+  int session_handle = 0;
+  int error = 0;
+  int pw_uid = 0;
+  int pw_gid = 0;
+  int uid = 0;
+  char pw_shell[256] = {0};
+  char pw_dir[256] = {0};
+  char pw_gecos[256] = {0};
+  char text[256] = {0};
+
+
+  pid = g_fork();
+  if (pid == -1)
+  {
+     printf("Error while forking\n");
+     return 1;
+  }
+  else if (pid == 0) /* child sesman */
+  {
+    session_handle = auth_userpass("su", (char*)username, NULL);
+    auth_start_session(session_handle, display);
+
+    error = g_getuser_info(username, &pw_gid, &pw_uid, pw_shell, pw_dir,
+                           pw_gecos);
+    if (error == 0)
+    {
+      error = g_setgid(pw_gid);
+      if (error == 0)
+      {
+        error = g_initgroups(username, pw_gid);
+      }
+      if (error == 0)
+      {
+        uid = pw_uid;
+        error = g_setuid(uid);
+      }
+      if (error == 0)
+      {
+        g_clearenv();
+        g_setenv("SHELL", pw_shell, 1);
+        g_setenv("PATH", "/bin:/usr/bin:/usr/X11R6/bin:/usr/local/bin", 1);
+        g_setenv("USER", username, 1);
+        g_sprintf(text, "%d", uid);
+        g_setenv("UID", text, 1);
+        g_setenv("HOME", pw_dir, 1);
+        g_set_current_dir(pw_dir);
+        g_sprintf(text, ":%d.0", display);
+        g_setenv("DISPLAY", text, 1);
+      }
+      else
+      {
+      	printf("error getting user info for user %s\n", username);
+      }
+    }
+    g_execlp3(command, command, 0);
+
+    printf("failed to exec command %s\n", command);
+    g_exit(0);
+  }
+  return 0;
 }
 
 /*****************************************************************************/
