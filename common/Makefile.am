@@ -7,6 +7,26 @@ AM_CFLAGS = \
   -DHAVE_ICONV \
   -DHAVE_ICONV_H
 
+
+if SESMAN_NOPAM
+AUTH_C = verify_user.c
+AUTH_LIB = -lcrypt
+else
+if SESMAN_PAMUSERPASS
+AUTH_C = verify_user_pam_userpass.c 
+AUTH_LIB = -lpam -lpam_userpass
+else
+if SESMAN_KERBEROS
+AUTH_C = verify_user_kerberos.c
+AUTH_LIB = -lkrb5
+else
+AUTH_C = verify_user_pam.c verify_user_pam.h
+AUTH_LIB = -lpam
+endif
+endif
+endif
+
+
 lib_LTLIBRARIES = \
   libxrdp_common.la
 
@@ -21,9 +41,11 @@ libxrdp_common_la_SOURCES = \
   ssl_calls.c ssl_calls.h \
   thread_calls.c thread_calls.h \
   trans.c trans.h \
-  uni_rdp.c uni_rdp.h
+  uni_rdp.c uni_rdp.h \
+  $(AUTH_C)
 
 libxrdp_common_la_LIBADD = \
   -lcrypto \
   -lpthread \
-  -ldl
+  -ldl \
+  $(AUTH_LIB)

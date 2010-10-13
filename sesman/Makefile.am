@@ -46,7 +46,6 @@ xrdp_sesman_SOURCES = \
   access.c access.h \
   config.c config.h \
   env.c env.h \
-  $(AUTH_C) \
   auth.h
 
 xrdp_sesman_LDADD = \

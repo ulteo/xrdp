@@ -25,6 +25,7 @@
  *
  */
 
+#include <verify_user_pam.h>
 #include "sesman.h"
 
 #include "libscp.h"
@@ -48,7 +49,7 @@ scp_v1_mng_process(struct SCP_CONNECTION* c, struct SCP_SESSION* s)
   retries = g_cfg->sec.login_retry;
   current_try = retries;
 
-  data = auth_userpass(s->username, s->password);
+  data = auth_userpass(NULL, s->username, s->password);
   /*LOG_DBG("user: %s\npass: %s", s->username, s->password);*/
 
   if (!data)

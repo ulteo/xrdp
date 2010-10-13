@@ -37,7 +37,7 @@
  *
  */
 long DEFAULT_CC
-auth_userpass(char* user, char* pass);
+auth_userpass(const char* service, char* user, char* pass);
 
 /**
  *

@@ -25,6 +25,8 @@
  *
  */
 
+#include <verify_user_pam.h>
+
 #include "sesman.h"
 
 //#include "libscp_types.h"
@@ -51,7 +53,7 @@ scp_v1_process(struct SCP_CONNECTION* c, struct SCP_SESSION* s)
   retries = g_cfg->sec.login_retry;
   current_try = retries;
 
-  data = auth_userpass(s->username, s->password);
+  data = auth_userpass(NULL, s->username, s->password);
   /*LOG_DBG("user: %s\npass: %s", s->username, s->password);*/
 
   while ((!data) && ((retries == 0) || (current_try > 0)))
@@ -64,7 +66,7 @@ scp_v1_process(struct SCP_CONNECTION* c, struct SCP_SESSION* s)
     {
       case SCP_SERVER_STATE_OK:
         /* all ok, we got new username and password */
-        data = auth_userpass(s->username, s->password);
+        data = auth_userpass(NULL, s->username, s->password);
         /* one try less */
         if (current_try > 0)
         {

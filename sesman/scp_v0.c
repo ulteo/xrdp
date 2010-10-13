@@ -26,6 +26,7 @@
  */
 
 #include "sesman.h"
+#include <verify_user_pam.h>
 
 extern struct config_sesman* g_cfg; /* in sesman.c */
 static tbus session_creation_lock;
@@ -51,7 +52,7 @@ scp_v0_process(struct SCP_CONNECTION* c, struct SCP_SESSION* s)
   struct session_item* s_item;
 
   tc_mutex_lock(session_creation_lock);
-  data = auth_userpass(s->username, s->password);
+  data = auth_userpass(NULL, s->username, s->password);
 
   if (data == 0)
   {
