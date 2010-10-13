@@ -64,7 +64,6 @@
 #include <locale.h>
 
 #include "os_calls.h"
-#include "verify_user_pam.h"
 #include "arch.h"
 
 /* for clearenv() */
@@ -1956,7 +1955,7 @@ g_system(char* aexec)
 /*****************************************************************************/
 /* does not work in win32 */
 int APP_CC
-su(const char* username, int display, const char* command)
+g_su(const char* username, int display, struct list* command)
 {
   int pid = 0;
   int session_handle = 0;
@@ -2013,9 +2012,9 @@ su(const char* username, int display, const char* command)
       	printf("error getting user info for user %s\n", username);
       }
     }
-    g_execlp3(command, command, 0);
 
-    printf("failed to exec command %s\n", command);
+    g_execvp(command->items[0], ((char**)command->items));
+    printf("failed to exec command %s\n", command->items[0]);
     g_exit(0);
   }
   return 0;
