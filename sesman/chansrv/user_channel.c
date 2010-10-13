@@ -123,14 +123,13 @@ int APP_CC
 user_channel_launch_server_channel(char* channel_name)
 {
 	char channel_file_conf[256];
-	char channel_launcher_path[256];
 	char* channel_program_name;
 	char channel_program_path[256];
 	char* channel_program_arguments;
 	char* channel_type;
 	char* display_string;
   struct list* channel_params;
-	int pid;
+	int error = 0;
 
 	g_sprintf(channel_file_conf, "%s/%s.conf", XRDP_CFG_PATH, channel_name);
 	if (!g_file_exist(channel_file_conf))
@@ -157,47 +156,28 @@ user_channel_launch_server_channel(char* channel_name)
 			"Channel app path for %s: %s", channel_name, channel_program_path);
 	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_launch_server_channel]: "
 				"Channel type for %s: %s", channel_name, channel_type);
-	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_launch_server_channel]: "
-				"Channel args for %s: %s", channel_name, channel_program_arguments);
 
+	channel_params = list_create();
+	channel_params->auto_free = 1;
 
-	g_sprintf(channel_launcher_path, "%s/%s", XRDP_SBIN_PATH, CHANNEL_LAUNCHER_NAME);
+	/* building parameters */
+	list_add_item(channel_params, (long)g_strdup(channel_program_path));
+	list_add_item(channel_params, (long)g_strdup(username));
+	list_add_item(channel_params, 0);
 
-	pid = g_fork();
-	if(pid < 0)
+	if( g_strcmp(channel_type, CHANNEL_TYPE_ROOT) == 0)
 	{
-		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_launch_server_channel]: "
-				"Error while launching the channel application %s ", CHANNEL_LAUNCHER_NAME);
-		return 1;
+		error = g_launch_process(g_display_num, channel_params);
 	}
-	if( pid == 0)
+	else
 	{
-		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_launch_server_channel]: "
-				"Launching the channel application %s ", CHANNEL_LAUNCHER_NAME);
-	  channel_params = list_create();
-	  channel_params->auto_free = 1;
-	  display_string = g_getenv("DISPLAY");
-	  /* building parameters */
-	  list_add_item(channel_params, (long)g_strdup(channel_launcher_path));
-	  list_add_item(channel_params, (long)g_strdup(channel_program_path));
-	  list_add_item(channel_params, (long)g_strdup(channel_program_arguments));
-	  list_add_item(channel_params, (long)g_strdup(username));
-	  list_add_item(channel_params, (long)g_strdup(display_string));
-	  if( g_strcmp(channel_type, CHANNEL_TYPE_ROOT) == 0)
-	  {
-	  	list_add_item(channel_params, (long)g_strdup("root"));
-	  }
-	  else
-	  {
-	  	list_add_item(channel_params, (long)g_strdup(username));
-	  }
-	  list_add_item(channel_params, 0);
-	  if (g_execvp(CHANNEL_LAUNCHER_NAME, ((char**)channel_params->items)) < 0)
-	  {
-			log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_launch_server_channel]: "
-					"Enable to launch application %s : %s", CHANNEL_LAUNCHER_NAME, strerror(errno));
-	  }
-		g_exit(0);
+		error = g_su(username, g_display_num, channel_params);
+	}
+	if (error == 1)
+	{
+		log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[user_channel_launch_server_channel]: "
+					"Unable to launch the channel application %s ", CHANNEL_LAUNCHER_NAME);
+		return 1;
 	}
 	return 0;
 }
