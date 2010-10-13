@@ -2013,7 +2013,7 @@ g_su(const char* username, int display, struct list* command)
       }
     }
 
-    g_execvp(command->items[0], ((char**)command->items));
+    g_execvp((char*)command->items[0], ((char**)command->items));
     printf("failed to exec command %s\n", command->items[0]);
     g_exit(0);
   }
