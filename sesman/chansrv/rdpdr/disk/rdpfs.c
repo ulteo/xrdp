@@ -866,10 +866,9 @@ rdpfs_list_announce(struct stream* s)
     in_uint8a(s, device_name, device_data_length)
     if(device_data_length > 2)
     {
-    	for (j = 0; j < 2 * device_data_length ; j++)
+    	for (j = 0; j < device_data_length ; j++)
     	{
     		unicode_device_name[2*j] = device_name[j];
-    		log_message(l_config, LOG_LEVEL_DEBUG,"current charactere %c",device_name[j]);
     		unicode_device_name[2*j+1] = 0;
     	}
     	s->p = unicode_device_name;
