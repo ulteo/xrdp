@@ -18,7 +18,8 @@ rdpdr_disk_SOURCES = \
   disk_dev.c disk_dev.h \
   hashmap.c hashmap.h \
   rdpfs_cache.c rdpfs_cache.h \
-  rdpfs.h rdpfs.c
+  rdpfs.h rdpfs.c \
+  shares.c shares.h
 
 rdpdr_disk_LDADD = \
   -L/usr/X11R6/lib \

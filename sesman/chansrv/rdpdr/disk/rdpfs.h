@@ -24,6 +24,7 @@
 #include "rdpdr.h"
 #include "log.h"
 #include "vchannel.h"
+#include "shares.h"
 #include <sys/stat.h>
 
 #define MAX_SHARE 128

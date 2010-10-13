@@ -25,15 +25,6 @@
 
 
 
-const char* desktop_file_template = "[Desktop Entry]\n"
-		"Version=1.0\n"
-		"Type=Link\n"
-		"Name=%ShareName%\n"
-		"Comment=XRDP share\n"
-		"URL=%SharePath%\n"
-		"Icon=folder-remote\n";
-
-
 extern struct log_config *l_config;
 int  disk_sock;
 int rdpdr_sock;
@@ -50,85 +41,6 @@ extern int disk_up;
 static tbus send_mutex;
 
 
-/*****************************************************************************/
-static int add_share_to_desktop(const char* share_name){
-	char* home_dir = g_getenv("HOME");
-	char desktop_file_path[1024];
-	char share_path[256];
-	char file_content[1024];
-	int handle;
-
-	g_snprintf((char*)desktop_file_path, 256, "%s/Desktop", home_dir);
-	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[add_share_to_desktop]: "
-	        		"Desktop file path : %s", desktop_file_path);
-
-
-	g_mkdir(desktop_file_path);
-	if (g_file_exist(desktop_file_path) == 0){
-		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[add_share_to_desktop]: "
-		        		"Desktop already exist");
-		return 1;
-	}
-
-	g_snprintf((char*)desktop_file_path, sizeof(desktop_file_path), "%s/Desktop/%s.desktop", home_dir, share_name);
-	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[add_share_to_desktop]: "
-	        		"Desktop file path : %s", desktop_file_path);
-
-	if (g_file_exist(desktop_file_path) != 0)
-	{
-		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[add_share_to_desktop]: "
-		        		"Share already exist");
-		return 0;
-	}
-
-	g_snprintf(share_path, sizeof(desktop_file_path), "%s/%s/%s", home_dir, RDPDRIVE_NAME, share_name);
-	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[add_share_to_desktop]: "
-		        		"Share path : %s", share_path);
-
-	g_strcpy(file_content, desktop_file_template);
-	g_str_replace_first(file_content, "%ShareName%", (char*)share_name);
-	g_str_replace_first(file_content, "%SharePath%", share_path);
-
-	handle = g_file_open(desktop_file_path);
-	if(handle < 0)
-	{
-		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[add_share_to_desktop]: "
-		        		"Unable to create : %s", desktop_file_path);
-		return 1;
-	}
-	g_file_write(handle, file_content, g_strlen(file_content));
-	g_file_close(handle);
-
-	return 0;
-}
-
-/*****************************************************************************/
-static int remove_share_from_desktop(const char* share_name){
-	char* home_dir = g_getenv("HOME");
-	char desktop_file_path[1024];
-	char share_path[1024];
-	char file_content[1024];
-	int handle;
-
-	g_snprintf((char*)desktop_file_path, sizeof(desktop_file_path), "%s/Desktop", home_dir);
-	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[remove_share_to_desktop]: "
-	        		"Desktop file path : %s", desktop_file_path);
-
-	g_snprintf((char*)desktop_file_path, sizeof(desktop_file_path), "%s/Desktop/%s.desktop", home_dir, share_name);
-	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[remove_share_to_desktop]: "
-	        		"Desktop file path : %s", desktop_file_path);
-
-	if (g_file_exist(desktop_file_path) != 0)
-	{
-		g_file_delete(desktop_file_path);
-		return 0;
-	}
-
-	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[remove_share_to_desktop]: "
-			"Desktop file did not exixt");
-
-	return 1;
-}
 
 /*****************************************************************************/
 /* Convert seconds since 1970 back to filetime */
@@ -766,7 +678,7 @@ rdpfs_add(struct stream* s, int device_data_length,
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_add]: "
 				"Succedd to add disk %s", disk_devices[disk_devices_count].dir_name);
 
-	add_share_to_desktop(device_name);
+	share_add_to_desktop(device_name);
 	return disk_devices_count++;
 }
 
@@ -782,7 +694,7 @@ rdpfs_remove(int device_id)
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_remove]: "
 				"Removing disk %s with id=%i", device->dir_name, device->device_id);
 
-	remove_share_from_desktop(device->dir_name);
+	share_remove_from_desktop(device->dir_name);
 	if (device->device_id == last_device->device_id)
 	{
 		device->device_id = -1;
