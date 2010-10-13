@@ -26,23 +26,29 @@ Description: Seamless XRDP Shell
  Seamlessrdpshell is a rdp addon offering the possibility to have an
  application without a desktop.
 
+Package: xrdp-rdpdr
+Architecture: any
+Depends: ${shlibs:Depends}, xrdp
+Description: XRDP disks redirection
+ XRDP channel that handle disks redirection.
+
 Package: xrdp-disk
 Architecture: any
-Depends: ${shlibs:Depends}, xrdp, fuse-utils
+Depends: ${shlibs:Depends}, xrdp-rdpdr, fuse-utils
 Description: XRDP disk manager
- XRDP channel for fuse that mounting USB disk and user home directory.
+ XRDP Disk mounts USB disk and user home directory via Fuse.
+
+Package: xrdp-printer
+Architecture: any
+Depends: ${shlibs:Depends}, ${python:Depends}, xrdp-rdpdr, ghostscript, cupsys
+Description: cups file converter to ps format
+ XRDP Printer converts a ps file from cups in ps
 
 Package: xrdp-clipboard
 Architecture: any
 Depends: ${shlibs:Depends}, xrdp
 Description: XRDP clipboard
  XRDP channel providing copy/past text functionnality.
-
-Package: xrdp-printer
-Architecture: all
-Depends: ${python:Depends}, xrdp, ghostscript, cupsys
-Description: cups file converter to ps format
- Xrdpi-Printer convert a ps file from cups in ps
 
 Package: xrdp-sound
 Architecture: any

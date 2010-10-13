@@ -1,4 +1,3 @@
-debian/tmp/etc/xrdp/rdpdr.conf
 debian/tmp/etc/xrdp/startwm.sh
 debian/tmp/etc/xrdp/*.ini
 debian/tmp/etc/xrdp/Xserver
@@ -13,12 +12,6 @@ debian/tmp/usr/lib/xrdp/libxup.so*
 debian/tmp/usr/lib/*.so*
 debian/tmp/usr/share/xrdp
 debian/tmp/usr/sbin/xrdp*
-debian/tmp/usr/sbin/*rdpdr*
 debian/tmp/usr/bin/logoff
-debian/tmp/usr/bin/startapp
-debian/tmp/usr/bin/xrdp-genkeymap
-debian/tmp/usr/bin/xrdp-keygen
-debian/tmp/usr/bin/xrdp-sesadmin
-debian/tmp/usr/bin/xrdp-sesrun
-debian/tmp/usr/bin/xrdp-sestest
+debian/tmp/usr/bin/xrdp-*
 debian/lintian-overrides/xrdp /usr/share/lintian/overrides/
