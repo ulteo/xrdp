@@ -3,7 +3,7 @@
 # change the order in line below to run to run whatever window manager you
 # want, default to kde
 export XRDP_PROCESS=1
-SESSIONS="x-session-manager x-window-manager"
+SESSIONS="startxfce4 x-session-manager x-window-manager"
 
 DefaultShell=$1
 

@@ -81,8 +81,9 @@ dumpWalker(struct xrdp_compressor* compressor)
 	printf("#############################################\n");
 }
 
-void updateHistory(struct list** histTab, unsigned char c, int offset)
+void updateHistory(struct list** histTab, unsigned int c, int offset)
 {
+	c &=MASK;
 	if (histTab[c] == 0)
 	{
 		//une nouvelle valeur
@@ -95,24 +96,26 @@ void updateHistory(struct list** histTab, unsigned char c, int offset)
 void historyFlush(struct xrdp_compressor* compressor)
 {
 	int i;
-	for (i = 0 ; i<256 ; i++)
+	g_free(compressor->histTab);
+	g_free(compressor->historyBuffer);
+	compressor->histTab = g_malloc(MPPC_64K_DICT_SIZE * sizeof(struct list),1);
+	for (i = 0; i < MPPC_64K_DICT_SIZE ; i++)
 	{
-		if (compressor->histTab[i] != NULL)
-		{
-			list_delete(compressor->histTab[i]);
-		}
-		compressor->histTab[i] = 0;
+		compressor->histTab[i] = NULL;
 	}
+	compressor->historyBuffer_size = MPPC_64K_DICT_SIZE;
+	compressor->historyBuffer = g_malloc(MPPC_64K_DICT_SIZE, 1);
+	compressor->historyOffset = 0;
 }
 
 struct xrdp_compressor*
 mppc_init(int new_type)
 {
-	int i = 0;
 	int dictSize;
 	struct xrdp_compressor* compressor;
 	compressor = malloc(sizeof(struct xrdp_compressor));
 	compressor->type = new_type;
+	int i;
 
 	switch (new_type)
 	{
@@ -126,12 +129,11 @@ mppc_init(int new_type)
 			//TODO add log message
 			return 0;
 	}
-	compressor->histTab = malloc(256 * sizeof(struct list));
-	for (i = 0; i < 256 ; i++)
+	compressor->histTab = malloc(MPPC_64K_DICT_SIZE * sizeof(struct list));
+	for (i = 0; i < MPPC_64K_DICT_SIZE ; i++)
 	{
 		compressor->histTab[i] = NULL;
 	}
-
 	compressor->historyBuffer_size = dictSize;
 	compressor->historyOffset = 0;
 	compressor->historyBuffer = malloc(dictSize);
@@ -163,6 +165,7 @@ compressInit(struct xrdp_compressor* compressor, struct stream* datas)
 	make_stream(compressor->outputBuffer.packet);
 	init_stream(compressor->outputBuffer.packet, datas->size);
 }
+
 
 int
 outByte(struct xrdp_compressor* compressor, int  fill)
@@ -252,6 +255,7 @@ createCopyTuple(struct xrdp_compressor* compressor, int copy_offset, int copy_le
 		}
 		else
 		{
+			printf("popo\n");
 			return 1;
 		}
 	}
@@ -305,6 +309,7 @@ createCopyTuple(struct xrdp_compressor* compressor, int copy_offset, int copy_le
 	}
 	else if ((copy_length >= 128) && (copy_length < 256))
 	{
+
 		walker_len += 7;
 		walker |= 0x7E << (INT_SIZE - walker_len);
 		walker_len += 7;
@@ -312,6 +317,7 @@ createCopyTuple(struct xrdp_compressor* compressor, int copy_offset, int copy_le
 	}
 	else if ((copy_length >= 256) && (copy_length < 512))
 	{
+
 		walker_len += 8;
 		walker |= 0xFE << (INT_SIZE - walker_len);
 		walker_len += 8;
@@ -370,11 +376,13 @@ createCopyTuple(struct xrdp_compressor* compressor, int copy_offset, int copy_le
 		}
 		else
 		{
+			printf("popo\n");
 			return 1;
 		}
 	}
 	else
 	{
+		printf("popo\n");
 		return 1;
 	}
 	compressor->walker = walker;
@@ -383,44 +391,61 @@ createCopyTuple(struct xrdp_compressor* compressor, int copy_offset, int copy_le
 	return 0;
 }
 
-
 void
 searchMatchBytes(struct xrdp_compressor* compressor, int* historyPtr)
 {
 	int i = 0;
-	int j=0;
+	int j = 0;
 	int literal;
 	int best_copy_offset = -1;
 	int best_copy_length = -1;
 	int copy_length;
 	int copy_offset;
-
-	unsigned char data = compressor->historyBuffer[*historyPtr];
-	struct list* list = compressor->histTab[data];
-	int offset;
-	if (list != NULL)
+	unsigned int data;
+	//printf("history offset : %i - histPtr %i\n", compressor->historyOffset, *historyPtr);
+	if (*historyPtr > compressor->historyOffset)
 	{
-		i = 0;
-		while( i < list->count)
-		{
-			offset = (int)list_get_item(list, i++);
-			copy_length = 1;
-			copy_offset = *historyPtr - offset;
-			while ((*historyPtr + copy_length) < compressor->historyOffset &&
-					compressor->historyBuffer[offset + copy_length] == compressor->historyBuffer[*historyPtr + copy_length])
-			{
-				copy_length++;
-			}
-			if (copy_length >= best_copy_length)
-			{
-				best_copy_length = copy_length;
-				best_copy_offset = copy_offset;
-			}
-		}
+		printf("\n\nBEEP1\n\n");
 	}
 
-	if (best_copy_length < 3)
+	if (*historyPtr == compressor->historyOffset)
 	{
+		printf("\n\nBEEP1\n\n");
+	}
+
+//	if (*historyPtr != compressor->historyOffset-1)
+//	{
+		data = compressor->historyBuffer[*historyPtr];
+//		data = compressor->historyBuffer[*historyPtr]<<8 & 0x0ff00;
+//		data |= compressor->historyBuffer[*historyPtr + 1] & 0x00ff ;
+
+		data &=MASK;
+		struct list* list = compressor->histTab[data];
+		int offset;
+		if (list != NULL)
+		{
+			i = 0;
+			while( i < list->count)
+			{
+				offset = (int)list_get_item(list, i++);
+				copy_length = 1;
+				copy_offset = *historyPtr - offset;
+
+				while ((*historyPtr + copy_length) < compressor->historyOffset &&
+						compressor->historyBuffer[offset + copy_length] == compressor->historyBuffer[*historyPtr + copy_length])
+				{
+					copy_length++;
+				}
+				if (copy_length >= best_copy_length)
+				{
+					best_copy_length = copy_length;
+					best_copy_offset = copy_offset;
+				}
+			}
+		}
+//	}
+		if (best_copy_length < 3)
+		{
 		literal = (compressor->historyBuffer[*historyPtr] & 0x000000ff);
 		if (literal > 0x7F)
 		{
@@ -434,18 +459,29 @@ searchMatchBytes(struct xrdp_compressor* compressor, int* historyPtr)
 			compressor->walker_len += BYTE_SIZE;
 			compressor->walker |= (literal) << (INT_SIZE - compressor->walker_len);
 		}
-		updateHistory(compressor->histTab, compressor->historyBuffer[*historyPtr], *historyPtr);
+		if (*historyPtr != compressor->historyOffset-1)
+		{
+
+			updateHistory(compressor->histTab, data, *historyPtr);
+		}
 		(*historyPtr)++;
 		return;
 	}
 	createCopyTuple(compressor, best_copy_offset, best_copy_length);
 	for (i=0; i < best_copy_length; i++)
 	{
-		updateHistory(compressor->histTab, compressor->historyBuffer[*historyPtr + i], *historyPtr + i);
+//		if (*historyPtr != compressor->historyOffset-1)
+//		{
+//			data = compressor->historyBuffer[*historyPtr+i]<<8 & 0xff00;
+//			data |= compressor->historyBuffer[*historyPtr + i + 1] & 0xff ;
+			data = compressor->historyBuffer[*historyPtr+i] & 0xff;
+			updateHistory(compressor->histTab, data, *historyPtr + i);
+//		}
 	}
 	*historyPtr += best_copy_length;
 	return;
 }
+
 
 struct stream *
 compressMain(struct xrdp_compressor* compressor, struct stream* uncompressedDatas, int* flags)
@@ -455,8 +491,8 @@ compressMain(struct xrdp_compressor* compressor, struct stream* uncompressedData
 	if (uncompressedDatas->size > compressor->historyBuffer_size - compressor->historyOffset)
 	{
 		compressor->historyOffset = 0;
-		*flags |= MPPC_RESET;
 		historyFlush(compressor);
+		*flags |= MPPC_RESET;
 	}
 
 	memcpy(compressor->historyBuffer + compressor->historyOffset, uncompressedDatas->data, uncompressedDatas->size);
@@ -487,9 +523,11 @@ compressMain(struct xrdp_compressor* compressor, struct stream* uncompressedData
 }
 
 
+
 struct stream*
 mppc_compress(struct xrdp_compressor* compressor, struct stream* uncompressedPacket, int* flags)
 {
+	duration = 0;
 	struct stream* uncompressedDatas;
 	make_stream(uncompressedDatas);
 	init_stream(uncompressedDatas, uncompressedPacket->size);
@@ -498,23 +536,19 @@ mppc_compress(struct xrdp_compressor* compressor, struct stream* uncompressedPac
 	char* datasToSend = NULL;
 
 	*flags |= compressor->type;
-
+	duration = g_time2();
 	out_uint8p(uncompressedDatas, uncompressedPacket->p, uncompressedPacket->size);
 	uncompressedDatas->size = uncompressedPacket->size;
 	uncompressedDatas->p = uncompressedDatas->data;
 
-	//int time = g_time2();
 	compressInit(compressor, uncompressedPacket);
 	compressedDatas = compressMain(compressor, uncompressedDatas, flags);
-	//time = g_time2()-time;
-	//printf("time passed in searching match byte %i\n", time);
+//	printf("uncompressedPacket : %i\n", uncompressedPacket->size);
+//	printf("historyOffset : %i\n", compressor->historyOffset);
+	//printf("time passed in searching match byte %i\n", g_time2() - duration);
 	if (compressedDatas->size > uncompressedDatas->size)
 	{
 		return uncompressedDatas;
 	}
 	return compressedDatas;
 }
-
-
-
-

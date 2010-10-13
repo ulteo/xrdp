@@ -735,7 +735,6 @@ rdpdr_launch_disk_manager(int display_num)
 	char socket_filename[256];
   struct list* channel_params;
 
-	int pid;
 	int sock;
 
   g_sprintf(socket_filename, "/var/spool/xrdp/%i/vchannel_disk", display_num);
@@ -750,36 +749,19 @@ rdpdr_launch_disk_manager(int display_num)
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_launch_disk_manager]: "
 			"Try to launch the rdpdr device application 'rdpdr_disk'");
-	g_sprintf(program_command, "/usr/sbin/rdpdr_disk %s", username);
+	g_sprintf(program_command, "%s/rdpdr_disk", XRDP_SBIN_PATH);
 
-	pid = g_fork();
-	if(pid < 0)
-	{
-		log_message(l_config, LOG_LEVEL_DEBUG, "chansrv[user_channel_launch_server_channel]: "
-				"Error while launching the channel application %s ", program_command);
-		return 1;
-	}
-	if( pid == 0)
-	{
-		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_launch_disk_manager]: "
-				"Launching the disk program");
-	  channel_params = list_create();
-	  channel_params->auto_free = 1;
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_launch_disk_manager]: "
+			"Launching the disk program");
+	channel_params = list_create();
+	channel_params->auto_free = 1;
 
-	  /* building parameters */
-	  list_add_item(channel_params, (long)g_strdup("su"));
-	  list_add_item(channel_params, (long)g_strdup(username));
-	  list_add_item(channel_params, (long)g_strdup("-c"));
-	  list_add_item(channel_params, (long)g_strdup(program_command));
+	/* building parameters */
+	list_add_item(channel_params, (long)g_strdup(program_command));
+	list_add_item(channel_params, (long)g_strdup(username));
+	list_add_item(channel_params, 0);
+	g_su(username, display_num, channel_params);
 
-	  list_add_item(channel_params, 0);
-	  if (g_execvp("su", ((char**)channel_params->items)) < 0)
-	  {
-			log_message(l_config, LOG_LEVEL_DEBUG, "chansrv[user_channel_launch_server_channel]: "
-					"Enable to launch application %s : %s", program_command, strerror(errno));
-	  }
-		g_exit(0);
-	}
 	/* wait device */
 	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_launch_disk_manager]: "
 			"Waiting disk program");

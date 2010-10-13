@@ -98,8 +98,11 @@ auth_userpass(const char* service, char* user, char* pass)
   }
 
   auth_info = g_malloc(sizeof(struct t_auth_info), 1);
+  if (pass != NULL)
+  {
+    g_strncpy(auth_info->user_pass.pass, pass, 255);
+  }
   g_strncpy(auth_info->user_pass.user, user, 255);
-  g_strncpy(auth_info->user_pass.pass, pass, 255);
   auth_info->pamc.conv = &verify_pam_conv;
   auth_info->pamc.appdata_ptr = &(auth_info->user_pass);
 
