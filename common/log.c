@@ -94,7 +94,7 @@ log_lvl2str(int lvl, char* str)
 int DEFAULT_CC
 log_message(struct log_config* l_cfg, const unsigned int lvl, const char* msg, ...)
 {
-  if (lvl > l_cfg->log_level)
+  if (lvl > l_cfg->log_level || l_cfg == NULL)
   {
     return 0;
   }
