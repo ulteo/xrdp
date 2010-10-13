@@ -220,6 +220,8 @@ int APP_CC
 g_system(char* aexec);
 int APP_CC
 g_su(const char* username, int display, struct list* command);
+int APP_CC
+g_launch_process(int display, struct list* command);
 char* APP_CC
 g_get_strerror(void);
 int APP_CC

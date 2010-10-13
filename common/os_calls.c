@@ -2023,6 +2023,34 @@ g_su(const char* username, int display, struct list* command)
 
 /*****************************************************************************/
 /* does not work in win32 */
+int APP_CC
+g_launch_process(int display, struct list* command)
+{
+  int pid = 0;
+  char text[256] = {0};
+
+  pid = g_fork();
+  if (pid == -1)
+  {
+     printf("Error while forking\n");
+     return 1;
+  }
+  else if (pid == 0) /* child sesman */
+  {
+  	g_setenv("XRDP_PROCESS", "1", 1);
+  	g_sprintf(text, ":%d.0", display);
+  	g_setenv("DISPLAY", text, 1);
+
+    g_execvp((char*)command->items[0], ((char**)command->items));
+    printf("failed to exec command %s\n", command->items[0]);
+    g_exit(0);
+  }
+  return 0;
+}
+
+
+/*****************************************************************************/
+/* does not work in win32 */
 char* APP_CC
 g_get_strerror(void)
 {
