@@ -760,7 +760,12 @@ rdpdr_launch_disk_manager(int display_num)
 	list_add_item(channel_params, (long)g_strdup(program_command));
 	list_add_item(channel_params, (long)g_strdup(username));
 	list_add_item(channel_params, 0);
-	g_su(username, display_num, channel_params);
+	if (g_su(username, display_num, channel_params) == 1)
+	{
+		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_launch_disk_manager]: "
+				"Unable to launch the disk manager program");
+		return 1;
+	}
 
 	/* wait device */
 	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_launch_disk_manager]: "
