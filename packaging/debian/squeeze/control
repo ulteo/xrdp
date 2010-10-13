@@ -32,6 +32,12 @@ Depends: ${shlibs:Depends}, xrdp, fuse-utils
 Description: XRDP disk manager
  XRDP channel for fuse that mounting USB disk and user home directory.
 
+Package: xrdp-clipboard
+Architecture: any
+Depends: ${shlibs:Depends}, xrdp
+Description: XRDP clipboard
+ XRDP channel providing copy/past text functionnality.
+
 Package: xrdp-printer
 Architecture: all
 Depends: ${python:Depends}, xrdp, ghostscript, cupsys
