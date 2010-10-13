@@ -55,6 +55,9 @@
   (s).size++; \
 }
 
+#define MASK 0xff
+
+
 struct compressed_stream
 {
 	struct stream* packet;
@@ -71,6 +74,7 @@ struct xrdp_compressor
 	char* historyBuffer;
 	int dictSize;
 	int srcLength;
+	int toUpdate;
 
 	struct list** histTab;
 	/* for binary operation */
