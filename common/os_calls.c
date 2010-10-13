@@ -1120,6 +1120,21 @@ g_file_open(const char* file_name)
 }
 
 /*****************************************************************************/
+/* returns -1 on error, else return handle or file descriptor */
+int APP_CC
+g_file_append(const char* file_name)
+{
+#if defined(_WIN32)
+  return (int)CreateFileA(file_name, GENERIC_READ | GENERIC_WRITE,
+                          FILE_SHARE_READ | FILE_SHARE_WRITE,
+                          0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+#else
+  return  open(file_name, O_APPEND | O_CREAT, S_IRUSR | S_IWUSR);
+#endif
+}
+
+
+/*****************************************************************************/
 /* returns error, always 0 */
 int APP_CC
 g_file_close(int fd)

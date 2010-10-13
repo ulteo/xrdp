@@ -135,6 +135,8 @@ g_memcmp(const void* s1, const void* s2, int len);
 int APP_CC
 g_file_open(const char* file_name);
 int APP_CC
+g_file_append(const char* file_name);
+int APP_CC
 g_file_close(int fd);
 int APP_CC
 g_file_read(int fd, char* ptr, int len);
