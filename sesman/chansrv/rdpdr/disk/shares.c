@@ -362,16 +362,16 @@ int share_remove_from_bookmarks(const char* share_name){
 	g_snprintf((char*)bookmark_file_path, 256, "%s/%s", home_dir, BOOKMARK_FILENAME);
 
 	g_snprintf(bookmark_file_content, sizeof(bookmark_file_content), "file://%s/%s/%s\n", home_dir, RDPDRIVE_NAME, share_name);
-	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[share_add_to_bookmark]: "
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[share_remove_from_bookmarks]: "
 		        		"Entry to remove: %s", bookmark_file_content);
 
 	escaped_bookmark_file_content = w_markup_escape_text(bookmark_file_content, -1);
-	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[share_add_to_bookmark]: "
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[share_remove_from_bookmarks]: "
 		        		"Entry escaped to remove: %s", escaped_bookmark_file_content);
 
 	if (replace_in_file(bookmark_file_path, escaped_bookmark_file_content) == 1 )
 	{
-		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[share_add_to_bookmark]: "
+		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[share_remove_from_bookmarks]: "
 		        		"Unable to remove entry in the file %s ", bookmark_file_path);
 		return 1;
 	}
