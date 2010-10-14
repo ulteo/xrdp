@@ -199,6 +199,8 @@ g_strncasecmp(const char* c1, const char* c2, int len);
 int APP_CC
 g_str_replace_first(char * buffer, char * s, char * by);
 int APP_CC
+g_str_end_with(char * buffer, char * end);
+int APP_CC
 g_atoi(char* str);
 int APP_CC
 g_htoi(char* str);

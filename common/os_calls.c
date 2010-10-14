@@ -1629,6 +1629,23 @@ g_str_replace_first(char * buffer, char * s, char * by)
 
 /*****************************************************************************/
 int APP_CC
+g_str_end_with(char * buffer, char * end)
+{
+	int buffer_len = strlen(buffer);
+	int end_len = strlen(end);
+	int increment = 0;
+
+	if (end_len > buffer_len)
+	{
+		return 1;
+	}
+	increment = buffer_len - end_len;
+	return strncmp(buffer + increment, end, end_len);
+
+}
+
+/*****************************************************************************/
+int APP_CC
 g_atoi(char* str)
 {
   if (str == 0)
