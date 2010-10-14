@@ -124,4 +124,20 @@ lock_sync_sem_acquire(void);
 void APP_CC
 lock_sync_sem_release(void);
 
+/**
+ *
+ * @brief acquires the lock for the sesman stop
+ *
+ */
+void APP_CC
+lock_stopwait_acquire(void);
+
+/**
+ *
+ * @brief releases the lock for the sesman stop
+ *
+ */
+void APP_CC
+lock_stopwait_release(void);
+
 #endif

@@ -54,6 +54,8 @@ void DEFAULT_CC
 sesman_stop(void)
 {
 	stop = 1;
+	lock_stopwait_acquire();
+	g_exit(1);
 }
 
 
@@ -850,6 +852,7 @@ monit_thread(void* param)
 {
   char pid_file[256];
 
+  lock_stopwait_acquire();
   while (stop == 0)
   {
   	g_sleep(g_cfg->sess.monitoring_delay);
@@ -864,7 +867,7 @@ monit_thread(void* param)
 
 	g_snprintf(pid_file, 255, "%s/xrdp-sesman.pid", XRDP_PID_PATH);
 	g_file_delete(pid_file);
-	g_exit(1);
+	lock_stopwait_release();
 
 }
 

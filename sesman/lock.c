@@ -27,6 +27,7 @@ extern struct config_sesman* g_cfg; /* in sesman.c */
 
 static tbus g_sync_mutex = 0;
 static tbus g_lock_chain = 0;
+static tbus g_lock_waitstop = 0;
 static tbus g_sync_sem = 0;
 static tbus g_lock_socket = 0;
 
@@ -36,6 +37,7 @@ lock_init(void)
 {
   g_sync_mutex = tc_mutex_create();
   g_lock_chain = tc_mutex_create();
+  g_lock_waitstop = tc_mutex_create();
   g_sync_sem = tc_sem_create(0);
   g_lock_socket = tc_sem_create(1);
 }
@@ -46,6 +48,7 @@ lock_deinit(void)
 {
   tc_mutex_delete(g_sync_mutex);
   tc_mutex_delete(g_lock_chain);
+  tc_mutex_delete(g_lock_waitstop);
   tc_sem_delete(g_sync_sem);
   tc_sem_delete(g_lock_socket);
 }
@@ -66,6 +69,20 @@ lock_chain_release2(void)
   /* unlock the chain */
   LOG_DBG(&(g_cfg->log), "lock_chain_release()");
   tc_mutex_unlock(g_lock_chain);
+}
+
+/******************************************************************************/
+void APP_CC
+lock_stopwait_acquire(void)
+{
+  tc_mutex_lock(g_lock_waitstop);
+}
+
+/******************************************************************************/
+void APP_CC
+lock_stopwait_release(void)
+{
+  tc_mutex_unlock(g_lock_waitstop);
 }
 
 /******************************************************************************/
