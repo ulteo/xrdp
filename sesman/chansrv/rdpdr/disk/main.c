@@ -184,7 +184,6 @@ int main(int argc, char** argv, char** environ)
 		g_printf("Usage : rdpdr_disk USERNAME\n");
 		return 1;
 	}
-	//decrease_right
 
 	if (disk_init() != LOG_STARTUP_OK)
 	{
