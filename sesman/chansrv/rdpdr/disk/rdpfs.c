@@ -298,7 +298,7 @@ rdpfs_close()
 
 	while (disk_devices_count != 0)
 	{
-		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_open]: "
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_close]: "
 				"Remove device with id= %i", disk_devices[0].device_id);
 		rdpfs_remove(disk_devices[0].device_id);
 	}
