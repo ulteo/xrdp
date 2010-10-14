@@ -1572,6 +1572,13 @@ g_strstr(const char* c1, const char* c2)
 }
 
 /*****************************************************************************/
+char* APP_CC
+g_strchr(const char* c1, int c)
+{
+	return strchr(c1,c);
+}
+
+/*****************************************************************************/
 int APP_CC
 g_strcmp(const char* c1, const char* c2)
 {
