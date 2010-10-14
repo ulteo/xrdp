@@ -5,9 +5,7 @@ AM_CFLAGS = \
   -DXRDP_SHARE_PATH=\"${datadir}/xrdp\" \
   -DXRDP_PID_PATH=\"${localstatedir}/run\" \
   -DHAVE_ICONV \
-  -DHAVE_ICONV_H \
-  `pkg-config glib-2.0 --cflags` \
-  `pkg-config glib-2.0 --libs` 
+  -DHAVE_ICONV_H 
   
 
 
@@ -45,8 +43,7 @@ libxrdp_common_la_SOURCES = \
   thread_calls.c thread_calls.h \
   trans.c trans.h \
   uni_rdp.c uni_rdp.h \
-  $(AUTH_C) \
-  glib_wrapper.c glib_wrapper.h
+  $(AUTH_C) 
 
 libxrdp_common_la_LIBADD = \
   -lcrypto \
