@@ -1129,7 +1129,7 @@ g_file_append(const char* file_name)
                           FILE_SHARE_READ | FILE_SHARE_WRITE,
                           0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 #else
-  return  open(file_name, O_APPEND | O_CREAT, S_IRUSR | S_IWUSR);
+  return  open(file_name, O_APPEND | O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
 #endif
 }
 
