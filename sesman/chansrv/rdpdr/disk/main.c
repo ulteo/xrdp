@@ -227,6 +227,8 @@ int main(int argc, char** argv, char** environ)
 					"Unable to open a connection to RDP filesystem");
 	}
 
+	share_desktop_purge();
+
 	g_sprintf(mount_point, "%s/%s", home_dir, RDPDRIVE_NAME);
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[main]: "
