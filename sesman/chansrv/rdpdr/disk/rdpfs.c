@@ -696,7 +696,7 @@ rdpfs_remove(int device_id)
 				"Removing disk %s with id=%i", device->dir_name, device->device_id);
 
 	share_remove_from_desktop(device->dir_name);
-	share_remove_from_desktop(device->dir_name);
+	share_remove_from_bookmarks(device->dir_name);
 
 	if (device->device_id == last_device->device_id)
 	{
