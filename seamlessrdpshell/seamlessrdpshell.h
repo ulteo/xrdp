@@ -57,6 +57,7 @@ typedef struct {
 	int lock;
 	int iconify;
 	Window window_id;
+	Window win_out;
 	Window parent;
 	int normal_x;
 	int normal_y;
@@ -79,13 +80,14 @@ typedef struct{
 		window_list.item_count = 0;\
 }\
 
-#define Window_add(window_list, window){\
+#define Window_add(window_list, window, win_out){\
 	int count = window_list.item_count;\
 	Window_item* temp;\
 	Window_get(window_list, window,temp);\
 	if(temp == 0){\
 		window_list.list[count].state = SEAMLESSRDP_NORMAL;\
 		window_list.list[count].window_id = window;\
+		window_list.list[count].win_out = win_out;\
 		window_list.list[count].normal_x = -1;\
 		window_list.item_count++;\
 	};\
@@ -97,7 +99,7 @@ typedef struct{
 	int count = window_list.item_count;\
 	window_item =0;\
 	for(i=0 ; i < count; i++){\
-		if(window_list.list[i].window_id == window){\
+		if(window_list.list[i].window_id == window || window_list.list[i].win_out == window){\
 			window_item = &window_list.list[i];\
 			break;\
 		}\

@@ -803,7 +803,7 @@ void create_window(Window win_out){
   			"Windows 0x%08lx is not resizable", proper_win);
   }
 
-  sprintf(window_id, "0x%08x",(int)win_out);
+  sprintf(window_id, "0x%08x",(int) proper_win);
   sprintf(buffer, "CREATE,%i,%s,%i,0x%08x,0x%08x\n", message_id, window_id,pid,(int)parent_id,flags );
 	send_message(buffer, strlen(buffer));
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[create_window]: "
@@ -825,7 +825,7 @@ void create_window(Window win_out){
 	send_message(buffer, strlen(buffer));
 	free(window_id);
 	free(buffer);
-	Window_add(window_list,win_out);
+	Window_add(window_list, proper_win, win_out);
 	//Window_dump(window_list);
 }
 
@@ -1086,7 +1086,7 @@ void *thread_Xvent_process (void * arg)
 					break;
 				}
 			}
-			destroy_window( w);
+			destroy_window(witem->window_id);
 			break;
 
 		default:
