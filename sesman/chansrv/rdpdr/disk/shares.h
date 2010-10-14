@@ -24,6 +24,9 @@
 #include "log.h"
 #include "rdpfs.h"
 #include <os_calls.h>
+#include <glib_wrapper.h>
+#include <dirent.h>
+
 
 #define DESKTOP_FILE_TEMPLATE "[Desktop Entry]\n" \
 		"Version=1.0\n" \
@@ -35,7 +38,7 @@
 
 #define BOOKMARK_FILENAME  ".gtk-bookmarks"
 
-
+int share_desktop_purge();
 int share_add_to_desktop(const char* share_name);
 int share_remove_from_desktop(const char* share_name);
 
