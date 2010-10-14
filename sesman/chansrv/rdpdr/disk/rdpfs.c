@@ -679,6 +679,7 @@ rdpfs_add(struct stream* s, int device_data_length,
 				"Succedd to add disk %s", disk_devices[disk_devices_count].dir_name);
 
 	share_add_to_desktop(device_name);
+	share_add_to_bookmark(device_name);
 	return disk_devices_count++;
 }
 
@@ -695,6 +696,8 @@ rdpfs_remove(int device_id)
 				"Removing disk %s with id=%i", device->dir_name, device->device_id);
 
 	share_remove_from_desktop(device->dir_name);
+	share_remove_from_desktop(device->dir_name);
+
 	if (device->device_id == last_device->device_id)
 	{
 		device->device_id = -1;
