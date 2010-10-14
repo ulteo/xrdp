@@ -97,7 +97,7 @@ get_in_window(Display* display,  Window w)
   }
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_in_window]: "
-				"In window : %i",(int)children[nchildren-1]);
+				"In window : 0x%08lx", children[nchildren-1]);
   return children[nchildren-1];
 }
 
@@ -112,7 +112,7 @@ int is_good_window(Display* display,  Window w)
   if((status != 0) || (data == 0))
   {
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[is_good_window]: "
-					" %i did not contain the right information", (int)w);
+					" 0x%08lx did not contain the right information", w);
   }
   return status;
 }
@@ -223,13 +223,13 @@ int get_window_pid(Display* display, Window w, int* pid){
   if(status != 0)
   {
   	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_pid]: "
-					"Unable to get pid of window %i", (int)w);
+					"Unable to get pid of window 0x%08lx", w);
     return False;
   }
   if(data == 0)
   {
   	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_pid]: "
-					"No pid for window %i", (int)w);
+					"No pid for window 0x%08lx", w);
     return False;
   }
   *pid = (int) \
@@ -255,14 +255,14 @@ int get_parent_window(Display* display, Window w, Window* parent){
   if(status != 0)
   {
   	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_parent_window]: "
-  			"Unable to get parent of window %i", (int)w);
+  			"Unable to get parent of window 0x%08lx", w);
     *parent = 0;
     return False;
   }
   if(data == 0)
   {
   	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_parent_window]: "
-  			"No parent window for window %i", (int)w);
+  			"No parent window for window 0x%08lx", w);
     *parent = 0;
     return False;
   }
@@ -276,6 +276,6 @@ int get_parent_window(Display* display, Window w, Window* parent){
 		  (*((unsigned char*) data+ 3) << 24) \
 		);
   log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_parent_window]: "
-				"Parent window for window %i : %i\n", (int)w, (int)parent);
+				"Parent window for window 0x%08lx : 0x%08lx\n", w, parent);
   return True;
 }

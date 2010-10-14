@@ -256,7 +256,7 @@ void synchronize(){
 		{
 			proper_win = witem->window_id;
 			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[synchronize]: "
-					"%i is a good window", (int)proper_win);
+					"0x%08lx is a good window", proper_win);
 		}
 		else
 		{
@@ -264,7 +264,7 @@ void synchronize(){
 			{
 				proper_win = win_in;
 				log_message(l_config, LOG_LEVEL_DEBUG, "XHook[synchronize]: "
-						"%i is a good window", (int)proper_win);
+						"0x%08lx is a good window", proper_win);
 			}
 			else
 			{
@@ -356,20 +356,20 @@ int process_move_action(XEvent* ev){
   if(witem == 0)
   {
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[process_move_action]: "
-				"Window (%i) remove during the operation", (int)ev->xconfigure.window);
+				"Window (0x%08lx) remove during the operation", ev->xconfigure.window);
     return 0;
   }
   win_in = get_in_window(display, witem->window_id);
   if(win_in == 0)
   {
   	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[process_move_action]: "
-  			"Unknow window : %i", (int)witem->window_id);
+  			"Unknow window : 0x%08lx", witem->window_id);
     return 0;
   }
   if(witem->state == SEAMLESSRDP_MINIMIZED)
   {
   	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[process_move_action]: "
-  			"The window %i is minimized", (int)witem->window_id);
+  			"The window 0x%08lx is minimized", witem->window_id);
     return 1;
   }
   XGetGeometry(display,witem->window_id,&root,&x,&y,&width, &height,&border,&depth );
@@ -468,7 +468,7 @@ void process_message(char* buffer){
 		Window w = (Window)hex2int(token3);
 
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[process_message]: "
-				"State : %i for the window %i",state, (int)w);
+				"State : %i for the window 0x%08lx",state, w);
 		change_state(w, state);
 		sprintf(buffer2, "ACK,%i,%s\n", message_id, token2);
 		send_message(buffer2, strlen(buffer2));
@@ -554,13 +554,13 @@ get_icon(Window win_in, Window win_out )
 	if(get_property(display, win_in, "_NET_WM_ICON", &nitems, (unsigned char*)&data) != Success)
 	{
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_icon]: "
-					"No icon for the application %i",(int)win_out);
+					"No icon for the application 0x%08lx", win_out);
 		return 1;
 	}
 	if(nitems < 16*16+2)
 	{
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_icon]: "
-					"No proper icon for the application %i",(int)win_out);
+					"No proper icon for the application 0x%08lx", win_out);
 		return 1;
 	}
 	sprintf(window_id, "0x%08x",(int)win_out);
@@ -670,13 +670,13 @@ int is_window_resizable(Display* display, Window w)
 	    if(atom == XInternAtom(display, "_NET_WM_ACTION_MAXIMIZE_HORZ", True))
 	    {
 	      log_message(l_config, LOG_LEVEL_DEBUG, "XHook[is_window_resizable]: "
-	  					"window %i is resizable",(int)w);
+	  					"window 0x%08lx is resizable", w);
 	    	return 0;
 	    }
 	    if(atom == XInternAtom(display, "_NET_WM_ACTION_MAXIMIZE_VERT", True))
 	    {
 	    	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[is_window_resizable]: "
-	    			"window %i is resizable",(int)w);
+	    			"window 0x%08lx is resizable", w);
 	    	return 0;
 	    }
 		data+=sizeof(Atom);
@@ -686,7 +686,7 @@ int is_window_resizable(Display* display, Window w)
 
 /*****************************************************************************/
 void create_window(Window win_out){
-	char* window_id = malloc(11);;
+	char* window_id = malloc(11);
 	char* buffer = malloc(1024);
 	int x,y;
 	unsigned int width,height,border,depth;
@@ -708,7 +708,7 @@ void create_window(Window win_out){
 
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[create_window]: "
-			"Creation of the window : %i",(int)win_out);
+			"Creation of the window : 0x%08lx", win_out);
 	Window_get(window_list, win_out, witem);
 	if(witem != 0)
 	{
@@ -716,7 +716,7 @@ void create_window(Window win_out){
 		sprintf(buffer, "STATE,%i,%s,0x%08x,0x%08x\n", message_id,window_id,0,0 );
 		send_message(buffer, strlen(buffer));
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[create_window]: "
-				"%i already exist",(int)win_out);
+				"0x%08lx already exist", win_out);
 		free(window_id);
 		free(buffer);
 		return;
@@ -735,7 +735,7 @@ void create_window(Window win_out){
 	{
 		proper_win = win_out;
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[create_window]: "
-					"%i is a good window", (int)proper_win);
+					"0x%08lx is a good window", proper_win);
 	}
 	else
 	{
@@ -743,7 +743,7 @@ void create_window(Window win_out){
 		{
 			proper_win = win_in;
 			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[create_window]: "
-						"%i is a good window", (int)proper_win);
+						"0x%08lx is a good window", proper_win);
 		}
 		else
 		{
@@ -758,7 +758,7 @@ void create_window(Window win_out){
 	if(attributes.class == 2)
 	{
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[create_window]: "
-					"Bad attributes : %i",(int)proper_win);
+					"Bad attributes : 0x%08lx", proper_win);
 		free(window_id);
 		free(buffer);
 		return;
@@ -792,7 +792,7 @@ void create_window(Window win_out){
 		if(states[i] == XInternAtom(display, "_NET_WM_STATE_MODAL", False)) {
 			flags |= SEAMLESSRDP_CREATE_MODAL;
 			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[create_window]: "
-				"%i is a modal windows", proper_win);
+				"0x%08lx is a modal windows", proper_win);
 		}
 	}
 
@@ -800,7 +800,7 @@ void create_window(Window win_out){
   {
   	flags |= SEAMLESS_CREATE_FIXEDSIZE;
   	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[create_window]: "
-  			"Windows %i is not resizable", proper_win);
+  			"Windows 0x%08lx is not resizable", proper_win);
   }
 
   sprintf(window_id, "0x%08x",(int)win_out);
@@ -901,7 +901,7 @@ int get_state(Window w)
     }
 
     log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_state]: "
-					"State for %i : %s",(int)real_window, XGetAtomName(display, atom));
+					"State for 0x%08lx : %s", real_window, XGetAtomName(display, atom));
 
     return state;
 }
@@ -922,7 +922,7 @@ void destroy_window(Window w)
 	window_id = malloc(11);
 	buffer = malloc(1024);
   log_message(l_config, LOG_LEVEL_DEBUG, "XHook[destroy]: "
-				"Destroy of window: %i",(int)w);
+				"Destroy of window: 0x%08lx", w);
 	sprintf(window_id, "0x%08x",(int)w);
 	sprintf(buffer, "DESTROY,%i,%s,%08x\n", message_id,window_id,0 );
 
@@ -957,18 +957,14 @@ void move_window(Window w, int x, int y, int width, int height)
 	buffer = malloc(1024);
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[move_window]: "
-				"State: %i",witem->state);
+				"Windows id : 0x%08lx State: %i", witem->window_id, witem->state);
 	if(witem->state == SEAMLESSRDP_MAXIMIZED)
 	{
-		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[move_window]: "
-					"Windows id : %i", (int)witem->window_id);
 		sprintf(window_id, "0x%08x",(int)witem->window_id);
 		sprintf(buffer, "POSITION,%i,%s,%i,%i,%i,%i,0x%08x\n", message_id,window_id, -4, -4, width, height, 0 );
 	}
 	else
 	{
-		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[move_window]: "
-					"Windows id: %i",(int)witem->window_id);
 		sprintf(window_id, "0x%08x",(int)witem->window_id);
 		sprintf(buffer, "POSITION,%i,%s,%i,%i,%i,%i,0x%08x\n", message_id,window_id, x, y, width, height, 0 );
 	}
@@ -1013,11 +1009,11 @@ void check_window_state()
 		}
 		state = get_state( proper_win);
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[check_window_state]: "
-					"State for %i: %i\n", (int)window_list.list[i].window_id, state);
+					"State for 0x%08lx: %i\n", window_list.list[i].window_id, state);
 		if (state != window_list.list[i].state)
 		{
 			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[check_window_state]: "
-					"State for window %i has change for : %i", (int)window_list.list[i].window_id, state);
+					"State for window 0x%08lx has change for : %i", window_list.list[i].window_id, state);
 			window_list.list[i].state = state;
 			window_id = malloc(11);
 			buffer = malloc(1024);
@@ -1041,7 +1037,7 @@ void *thread_Xvent_process (void * arg)
 
 	root_windows = DefaultRootWindow(display);
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
-				"Windows root ID : %i", (int)root_windows);
+				"Windows root ID : 0x%08lx", root_windows);
 
 	XSelectInput(display, root_windows, SubstructureNotifyMask);
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
@@ -1059,7 +1055,7 @@ void *thread_Xvent_process (void * arg)
 		case ConfigureNotify:
 			w = ev.xconfigure.window;
 			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
-						"Window move : %i",(int)w);
+						"Window move : 0x%08lx", w);
 			move_window(w, ev.xconfigure.x,ev.xconfigure.y,ev.xconfigure.width,ev.xconfigure.height);
 			break;
 
@@ -1071,13 +1067,13 @@ void *thread_Xvent_process (void * arg)
 		case DestroyNotify:
 			w = ev.xdestroywindow.window;
 			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
-						"Destroy of the window: %i",(int)w);
+						"Destroy of the window: 0x%08lx", w);
 			break;
 
 		case UnmapNotify:
 			w = ev.xunmap.window;
 			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
-						"Unmap of the window: %i",(int)w);
+						"Unmap of the window: 0x%08lx", w);
 			//Window_dump(window_list);
 
 			Window_get(window_list,w, witem);
