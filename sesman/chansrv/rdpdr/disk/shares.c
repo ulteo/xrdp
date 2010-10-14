@@ -24,6 +24,64 @@
 extern struct log_config *l_config;
 
 
+/* A table of the ASCII chars from space (32) to DEL (127) */
+static const char ACCEPTABLE_URI_CHARS[96] = {
+  /*      !    "    #    $    %    &    '    (    )    *    +    ,    -    .    / */
+  0x00,0x3F,0x20,0x20,0x28,0x00,0x2C,0x3F,0x3F,0x3F,0x3F,0x2A,0x28,0x3F,0x3F,0x1C,
+  /* 0    1    2    3    4    5    6    7    8    9    :    ;    <    =    >    ? */
+  0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x38,0x20,0x20,0x2C,0x20,0x20,
+  /* @    A    B    C    D    E    F    G    H    I    J    K    L    M    N    O */
+  0x38,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,
+  /* P    Q    R    S    T    U    V    W    X    Y    Z    [    \    ]    ^    _ */
+  0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x20,0x20,0x20,0x20,0x3F,
+  /* `    a    b    c    d    e    f    g    h    i    j    k    l    m    n    o */
+  0x20,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,
+  /* p    q    r    s    t    u    v    w    x    y    z    {    |    }    ~  DEL */
+  0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x3F,0x20,0x20,0x20,0x3F,0x20
+};
+
+static const char HEX_CHARS[16] = "0123456789ABCDEF";
+
+
+static char*
+share_convert_path(char* path)
+{
+	char* buffer = NULL;
+	int i = 0;
+	int buffer_len = 0;
+	int path_len = 0;
+	unsigned char c = 0;
+	char* t = 0;
+
+	path_len = g_strlen(path);
+	buffer_len = path_len * 3 + 1;
+	buffer = g_malloc(buffer_len, 1);
+
+	t = buffer;
+
+	/* copy the path component name */
+	for (i = 0 ; i< path_len ; i++)
+	{
+		c = path[i];
+		if (!ACCEPTABLE_URI_CHAR (c) && (c != '\n'))
+		{
+			*t++ = '%';
+			*t++ = HEX_CHARS[c >> 4];
+			*t++ = HEX_CHARS[c & 15];
+		}
+		else
+		{
+			*t++ = path[i];
+		}
+	}
+	*t = '\0';
+
+	return buffer;
+}
+
+
+
+
 static int file_contain(char* filename, char* pattern)
 {
 	char* buffer = NULL;
@@ -237,11 +295,12 @@ int share_add_to_bookmark(const char* share_name){
 		return 1;
 	}
 
-	g_snprintf(bookmark_file_content, sizeof(bookmark_file_content), "file://%s/%s/%s\n", home_dir, RDPDRIVE_NAME, share_name);
+	g_snprintf(bookmark_file_content, sizeof(bookmark_file_content), "%s%s/%s/%s\n", FILE_PREFFIX, home_dir, RDPDRIVE_NAME, share_name);
+
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[share_add_to_bookmark]: "
 		        		"Entry to add: %s", bookmark_file_content);
 
-	escaped_bookmark_file_content = w_markup_escape_text(bookmark_file_content, -1);
+	escaped_bookmark_file_content = share_convert_path(bookmark_file_content);
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[share_add_to_bookmark]: "
 		        		"Entry escaped added: %s", bookmark_file_content);
@@ -361,11 +420,11 @@ int share_remove_from_bookmarks(const char* share_name){
 
 	g_snprintf((char*)bookmark_file_path, 256, "%s/%s", home_dir, BOOKMARK_FILENAME);
 
-	g_snprintf(bookmark_file_content, sizeof(bookmark_file_content), "file://%s/%s/%s\n", home_dir, RDPDRIVE_NAME, share_name);
+	g_snprintf(bookmark_file_content, sizeof(bookmark_file_content), "%s%s/%s/%s", FILE_PREFFIX, home_dir, RDPDRIVE_NAME, share_name);
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[share_remove_from_bookmarks]: "
 		        		"Entry to remove: %s", bookmark_file_content);
 
-	escaped_bookmark_file_content = w_markup_escape_text(bookmark_file_content, -1);
+	escaped_bookmark_file_content = share_convert_path(bookmark_file_content);
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[share_remove_from_bookmarks]: "
 		        		"Entry escaped to remove: %s", escaped_bookmark_file_content);
 
@@ -373,9 +432,11 @@ int share_remove_from_bookmarks(const char* share_name){
 	{
 		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[share_remove_from_bookmarks]: "
 		        		"Unable to remove entry in the file %s ", bookmark_file_path);
-		return 1;
+		error = 1;
 	}
-	return 0;
+	error = 0;
+	g_free(escaped_bookmark_file_content);
+	return error;
 }
 
 /*****************************************************************************/

@@ -296,6 +296,7 @@ rdpfs_close()
 {
 	struct disk_device* current_disk;
 
+	share_desktop_purge();
 	while (disk_devices_count != 0)
 	{
 		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_close]: "

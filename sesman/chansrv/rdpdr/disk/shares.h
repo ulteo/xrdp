@@ -24,7 +24,6 @@
 #include "log.h"
 #include "rdpfs.h"
 #include <os_calls.h>
-#include <glib_wrapper.h>
 #include <dirent.h>
 
 
@@ -37,6 +36,9 @@
 		"Icon=folder-remote\n"
 
 #define BOOKMARK_FILENAME  ".gtk-bookmarks"
+#define FILE_PREFFIX       "file://"
+
+#define ACCEPTABLE_URI_CHAR(c) ((c) >= 32 && (c) < 128 && (ACCEPTABLE_URI_CHARS[(c) - 32] & 0x08))
 
 int share_desktop_purge();
 int share_add_to_desktop(const char* share_name);
