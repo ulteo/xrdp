@@ -143,7 +143,7 @@ share_get_bookmarks_list()
 				item = g_strdup(pos);
 				g_strtrim(item, 3);
 				list_add_item(bookmarks, (long)item);
-				log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[share_get_bookmarks_list]: "
+				log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[share_get_bookmarks_list]: "
 						"Add bookmark %s to bookmarks list", pos);
 			}
 			pos = pos2;
@@ -153,7 +153,7 @@ share_get_bookmarks_list()
 		item = g_strdup(pos);
 		g_strtrim(item, 3);
 		list_add_item(bookmarks, (long)item);
-		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[share_get_bookmarks_list]: "
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[share_get_bookmarks_list]: "
 				"Add bookmark %s to bookmarks list", pos);
 
 		pos = pos2 + 1;
