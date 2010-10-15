@@ -25,6 +25,7 @@
 #include "rdpfs.h"
 #include <os_calls.h>
 #include <dirent.h>
+#include <list.h>
 
 
 #define DESKTOP_FILE_TEMPLATE "[Desktop Entry]\n" \
@@ -43,5 +44,10 @@
 int share_desktop_purge();
 int share_add_to_desktop(const char* share_name);
 int share_remove_from_desktop(const char* share_name);
+
+int share_bookmark_purge();
+int share_add_to_bookmarks(const char* share_name);
+int share_remove_from_bookmarks(const char* share_name);
+
 
 #endif /* SHARES_H_ */

@@ -228,6 +228,7 @@ int main(int argc, char** argv, char** environ)
 	}
 
 	share_desktop_purge();
+	share_bookmark_purge();
 
 	g_sprintf(mount_point, "%s/%s", home_dir, RDPDRIVE_NAME);
 

@@ -43,6 +43,7 @@ static const char ACCEPTABLE_URI_CHARS[96] = {
 static const char HEX_CHARS[16] = "0123456789ABCDEF";
 
 
+/*****************************************************************************/
 static char*
 share_convert_path(char* path)
 {
@@ -79,9 +80,142 @@ share_convert_path(char* path)
 	return buffer;
 }
 
+/*****************************************************************************/
+struct list*
+share_get_bookmarks_list()
+{
+	int file_size = 0;
+	char* home_dir = g_getenv("HOME");
+	char* buffer = NULL;
+	char* pos = NULL;
+	char* pos2 = NULL;
+	char* item = NULL;
+	int fd = 0;
+	struct list* bookmarks = NULL;
+	char bookmark_file_path[1024] = {0};
+
+	g_snprintf((char*)bookmark_file_path, sizeof(bookmark_file_path), "%s/%s", home_dir, BOOKMARK_FILENAME);
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[share_get_bookmarks_list]: "
+			"Bookmark file: %s", bookmark_file_path);
 
 
+	if (g_file_exist(bookmark_file_path) == 0){
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[share_get_bookmarks_list]: "
+				"Bookmark file do not exist");
+		goto fail;
+	}
 
+	file_size = g_file_size(bookmark_file_path);
+	if (file_size < 0)
+	{
+		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[share_get_bookmarks_list]: "
+				"Unable to get size of file %s", bookmark_file_path);
+		goto fail;
+	}
+
+	buffer = g_malloc(file_size+1, 1);
+	fd = g_file_open(bookmark_file_path);
+	if (fd < 0)
+	{
+		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[share_get_bookmarks_list]: "
+				"Unable to open file %s", bookmark_file_path);
+		goto fail;
+	}
+
+	if (g_file_read(fd, buffer, file_size) < 0)
+	{
+		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[share_get_bookmarks_list]: "
+				"Unable to read the file %s [%s]", bookmark_file_path, strerror(errno));
+		goto fail;
+	}
+
+	bookmarks = list_create();
+	bookmarks->auto_free = 1;
+
+	pos = buffer;
+	while(pos != NULL)
+	{
+		pos2 = g_strchr(pos, '\n');
+		if (pos2 == NULL)
+		{
+			if (g_strlen(pos) > 1)
+			{
+				item = g_strdup(pos);
+				g_strtrim(item, 3);
+				list_add_item(bookmarks, (long)item);
+				log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[share_get_bookmarks_list]: "
+						"Add bookmark %s to bookmarks list", pos);
+			}
+			pos = pos2;
+			continue;
+		}
+		*pos2 = 0;
+		item = g_strdup(pos);
+		g_strtrim(item, 3);
+		list_add_item(bookmarks, (long)item);
+		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[share_get_bookmarks_list]: "
+				"Add bookmark %s to bookmarks list", pos);
+
+		pos = pos2 + 1;
+	}
+	if (buffer)
+	{
+		g_free(buffer);
+	}
+	return bookmarks;
+
+fail:
+	if (buffer)
+	{
+		g_free(buffer);
+	}
+	bookmarks = list_create();
+	bookmarks->auto_free = 1;
+
+	return bookmarks;
+}
+
+/*****************************************************************************/
+int
+share_save_bookmark(struct list* bookmarks)
+{
+	int fd = 0;
+	int i = 0;
+	char* bookmark = NULL;
+	char* home_dir = g_getenv("HOME");
+	char bookmark_file_path[1024] = {0};
+
+	g_snprintf((char*)bookmark_file_path, sizeof(bookmark_file_path), "%s/%s", home_dir, BOOKMARK_FILENAME);
+
+	if (g_file_exist(bookmark_file_path)){
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[share_get_bookmarks_list]: "
+				"Bookmark already exist, delete it");
+		g_file_delete(bookmark_file_path);
+	}
+
+	fd = g_file_open(bookmark_file_path);
+	if (fd < 0)
+	{
+		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[share_save_bookmark]: "
+				"Unable to open file %s", bookmark_file_path);
+		return 1;
+	}
+
+  for (i=0; i<(bookmarks->count); i++)
+  {
+  	bookmark = (char*)list_get_item(bookmarks, i);
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[share_save_bookmark]: "
+				"Test item %s", bookmark);
+  	g_file_write(fd, bookmark, g_strlen(bookmark));
+  	g_file_write(fd, "\n", 1);
+  }
+
+  g_file_close(fd);
+  return 0;
+}
+
+
+/*****************************************************************************/
 static int file_contain(char* filename, char* pattern)
 {
 	char* buffer = NULL;
@@ -139,6 +273,7 @@ fail:
 }
 
 
+/*****************************************************************************/
 int
 share_desktop_purge()
 {
@@ -279,171 +414,97 @@ int share_add_to_bookmark(const char* share_name){
 	char *escaped_bookmark_file_content;
 	int fd;
 	int error;
+	struct list* bookmarks = NULL;
 
-	g_snprintf((char*)bookmark_file_path, 256, "%s/%s", home_dir, BOOKMARK_FILENAME);
+	bookmarks = share_get_bookmarks_list();
 
-	if (g_file_exist(bookmark_file_path) == 0){
-		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[share_add_to_bookmark]: "
-		        		"Bookmark already exist");
-	}
-
-	fd = g_file_append(bookmark_file_path);
-	if (fd < 0)
-	{
-		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[share_add_to_bookmark]: "
-		        		"Unable to open file %s", bookmark_file_path);
-		return 1;
-	}
-
-	g_snprintf(bookmark_file_content, sizeof(bookmark_file_content), "%s%s/%s/%s\n", FILE_PREFFIX, home_dir, RDPDRIVE_NAME, share_name);
+	g_snprintf(bookmark_file_content, sizeof(bookmark_file_content), "%s%s/%s/%s", FILE_PREFFIX, home_dir, RDPDRIVE_NAME, share_name);
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[share_add_to_bookmark]: "
-		        		"Entry to add: %s", bookmark_file_content);
+			"Entry to add: %s", bookmark_file_content);
 
 	escaped_bookmark_file_content = share_convert_path(bookmark_file_content);
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[share_add_to_bookmark]: "
-		        		"Entry escaped added: %s", bookmark_file_content);
+			"Entry escaped added: %s", escaped_bookmark_file_content);
+	list_add_item(bookmarks, (long)g_strdup(escaped_bookmark_file_content));
 
-	error = g_file_write(fd, escaped_bookmark_file_content, g_strlen(escaped_bookmark_file_content));
-	g_free(escaped_bookmark_file_content);
-	if (error < 0 )
-	{
-		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[share_add_to_bookmark]: "
-		        		"Unable to write in the file %s [%s]", bookmark_file_path, strerror(errno));
-		return 1;
-	}
-	g_file_close(fd);
-
-}
-
-
-static int
-replace_in_file(char* filename, char* pattern)
-{
-	int file_size = 0;
-	int pattern_size = 0;
-	char* buffer = NULL;
-	char* pos = NULL;
-	int file_seek = 0;
-	int fd = 0;
-
-	pattern_size = g_strlen(pattern);
-	file_size = g_file_size(filename);
-	if (file_size < 0)
-	{
-		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[replace_in_file]: "
-				"Unable to get size of file %s", filename);
-		return 1;
-	}
-	buffer = g_malloc(file_size, 0);
-	fd = g_file_open(filename);
-	if (fd < 0)
-	{
-		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[replace_in_file]: "
-		        		"Unable to open file %s", filename);
-		goto fail;
-	}
-	if (g_file_read(fd, buffer, file_size) < 0)
-	{
-		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[replace_in_file]: "
-				"Unable to read the file %s [%s]", filename, strerror(errno));
-		goto fail;
-	}
-
-	pos = g_strstr(buffer, pattern);
-	if (pos == NULL)
-	{
-		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[replace_in_file]: "
-				"Unable to find the pattern %s in the file %s", pattern, filename);
-		goto fail;
-	}
-	file_seek = pos - buffer;
-	if (file_seek < 0 || file_seek > file_size)
-	{
-		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[replace_in_file]: "
-				"Invalid position %i", file_seek);
-		goto fail;
-	}
-	if (g_file_seek(fd, file_seek + pattern_size) < 0)
-	{
-		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[replace_in_file]: "
-				"Unable to go to the position %i [%s]", file_seek, strerror(errno));
-	}
-	if (g_file_read(fd, pos, file_size-pattern_size) < 0)
-	{
-		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[replace_in_file]: "
-				"Unable to read the end of the file %s", filename);
-		goto fail;
-	}
-
-	g_file_close(fd);
-	if (g_file_delete(filename) == 0)
-	{
-		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[replace_in_file]: "
-				"Unable to delete file %s", filename);
-		goto fail;
-	}
-	fd = g_file_open(filename);
-	if (fd < 0)
-	{
-		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[replace_in_file]: "
-				"Unable to open file %s", filename);
-		goto fail;
-	}
-	if (g_file_write(fd, buffer, file_size - pattern_size) < 0)
-	{
-				log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[replace_in_file]: "
-				"Unable to write the file %s", filename);
-		goto fail;
-	}
-
-	g_file_close(fd);
+	share_save_bookmark(bookmarks);
+	list_delete(bookmarks);
 	return 0;
-
-fail:
-	if (buffer)
-	{
-		g_free(buffer);
-	}
-	return 1;
 }
+
+
 
 /*****************************************************************************/
 int share_remove_from_bookmarks(const char* share_name){
+	int i = 0;
 	char* home_dir = g_getenv("HOME");
-	char bookmark_file_content[1024] = {0};
 	char bookmark_file_path[1024] = {0};
-	char *escaped_bookmark_file_content;
-	int fd;
-	int error;
+	char bookmark_file_content[1024] = {0};
+	char *escaped_bookmark_file_content = NULL;
+	char* bookmark = NULL;
+	struct list* bookmarks = NULL;
+	struct list* new_bookmarks = NULL;
 
-	g_snprintf((char*)bookmark_file_path, 256, "%s/%s", home_dir, BOOKMARK_FILENAME);
 
-	g_snprintf(bookmark_file_content, sizeof(bookmark_file_content), "%s%s/%s/%s", FILE_PREFFIX, home_dir, RDPDRIVE_NAME, share_name);
+	bookmarks = share_get_bookmarks_list();
+	if (share_name == NULL)
+	{
+		g_snprintf(bookmark_file_content, sizeof(bookmark_file_content), "%s%s/%s", FILE_PREFFIX, home_dir, RDPDRIVE_NAME);
+	}
+	else
+	{
+		g_snprintf(bookmark_file_content, sizeof(bookmark_file_content), "%s%s/%s/%s", FILE_PREFFIX, home_dir, RDPDRIVE_NAME, share_name);
+	}
+
+
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[share_remove_from_bookmarks]: "
-		        		"Entry to remove: %s", bookmark_file_content);
+			"Entry to remove: %s", bookmark_file_content);
 
 	escaped_bookmark_file_content = share_convert_path(bookmark_file_content);
-	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[share_remove_from_bookmarks]: "
-		        		"Entry escaped to remove: %s", escaped_bookmark_file_content);
 
-	if (replace_in_file(bookmark_file_path, escaped_bookmark_file_content) == 1 )
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[share_remove_from_bookmarks]: "
+			"Entry escaped to remove: %s", escaped_bookmark_file_content);
+
+	new_bookmarks = list_create();
+	new_bookmarks->auto_free = 1;
+	for (i=0; i<(bookmarks->count); i++)
 	{
-		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[share_remove_from_bookmarks]: "
-		        		"Unable to remove entry in the file %s ", bookmark_file_path);
-		error = 1;
+		bookmark = (char*)list_get_item(bookmarks, i);
+		if (bookmark == NULL)
+		{
+			continue;
+		}
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[share_remove_from_bookmarks]: "
+				"Test item %s", bookmark);
+  	if (g_strstr(bookmark, escaped_bookmark_file_content) == 0)
+		{
+  		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[share_remove_from_bookmarks]: "
+  				"keep the item %s", bookmark);
+			list_add_item(new_bookmarks, (long)g_strdup(bookmark));
+			continue;
+		}
 	}
-	error = 0;
-	g_free(escaped_bookmark_file_content);
-	return error;
+	list_delete(bookmarks);
+  list_dump_items(new_bookmarks);
+
+	share_save_bookmark(new_bookmarks);
+	list_delete(new_bookmarks);
+	if (escaped_bookmark_file_content)
+	{
+		g_free(escaped_bookmark_file_content);
+	}
+	return 0;
 }
 
 /*****************************************************************************/
 int
 share_bookmark_purge()
 {
-	return 0;
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[share_bookmark_purge]: "
+			"Purge bookmarks");
+	return share_remove_from_bookmarks(NULL);
 }
 
 
