@@ -673,9 +673,10 @@ rdpdr_process_channel_opening(int client, const char* device)
 int APP_CC
 rdpdr_launch_printer_manager(int display_num)
 {
-	char device_program_path[256];
+	char program_command[256];
 	char device_program_name[15];
 	char socket_filename[256];
+	struct list* channel_params;
 	int pid;
 	int sock;
 
@@ -690,24 +691,24 @@ rdpdr_launch_printer_manager(int display_num)
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_launch_printer_manager]: "
 			"Try to launch the rdpdr device application 'rdpdr_printer'");
-	pid = g_fork();
-	if(pid < 0)
+
+	g_sprintf(program_command, "%s/rdpdr_printer", XRDP_SBIN_PATH);
+	channel_params = list_create();
+	channel_params->auto_free = 1;
+
+	/* building parameters */
+	list_add_item(channel_params, (long)g_strdup(program_command));
+	list_add_item(channel_params, (long)g_strdup(username));
+	list_add_item(channel_params, 0);
+
+	pid = g_launch_process(display_num, channel_params);
+	if (pid == 0)
 	{
-		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_launch_printer_manager]: "
-				"Error while launching the channel application rdpdr_printer");
+		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_launch_disk_manager]: "
+				"Unable to launch the printer manager program");
 		return 1;
 	}
-	if( pid == 0)
-	{
-		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_launch_printer_manager]: "
-				"Launching the channel application rdpdr_printer ");
 
-		g_sprintf(device_program_path, "%s/%s",XRDP_SBIN_PATH, "rdpdr_printer");
-		g_execlp3(device_program_path, device_program_name, username);
-		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_launch_printer_manager]: "
-				"The channel application rdpdr_printer ended");
-		g_exit(0);
-	}
 	/* wait device */
 	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_launch_printer_manager]: "
 			"Waiting printer program");
