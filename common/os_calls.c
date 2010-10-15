@@ -2012,7 +2012,7 @@ g_su(const char* username, int display, struct list* command)
   if (pid == -1)
   {
      printf("Error while forking\n");
-     return 1;
+     return 0;
   }
   else if (pid == 0) /* child sesman */
   {
@@ -2057,7 +2057,7 @@ g_su(const char* username, int display, struct list* command)
     printf("failed to exec command %s\n", command->items[0]);
     g_exit(0);
   }
-  return 0;
+  return pid;
 }
 
 /*****************************************************************************/
