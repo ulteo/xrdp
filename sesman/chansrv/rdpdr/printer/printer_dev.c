@@ -34,6 +34,15 @@ static char user_spool_dir[256];
 extern int inotify_sock;
 extern int printer_up;
 
+
+static const char *
+password_handler(const char *prompt)
+{
+	//TODO: find a way to manage password
+  (void)prompt;
+  return NULL;
+}
+
 /************************************************************************/
 int				/* O - 0 if name is no good, 1 if name is good */
 printer_dev_validate_name(const char *name)		/* I - Name to check */
@@ -164,6 +173,7 @@ printer_dev_server_connect(http_t **http )
 			return 1;
 	  }
 	}
+  cupsSetPasswordCB(password_handler);
 	return 0;
 }
 
