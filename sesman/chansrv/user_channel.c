@@ -128,8 +128,8 @@ user_channel_launch_server_channel(char* channel_name)
 	char* channel_program_arguments;
 	char* channel_type;
 	char* display_string;
-  struct list* channel_params;
-	int error = 0;
+	struct list* channel_params;
+	int pid = 0;
 
 	g_sprintf(channel_file_conf, "%s/%s.conf", XRDP_CFG_PATH, channel_name);
 	if (!g_file_exist(channel_file_conf))
@@ -167,13 +167,13 @@ user_channel_launch_server_channel(char* channel_name)
 
 	if( g_strcmp(channel_type, CHANNEL_TYPE_ROOT) == 0)
 	{
-		error = g_launch_process(g_display_num, channel_params);
+		pid = g_launch_process(g_display_num, channel_params);
 	}
 	else
 	{
-		error = g_su(username, g_display_num, channel_params);
+		pid = g_su(username, g_display_num, channel_params);
 	}
-	if (error == 1)
+	if (pid == 0)
 	{
 		log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[user_channel_launch_server_channel]: "
 					"Unable to launch the channel application %s ", CHANNEL_LAUNCHER_NAME);

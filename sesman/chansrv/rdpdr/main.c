@@ -733,12 +733,12 @@ rdpdr_launch_disk_manager(int display_num)
 {
 	char program_command[256];
 	char socket_filename[256];
-  struct list* channel_params;
+	struct list* channel_params;
+	int pid = 0;
+	int sock = 0;
 
-	int sock;
-
-  g_sprintf(socket_filename, "/var/spool/xrdp/%i/vchannel_disk", display_num);
-  sock = g_create_unix_socket(socket_filename);
+	g_sprintf(socket_filename, "/var/spool/xrdp/%i/vchannel_disk", display_num);
+	sock = g_create_unix_socket(socket_filename);
 	if (sock == 1)
 	{
 	  log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr[rdpdr_launch_disk_manager]: "
@@ -760,12 +760,16 @@ rdpdr_launch_disk_manager(int display_num)
 	list_add_item(channel_params, (long)g_strdup(program_command));
 	list_add_item(channel_params, (long)g_strdup(username));
 	list_add_item(channel_params, 0);
-	if (g_su(username, display_num, channel_params) == 1)
+
+	pid = g_su(username, display_num, channel_params);
+	if (pid == 0)
 	{
 		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_launch_disk_manager]: "
 				"Unable to launch the disk manager program");
 		return 1;
 	}
+	/* wait process, rdpdr_disk may return */
+	g_waitpid(pid);
 
 	/* wait device */
 	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_launch_disk_manager]: "
