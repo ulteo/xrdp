@@ -30,6 +30,8 @@
 
 int
 hex2int(const char* hexa_string);
+const char*
+gravityToStr(int gravity);
 Window
 get_in_window(Display* display,  Window w);
 int

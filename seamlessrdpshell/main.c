@@ -346,53 +346,56 @@ int get_next_token(char** message, char** token){
 /*****************************************************************************/
 int process_move_action(XEvent* ev){
   Window_item *witem;
-  Window win_in;
-  Status status;
   Window root;
   int x;
   int y;
   unsigned int width,height,border,depth;
-	Window_get(window_list, ev->xconfigure.window, witem);
+  short flag = 0;
+  XWindowAttributes attr;
+
+  Window_get(window_list, ev->xconfigure.window, witem);
   if(witem == 0)
   {
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[process_move_action]: "
 				"Window (0x%08lx) remove during the operation", ev->xconfigure.window);
     return 0;
   }
-  win_in = get_in_window(display, witem->window_id);
-  if(win_in == 0)
-  {
-  	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[process_move_action]: "
-  			"Unknow window : 0x%08lx", witem->window_id);
-    return 0;
-  }
+
   if(witem->state == SEAMLESSRDP_MINIMIZED)
   {
   	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[process_move_action]: "
   			"The window 0x%08lx is minimized", witem->window_id);
     return 1;
   }
-  XGetGeometry(display,witem->window_id,&root,&x,&y,&width, &height,&border,&depth );
-  if(x !=ev->xconfigure.x || y != ev->xconfigure.y)
-  {
-    int x_decal,y_decal;
-    unsigned int width2,height2,border2,depth2;
-    XGetGeometry(display,win_in,&root,&x_decal,&y_decal,&width2, &height2,&border2,&depth2 );
-    status = XMoveWindow(display, witem->window_id , ev->xconfigure.x-x_decal,ev->xconfigure.y-y_decal);
+  
+  XGetWindowAttributes(display, witem->window_id, &attr);
+  log_message(l_config, LOG_LEVEL_DEBUG, "XHook[process_move_action]: "
+  	"Wnd 0x%08lx gravity: %s", witem->window_id, gravityToStr(attr.win_gravity));
+
+  if (attr.win_gravity != StaticGravity) {
+	  ev->xconfigure.x -= attr.x;
+	  ev->xconfigure.y -= attr.y;
   }
-  else
-  {
-  	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[process_move_action]: "
-  			"Cannot move window at the same position");
+
+  XGetGeometry(display, witem->win_out, &root, &x, &y, &width, &height, &border, &depth);
+
+  if (x != ev->xconfigure.x || y != ev->xconfigure.y)
+    flag += 1;
+  if (width != ev->xconfigure.width || height != ev->xconfigure.height)
+    flag += 2;
+
+  switch (flag) {
+    case 1:
+      XMoveWindow(display, witem->win_out , ev->xconfigure.x, ev->xconfigure.y);
+      break;
+    case 2:
+      XResizeWindow(display, witem->win_out , ev->xconfigure.width, ev->xconfigure.height);
+      break;
+    case 3:
+      XMoveResizeWindow(display, witem->win_out, ev->xconfigure.x, ev->xconfigure.y, ev->xconfigure.width, ev->xconfigure.height);
+      break;
   }
-  if(width !=ev->xconfigure.width || height != ev->xconfigure.height){
-    XResizeWindow(display, witem->window_id , ev->xconfigure.width,ev->xconfigure.height);
-  }
-  else
-  {
-  	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[process_move_action]: "
-  			"Cannot resize the window at the same dimension");
-  }
+
   return 1;
 }
 

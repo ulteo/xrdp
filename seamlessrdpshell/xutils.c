@@ -24,6 +24,29 @@
 
 extern struct log_config* l_config;
 
+static char* gravity_strs[] = {"ForgetGravity",
+				"NorthWestGravity",
+				"NorthGravity",
+				"NorthEastGravity",
+				"WestGravity",
+				"CenterGravity",
+				"EastGravity",
+				"SouthWestGravity",
+				"SouthGravity",
+				"SouthEastGravity",
+				"StaticGravity"
+				};
+
+/*****************************************************************************/
+const char*
+gravityToStr(int gravity)
+{
+	if (gravity >= (sizeof(gravity_strs) / sizeof(gravity_strs[0])))
+		return "BadGravity";
+
+	return gravity_strs[gravity];
+}
+
 /*****************************************************************************/
 int
 hex2int(const char* hexa_string)
