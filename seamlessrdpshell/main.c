@@ -768,6 +768,16 @@ void create_window(Window win_out){
 	get_window_pid(display, proper_win, &pid);
 	get_parent_window(display, proper_win, &parent_id);
 
+	if (parent_id != 0) {
+		Window_get(window_list, parent_id, witem);
+		if (witem == 0) {
+			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[create_window]: "
+				"Found a parent window (0x%08lx) for the window 0x%08lx, but the windows list does not contain it", parent_id, proper_win);
+			parent_id = 0;
+		}
+		witem = NULL;
+	}
+
   if(win_in == 0)
   {
     win_in = win_out;
