@@ -992,10 +992,7 @@ void check_window_state()
 	char* window_id;
 	char* buffer;
 
-	Window win;
-	Window win_in;
 	Window_item *witem;
-	Window proper_win = 0;
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[check_window_state]: "
 				"Check windows states");
 	int i;
@@ -1004,34 +1001,19 @@ void check_window_state()
 	for(i=0 ; i < count; i++)
 	{
 		witem = &window_list.list[i];
-		win = window_list.list[i].window_id;
-		win_in = get_in_window(display, win);
-		if(is_good_window(display, win) == 0)
-		{
-			proper_win = win;
-		}
-		if(is_good_window(display, win_in) == 0)
-		{
-			proper_win = win_in;
-		}
-		if(proper_win == 0)
-		{
-			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[check_window_state]: "
-						"No good win");
-			return;
-		}
-		state = get_state( proper_win);
+		
+		state = get_state(witem->win_out);
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[check_window_state]: "
-					"State for 0x%08lx: %i\n", window_list.list[i].window_id, state);
-		if (state != window_list.list[i].state)
+					"State for 0x%08lx: %i\n", witem->window_id, state);
+		if (state != witem->state)
 		{
 			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[check_window_state]: "
-					"State for window 0x%08lx has change for : %i", window_list.list[i].window_id, state);
-			window_list.list[i].state = state;
+					"State for window 0x%08lx has change for : %i", witem->window_id, state);
+			witem->state = state;
 			window_id = malloc(11);
 			buffer = malloc(1024);
 
-			sprintf(window_id, "0x%08x",(int)win);
+			sprintf(window_id, "0x%08lx", (unsigned long) witem->window_id);
 			sprintf(buffer, "STATE,%i,%s,0x%08x,0x%08x\n", message_id,window_id,state,0 );
 			send_message(buffer, strlen(buffer));
 			free(window_id);
