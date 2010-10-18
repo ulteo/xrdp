@@ -908,7 +908,7 @@ session_destroy(struct session_item* sess)
 		{
 			if( 	 (g_strcmp(dir_entry->d_name, ".") == 0)
 					|| (g_strcmp(dir_entry->d_name, "..") == 0)
-					|| (dir_entry->d_type == DT_DIR))
+					|| (dir_entry->d_type != DT_DIR))
 			{
 				continue;
 			}
