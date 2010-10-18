@@ -536,7 +536,7 @@ void process_message(char* buffer){
 
 /*****************************************************************************/
 int
-get_icon(Window win_in, Window win_out )
+get_icon(Window wnd)
 {
 #if __WORDSIZE==64
 	return 0;
@@ -554,19 +554,19 @@ get_icon(Window win_in, Window win_out )
 	char* buffer_pos = buffer;
 	char* window_id = g_malloc(11, 1);
 
-	if(get_property(display, win_in, "_NET_WM_ICON", &nitems, (unsigned char*)&data) != Success)
+	if(get_property(display, wnd, "_NET_WM_ICON", &nitems, (unsigned char*)&data) != Success)
 	{
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_icon]: "
-					"No icon for the application 0x%08lx", win_out);
+					"No icon for the application 0x%08lx", wnd);
 		return 1;
 	}
 	if(nitems < 16*16+2)
 	{
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_icon]: "
-					"No proper icon for the application 0x%08lx", win_out);
+					"No proper icon for the application 0x%08lx", wnd);
 		return 1;
 	}
-	sprintf(window_id, "0x%08x",(int)win_out);
+	sprintf(window_id, "0x%08lx", wnd);
 	//analyzing of _NET_WM_ICON atom content
 	k=0;
 	while( k < nitems )
@@ -829,7 +829,7 @@ void create_window(Window win_out){
 	send_message(buffer, strlen(buffer));
 	if (! (flags & SEAMLESS_CREATE_POPUP))
 	{
-		get_icon( win_in, win_out);
+		get_icon(proper_win);
 	}
 
 	sprintf(buffer, "POSITION,%i,%s,%i,%i,%i,%i,0x%08x\n", message_id,window_id, attributes.x,attributes.y,attributes.width,attributes.height,0 );
