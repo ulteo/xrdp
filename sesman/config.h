@@ -63,6 +63,7 @@
 #define SESMAN_CFG_SESS_DISC_LIMIT   "DisconnectedTimeLimit"
 #define SESMAN_CFG_SESS_MONIT_DELAY  "MonitoringDelay"
 #define SESMAN_CFG_SESS_X_TIMEOUT    "XserverTimeout"
+#define SESMAN_CFG_SESS_MANAGEMENT_THREAD_COUNT "ManagementThreadCount"
 
 /**
  *
@@ -135,6 +136,13 @@ struct config_sessions
    * @brief delay to check if Xserver is started
    */
   int x_session_timeout;
+
+  /**
+   * @var x_management_thread_count
+   * @brief number of thread involved in session management
+   */
+  int management_thread_count;
+
 
 };
 

@@ -27,6 +27,7 @@
 
 #include "sesman.h"
 #include "thread_calls.h"
+#include "thread_pool.h"
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
 #include <libxml/tree.h>
@@ -47,6 +48,7 @@ tbus g_sync_event = 0;
 int stop = 0;
 
 extern int g_thread_sck; /* in thread.c */
+static THREAD_POOL* pool;
 
 
 
@@ -643,13 +645,28 @@ int close_management_connection(xmlDocPtr doc, int socket)
 		xmlFreeDoc(doc);
 	}
 	g_tcp_close(socket);
-
-  pthread_exit(NULL);
-  //return 1;
 }
 
+int thread_routine()
+{
+	int job = 0;
 
+	while(1)
+	{
+		log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[thread_routine]: "
+  			"Wait job");
 
+		thread_pool_wait_job(pool);
+
+		job = thread_pool_pop_job(pool);
+		if (job == 0)
+		{
+			continue;
+		}
+
+		process_request(job);
+	}
+}
 
 /************************************************************************/
 int
@@ -699,9 +716,6 @@ process_request(int client)
     //xml_send_error(client,"test");
   	return close_management_connection(doc, client);
   }
-
-
-
 
   if( g_strcmp(request_type, "session") == 0)
   {
@@ -821,12 +835,19 @@ process_request(int client)
 	return close_management_connection(doc, client);
 }
 
-
 THREAD_RV THREAD_CC
 admin_thread(void* param)
 {
   int server = g_create_unix_socket(MANAGEMENT_SOCKET_NAME);
   g_chmod_hex(MANAGEMENT_SOCKET_NAME, 0xFFFF);
+
+  log_message(&(g_cfg->log), LOG_LEVEL_INFO, "sesman[admin_thread]: "
+					"Create pool thread");
+  pool = thread_pool_init_pool(g_cfg->sess.management_thread_count);
+
+  log_message(&(g_cfg->log), LOG_LEVEL_INFO, "sesman[admin_thread]: "
+					"Start pool thread");
+  thread_pool_start_pool_thread(pool, thread_routine);
 
   xmlInitParser();
   while(1)
@@ -834,16 +855,17 @@ admin_thread(void* param)
   	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[admin_thread]: "
 					"wait connection");
     int client = g_wait_connection(server);
+    log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[process_request]: "
+						"New client connection [%i]",client);
+
     if (client < 0)
     {
     	log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[process_request]: "
 							"Unable to get client from management socket [%s]", strerror(g_get_errno()));
+    	continue;
     }
-    else
-    {
-    	tc_thread_create((void*)process_request, (void*)client);
-    	//process_request(client);
-    }
+
+    thread_pool_push_job(pool, client);
   }
 }
 
