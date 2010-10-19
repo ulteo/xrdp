@@ -420,6 +420,27 @@ int process_destroy_action(Window wnd) {
 }
 
 /*****************************************************************************/
+int process_focus_action(Window wnd) {
+	Window_item* witem = NULL;
+
+	Window_get(window_list, wnd, witem);
+	if (witem == 0) {
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[process_focus_action]: "
+			"Window (0x%08lx) no longer exists", wnd);
+		return 0;
+	}
+
+	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[process_focus_action]: "
+			"Setting focus in window (0x%08lx)", wnd);
+
+	XMapRaised(display, wnd);
+
+	XSetInputFocus(display, wnd, RevertToParent, CurrentTime);
+
+	return 0;
+}
+
+/*****************************************************************************/
 int change_state(Window w, int state ){
 	Window_item *witem;
 	Window_get(window_list, w, witem);
@@ -509,6 +530,9 @@ void process_message(char* buffer){
 
 	if(strcmp("FOCUS", token1)==0 )
 	{
+		Window wnd = (Window) hex2int(token3);
+		process_focus_action(wnd);
+
 		sprintf(buffer2, "ACK,%i,%s\n", message_id, token2);
 		send_message(buffer2, strlen(buffer2));
 		free(buffer2);
