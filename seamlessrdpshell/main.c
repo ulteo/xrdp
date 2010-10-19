@@ -964,18 +964,14 @@ void move_window(Window w, int x, int y, int width, int height)
 	char* window_id;
 	char* buffer;
 
-	Window win_in = get_in_window(display, w);
 	Window_item* witem;
 
 	Window_get(window_list, w, witem);
 	if(witem == 0)
 	{
-		Window_get(window_list,win_in, witem);
-		if(witem == 0){
-	    log_message(l_config, LOG_LEVEL_DEBUG, "XHook[move_window]: "
-						"Unknowed window");
-			return;
-		}
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[move_window]: "
+			"Unknowed window");
+		return;
 	}
 	window_id = malloc(11);
 	buffer = malloc(1024);
