@@ -867,10 +867,17 @@ int get_state(Window w)
 		return 0;
 	}
 
+	atom = XInternAtom(display, "_NET_WM_STATE", True);
+	if (atom == None) {
+		log_message(l_config, LOG_LEVEL_ERROR, "XHook[get_state]: "
+			"Unable to find \"_NET_WM_STATE\" on the display %s", XDisplayString(display));
+		return 0;
+	}
+
 	status = XGetWindowProperty(
 			display,
 			real_window,
-			XInternAtom(display, "_NET_WM_STATE", True),
+			atom,
 			0,
 			(~0L),
 			False,
