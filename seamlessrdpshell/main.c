@@ -871,7 +871,7 @@ void create_window(Window win_out){
 }
 
 /*****************************************************************************/
-int get_state(Window w)
+int get_state(Window_item* witem)
 {
 	unsigned char* data;
 	Atom     actual_type;
@@ -881,15 +881,18 @@ int get_state(Window w)
 	Atom atom = 0;
 	int i;
 	int status;
-	Window_item* witem;
-	Window real_window = w;
+	Window real_window;
 
 	int state = SEAMLESSRDP_NORMAL;
-	Window_get(window_list, w, witem);
-	if(w == 0)
+	
+	if(witem == 0)
 	{
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_state]: "
+					"witem = 0\n");
 		return 0;
 	}
+
+	real_window = witem->win_out;
 
 	atom = XInternAtom(display, "_NET_WM_STATE", True);
 	if (atom == None) {
@@ -913,14 +916,47 @@ int get_state(Window w)
 			&data);
 
     if(status != 0){
+	    log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_state]: "
+					"Window 0x%08lx: Unable to get state\n", real_window);
 		return 0;
     }
     if(nitems == 0){
-    	return 0;
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_state]: "
+					"Window 0x%08lx: Contains no state\n", real_window);
+
+		real_window = witem->window_id;
+
+		status = XGetWindowProperty(
+				display,
+				real_window,
+				atom,
+				0,
+				(~0L),
+				False,
+				AnyPropertyType,
+				&actual_type,
+				&actual_format,
+				&nitems,
+				&bytes,
+				&data);
+
+		if (status != 0) {
+			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_state]: "
+				"Window 0x%08lx: Unable to get state\n", real_window);
+			
+			return 0;
+		}
+
+		if (nitems == 0) {
+			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_state]: "
+				"Window 0x%08lx: Contains no state\n", real_window);
+
+			return 0;
+		}
     }
 
   	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_state]: "
-					"%i state founded",(int)nitems);
+					"Window 0x%08lx: %i state founded", real_window,(int)nitems);
     for(i = 0; i<nitems ; i++)
     {
     	atom = (Atom) \
@@ -931,9 +967,9 @@ int get_state(Window w)
     					(*((unsigned char*) data+ 3) << 24) \
     			); \
     	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_state]: "
-					"Atom state : %i",(int)atom);
+					"Window 0x%08lx: Atom state : %i", real_window,(int)atom);
     	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_state]: "
-    					"Windows state : %s[%i]\n",XGetAtomName(display, atom),(int)atom);
+    					"Window 0x%08lx: state : %s[%i]\n", real_window,XGetAtomName(display, atom),(int)atom);
 	    if(atom == XInternAtom(display, "_NET_WM_STATE_HIDDEN", True))
 	    {
 	    	state =SEAMLESSRDP_MINIMIZED;
@@ -1033,7 +1069,7 @@ void check_window_state()
 	{
 		witem = &window_list.list[i];
 		
-		state = get_state(witem->win_out);
+		state = get_state(witem);
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[check_window_state]: "
 					"State for 0x%08lx: %i\n", witem->window_id, state);
 		if (state != witem->state)
@@ -1107,6 +1143,13 @@ void *thread_Xvent_process (void * arg)
 					"Unknowed window\n");
 				break;
 			}
+
+			if (witem->state == SEAMLESSRDP_MINIMIZED) {
+				log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
+					"Window 0x%08lx is iconified\n", witem->win_out);
+				break;
+			}
+
 			destroy_window(witem->window_id);
 			break;
 
