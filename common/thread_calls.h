@@ -28,6 +28,20 @@
 
 #include "arch.h"
 
+typedef struct {
+    int needed;
+    int called;
+    pthread_mutex_t mutex;
+    pthread_cond_t cond;
+} barrier_t;
+
+
+int APP_CC
+tc_barrier_init(barrier_t *barrier,int needed);
+int APP_CC
+tc_barrier_destroy(barrier_t *barrier);
+int APP_CC
+tc_barrier_wait(barrier_t *barrier);
 int APP_CC
 tc_thread_create(THREAD_RV (THREAD_CC * start_routine)(void*), void* arg);
 tbus APP_CC
