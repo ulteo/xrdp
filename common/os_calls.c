@@ -1626,7 +1626,7 @@ g_str_replace_first(char * buffer, char * s, char * by)
 		size_t len_by = strlen(by);
 		if (len_s != len_by)
 		{
-			memmove(p + len_by, p + len_s, len_p);
+			memmove(p + len_by, p + len_s, len_p - len_s + 1);
 		}
 		strncpy(p, by, len_by);
 		return 0;
