@@ -54,10 +54,8 @@ static void rdpfs_update_fs_cache_index()
 	fs->last_change_time    = 0;
 	fs->last_write_time     = 0;
 	fs->nlink               = 0;
-	if (fs->key && fs->key[0])
-	{
-		deleteFromHashMap(direntry_cache.fs_map, fs->key);
-	}
+
+	deleteFromHashMap(direntry_cache.fs_map, fs->key);
 	fs->filename[0] = 0;
 	fs->key[0] = 0;
 }
@@ -65,7 +63,7 @@ static void rdpfs_update_fs_cache_index()
 /************************************************************************/
 void rdpfs_cache_init()
 {
-	direntry_cache.fs_list = g_malloc(RDPFS_CACHE_FS_SIZE * sizeof(struct fs_info), 1);
+	direntry_cache.fs_list = g_malloc(RDPFS_CACHE_FS_SIZE * sizeof(struct fs_info), 0);
 	direntry_cache.index = 0;
 	direntry_cache.fs_map = newHashMap(rdpfs_destroyEntry, NULL);
 	direntry_cache.fs_map->mapSize = 0;

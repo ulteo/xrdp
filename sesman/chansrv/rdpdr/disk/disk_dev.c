@@ -126,9 +126,6 @@ static int disk_dev_getattr(const char *path, struct stat *stbuf)
 			return 0;
 		}
 		g_str_replace_first(rdp_path, disk->dir_name, "");
-		log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[disk_dev_getattr]: "
-				"After replace first %s", rdp_path);
-
 
 
 		if (strcmp(rdp_path, "/") == 0)
@@ -900,14 +897,13 @@ fuse_run()
 				"Unable to initialize the mount point : %s", mount_point);
 	}
 
-//	umask(0);
+	umask(0);
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[main]: "
 			"Configuration of fuse");
 	fuse_opt_add_arg(&args, "");
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[main]: "
 			"Setup of the main mount point: %s", mount_point);
   fuse_opt_add_arg(&args, mount_point);
-  fuse_opt_add_arg(&args, "-f");
 
 	ret = fuse_main(args.argc, args.argv, &disk_dev_oper, NULL);
 	fuse_opt_free_args(&args);

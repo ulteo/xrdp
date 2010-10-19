@@ -39,30 +39,8 @@ static struct disk_device disk_devices[MAX_SHARE];
 static int disk_devices_count = 0;
 extern int disk_up;
 static tbus send_mutex;
-static tbus action_index_mutex;
 
 
-/*****************************************************************************/
-/* get the next action index */
-static int
-get_next_action_index()
-{
-	int new_action_index = 0;
-
-	tc_mutex_lock(action_index_mutex);
-	if (action_index == 127)
-	{
-		action_index = 0;
-	}
-	else
-	{
-		action_index++;
-	}
-	new_action_index = action_index;
-	tc_mutex_unlock(action_index_mutex);
-
-	return new_action_index;
-}
 
 /*****************************************************************************/
 /* Convert seconds since 1970 back to filetime */
@@ -309,7 +287,6 @@ rdpfs_open()
 			"Initialise the rdpfs cache");
 	rdpfs_cache_init();
 	send_mutex = tc_mutex_create();
-	action_index_mutex = tc_mutex_create();
 	return 0;
 }
 
@@ -344,7 +321,10 @@ rdpfs_create(int device_id, int desired_access, int shared_access,
 	make_stream(s);
 	init_stream(s,1024);
 
-	completion_id = get_next_action_index();
+	if (action_index == 127)
+		action_index = 0;
+	completion_id = action_index;
+	action_index++;
 
 	actions[completion_id].device = device_id;
 	actions[completion_id].file_id = completion_id;
