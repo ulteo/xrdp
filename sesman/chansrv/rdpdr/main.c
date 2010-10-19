@@ -674,7 +674,6 @@ int APP_CC
 rdpdr_launch_printer_manager(int display_num)
 {
 	char program_command[256];
-	char device_program_name[15];
 	char socket_filename[256];
 	struct list* channel_params;
 	int pid;
