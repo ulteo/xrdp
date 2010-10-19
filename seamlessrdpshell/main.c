@@ -51,9 +51,13 @@ int
 error_handler(Display* display, XErrorEvent* error)
 {
   char text[256];
+  char major_opcode[256];
+  char minor_opcode[256];
   XGetErrorText(display, error->error_code, text, 255);
+  XGetErrorText(display, error->request_code, major_opcode, 255);
+  XGetErrorText(display, error->minor_code, minor_opcode, 255);
   log_message(l_config, LOG_LEVEL_DEBUG, "XHook[error_handler]: "
-  		" Error [%s]", text);
+  		" Error [%s] Major opcode [%s] Minor opcode [%s] Type: %i ResourceId: %lu", text, major_opcode, minor_opcode, error->type, error->resourceid);
   return 0;
 }
 
