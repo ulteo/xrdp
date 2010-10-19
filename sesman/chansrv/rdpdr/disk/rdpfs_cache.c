@@ -26,6 +26,8 @@
 
 static struct rdpfs_direntry_cache direntry_cache;
 extern struct log_config *l_config;
+static tbus cache_mutex;
+
 
 static void rdpfs_destroyEntry(void *arg, char *key, void *value)
 {
@@ -69,6 +71,7 @@ void rdpfs_cache_init()
 	direntry_cache.index = 0;
 	direntry_cache.fs_map = newHashMap(rdpfs_destroyEntry, NULL);
 	direntry_cache.fs_map->mapSize = 0;
+	cache_mutex = tc_mutex_create();
 }
 
 /************************************************************************/
@@ -86,6 +89,8 @@ void APP_CC
 rdpfs_cache_add_fs(const char* path, struct fs_info* fs_inf)
 {
 	struct fs_info* fs;
+	tc_mutex_lock(cache_mutex);
+
 	/* test if present */
 	fs = (struct fs_info*)getFromHashMap(direntry_cache.fs_map, path);
 
@@ -111,6 +116,7 @@ rdpfs_cache_add_fs(const char* path, struct fs_info* fs_inf)
 	addToHashMap(direntry_cache.fs_map, path, fs);
 	rdpfs_update_fs_cache_index();
 
+	tc_mutex_unlock(cache_mutex);
 	return;
 }
 
@@ -118,10 +124,14 @@ rdpfs_cache_add_fs(const char* path, struct fs_info* fs_inf)
 struct fs_info*
 rdpfs_cache_get_fs(const char* fs_name)
 {
-	struct fs_info* temp = (struct fs_info*)getFromHashMap(direntry_cache.fs_map, fs_name);
-	int time;
+	struct fs_info* temp = NULL;
+	int time = 0;
+	tc_mutex_lock(cache_mutex);
+
+	temp = (struct fs_info*)getFromHashMap(direntry_cache.fs_map, fs_name);
 	if (temp == NULL)
 	{
+		tc_mutex_unlock(cache_mutex);
 		return NULL;
 	}
 	time = g_time1()-temp->time_stamp;
@@ -131,8 +141,11 @@ rdpfs_cache_get_fs(const char* fs_name)
 	{
 		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_cache_get_fs]: "
 				"Cached value expired");
+		tc_mutex_unlock(cache_mutex);
 		return NULL;
 	}
+
+	tc_mutex_unlock(cache_mutex);
 	return temp;
 }
 
