@@ -188,7 +188,7 @@ _vchannel_send(int sock, int type, const char* data, int length)
 
 	if(index == ERROR)
 	{
-		log_message(log_conf, LOG_LEVEL_WARNING ,"vchannel[vchannel_receive]: "
+		log_message(log_conf, LOG_LEVEL_WARNING ,"vchannel[vchannel_send]: "
 				"Enable to get channel from socket %i", sock);
 		return ERROR;
 	}
