@@ -1059,7 +1059,6 @@ void *thread_Xvent_process (void * arg)
 	Window w;
 	Window root_windows;
 	Window_item* witem;
-	Window win_in;
 
 	root_windows = DefaultRootWindow(display);
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
@@ -1104,13 +1103,9 @@ void *thread_Xvent_process (void * arg)
 
 			Window_get(window_list,w, witem);
 			if(witem == 0){
-				win_in = get_in_window(display, w);
-				Window_get(window_list,win_in, witem);
-				if(witem == 0){
-					log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
-							"Unknowed window\n");
-					break;
-				}
+				log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
+					"Unknowed window\n");
+				break;
 			}
 			destroy_window(witem->window_id);
 			break;
