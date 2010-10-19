@@ -438,7 +438,10 @@ rdpdr_client_capability(struct stream* s)
   in_uint32_le(s, ignored);			/* extendedPDU(unused) */
   in_uint32_le(s, ignored);			/* extraFlags1 */
   in_uint32_le(s, ignored);			/* extraFlags2 */
-  in_uint32_le(s, ignored);			/* SpecialTypeDeviceCap (device redirected before logon (smartcard/com port */
+  if (general_capability_version == GENERAL_CAPABILITY_VERSION_02)
+  {
+  	in_uint32_le(s, ignored);			/* SpecialTypeDeviceCap (device redirected before logon (smartcard/com port */
+  }
 
   for( i=1 ; i<capability_count ; i++ )
   {
