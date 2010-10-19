@@ -770,7 +770,7 @@ rdpdr_launch_disk_manager(int display_num)
 		return 1;
 	}
 	/* wait process, rdpdr_disk may return */
-	g_waitpid(pid);
+//	g_waitpid(pid);
 
 	/* wait device */
 	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_launch_disk_manager]: "

@@ -897,13 +897,14 @@ fuse_run()
 				"Unable to initialize the mount point : %s", mount_point);
 	}
 
-	umask(0);
+//	umask(0);
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[main]: "
 			"Configuration of fuse");
 	fuse_opt_add_arg(&args, "");
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[main]: "
 			"Setup of the main mount point: %s", mount_point);
-  fuse_opt_add_arg(&args, mount_point);
+	fuse_opt_add_arg(&args, mount_point);
+	fuse_opt_add_arg(&args, "-f");
 
 	ret = fuse_main(args.argc, args.argv, &disk_dev_oper, NULL);
 	fuse_opt_free_args(&args);
