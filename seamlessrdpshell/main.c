@@ -582,7 +582,7 @@ get_icon(Window wnd)
 	char* buffer_pos = buffer;
 	char* window_id = g_malloc(11, 1);
 
-	if(get_property(display, wnd, "_NET_WM_ICON", &nitems, (unsigned char*)&data) != Success)
+	if(get_property(display, wnd, "_NET_WM_ICON", &nitems, (unsigned char**)&data) != Success)
 	{
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_icon]: "
 					"No icon for the application 0x%08lx", wnd);
