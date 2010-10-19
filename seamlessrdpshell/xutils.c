@@ -299,6 +299,6 @@ int get_parent_window(Display* display, Window w, Window* parent){
 		  (*((unsigned char*) data+ 3) << 24) \
 		);
   log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_parent_window]: "
-				"Parent window for window 0x%08lx : 0x%08lx\n", w, parent);
+				"Parent window for window 0x%08lx : 0x%08lx\n", w, *parent);
   return True;
 }
