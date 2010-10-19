@@ -133,14 +133,10 @@ void APP_CC
 rdpfs_wait_reply(int completion_id)
 {
 	pthread_mutex_t* mutex = &rdpfs_response[completion_id].mutex;
-	pthread_cond_t* reply_cond = &rdpfs_response[completion_id].reply_cond;
 
-  if (pthread_cond_wait(reply_cond, mutex) != 0) {
-    perror("pthread_cond_timedwait() error");
-		log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[rdpfs_wait_reply]: "
-				"pthread_mutex_lock()");
-    return;
-  }
+	tc_mutex_lock(mutex);
+	tc_mutex_lock(mutex);
+	tc_mutex_unlock(mutex);
 }
 
 /*****************************************************************************/
@@ -289,6 +285,7 @@ int APP_CC
 rdpfs_open()
 {
 	int ret;
+	int i = 0;
 	disk_sock = vchannel_open("disk");
 	if(disk_sock == ERROR)
 	{
@@ -310,6 +307,13 @@ rdpfs_open()
 	rdpfs_cache_init();
 	send_mutex = tc_mutex_create();
 	action_index_mutex = tc_mutex_create();
+
+	for (i = 0; i< 128 ; i++)
+	{
+		pthread_cond_init(&rdpfs_response[i].reply_cond, NULL);
+		pthread_mutex_init(&rdpfs_response[i].mutex, NULL);
+	}
+
 	return 0;
 }
 
@@ -350,8 +354,6 @@ rdpfs_create(int device_id, int desired_access, int shared_access,
 	actions[completion_id].file_id = completion_id;
 	actions[completion_id].last_req = IRP_MJ_CREATE;
 
-	pthread_cond_init(&rdpfs_response[completion_id].reply_cond, NULL);
-	pthread_mutex_init(&rdpfs_response[completion_id].mutex, NULL);
 
 	g_strcpy(actions[completion_id].path, path);
 
@@ -1127,15 +1129,6 @@ rdpfs_process_information_response(int completion_id, struct stream* s)
 
 /*****************************************************************************/
 int APP_CC
-rdpfs_process_close_response(int completion_id)
-{
-	pthread_cond_destroy(&rdpfs_response[completion_id].reply_cond);
-	pthread_mutex_destroy(&rdpfs_response[completion_id].mutex);
-	//cleaning
-}
-
-/*****************************************************************************/
-int APP_CC
 rdpfs_process_iocompletion(struct stream* s)
 {
 	int device;
@@ -1144,6 +1137,7 @@ rdpfs_process_iocompletion(struct stream* s)
 	int result;
 	int offset;
 	int size;
+	pthread_mutex_t* mutex;
 
 
 	result = 0;
@@ -1226,9 +1220,19 @@ rdpfs_process_iocompletion(struct stream* s)
 	default:
 		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_iocompletion]: "
 				"last request %08x is invalid",actions[completion_id].last_req);
-		return -1;
+		result = -1;
 	}
-	pthread_cond_signal(&rdpfs_response[completion_id].reply_cond);
+
+	mutex = &rdpfs_response[completion_id].mutex;
+	while(pthread_mutex_trylock(mutex) == 0)
+	{
+		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_iocompletion]: "
+				"The caller of this method is not ready to receive the unlock");
+		tc_mutex_unlock(mutex);
+		g_sleep(5);
+	}
+	tc_mutex_unlock(mutex);
+
 	return result;
 }
 
