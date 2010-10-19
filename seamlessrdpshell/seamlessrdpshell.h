@@ -54,8 +54,6 @@
 
 typedef struct {
 	int state;
-	int lock;
-	int iconify;
 	Window window_id;
 	Window win_out;
 	Window parent;
@@ -88,7 +86,11 @@ typedef struct{
 		window_list.list[count].state = SEAMLESSRDP_NORMAL;\
 		window_list.list[count].window_id = window;\
 		window_list.list[count].win_out = win_out;\
+		window_list.list[count].parent = (Window) 0;\
 		window_list.list[count].normal_x = -1;\
+		window_list.list[count].normal_y = -1;\
+		window_list.list[count].normal_width = 1;\
+		window_list.list[count].normal_height = 1;\
 		window_list.item_count++;\
 	};\
 }\
@@ -113,8 +115,14 @@ typedef struct{
 	Window_item* temp;\
 	Window_get(window_list, window,temp);\
 	if(temp != 0){\
-		temp->window_id = window_list.list[count-1].window_id;\
 		temp->state = window_list.list[count-1].state;\
+		temp->window_id = window_list.list[count-1].window_id;\
+		temp->win_out = window_list.list[count-1].win_out;\
+		temp->parent = window_list.list[count-1].parent;\
+		temp->normal_x = window_list.list[count-1].normal_x;\
+		temp->normal_y = window_list.list[count-1].normal_y;\
+		temp->normal_width = window_list.list[count-1].normal_width;\
+		temp->normal_height = window_list.list[count-1].normal_height;\
 		window_list.item_count--;\
 	}\
 }\
@@ -124,10 +132,19 @@ typedef struct{
 	int count = window_list.item_count;\
 	printf("\tdump list of %i elements\n",count);\
 	for(i=0 ; i < count; i++){\
-		printf("\t elem %i :: state->%i || iconify->%i \n", \
-				(int) window_list.list[i].window_id, \
-				window_list.list[i].state, \
-				window_list.list[i].iconify);\
+		printf("\t elem %i :: state->%i || lock->%i || iconify->%i || "\
+			"window_id->0x%08lx || win_out->0x%08lx || "\
+			"parent->0x%08lx || normal_x->%i || normal_y->%i || "\
+			"normal_width->%u || normal_height->%u\n", \
+			i, \
+			window_list.list[i].state, \
+			window_list.list[i].window_id, \
+			window_list.list[i].win_out, \
+			window_list.list[i].parent, \
+			window_list.list[i].normal_x, \
+			window_list.list[i].normal_y, \
+			window_list.list[i].normal_width, \
+			window_list.list[i].normal_height);\
 	}\
 }\
 
