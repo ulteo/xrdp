@@ -18,7 +18,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  **/
 
-
 #ifndef XUTILS_H_
 #define XUTILS_H_
 
@@ -28,26 +27,19 @@
 #include <X11/X.h>
 #include <stdio.h>
 
+int hex2int(const char *hexa_string);
+const char *gravityToStr(int gravity);
+Window get_in_window(Display * display, Window w);
+int get_window_name(Display * display, Window w, unsigned char **name);
 int
-hex2int(const char* hexa_string);
-const char*
-gravityToStr(int gravity);
-Window
-get_in_window(Display* display,  Window w);
+get_window_state(Display * display, Window w, Atom ** atoms,
+		 unsigned long *nitems);
+int get_window_type(Display * display, Window w, Atom * atom);
+int get_window_pid(Display * display, Window w, int *pid);
+int get_parent_window(Display * display, Window w, Window * parent);
+int is_good_window(Display * display, Window w);
 int
-get_window_name(Display* display, Window w, unsigned char** name);
-int
-get_window_state(Display* display, Window w, Atom** atoms, unsigned long* nitems);
-int
-get_window_type(Display* display, Window w, Atom* atom);
-int
-get_window_pid(Display* display, Window w, int* pid);
-int
-get_parent_window(Display* display, Window w, Window* parent);
-int
-is_good_window(Display* display,  Window w);
-int
-get_property( Display* display, Window w, const char* property, unsigned long *nitems, unsigned char** data);
+get_property(Display * display, Window w, const char *property,
+	     unsigned long *nitems, unsigned char **data);
 
-
-#endif /* XUTILS_H_ */
+#endif				/* XUTILS_H_ */

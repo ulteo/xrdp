@@ -5,7 +5,6 @@
  *      Author: david
  */
 
-
 #ifndef SEAMLESSRDPSHELL_H_
 #define SEAMLESSRDPSHELL_H_
 
@@ -15,7 +14,6 @@
 #include <X11/X.h>
 #include <stdio.h>
 
-
 /* config constant */
 #define XHOOK_CFG_GLOBAL						"Globals"
 #define XHOOK_CFG_NAME							"Name"
@@ -24,7 +22,6 @@
 #define XHOOK_CFG_LOG_LEVEL					"LogLevel"
 #define XHOOK_CFG_LOG_ENABLE_SYSLOG	"EnableSyslog"
 #define XHOOK_CFG_LOG_SYSLOG_LEVEL	"SyslogLevel"
-
 
 /* socket constant */
 #define ERROR	-1
@@ -42,15 +39,10 @@
 #define SEAMLESSRDP_MINIMIZED			1
 #define SEAMLESSRDP_VERY_MAXIMIZED		3
 
-
 /* Xlib constant  */
-#define _NET_WM_STATE_REMOVE        	0    /* remove/unset property */
-#define _NET_WM_STATE_ADD           	1    /* add/set property */
-#define _NET_WM_STATE_TOGGLE        	2    /* toggle property  */
-
-
-
-
+#define _NET_WM_STATE_REMOVE        	0	/* remove/unset property */
+#define _NET_WM_STATE_ADD           	1	/* add/set property */
+#define _NET_WM_STATE_TOGGLE        	2	/* toggle property  */
 
 typedef struct {
 	int state;
@@ -64,14 +56,11 @@ typedef struct {
 
 } Window_item;
 
-
-
-typedef struct{
+typedef struct {
 	Window_item list[1024];
 	int item_count;
 
 } Window_list;
-
 
 /* windows list macro */
 #define Window_list_init(window_list){\
@@ -107,7 +96,6 @@ typedef struct{
 		}\
 	}\
 }\
-
 
 
 #define Window_del(window_list, window){\
@@ -149,4 +137,4 @@ typedef struct{
 }\
 
 
-#endif /* SEAMLESSRDPSHELL_H_ */
+#endif				/* SEAMLESSRDPSHELL_H_ */
