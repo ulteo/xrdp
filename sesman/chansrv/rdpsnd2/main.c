@@ -141,6 +141,7 @@ int start_pulseaudio()
 	args = list_create();
 	args->auto_free = 1;
 
+	g_snprintf((char*)pa_config_path, 256, "%s/%s", XRDP_CFG_PATH, "rdpsnd.pa");
 	list_add_item(args, (tbus)strdup("/usr/bin/pulseaudio"));
 	list_add_item(args, (tbus)strdup("-nF"));
 	list_add_item(args, (tbus)strdup((const char*)pa_config_path));
