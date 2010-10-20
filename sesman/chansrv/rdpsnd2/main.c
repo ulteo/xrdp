@@ -62,6 +62,7 @@ extern int completion_count;
 extern RD_WAVEFORMATEX server_format;
 struct log_config* l_config;
 int pulseaudio_pid;
+int display_num;
 
 void sound_process(const void *data, size_t size) {
   	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[sound_process]: "
@@ -139,7 +140,12 @@ int start_pulseaudio()
 
 	args = list_create();
 	args->auto_free = 1;
-	pulseaudio_pid = fork ();
+
+	list_add_item(args, (tbus)strdup("/usr/bin/pulseaudio"));
+	list_add_item(args, (tbus)strdup("-nF"));
+	list_add_item(args, (tbus)strdup((const char*)pa_config_path));
+
+	pulseaudio_pid = g_launch_process(display_num, args);
 	if ( pulseaudio_pid < 0 )
 	{
 		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpsnd[start_pulseaudio]: "
@@ -152,20 +158,7 @@ int start_pulseaudio()
 				"Child pid : %i", pulseaudio_pid);
 		return 0;
 	}
-	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[start_pulseaudio]: "
-			"Child processus");
-
-	g_snprintf((char*)pa_config_path, 256, "%s/%s", XRDP_CFG_PATH, "rdpsnd.pa");
-	list_add_item(args, (tbus)strdup("pulseaudio"));
-	list_add_item(args, (tbus)strdup("-nF"));
-	list_add_item(args, (tbus)strdup((const char*)pa_config_path));
-	execvp( "/usr/bin/pulseaudio", (char**)args->items);
-
 	list_delete(args);
-	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[start_pulseaudio]: "
-			"Failed to start pulseaudio");
-	wait(&status);
-	g_exit(0);
 }
 
 int
@@ -178,7 +171,6 @@ sndchannel_init()
   char* name;
   char* value;
   int index;
-  int display_num;
   int res;
 
   display_num = g_get_display_num_from_display(g_strdup(g_getenv("DISPLAY")));
