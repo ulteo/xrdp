@@ -239,7 +239,7 @@ vchannel_sound_process_client_format(struct stream* s)
 	}
 	if( wDGramPort == 0)
 	{
-		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpsnd[vchannel_sound_process_client_format]: "
+		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[vchannel_sound_process_client_format]: "
 				"Client do not use UDP transport layer");
 		vchannel_sound_send_training();
 	}
