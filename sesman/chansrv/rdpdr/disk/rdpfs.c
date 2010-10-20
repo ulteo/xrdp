@@ -132,11 +132,8 @@ rdpfs_receive(const char* data, int* length, int* total_length)
 void APP_CC
 rdpfs_wait_reply(int completion_id)
 {
-	pthread_mutex_t* mutex = &rdpfs_response[completion_id].mutex;
-
-	tc_mutex_lock(mutex);
-	tc_mutex_lock(mutex);
-	tc_mutex_unlock(mutex);
+	barrier_t* barrier = &rdpfs_response[completion_id].barrier;
+	barrier_wait(barrier);
 }
 
 /*****************************************************************************/
@@ -310,8 +307,7 @@ rdpfs_open()
 
 	for (i = 0; i< 128 ; i++)
 	{
-		pthread_cond_init(&rdpfs_response[i].reply_cond, NULL);
-		pthread_mutex_init(&rdpfs_response[i].mutex, NULL);
+		barrier_init(&rdpfs_response[i].barrier,2);
 	}
 
 	return 0;
@@ -1223,15 +1219,8 @@ rdpfs_process_iocompletion(struct stream* s)
 		result = -1;
 	}
 
-	mutex = &rdpfs_response[completion_id].mutex;
-	while(pthread_mutex_trylock(mutex) == 0)
-	{
-		log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_process_iocompletion]: "
-				"The caller of this method is not ready to receive the unlock");
-		tc_mutex_unlock(mutex);
-		g_sleep(5);
-	}
-	tc_mutex_unlock(mutex);
+	barrier_t* barrier = &rdpfs_response[completion_id].barrier;
+	barrier_wait(barrier);
 
 	return result;
 }
