@@ -90,11 +90,11 @@ void *thread_sound_process (void * arg)
   ss.channels = server_format.nChannels;
   ss.rate = server_format.nSamplesPerSec;
   pa_simple *s = NULL;
-  block_size = pa_bytes_per_second(&ss) / 20; /* 50 ms */
-  if (block_size <= 0)
-      block_size = pa_frame_size(&ss);
-  server_format.nAvgBytesPerSec = block_size;
-	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[thread_sound_process]: "
+//  block_size = pa_bytes_per_second(&ss) / 20; /* 50 ms */
+//  if (block_size <= 0)
+//      block_size = pa_frame_size(&ss);
+  server_format.nAvgBytesPerSec = server_format.wBitsPerSample * server_format.nChannels * server_format.nSamplesPerSec / 8;
+  log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[thread_sound_process]: "
 			" Block size : %i", block_size);
 
   buffer = g_malloc(block_size, 0);
@@ -129,11 +129,122 @@ void *thread_sound_process (void * arg)
 }
 
 /*****************************************************************************/
+int make_pa_from_config(char* client_pa_file)
+{
+	char pa_config_path[256] = {0};
+	char opt_line[256] = {0};
+	int opt_line_len = 0;
+	int file_size = 0;
+	int fd = 0;
+	char* buffer = NULL;
+
+
+	g_snprintf(pa_config_path, 256, "%s/%s", XRDP_CFG_PATH, "rdpsnd.pa");
+
+	if (server_format.wBitsPerSample == 8)
+	{
+		g_snprintf(opt_line, 256, "load-module module-null-sink channels=%i rate=%i format=u%i",
+				server_format.nChannels, server_format.nSamplesPerSec, server_format.wBitsPerSample);
+	}
+	else
+	{
+		g_snprintf(opt_line, 256, "load-module module-null-sink channels=%i rate=%i format=s%ile",
+				server_format.nChannels, server_format.nSamplesPerSec, server_format.wBitsPerSample);
+	}
+
+
+	file_size = g_file_size(pa_config_path);
+	if (file_size < 0 )
+	{
+		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpsnd[make_pa_from_config]: "
+				"Unable to get the size of the file %s [%s]", pa_config_path, strerror(errno));
+		goto fail;
+	}
+
+	fd = g_file_open(pa_config_path);
+	if (fd < 0)
+	{
+		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpsnd[make_pa_from_config]: "
+				"Unable to open the file %s [%s]", pa_config_path, strerror(errno));
+		goto fail;
+	}
+	buffer = g_malloc(file_size + 1, 1);
+	if (buffer == NULL)
+	{
+		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpsnd[make_pa_from_config]: "
+				"Unable to allocate memory to store the file", pa_config_path, strerror(errno));
+		goto fail;
+	}
+	if (g_file_read(fd, buffer, file_size) != file_size)
+	{
+		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpsnd[make_pa_from_config]: "
+				"Unable to read the file", pa_config_path, strerror(errno));
+
+		goto fail;
+	}
+	g_file_close(fd);
+	fd = 0;
+
+	fd = g_file_open(client_pa_file);
+	if (fd < 0)
+	{
+		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpsnd[make_pa_from_config]: "
+				"Unable to open the file %s [%s]", client_pa_file, strerror(errno));
+		goto fail;
+	}
+
+	if (g_file_write(fd, buffer, file_size) != file_size )
+	{
+		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpsnd[make_pa_from_config]: "
+				"Unable to write buffer to the file %s [%s]", client_pa_file, strerror(errno));
+		goto fail;
+	}
+
+	if (g_file_write(fd, "\n", 1) != 1)
+	{
+		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpsnd[make_pa_from_config]: "
+				"Unable to write buffer to the file %s [%s]", client_pa_file, strerror(errno));
+		goto fail;
+	}
+
+	opt_line_len = g_strlen(opt_line);
+	if (g_file_write(fd, opt_line, opt_line_len) != opt_line_len)
+	{
+		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpsnd[make_pa_from_config]: "
+				"Unable to write buffer to the file %s [%s]", client_pa_file, strerror(errno));
+		goto fail;
+	}
+
+	g_file_close(fd);
+	if (buffer)
+	{
+		g_free(buffer);
+	}
+	return 0;
+
+fail:
+	if (buffer)
+	{
+		g_free(buffer);
+	}
+	if (fd)
+	{
+		g_file_close(fd);
+	}
+	return 1;
+}
+
+
+
+
+/*****************************************************************************/
 int start_pulseaudio()
 {
 	struct list *args;
 	int status = 0;
-	char* pa_config_path[256];
+	char client_pa_config_path[256] = {0};
+	char home_pulse_dir[256] = {0};
+	char* home = g_getenv("HOME");
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[start_pulseaudio]: "
 			"Starting pulseaudio");
@@ -141,10 +252,16 @@ int start_pulseaudio()
 	args = list_create();
 	args->auto_free = 1;
 
-	g_snprintf((char*)pa_config_path, 256, "%s/%s", XRDP_CFG_PATH, "rdpsnd.pa");
+	g_snprintf(home_pulse_dir, 256, "%s/%s", home, ".pulse");
+	g_remove_dirs(home_pulse_dir);
+	g_mkdir(home_pulse_dir);
+
+	g_snprintf(client_pa_config_path, 256, "%s/%s", home_pulse_dir, "rdpsnd.pa");
+	make_pa_from_config(client_pa_config_path);
+
 	list_add_item(args, (tbus)strdup("/usr/bin/pulseaudio"));
 	list_add_item(args, (tbus)strdup("-nF"));
-	list_add_item(args, (tbus)strdup((const char*)pa_config_path));
+	list_add_item(args, (tbus)strdup((const char*)client_pa_config_path));
 
 	pulseaudio_pid = g_launch_process(display_num, args);
 	if ( pulseaudio_pid < 0 )
