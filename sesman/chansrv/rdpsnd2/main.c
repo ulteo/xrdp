@@ -189,7 +189,7 @@ sndchannel_init()
 		return ERROR;
 	}
 	l_config = g_malloc(sizeof(struct log_config), 1);
-	l_config->program_name = "XHook";
+	l_config->program_name = "vchannel_rdpsnd";
 	l_config->log_file = 0;
 	l_config->fd = 0;
 	l_config->log_level = LOG_LEVEL_DEBUG;
