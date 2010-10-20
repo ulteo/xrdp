@@ -823,7 +823,9 @@ void create_window(Window win_out){
   		type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_POPUP_MENU",False))
   {
       flags = SEAMLESS_CREATE_POPUP;
-      //parent_id = -1;
+      
+      if (parent_id == 0)
+	      parent_id = -1;
   }
 
 
