@@ -786,7 +786,7 @@ void create_window(Window win_out){
 		}
 	}
 	XGetWindowAttributes(display,win_out, &attributes);
-	if(attributes.class == 2)
+	if(attributes.class == InputOnly)
 	{
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[create_window]: "
 					"Bad attributes : 0x%08lx", proper_win);
