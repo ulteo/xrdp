@@ -94,6 +94,7 @@ void *thread_sound_process (void * arg)
 //  if (block_size <= 0)
 //      block_size = pa_frame_size(&ss);
   server_format.nAvgBytesPerSec = server_format.wBitsPerSample * server_format.nChannels * server_format.nSamplesPerSec / 8;
+  block_size =  server_format.nAvgBytesPerSec;
   log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[thread_sound_process]: "
 			" Block size : %i", block_size);
 
