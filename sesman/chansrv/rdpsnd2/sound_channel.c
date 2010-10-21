@@ -94,7 +94,7 @@ vchannel_sound_send_wave_info(int timestamp, int len, char* data)
 	out_uint8(s, SNDC_WAVE);
 
 	out_uint8(s, 0);												/* padding */
-	out_uint16_le(s, len+8);								/* data size*/
+	out_uint16_le(s, len+16);								/* data size*/
 	/* Body */
 	out_uint16_le(s, timestamp);						/* wTimeStamp */
 	out_uint16_le(s, 0); 										/* wFormatNo */
@@ -108,11 +108,11 @@ vchannel_sound_send_wave_info(int timestamp, int len, char* data)
 	free_stream(s);
 
 	make_stream(s);
-	init_stream(s, len);
+	init_stream(s, len + 4);
 
-	p+=4;
+	//p+=4;
 	out_uint8s(s,4);		 										/* bPad */
-	out_uint8a(s, p, len-4);
+	out_uint8a(s, p, len);
 
 	s_mark_end(s);
 	vchannel_sound_send(s, 0);
