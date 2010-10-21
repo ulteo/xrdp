@@ -28,6 +28,14 @@
 
 #include "arch.h"
 
+#if defined(_WIN32)
+#include "os_calls.h"
+#include <windows.h>
+#else
+#include <pthread.h>
+#include <semaphore.h>
+#endif
+
 typedef struct {
     int needed;
     int called;
