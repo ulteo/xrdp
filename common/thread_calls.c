@@ -23,15 +23,7 @@
 
 */
 
-#if defined(_WIN32)
-#include <windows.h>
-#else
-#include <pthread.h>
-#include <semaphore.h>
-#endif
-#include "arch.h"
 #include "thread_calls.h"
-#include "os_calls.h"
 
 
 int APP_CC
