@@ -148,7 +148,7 @@ int make_pa_from_config(char* client_pa_file)
 
 	if (server_format.wBitsPerSample == 8)
 	{
-		g_snprintf(opt_line, 256, "load-module module-null-sink channels=%i rate=%i format=alaw",
+		g_snprintf(opt_line, 256, "load-module module-null-sink channels=%i rate=%i format=u8",
 				server_format.nChannels, server_format.nSamplesPerSec);
 	}
 	else
