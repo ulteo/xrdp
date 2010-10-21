@@ -74,7 +74,7 @@ struct stream
   if ((v) > (s)->size) \
   { \
     g_free((s)->data); \
-    (s)->data = (char*)g_malloc((v), 1); \
+    (s)->data = (char*)g_malloc((v), 0); \
     (s)->size = (v); \
   } \
   (s)->p = (s)->data; \
