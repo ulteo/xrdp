@@ -94,7 +94,7 @@ vchannel_sound_send_wave_info(int timestamp, int len, char* data)
 	out_uint8(s, SNDC_WAVE);
 
 	out_uint8(s, 0);												/* padding */
-	out_uint16_le(s, len+16);								/* data size*/
+	out_uint16_le(s, len+12);								/* data size*/
 	/* Body */
 	out_uint16_le(s, timestamp);						/* wTimeStamp */
 	out_uint16_le(s, 0); 										/* wFormatNo */
