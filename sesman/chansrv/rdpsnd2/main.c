@@ -78,6 +78,8 @@ void *thread_sound_process (void * arg)
 	char* buffer;
   int error;
   int block_size;
+  int factor;
+
   pa_sample_spec ss;
   if (server_format.wBitsPerSample == 16)
   {
@@ -94,7 +96,8 @@ void *thread_sound_process (void * arg)
 //  if (block_size <= 0)
 //      block_size = pa_frame_size(&ss);
   server_format.nAvgBytesPerSec = server_format.wBitsPerSample * server_format.nChannels * server_format.nSamplesPerSec / 8;
-  block_size =  server_format.nAvgBytesPerSec;
+  factor = (int) server_format.nAvgBytesPerSec / 4000;
+  block_size =  server_format.nAvgBytesPerSec / factor;
   log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[thread_sound_process]: "
 			" Block size : %i", block_size);
 
@@ -108,6 +111,7 @@ void *thread_sound_process (void * arg)
   			"Unable to connect to pulseaudio server, next retry in one second");
     s = pa_simple_new(NULL, "vchannel_rdpsnd", PA_STREAM_RECORD, NULL, "record", &ss, NULL, NULL, &error);
   }
+
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[thread_sound_process]: "
 			"Beginning the main loop");
