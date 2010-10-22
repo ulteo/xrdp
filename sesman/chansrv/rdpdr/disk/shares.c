@@ -452,7 +452,7 @@ int share_add_to_bookmark(const char* share_name, const char* client_name){
 
 	bookmarks = share_get_bookmarks_list();
 
-	g_snprintf(bookmark_file_content, sizeof(bookmark_file_content), "%s%s/%s/%s", FILE_PREFFIX, home_dir, RDPDRIVE_NAME, share_name);
+	g_snprintf(bookmark_file_content, sizeof(bookmark_file_content), "%s%s/%s on (%s)", FILE_PREFFIX, home_dir, share_name, client_name);
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[share_add_to_bookmark]: "
 			"Entry to add: %s", bookmark_file_content);
@@ -485,11 +485,11 @@ int share_remove_from_bookmarks(const char* share_name, const char* client_name)
 	bookmarks = share_get_bookmarks_list();
 	if (share_name == NULL)
 	{
-		g_snprintf(bookmark_file_content, sizeof(bookmark_file_content), "%s%s/%s", FILE_PREFFIX, home_dir, RDPDRIVE_NAME);
+		g_snprintf(bookmark_file_content, sizeof(bookmark_file_content), "on (", FILE_PREFFIX, home_dir, RDPDRIVE_NAME);
 	}
 	else
 	{
-		g_snprintf(bookmark_file_content, sizeof(bookmark_file_content), "%s%s/%s/%s", FILE_PREFFIX, home_dir, RDPDRIVE_NAME, share_name);
+		g_snprintf(bookmark_file_content, sizeof(bookmark_file_content), "%s%s/%s on (%s)", FILE_PREFFIX, home_dir, share_name, client_name);
 	}
 
 
@@ -636,9 +636,6 @@ share_symlink_purge()
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[share_symlink_purge]: "
 			"Purge symlink\n");
 
-	g_snprintf(path_preffix, sizeof(path_preffix), "%s/%s", home_dir, RDPDRIVE_NAME);
-
-
 	dir = opendir(home_dir);
 	if( dir == NULL)
 	{
@@ -662,7 +659,7 @@ share_symlink_purge()
 					"Unable to get symlink for %s", path);
 			continue;
 		}
-		if (link[0] == NULL)
+		if (link[0] == '\0')
 		{
 			continue;
 		}
