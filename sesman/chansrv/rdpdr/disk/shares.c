@@ -552,7 +552,7 @@ int share_add_to_symlink(const char* share_name, const char* client_name){
 	rdpdr_path = share_get_share_path(share_name);
 	symlink_path = share_get_share_link(share_name, client_name);
 
-	log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[share_add_to_symlink]: "
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[share_add_to_symlink]: "
 			"Creating the symlink: %s -> %s", symlink_path, rdpdr_path);
 	if (g_create_symlink(rdpdr_path, symlink_path) < 0)
 	{
@@ -625,5 +625,53 @@ fail:
 int
 share_symlink_purge()
 {
+	int i = 0;
+	char* home_dir = g_getenv("HOME");
+	char path[1024] = {0};
+	char link[1024] = {0};
+	char path_preffix[1024] = {0};
+	DIR *dir;
+	struct dirent *dir_entry = NULL;
+
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[share_symlink_purge]: "
+			"Purge symlink\n");
+
+	g_snprintf(path_preffix, sizeof(path_preffix), "%s/%s", home_dir, RDPDRIVE_NAME);
+
+
+	dir = opendir(home_dir);
+	if( dir == NULL)
+	{
+		return 0;
+	}
+	while ((dir_entry = readdir(dir)) != NULL)
+	{
+		if( 	 (g_strcmp(dir_entry->d_name, ".") == 0)
+				|| (dir_entry->d_name[0] == '.')
+				|| (g_strcmp(dir_entry->d_name, "..") == 0)
+				|| (dir_entry->d_type != DT_LNK))
+		{
+			continue;
+		}
+		g_snprintf(path, sizeof(path), "%s/%s", home_dir, dir_entry->d_name);
+
+
+		if (readlink(path, link, sizeof(link)) < 0)
+		{
+			log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[share_symlink_purge]: "
+					"Unable to get symlink for %s", path);
+			continue;
+		}
+		if (link[0] == NULL)
+		{
+			continue;
+		}
+  	if (g_strstr(link, path_preffix) != 0)
+  	{
+  		g_file_delete(path);
+  	}
+	}
+	closedir(dir);
+
 	return 0;
 }
