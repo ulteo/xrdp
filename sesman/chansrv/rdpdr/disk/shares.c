@@ -595,7 +595,7 @@ int share_remove_from_symlink(const char* share_name, const char* client_name){
 
 	symlink_path = share_get_share_link(share_name, client_name);
 
-	log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[share_add_to_symlink]: "
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[share_add_to_symlink]: "
 			"Removing the symlink: %s", symlink_path);
 	if (g_file_delete(symlink_path) < 0)
 	{
