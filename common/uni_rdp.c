@@ -58,7 +58,7 @@ uni_rdp_out_str(struct stream* s, char *string, int len)
 			{
 				iconv_close(iconv_h);
 				iconv_h = (iconv_t) - 1;
-				printf("rdp_out_unistr: iconv(1) fail, errno %d\n", errno);
+				printf("rdp_out_unistr: iconv(1) fail, errno %d %s\n", errno, strerror(errno));
 
 				g_iconv_works = 0;
 				uni_rdp_out_str(s, string, len);
@@ -72,7 +72,7 @@ uni_rdp_out_str(struct stream* s, char *string, int len)
 		{
 			iconv_close(iconv_h);
 			iconv_h = (iconv_t) - 1;
-			printf("rdp_out_unistr: iconv(2) fail, errno %d\n", errno);
+			printf("rdp_out_unistr: iconv(2) fail, errno %d %s\n", errno, strerror(errno));
 
 			g_iconv_works = 0;
 			uni_rdp_out_str(s, string, len);
@@ -135,7 +135,7 @@ uni_rdp_in_str(struct stream* s, char *string, int str_size, int in_len)
         iconv_close(iconv_h);
         iconv_h = (iconv_t) - 1;
         printf("rdpdr_disk[printer_dev_in_unistr]: "
-							"Iconv fail, errno %d\n", errno);
+							"Iconv fail, errno %d %s\n", errno, strerror(errno));
         g_iconv_works = 0;
         return uni_rdp_in_str(s, string, str_size, in_len);
       }
