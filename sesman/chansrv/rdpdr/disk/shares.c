@@ -81,6 +81,40 @@ share_convert_path(char* path)
 }
 
 /*****************************************************************************/
+static char*
+share_get_share_path(const char* sharename)
+{
+	char* share_path = NULL;
+	char* home_dir = g_getenv("HOME");
+
+	share_path = g_malloc(1024, 1);
+
+	if (sharename && sharename[0])
+	{
+		g_snprintf(share_path, 1024, "%s/%s/%s", home_dir, RDPDRIVE_NAME, sharename);
+	}
+	return share_path;
+}
+
+/*****************************************************************************/
+static char*
+share_get_share_link(const char* sharename, const char* client_name)
+{
+	char* share_link = NULL;
+	char* home_dir = g_getenv("HOME");
+
+	share_link = g_malloc(1024, 1);
+
+	if (sharename && sharename[0])
+	{
+		g_snprintf(share_link, 1024, "%s/%s on (%s)", home_dir, sharename, client_name);
+	}
+	return share_link;
+}
+
+
+
+/*****************************************************************************/
 struct list*
 share_get_bookmarks_list()
 {
@@ -407,7 +441,7 @@ int share_remove_from_desktop(const char* share_name){
 }
 
 /*****************************************************************************/
-int share_add_to_bookmark(const char* share_name){
+int share_add_to_bookmark(const char* share_name, const char* client_name){
 	char* home_dir = g_getenv("HOME");
 	char bookmark_file_content[1024] = {0};
 	char bookmark_file_path[1024] = {0};
@@ -437,7 +471,7 @@ int share_add_to_bookmark(const char* share_name){
 
 
 /*****************************************************************************/
-int share_remove_from_bookmarks(const char* share_name){
+int share_remove_from_bookmarks(const char* share_name, const char* client_name){
 	int i = 0;
 	char* home_dir = g_getenv("HOME");
 	char bookmark_file_path[1024] = {0};
@@ -504,7 +538,92 @@ share_bookmark_purge()
 {
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[share_bookmark_purge]: "
 			"Purge bookmarks");
-	return share_remove_from_bookmarks(NULL);
+	return share_remove_from_bookmarks(NULL, NULL);
+}
+
+/*****************************************************************************/
+int share_add_to_symlink(const char* share_name, const char* client_name){
+	char* rdpdr_path = NULL;
+	char* symlink_path = NULL;
+
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[share_add_to_symlink]: "
+			"Create symlink for share %s", share_name);
+
+	rdpdr_path = share_get_share_path(share_name);
+	symlink_path = share_get_share_link(share_name, client_name);
+
+	log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[share_add_to_symlink]: "
+			"Creating the symlink: %s -> %s", symlink_path, rdpdr_path);
+	if (g_create_symlink(rdpdr_path, symlink_path) < 0)
+	{
+		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[share_add_to_symlink]: "
+				"Unable to create the symlink: %s -> %s [%s]", symlink_path, rdpdr_path, strerror(errno));
+		goto fail;
+	}
+
+	if (rdpdr_path)
+	{
+		g_free(rdpdr_path);
+	}
+	if (symlink_path)
+	{
+		g_free(symlink_path);
+	}
+	return 0;
+
+
+fail:
+	if (rdpdr_path)
+	{
+		g_free(rdpdr_path);
+	}
+	if (symlink_path)
+	{
+		g_free(symlink_path);
+	}
+	return 1;
 }
 
 
+
+/*****************************************************************************/
+int share_remove_from_symlink(const char* share_name, const char* client_name){
+	char* symlink_path = NULL;
+
+	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[share_add_to_symlink]: "
+			"Remove symlink for share %s", share_name);
+
+	symlink_path = share_get_share_link(share_name, client_name);
+
+	log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[share_add_to_symlink]: "
+			"Removing the symlink: %s", symlink_path);
+	if (g_file_delete(symlink_path) < 0)
+	{
+		log_message(l_config, LOG_LEVEL_WARNING, "rdpdr_disk[share_add_to_symlink]: "
+				"Unable to remove the symlink: %s [%s]", symlink_path, strerror(errno));
+		goto fail;
+	}
+
+	if (symlink_path)
+	{
+		g_free(symlink_path);
+	}
+	return 0;
+
+
+fail:
+	if (symlink_path)
+	{
+		g_free(symlink_path);
+	}
+	return 1;
+
+
+}
+
+/*****************************************************************************/
+int
+share_symlink_purge()
+{
+	return 0;
+}

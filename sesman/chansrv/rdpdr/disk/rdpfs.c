@@ -29,6 +29,7 @@ extern struct log_config *l_config;
 int  disk_sock;
 int rdpdr_sock;
 static int client_id;
+static char client_name[256];
 static int is_fragmented_packet = 0;
 static int fragment_size;
 static struct stream* splitted_packet;
@@ -697,8 +698,9 @@ rdpfs_add(struct stream* s, int device_data_length,
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_dev_add]: "
 				"Succedd to add disk %s", disk_devices[disk_devices_count].dir_name);
 
-	share_add_to_desktop(device_name);
-	share_add_to_bookmark(device_name);
+//	share_add_to_desktop(device_name);
+	share_add_to_symlink(device_name, client_name);
+	share_add_to_bookmark(device_name, client_name);
 	return disk_devices_count++;
 }
 
@@ -714,8 +716,9 @@ rdpfs_remove(int device_id)
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_remove]: "
 				"Removing disk %s with id=%i", device->dir_name, device->device_id);
 
-	share_remove_from_desktop(device->dir_name);
-	share_remove_from_bookmarks(device->dir_name);
+//	share_remove_from_desktop(device->dir_name);
+	share_remove_from_symlink(device->dir_name, client_name);
+	share_remove_from_bookmarks(device->dir_name, client_name);
 
 	if (device->device_id == last_device->device_id)
 	{
@@ -1227,6 +1230,29 @@ rdpfs_process_iocompletion(struct stream* s)
 
 /*****************************************************************************/
 int APP_CC
+rdpfs_client_name(struct stream* s)
+{
+  int hostname_size;
+
+  log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_process_message]: ");
+
+  in_uint8s(s, 4);
+  in_uint32_le(s, hostname_size);   /* flag not use */
+  in_uint32_le(s, hostname_size);
+  if (hostname_size < 1)
+  {
+    log_message(l_config, LOG_LEVEL_ERROR, "rdpdr_disk[disk_process_message]: ");
+    return 1;
+  }
+
+  uni_rdp_in_str(s, client_name, sizeof(client_name), hostname_size);
+  log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[disk_process_message]: hostname : '%s'",client_name);
+
+  return 0;
+}
+
+/*****************************************************************************/
+int APP_CC
 rdpfs_process_message(struct stream* s, int length, int total_length)
 {
   int component;
@@ -1288,6 +1314,9 @@ rdpfs_process_message(struct stream* s, int length, int total_length)
     	result = rdpfs_list_remove(packet);
     	disk_up = 1;
       break;
+    case PAKID_CORE_CLIENT_NAME:
+    	result = rdpfs_client_name(packet);
+    	break;
     case PAKID_CORE_DEVICE_IOCOMPLETION:
     	result = rdpfs_process_iocompletion(packet);
     	break;

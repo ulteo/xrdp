@@ -46,8 +46,11 @@ int share_add_to_desktop(const char* share_name);
 int share_remove_from_desktop(const char* share_name);
 
 int share_bookmark_purge();
-int share_add_to_bookmarks(const char* share_name);
-int share_remove_from_bookmarks(const char* share_name);
+int share_add_to_bookmarks(const char* share_name, char* clientname);
+int share_remove_from_bookmarks(const char* share_name, const char* clientname);
 
+int share_symlink_purge();
+int share_add_to_symlink(const char* share_name, const char* clientname);
+int share_remove_from_symlink(const char* share_name, const char* clientname);
 
 #endif /* SHARES_H_ */
