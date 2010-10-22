@@ -133,7 +133,7 @@ vchannel_sound_send_wave_info(int timestamp, int len, char* data)
 	s_mark_end(s);
 	vchannel_sound_send(s, 0);
 	free_stream(s);
-	vchannel_sound_wait_reply();
+	//vchannel_sound_wait_reply();
 
 }
 
