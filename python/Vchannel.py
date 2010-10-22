@@ -91,6 +91,3 @@ class VirtualChannel():
 		
 		return ret == self.STATUS_NORMAL
 
-        def GetStatus(self):
-                return self.connected
-
