@@ -1120,6 +1120,18 @@ g_file_open(const char* file_name)
 }
 
 /*****************************************************************************/
+/* returns -1 on error, else return 0 */
+int APP_CC
+g_create_symlink(const char* source, const char* dest)
+{
+#if defined(_WIN32)
+  return -1;
+#else
+  return symlink(source, dest);
+#endif
+}
+
+/*****************************************************************************/
 /* returns -1 on error, else return handle or file descriptor */
 int APP_CC
 g_file_append(const char* file_name)

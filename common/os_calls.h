@@ -135,6 +135,8 @@ g_memcmp(const void* s1, const void* s2, int len);
 int APP_CC
 g_file_open(const char* file_name);
 int APP_CC
+g_create_symlink(const char* source, const char* dest);
+int APP_CC
 g_file_append(const char* file_name);
 int APP_CC
 g_file_close(int fd);
