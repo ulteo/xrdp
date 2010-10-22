@@ -96,7 +96,7 @@ void *thread_sound_process (void * arg)
 //  if (block_size <= 0)
 //      block_size = pa_frame_size(&ss);
   server_format.nAvgBytesPerSec = server_format.wBitsPerSample * server_format.nChannels * server_format.nSamplesPerSec / 8;
-  factor = (int) server_format.nAvgBytesPerSec / 16000;
+  factor = (int) server_format.nAvgBytesPerSec / MAX_BLOCK_SIZE;
   if (factor == 0)
   {
     factor = 1;

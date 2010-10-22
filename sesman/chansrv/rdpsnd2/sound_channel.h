@@ -42,6 +42,7 @@ int init_channel();
 #define SND_CFG_RATE							"Rate"
 
 #define MAX_SOUND_SENDED      5
+#define MAX_BLOCK_SIZE        16000
 
 #define SOUND_FORMAT_NUMBER		3
 /* Msg type */
