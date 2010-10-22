@@ -91,3 +91,11 @@ def SessionLogoff(session_id):
 		return False
 	
 	return True
+
+
+#if __name__ == "__main__":
+#	list = SessionGetList()
+#	for session in list:
+#		print "Session %i %s %s"%(session[0], session[1], session[2]
+#    main()
+
