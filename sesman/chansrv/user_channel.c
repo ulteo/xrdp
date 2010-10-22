@@ -167,11 +167,11 @@ user_channel_launch_server_channel(char* channel_name)
 
 	if( g_strcmp(channel_type, CHANNEL_TYPE_ROOT) == 0)
 	{
-		pid = g_launch_process(g_display_num, channel_params);
+		pid = g_launch_process(g_display_num, channel_params, 0);
 	}
 	else
 	{
-		pid = g_su(username, g_display_num, channel_params);
+		pid = g_su(username, g_display_num, channel_params, 0);
 	}
 	if (pid == 0)
 	{

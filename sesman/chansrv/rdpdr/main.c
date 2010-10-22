@@ -575,6 +575,7 @@ rdpdr_process_message(struct stream* s, int length, int total_length)
 
     case PAKID_CORE_CLIENT_NAME :
     	result =  rdpdr_client_name(packet);
+    	result = rdpdr_transmit(disk_sock, DATA_MESSAGE, packet->data, total_length);
     	rdpdr_send_server_capability();
     	break;
 
@@ -698,7 +699,7 @@ rdpdr_launch_printer_manager(int display_num)
 	list_add_item(channel_params, (long)g_strdup(username));
 	list_add_item(channel_params, 0);
 
-	pid = g_launch_process(display_num, channel_params);
+	pid = g_launch_process(display_num, channel_params, 0);
 	if (pid == 0)
 	{
 		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_launch_disk_manager]: "
@@ -759,7 +760,7 @@ rdpdr_launch_disk_manager(int display_num)
 	list_add_item(channel_params, (long)g_strdup(username));
 	list_add_item(channel_params, 0);
 
-	pid = g_su(username, display_num, channel_params);
+	pid = g_su(username, display_num, channel_params, 0);
 	if (pid == 0)
 	{
 		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpdr_launch_disk_manager]: "

@@ -2006,7 +2006,7 @@ g_system(char* aexec)
 /*****************************************************************************/
 /* does not work in win32 */
 int APP_CC
-g_su(const char* username, int display, struct list* command)
+g_su(const char* username, int display, struct list* command, int tag)
 {
   int pid = 0;
   int session_handle = 0;
@@ -2054,7 +2054,10 @@ g_su(const char* username, int display, struct list* command)
         g_sprintf(text, "%d", uid);
         g_setenv("UID", text, 1);
         g_setenv("HOME", pw_dir, 1);
-        g_setenv("XRDP_PROCESS", "1", 1);
+        if (tag)
+        {
+                g_setenv("XRDP_PROCESS", "1", 1);
+        }
         g_set_current_dir(pw_dir);
         g_sprintf(text, ":%d.0", display);
         g_setenv("DISPLAY", text, 1);
@@ -2075,7 +2078,7 @@ g_su(const char* username, int display, struct list* command)
 /*****************************************************************************/
 /* does not work in win32 */
 int APP_CC
-g_launch_process(int display, struct list* command)
+g_launch_process(int display, struct list* command, int tag)
 {
   int pid = 0;
   char text[256] = {0};
@@ -2088,7 +2091,10 @@ g_launch_process(int display, struct list* command)
   }
   else if (pid == 0) /* child sesman */
   {
-  	g_setenv("XRDP_PROCESS", "1", 1);
+        if (tag)
+        {
+  	       g_setenv("XRDP_PROCESS", "1", 1);
+        }
   	g_sprintf(text, ":%d.0", display);
   	g_setenv("DISPLAY", text, 1);
 

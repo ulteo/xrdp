@@ -272,7 +272,7 @@ int start_pulseaudio()
 	list_add_item(args, (tbus)strdup("-nF"));
 	list_add_item(args, (tbus)strdup((const char*)client_pa_config_path));
 
-	pulseaudio_pid = g_launch_process(display_num, args);
+	pulseaudio_pid = g_launch_process(display_num, args, 1);
 	if ( pulseaudio_pid < 0 )
 	{
 		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpsnd[start_pulseaudio]: "

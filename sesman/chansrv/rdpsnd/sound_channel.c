@@ -84,7 +84,7 @@ vchannel_sound_send_wave_info(int timestamp, int len, char* data)
 	char *p = data;
 	struct stream* s;
 	make_stream(s);
-	init_stream(s, 16);
+	init_stream(s, len+16);
 	/* RDPSND PDU Header */
 	out_uint8(s, SNDC_WAVE);
 
