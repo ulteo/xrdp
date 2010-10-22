@@ -20,6 +20,7 @@
 
 #include <vchannel.h>
 #include <os_calls.h>
+#include <uni_rdp.h>
 #include <xrdp_constants.h>
 #include <file.h>
 #include "rdpdr.h"
@@ -363,16 +364,10 @@ rdpdr_client_name(struct stream* s)
     log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr_channel[rdpdr_client_name]: no hostname specified");
     return 1;
   }
-  if (use_unicode == 1)
-  {
-    log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr_channel[rdpdr_client_name]: unicode is used");
-    rdpdr_in_unistr(s, hostname, sizeof(hostname), hostname_size);
-  }
-  else
-  {
-    in_uint8a(s, hostname, hostname_size);
-  }
+
+  uni_rdp_in_str(s, hostname, sizeof(hostname), hostname_size);
   log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr_channel[rdpdr_client_name]: hostname : '%s'",hostname);
+
   if (g_strlen(hostname) >0)
   {
     rdpdr_confirm_clientID_request();
