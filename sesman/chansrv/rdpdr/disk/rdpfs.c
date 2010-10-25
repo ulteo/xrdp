@@ -454,7 +454,7 @@ rdpfs_request_close(int completion_id, int device_id)
 	actions[completion_id].last_req = IRP_MJ_CLOSE;
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "rdpdr_disk[rdpfs_request_close]:"
-			"close device id %i\n", actions[completion_id].device);
+			"Close device id %i", actions[completion_id].device);
 	out_uint16_le(s, RDPDR_CTYP_CORE);
 	out_uint16_le(s, PAKID_CORE_DEVICE_IOREQUEST);
 	out_uint32_le(s, actions[completion_id].device);
