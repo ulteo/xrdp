@@ -47,7 +47,7 @@ struct fs_info
 	uint64_t last_change_time;
 	int file_attributes;
 	size_t file_size;
-	size_t allocation_size;    /* number of occuped cluster */
+	size_t allocation_size;    /* number of occupied cluster */
 	int nlink;
 	int delele_request;
 	int is_dir;
