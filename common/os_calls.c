@@ -2256,6 +2256,11 @@ g_daemonize(char* pid_file)
   char buffer[10];
 
   /* make sure we can write to pid file */
+  if (g_file_exist(pid_file))
+  {
+  	g_writeln("process already exist, quitting");
+  	g_exit(0);
+  }
   fd = g_file_open(pid_file); /* xrdp.pid */
   if (fd == -1)
   {
@@ -2267,8 +2272,6 @@ g_daemonize(char* pid_file)
   	g_writeln("running in daemon mode with no access to pid files, quitting");
   	g_exit(0);
   }
-  g_file_close(fd);
-  g_file_delete(pid_file);
 
   /* fork */
   pid = g_fork();
