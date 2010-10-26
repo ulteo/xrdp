@@ -2261,7 +2261,7 @@ g_daemonize(char* pid_file)
   	g_writeln("process already exist, quitting");
   	g_exit(0);
   }
-  fd = g_file_open(pid_file); /* xrdp.pid */
+  fd = g_file_open(pid_file); 
   if (fd == -1)
   {
   	g_writeln("running in daemon mode with no access to pid files, quitting");
