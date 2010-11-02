@@ -91,36 +91,27 @@ session_get_bydata(char* name)
 static int DEFAULT_CC
 x_server_running_check_ports(int display)
 {
-  char text[256];
-  int x_running;
-  int sck;
+  char display_file[256] = {0};
+  char display_lock[256] = {0};
+  char port_str[256] = {0};
+  int x_running = 0;
+  int sck = 0;
+  int port = 0;
 
-  g_sprintf(text, "/tmp/.X11-unix/X%d", display);
-  x_running = g_file_exist(text);
+  port = 5900 + display;
+  g_sprintf(display_file, "/tmp/.X11-unix/X%d", display);
+  g_sprintf(display_lock, "/tmp/.X%d-lock", display);
+  g_sprintf(port_str, "%2.2d", port);
+
+  x_running = g_file_exist(display_file);
   if (!x_running)
   {
-    g_sprintf(text, "/tmp/.X%d-lock", display);
-    x_running = g_file_exist(text);
+    x_running = g_file_exist(display_lock);
   }
-  if (!x_running) /* check 59xx */
+  if (!x_running) /* check port */
   {
     sck = g_tcp_socket();
-    g_sprintf(text, "59%2.2d", display);
-    x_running = g_tcp_bind(sck, text);
-    g_tcp_close(sck);
-  }
-  if (!x_running) /* check 60xx */
-  {
-    sck = g_tcp_socket();
-    g_sprintf(text, "60%2.2d", display);
-    x_running = g_tcp_bind(sck, text);
-    g_tcp_close(sck);
-  }
-  if (!x_running) /* check 62xx */
-  {
-    sck = g_tcp_socket();
-    g_sprintf(text, "62%2.2d", display);
-    x_running = g_tcp_bind(sck, text);
+    x_running = g_tcp_bind(sck, port_str);
     g_tcp_close(sck);
   }
   return x_running;
