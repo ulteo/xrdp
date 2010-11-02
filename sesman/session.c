@@ -636,7 +636,6 @@ session_start_fork(int width, int height, int bpp, char* username,
       return 0;
     }
     temp->item->pid = pid;
-    temp->item->xpid = xpid;
     temp->item->display = display;
     temp->item->width = width;
     temp->item->height = height;
@@ -857,13 +856,50 @@ session_unmount_drive(struct session_item* sess)
 
 /******************************************************************************/
 int DEFAULT_CC
+session_get_X_pid(int display)
+{
+	char x_temp_file[256] = {0};
+	char buffer[50] = {0};
+	int fd = 0;
+	int error = 0;
+
+	g_snprintf(x_temp_file, sizeof(x_temp_file), "/tmp/.X%i-lock", display);
+
+	if (! g_file_exist(x_temp_file))
+	{
+		return 0;
+	}
+
+	fd = g_file_open(x_temp_file);
+	if (fd < 0)
+	{
+		return 0;
+	}
+
+	error = g_file_read(fd, buffer, sizeof(buffer));
+	if (error < 0)
+	{
+		return 0;
+	}
+
+	g_strtrim(buffer, 3);
+	return atoi(buffer);
+}
+
+/******************************************************************************/
+int DEFAULT_CC
 session_clean_display(struct session_item* sess)
 {
 	char x_temp_file[256] = {0};
 	int display = sess->display;
-	int pid = sess->xpid;
+	int pid = 0;
 	int try_count = 5;
 
+	pid = session_get_X_pid(display);
+	if (pid == 0)
+	{
+		return 0;
+	}
 	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[session_clean_display]: "
 			"Pid of the X server: %i", pid);
 
