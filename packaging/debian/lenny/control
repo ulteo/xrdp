@@ -64,3 +64,48 @@ Architecture: all
 Depends: ${python:Depends}, xrdp
 Description: Python API for XRDP
  XRDP-Python is a Python wrapper for XRDP
+
+################
+# DEBUG packages
+
+Package: xrdp-dbg
+Section: debug
+Architecture: any
+Depends: xrdp (= ${binary:Version})
+Description: XRDP (debug symbols)
+
+Package: xrdp-seamrdp-dbg
+Section: debug
+Architecture: any
+Depends: xrdp-seamrdp (= ${binary:Version})
+Description: XRDP seamless (debug symbols)
+
+Package: xrdp-rdpdr-dbg
+Section: debug
+Architecture: any
+Depends: xrdp-rdpdr (= ${binary:Version})
+Description: XRDP disk redirection (debug symbols)
+
+Package: xrdp-disk-dbg
+Section: debug
+Architecture: any
+Depends: xrdp-disk (= ${binary:Version})
+Description: XRDP disk manager (debug symbols)
+
+Package: xrdp-clipboard-dbg
+Section: debug
+Architecture: any
+Depends: xrdp-clipboard (= ${binary:Version})
+Description: XRDP clipboard (debug symbols)
+
+Package: xrdp-printer-dbg
+Section: debug
+Architecture: any
+Depends: xrdp-printer (= ${binary:Version})
+Description: XRDP printer (debug symbols)
+
+Package: xrdp-sound-dbg
+Section: debug
+Architecture: any
+Depends: xrdp-sound (= ${binary:Version})
+Description: XRDP sound (debug symbols)
