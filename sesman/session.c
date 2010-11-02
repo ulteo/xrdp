@@ -645,6 +645,7 @@ session_start_fork(int width, int height, int bpp, char* username,
       return 0;
     }
     temp->item->pid = pid;
+    temp->item->xpid = xpid;
     temp->item->display = display;
     temp->item->width = width;
     temp->item->height = height;
@@ -863,6 +864,50 @@ session_unmount_drive(struct session_item* sess)
 	return 0;
 }
 
+/******************************************************************************/
+int DEFAULT_CC
+session_clean_display(struct session_item* sess)
+{
+	char x_temp_file[256] = {0};
+	int display = sess->display;
+	int pid = sess->xpid;
+	int try_count = 5;
+
+	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[session_clean_display]: "
+			"Pid of the X server: %i", pid);
+
+	while (g_testpid(pid) >= 0 && try_count > 0)
+	{
+		g_sigterm(pid);
+		g_sleep(100);
+		try_count --;
+	}
+
+	g_snprintf(x_temp_file, sizeof(x_temp_file), "/tmp/.X11-unix/X%i", display);
+	if (g_file_exist(x_temp_file))
+	{
+		log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[session_clean_display]: "
+				"Removing the X temp file: %s", x_temp_file);
+		if (g_file_delete(x_temp_file) == 0)
+		{
+			log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[session_clean_display]: "
+					"Unable to remove: %s", x_temp_file);
+		}
+	}
+
+	g_snprintf(x_temp_file, sizeof(x_temp_file), "/tmp/.X%i-lock", display);
+	if (g_file_exist(x_temp_file))
+	{
+		log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[session_clean_display]: "
+				"Removing the X temp file: %s", x_temp_file);
+		if (g_file_delete(x_temp_file) == 0)
+		{
+			log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[session_clean_display]: "
+					"Unable to remove: %s", x_temp_file);
+		}
+	}
+	return 0;
+}
 
 /******************************************************************************/
 int DEFAULT_CC
@@ -931,6 +976,7 @@ session_destroy(struct session_item* sess)
 		g_sleep(100);
 	}
 	session_unmount_drive(sess);
+	session_clean_display(sess);
 	//g_free(dir);
 	return 0;
 }
@@ -1041,6 +1087,7 @@ session_kill_by_display(int display)
       /* deleting the session */
       log_message(&(g_cfg->log), LOG_LEVEL_INFO, "session %d - user %s - "
                   "terminated", tmp->item->display, tmp->item->name);
+      session_destroy(tmp->item);
       g_free(tmp->item);
       if (prev == 0)
       {
@@ -1054,7 +1101,6 @@ session_kill_by_display(int display)
       }
       g_free(tmp);
       g_session_count--;
-      session_destroy(tmp->item);
       /*THREAD-FIX release chain lock */
       lock_chain_release();
       return SESMAN_SESSION_KILL_OK;
@@ -1235,22 +1281,22 @@ session_monit()
 	      if (g_testpid(tmp->item->pid) == tmp->item->pid)
 	      {
 	      	session_destroy(tmp->item);
-	      	g_free(tmp->item);
-		      if (prev == 0)
-		      {
-		        g_sessions = tmp->next;
-		        g_free(tmp);
-		        tmp = g_sessions;
-		      }
-		      else
-		      {
-		        prev->next = tmp->next;
-		        g_free(tmp);
-		        tmp = prev->next;
-		      }
-		      g_session_count--;
-		      continue;
 	      }
+	      g_free(tmp->item);
+	      if (prev == 0)
+	      {
+	    	  g_sessions = tmp->next;
+	    	  g_free(tmp);
+	    	  tmp = g_sessions;
+	      }
+	      else
+	      {
+	    	  prev->next = tmp->next;
+	    	  g_free(tmp);
+	    	  tmp = prev->next;
+	      }
+	      g_session_count--;
+	      continue;
 	    }
 	    else
 	    {

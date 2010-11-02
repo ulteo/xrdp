@@ -69,6 +69,7 @@ struct session_item
   char name[256];
   char homedir[1024];
   int pid; /* pid of sesman waiting for wm to end */
+  int xpid; /* pid of X server */
   int display;
   int width;
   int height;
