@@ -134,7 +134,7 @@ void APP_CC
 rdpfs_wait_reply(int completion_id)
 {
 	barrier_t* barrier = &rdpfs_response[completion_id].barrier;
-	barrier_wait(barrier);
+	tc_barrier_wait(barrier);
 }
 
 /*****************************************************************************/
@@ -308,7 +308,7 @@ rdpfs_open()
 
 	for (i = 0; i< 128 ; i++)
 	{
-		barrier_init(&rdpfs_response[i].barrier,2);
+		tc_barrier_init(&rdpfs_response[i].barrier,2);
 	}
 
 	return 0;
@@ -1225,7 +1225,7 @@ rdpfs_process_iocompletion(struct stream* s)
 	}
 
 	barrier_t* barrier = &rdpfs_response[completion_id].barrier;
-	barrier_wait(barrier);
+	tc_barrier_wait(barrier);
 
 	return result;
 }

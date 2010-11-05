@@ -27,7 +27,7 @@
 
 
 int APP_CC
-barrier_init(barrier_t *barrier,int needed)
+tc_barrier_init(barrier_t *barrier,int needed)
 {
     barrier->needed = needed;
     barrier->called = 0;
@@ -37,7 +37,7 @@ barrier_init(barrier_t *barrier,int needed)
 }
 
 int APP_CC
-barrier_destroy(barrier_t *barrier)
+tc_barrier_destroy(barrier_t *barrier)
 {
     pthread_mutex_destroy(&barrier->mutex);
     pthread_cond_destroy(&barrier->cond);
@@ -45,7 +45,7 @@ barrier_destroy(barrier_t *barrier)
 }
 
 int APP_CC
-barrier_wait(barrier_t *barrier)
+tc_barrier_wait(barrier_t *barrier)
 {
     pthread_mutex_lock(&barrier->mutex);
     barrier->called++;
