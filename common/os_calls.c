@@ -2259,18 +2259,18 @@ g_daemonize(char* pid_file)
   if (g_file_exist(pid_file))
   {
   	g_writeln("process already exist, quitting");
-  	g_exit(0);
+  	g_exit(1);
   }
   fd = g_file_open(pid_file); 
   if (fd == -1)
   {
   	g_writeln("running in daemon mode with no access to pid files, quitting");
-  	g_exit(0);
+  	g_exit(1);
   }
   if (g_file_write(fd, "0", 1) == -1)
   {
   	g_writeln("running in daemon mode with no access to pid files, quitting");
-  	g_exit(0);
+  	g_exit(1);
   }
 
   /* fork */
@@ -2278,18 +2278,18 @@ g_daemonize(char* pid_file)
   /* error */
 	if(pid < 0)
 	{
-		return 0;
+		g_exit(1);
 	}
 	/* parent process */
 	if( pid == 0 )
 	{
 		if(chdir("/") < 0)
 		{
-			return 0;
+			g_exit(1);
 		}
 		if(setsid() < 0)
 		{
-			return 0;
+			g_exit(1);
 		}
 		umask(0);
 		 /* Redirect standard files to /dev/null */
