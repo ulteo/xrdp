@@ -641,7 +641,9 @@ g_create_unix_socket(const char *socket_filename)
 
 /*****************************************************************************/
 /* connect to a socket unix */
-int g_unix_connect(const char* socket_filename){
+int APP_CC
+g_unix_connect(const char* socket_filename)
+{
   int sock, len;
   struct sockaddr_un saun;
 
