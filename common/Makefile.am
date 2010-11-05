@@ -41,6 +41,7 @@ libxrdp_common_la_SOURCES = \
   os_calls.c os_calls.h \
   ssl_calls.c ssl_calls.h \
   thread_calls.c thread_calls.h \
+  thread_pool.c thread_pool.h \
   trans.c trans.h \
   uni_rdp.c uni_rdp.h \
   $(AUTH_C) 
