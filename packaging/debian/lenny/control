@@ -28,7 +28,7 @@ Description: Seamless XRDP Shell
 
 Package: xrdp-rdpdr
 Architecture: any
-Depends: ${shlibs:Depends}, xrdp
+Depends: ${shlibs:Depends}, xrdp, fuse-utils
 Description: XRDP disks redirection
  XRDP channel that handle disks redirection.
 
