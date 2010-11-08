@@ -43,7 +43,7 @@ CONF = {"ghostscript" : "/usr/bin/gs",
         "spool_dir" : "/var/spool/xrdp_printer/SPOOL",
         "our_spool_file" : False,
 
-        "out_dir" : "/var/spool/xrdp_printer/${USER}/${PRINTER}/",
+        "out_dir" : "/home/${USER}/.rdp_drive/.rdp_printer/${PRINTER}",
         "out_file" : "%(title)s.%(type)s",
         
         "user" : pwd.getpwuid(os.getuid())[0],
@@ -225,7 +225,7 @@ def main():
     system("chgrp %s %s"%(CONF["group"],CONF["tmp_file"]))
 
     CONF["out_file"] = "%s/%s"%(CONF["out_dir"]%(CONF), CONF["out_file"]%(CONF))
-    os.rename(CONF["tmp_file"], CONF["out_file"])
+    shutil.move(CONF["tmp_file"], CONF["out_file"])
     
     return end(0)
   
