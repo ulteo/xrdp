@@ -206,7 +206,6 @@ void APP_CC
 list_dump_items(struct list* self)
 {
   int index;
-  tbus item;
 
   if (self->count == 0)
   {

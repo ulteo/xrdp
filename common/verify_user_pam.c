@@ -85,7 +85,6 @@ auth_userpass(const char* service, char* user, char* pass)
   struct t_auth_info* auth_info;
   char service_name[256] = {0};
   char *user_name = NULL;
-  int status;
 
   if (service == NULL)
   {

@@ -95,7 +95,6 @@ THREAD_POOL*
 thread_pool_init_pool(int thread_number)
 {
 	THREAD_POOL* pool = NULL;
-	int i = 0;
 
 	pool = g_malloc(sizeof(THREAD_POOL), 1);
 	if (pool == NULL)

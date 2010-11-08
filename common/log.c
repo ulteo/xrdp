@@ -30,31 +30,6 @@
 #include "log.h"
 
 
-/**
- *
- * @brief Converts xrdp log level to syslog logging level
- * @param xrdp logging level
- * @return syslog equivalent logging level
- *
- */
-static int DEFAULT_CC
-log_xrdp2syslog(const int lvl)
-{
-  switch (lvl)
-  {
-    case LOG_LEVEL_ALWAYS:
-      return LOG_CRIT;
-    case LOG_LEVEL_ERROR:
-      return LOG_ERR;
-    case LOG_LEVEL_WARNING:
-      return LOG_WARNING;
-    case LOG_LEVEL_INFO:
-      return LOG_INFO;
-    /* case LOG_LEVEL_DEBUG: */
-    default:
-      return LOG_DEBUG;
-  }
-}
 
 /**
  *ring 
@@ -341,10 +316,9 @@ log_hexdump(struct log_config* l_cfg, const unsigned int lvl, unsigned char *p, 
 void DEFAULT_CC
 log_file(struct log_config* l_cfg, const unsigned int lvl, const char *filename)
 {
-	int fd;
-	int file_size = 0;
-	char *buffer;
-	int res;
+  int fd;
+  int file_size = 0;
+  char *buffer;
 
   if (l_cfg->enable_syslog  && (lvl > l_cfg->syslog_level))
   {
