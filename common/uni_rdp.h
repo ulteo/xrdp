@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <os_calls.h>
 #include <xrdp_constants.h>
 
 

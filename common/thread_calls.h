@@ -27,9 +27,9 @@
 #define THREAD_CALLS_H
 
 #include "arch.h"
+#include "os_calls.h"
 
 #if defined(_WIN32)
-#include "os_calls.h"
 #include <windows.h>
 #else
 #include <pthread.h>

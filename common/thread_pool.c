@@ -108,8 +108,8 @@ thread_pool_init_pool(int thread_number)
 	pool->job_queue->auto_free = 0;
 	pool->thread_list->auto_free = 0;
 
-	pool->job_wait = (pthread_mutex_t*)tc_mutex_create();
-	pool->thread_wait = (pthread_mutex_t*)tc_mutex_create();
+	pool->job_wait = tc_mutex_create();
+	pool->thread_wait = tc_mutex_create();
 	return pool;
 }
 

@@ -2071,7 +2071,7 @@ g_su(const char* username, int display, struct list* command, int tag)
     }
 
     g_execvp((char*)command->items[0], ((char**)command->items));
-    printf("failed to exec command %s\n", command->items[0]);
+    printf("failed to exec command %s\n", (char*)command->items[0]);
     g_exit(0);
   }
   return pid;
@@ -2101,7 +2101,7 @@ g_launch_process(int display, struct list* command, int tag)
   	g_setenv("DISPLAY", text, 1);
 
     g_execvp((char*)command->items[0], ((char**)command->items));
-    printf("failed to exec command %s\n", command->items[0]);
+    printf("failed to exec command %s\n", (char*)command->items[0]);
     g_exit(0);
   }
   return pid;
@@ -2312,6 +2312,7 @@ g_daemonize(char* pid_file)
 	g_file_write(fd, buffer, strlen(buffer));
 	g_file_close(fd);
 	g_exit(0);
+	return 0;
 #endif
 }
 

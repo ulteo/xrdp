@@ -23,12 +23,13 @@
 
 #include <os_calls.h>
 #include <pthread.h>
+#include <thread_calls.h>
 #include <list.h>
 
 typedef struct thread_pool
 {
-	pthread_mutex_t* thread_wait;
-	pthread_mutex_t* job_wait;
+	tbus thread_wait;
+	tbus job_wait;
 
 	int max_thread_count;
 
