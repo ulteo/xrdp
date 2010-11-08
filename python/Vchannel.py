@@ -43,7 +43,7 @@ class VirtualChannel():
 	        self._handle = self._dll.vchannel_open(self.name)
 		if self._handle == self.STATUS_ERROR :
 			self._handle = None
-			connected = False
+			self.connected = False
 			return False
 		self.connected = True
 		return True
