@@ -2,6 +2,7 @@
 
 # Copyright (C) 2010 Ulteo SAS
 # http://www.ulteo.com
+# Author Laurent CLOUET <laurent@ulteo.com> 2010
 # Author Julien LANGLOIS <julien@ulteo.com> 2010
 # Author David LECHEVALIER <david@ulteo.com> 2010
 #
@@ -19,9 +20,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import os
-import socket
-import struct
 import ctypes
 from VchannelException import VchannelException
 
