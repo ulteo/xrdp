@@ -495,8 +495,8 @@ send_session(int client, int session_id)
   {
   	log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[send_session]: "
 				"the session %i did not exist",session_id);
-//    xml_send_error(client, "the session id of the request did not exist");
-//    return 1;
+    xml_send_error(client, "the session id of the request did not exist");
+    return 1;
   }
   version = xmlCharStrdup("1.0");
 	doc = xmlNewDoc(version);

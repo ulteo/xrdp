@@ -62,6 +62,42 @@ static int g_sync_result;
 
 /******************************************************************************/
 struct session_item* DEFAULT_CC
+session_copy(struct session_item* src)
+{
+  struct session_item* copy;
+
+  copy = g_malloc(sizeof(struct session_item), 1);
+  if (copy == NULL)
+  {
+    log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "Internal error: unable to copy a session");
+    g_free(copy);
+    return NULL;
+  }
+
+  copy->display = src->display;
+  copy->status = src->status;
+  copy->height = src->height;
+  copy->width = src->width;
+  copy->data = src->data;
+  copy->type = src->type;
+  copy->bpp = src->bpp;
+  copy->pid = src->pid;
+
+  if (src->homedir)
+  {
+    g_snprintf(copy->homedir, sizeof(copy->homedir), src->homedir);
+  }
+  if (src->name)
+  {
+    g_snprintf(copy->name, sizeof(copy->name), src->name);
+  }
+
+  return copy;
+}
+
+
+/******************************************************************************/
+struct session_item* DEFAULT_CC
 session_get_bydata(char* name)
 {
   struct session_chain* tmp;
@@ -1225,14 +1261,6 @@ session_get_by_display(int display)
   struct session_chain* tmp;
   struct session_item* dummy;
 
-  dummy = g_malloc(sizeof(struct session_item), 1);
-  if (0 == dummy)
-  {
-    log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "internal error", display);
-    g_free(dummy);
-    return 0;
-  }
-
   /*THREAD-FIX require chain lock */
 //  lock_chain_acquire();
 
@@ -1245,23 +1273,20 @@ session_get_by_display(int display)
                   "display %d is null!", display);
       /*THREAD-FIX release chain lock */
 //      lock_chain_release();
-      g_free(dummy);
       return 0;
     }
     if (tmp->item->display == display)
     {
       /*THREAD-FIX release chain lock */
-      g_memcpy(dummy, tmp->item, sizeof(struct session_item));
 //      lock_chain_release();
       /*return tmp->item;*/
-      return dummy;
+      return session_copy(tmp->item);;
     }
     /* go on */
     tmp=tmp->next;
   }
   /*THREAD-FIX release chain lock */
 //  lock_chain_release();
-  g_free(dummy);
   return 0;
 }
 
