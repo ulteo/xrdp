@@ -521,7 +521,7 @@ g_tcp_recv(int sck, void* ptr, int len, int flags)
 #if defined(_WIN32)
   return recv(sck, (char*)ptr, len, flags);
 #else
-  return recv(sck, ptr, len, flags);
+  return recv(sck, ptr, len, flags|MSG_NOSIGNAL);
 #endif
 }
 
@@ -532,7 +532,7 @@ g_tcp_send(int sck, const void* ptr, int len, int flags)
 #if defined(_WIN32)
   return send(sck, (const char*)ptr, len, flags);
 #else
-  return send(sck, ptr, len, flags);
+  return send(sck, ptr, len, flags|MSG_NOSIGNAL);
 #endif
 }
 
