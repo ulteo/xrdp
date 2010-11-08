@@ -1,3 +1,2 @@
-debian/tmp/usr/sbin/rdpdr_printer
 debian/tmp/usr/lib/cups/backend/xrdpprinter
 debian/tmp/usr/share/cups/model/PostscriptColor.ppd.gz
