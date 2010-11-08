@@ -49,7 +49,7 @@ int stop = 0;
 
 extern int g_thread_sck; /* in thread.c */
 static THREAD_POOL* pool;
-
+static char pid_file[256];
 
 
 void DEFAULT_CC
@@ -872,8 +872,6 @@ admin_thread(void* param)
 THREAD_RV THREAD_CC
 monit_thread(void* param)
 {
-  char pid_file[256];
-
   lock_stopwait_acquire();
   while (stop == 0)
   {
@@ -904,7 +902,6 @@ main(int argc, char** argv)
   int pid;
   char pid_s[8];
   char text[256];
-  char pid_file[256];
 
   if(g_is_root() != 0){
   	g_printf("Error, xrdp-sesman service must be start with root privilege\n");
@@ -1091,12 +1088,6 @@ main(int argc, char** argv)
   tc_thread_create(monit_thread, 0);
   sesman_main_loop();
   scp_remove_mutex();
-
-  /* clean up PID file on exit */
-  if (daemon)
-  {
-    g_file_delete(pid_file);
-  }
 
   g_delete_wait_obj(g_term_event);
   g_delete_wait_obj(g_sync_event);

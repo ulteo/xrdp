@@ -42,6 +42,7 @@ static long g_sync_result = 0;
 static long g_sync_param1 = 0;
 static long g_sync_param2 = 0;
 static long (*g_sync_func)(long param1, long param2);
+static char pid_file[256];
 
 /*****************************************************************************/
 long APP_CC
@@ -93,6 +94,7 @@ xrdp_shutdown(int sig)
   {
     g_set_wait_obj(g_term_event);
   }
+  g_file_delete(pid_file);
 }
 
 /*****************************************************************************/
@@ -281,7 +283,6 @@ main(int argc, char** argv)
   int fd;
   int no_daemon;
   char text[256];
-  char pid_file[256];
 #endif
   if(g_is_root() != 0){
   	g_printf("Error, xrdp service must be start with root privilege\n");
@@ -546,9 +547,6 @@ main(int argc, char** argv)
   /* I don't think it ever gets here */
   /* when running in win32 app mode, control c exits right away */
   WSACleanup();
-#else
-  /* delete the xrdp.pid file */
-  g_file_delete(pid_file);
 #endif
   return 0;
 }
