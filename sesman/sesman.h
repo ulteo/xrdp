@@ -50,8 +50,8 @@
 #include "thread_calls.h"
 
 #include "libscp.h"
-#define XRDP_SOCKET_PATH  			"/var/spool/xrdp/"
-#define MANAGEMENT_SOCKET_NAME  "/var/spool/xrdp/xrdp_management"
+#include "xrdp_constants.h"
+
 
 #define UMOUNT_UTILS            "/bin/umount"
 

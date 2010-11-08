@@ -26,6 +26,18 @@
 #define DEFAULT_CODEPAGE     "UTF-8"
 #define WINDOWS_CODEPAGE     "UTF-16LE"
 
+#define XRDP_SOCKET_PATH               "/var/spool/xrdp/"
+#define PRINTER_SOCKET_NAME            "/var/spool/xrdp/xrdp_printer"
+#define MANAGEMENT_SOCKET_NAME         "/var/spool/xrdp/xrdp_management"
+
+#define REQUEST_ACTION_DELETE           "delete"
+#define REQUEST_ACTION_ADD              "add"
+#define REQUEST_ACTION_PURGE            "purge"
+#define REQUEST_ACTION_DELETE           "delete"
+
+#define REQUEST_TYPE_PRINTER            "printer"
+#define REQUEST_TYPE_PRINTERS           "printers"
+
 
 /* TCP port for Remote Desktop Protocol */
 #define TCP_PORT_RDP                   3389
