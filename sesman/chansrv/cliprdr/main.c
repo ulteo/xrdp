@@ -770,6 +770,7 @@ int main(int argc, char** argv, char** environ)
 	(void)pthread_join (Xevent_thread, &ret);
 	//(void)pthread_join (Vchannel_thread, &ret);
 	pthread_mutex_destroy(&mutex);
+	XCloseDisplay(display);
 	g_free(l_config);
 	return 0;
 }
