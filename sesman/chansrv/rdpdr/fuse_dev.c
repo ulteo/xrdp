@@ -89,6 +89,8 @@ static int fuse_dev_getattr(const char *path, struct stat *stbuf)
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[fuse_dev_getattr]: "
 				"getattr on %s", path);
+
+	g_memset(stbuf, 0, sizeof(struct stat));
 	if (disk_up == 0)
 	{
 		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[fuse_dev_getattr]: "
