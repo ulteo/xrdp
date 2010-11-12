@@ -124,10 +124,6 @@ static int fuse_dev_getattr(const char *path, struct stat *stbuf)
 		return 0;
 	}
 
-//	log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr[fuse_dev_getattr]: "
-//			"inspect path %s", path);
-
-
 	rdp_path = g_strdup(path);
 
 	if (strcmp(rdp_path, "/") == 0) {
