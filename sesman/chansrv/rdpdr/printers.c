@@ -62,7 +62,7 @@ xml_get_xpath(xmlDocPtr doc, const char* xpath, char* value)
 	}
 	g_strcpy(value, (const char*)keyword);
 	xmlXPathFreeObject(xpathObj);
-	xmlFree(keyword);
+
 	return 0;
 }
 
@@ -197,7 +197,7 @@ xml_receive_message(int client)
 	int res = 0;
 	make_stream(s);
 	init_stream(s, 1024);
-	xmlDocPtr doc;
+	xmlDocPtr doc = NULL;
 
 	res= g_tcp_recv(client, s->data, sizeof(int), 0);
 
@@ -227,7 +227,8 @@ xml_receive_message(int client)
 static int DEFAULT_CC
 printer_process_response(int sock, char* status_msg)
 {
-	xmlDocPtr doc;
+	xmlDocPtr doc = NULL;
+	int rv = 0;
 
 	doc = xml_receive_message(sock);
 	if ( doc == NULL)
@@ -238,14 +239,24 @@ printer_process_response(int sock, char* status_msg)
 	}
 	if (xml_get_xpath(doc, XML_RESPONSE_PATH, status_msg) == 0)
 	{
-		return 0;
+		rv = 0;
+		goto end;
 	}
 	if (xml_get_xpath(doc, XML_ERROR_PATH, status_msg) == 0)
 	{
-		return 1;
+		rv = 0;
+		goto end;
 	}
 	g_strcat(status_msg, "Unknow error");
-	return 1;
+	rv = 1;
+
+end:
+	if (doc != NULL)
+	{
+		xmlFreeDoc(doc);
+	}
+	return rv;
+
 }
 
 /************************************************************************/
@@ -290,8 +301,16 @@ printer_do_request(const char* request_type, const char* action, const char* use
 int DEFAULT_CC
 printer_init()
 {
-	  xmlInitParser();
-	  return printer_purge(username);
+	xmlInitParser();
+	return printer_purge(username);
+}
+
+/************************************************************************/
+int DEFAULT_CC
+printer_dinit()
+{
+	xmlCleanupParser();
+	return printer_purge(username);
 }
 
 /************************************************************************/

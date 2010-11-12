@@ -193,5 +193,10 @@ int main(int argc, char** argv, char** environ)
 	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[main]: "
 				"Rdpdrive is located on %s", mount_point);
 
-	return fuse_run();
+	if (fuse_run() == 1)
+	{
+		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[main]: "
+				"Fail to start fuse");
+	}
+	g_free(l_config);
 }

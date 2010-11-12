@@ -323,6 +323,8 @@ rdpfs_open()
 		tc_barrier_init(&rdpfs_response[i].barrier,2);
 	}
 
+	printer_init();
+
 	return 0;
 }
 
@@ -341,6 +343,8 @@ rdpfs_close()
 	}
 
 	vchannel_close(rdpdr_sock);
+	rdpfs_cache_dinit();
+	printer_dinit();
 	//TODO mutex cond realease
 	return 0;
 }
