@@ -259,6 +259,7 @@ vchannel_receive(int sock, const char* data, int* length, int* total_length)
 	{
 		log_message(log_conf, LOG_LEVEL_ERROR ,"vchannel{%s}[vchannel_receive]: "
 				"Error while receiving data lenght: %s",channel->name, strerror(errno));
+		free_stream(header);
 		return ERROR;
 	}
 	log_message(log_conf, LOG_LEVEL_DEBUG_PLUS ,"vchannel{%s}[vchannel_receive]: "
@@ -267,6 +268,8 @@ vchannel_receive(int sock, const char* data, int* length, int* total_length)
 	in_uint8(header, type);
 	in_uint32_be(header, *length);
 	in_uint32_be(header, *total_length);
+	free_stream(header);
+
 	switch(type)
 	{
 	case CHANNEL_OPEN:
