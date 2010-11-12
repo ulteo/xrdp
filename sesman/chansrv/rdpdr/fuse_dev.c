@@ -109,17 +109,6 @@ static int fuse_dev_getattr(const char *path, struct stat *stbuf)
 			return 0;
 		}
 		stbuf->st_nlink = 2;
-		stbuf->st_blksize = 0;
-		stbuf->st_atime = 0;
-		stbuf->st_mtime = 0;
-		stbuf->st_ctime = 0;
-		stbuf->st_dev = 0;
-		stbuf->st_gid = 0;
-		stbuf->st_ino = 0;
-		stbuf->st_rdev = 0;
-		stbuf->st_size = 0;
-		stbuf->st_uid = g_getuid();
-
 		stbuf->st_mode = S_IFDIR | 0755;
 		return 0;
 	}
