@@ -54,7 +54,10 @@ fi
 xrdp_start()
 {
   logoff all
-  mkdir $SPOOLDIR
+  if ! test -d $SPOOLDIR; then
+    mkdir -p $SPOOLDIR
+  fi
+
   log_daemon_msg "Starting Xrdp rdp server"
   if start-stop-daemon --start --quiet --oknodo --pidfile /var/run/xrdp.pid --exec $SBINDIR/xrdp -- >$LOG; then
     log_end_msg 0
