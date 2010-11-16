@@ -166,9 +166,7 @@ log_start(struct log_config* l_cfg)
 		pthread_mutex_init(&(l_cfg->log_lock), &(l_cfg->log_lock_attr));
 	#endif
 
-	if(g_file_exist(LOGGING_SOCKET))
-		return LOG_STARTUP_OK;
-	return LOG_ERROR_FILE_OPEN;
+	return LOG_STARTUP_OK;
 }
 
 /******************************************************************************/
