@@ -15,279 +15,118 @@
 # chkconfig: 2345 11 89
 # description: starts xrdp
 
+#TODO: improve logs - start/stop daemon in right order
+
 SBINDIR=/usr/sbin
-LOG=/dev/null
 CFGDIR=/etc/xrdp
 LOGDIR=/var/log/xrdp
 SPOOLDIR=/var/spool/xrdp
+LOGDIR=/dev/null
 
+BINARIES="xrdp-logd xrdp-printerd xrdp xrdp-sesman"
 
 . /lib/lsb/init-functions
 
-
-if ! test -x $SBINDIR/xrdp
-then
-  log_warning_msg "xrdp is not executable"
-  exit 0
-fi
-if ! test -x $SBINDIR/xrdp-sesman
-then
-  log_warning_msg "xrdp-sesman is not executable"
-  exit 0
-fi
-if ! test -x $SBINDIR/xrdp-logd
-then
-  log_warning_msg "xrdp-logd is not executable"
-  exit 0
-fi
-if ! test -x $SBINDIR/xrdp-printerd
-then
-  log_warning_msg "xrdp-printerd is not executable"
-  exit 0
-fi
-if ! test -x $CFGDIR/startwm.sh
-then
+for exe in $BINARIES; do
+    if ! [ -x "$SBINDIR/$exe" ]; then
+      log_warning_msg "$exe is not executable"
+      exit 0
+    fi
+done
+if ! [ -x $CFGDIR/startwm.sh ]; then
   log_warning_msg "startwm.sh is not executable"
   exit 0
 fi
 
+is_daemon_running()
+{
+  DAEMON=$1
+  PID=/var/run/$DAEMON.pid
+  if [ -s $PID ] && kill -0 $(cat $PID) >/dev/null 2>&1; then
+    return 0;
+  else
+    return 1;
+  fi
+}
+
 xrdp_start()
 {
   logoff all
-  if ! test -d $SPOOLDIR; then
-    mkdir -p $SPOOLDIR
-  fi
-
-  log_daemon_msg "Starting Xrdp rdp server"
-  if start-stop-daemon --start --quiet --oknodo --pidfile /var/run/xrdp.pid --exec $SBINDIR/xrdp -- >$LOG; then
-    log_end_msg 0
-  else
-    log_end_msg 1
-  fi
-  log_daemon_msg "Starting Xrdp session manager"
-  if start-stop-daemon --start --quiet --oknodo --pidfile /var/run/xrdp-sesman.pid --exec $SBINDIR/xrdp-sesman -- >$LOG; then
-    log_end_msg 0
-  else
-    log_end_msg 1
-  fi
-  log_daemon_msg "Starting Xrdp logging service"
-  if start-stop-daemon --start --quiet --oknodo --pidfile /var/run/xrdp-logd.pid --exec $SBINDIR/xrdp-logd -- >$LOG; then
-    log_end_msg 0
-  else
-    log_end_msg 1
-  fi
-  log_daemon_msg "Starting Xrdp printer service"
-  if start-stop-daemon --start --quiet --oknodo --pidfile /var/run/xrdp-printerd.pid --exec $SBINDIR/xrdp-printerd -- >$LOG; then
-    log_end_msg 0
-  else
-    log_end_msg 1
-  fi
+  [ -d $SPOOLDIR ] && mkdir -p $SPOOLDIR
+  for exe in $BINARIES; do
+      log_daemon_msg "Starting $exe"
+      if start-stop-daemon --start --quiet --oknodo --pidfile /var/run/$exe.pid\
+                           --exec $SBINDIR/$exe -- >$LOGDIR
+      then
+        log_end_msg 0
+      else
+        log_end_msg 1
+      fi
+  done
   return 0;
 }
 
 xrdp_stop()
 {
   logoff all
-  log_daemon_msg "Stopping Xrdp rdp server"
-  if start-stop-daemon --stop --quiet --oknodo --pidfile /var/run/xrdp.pid --retry 30; then
-    log_end_msg 0
-  else
-    log_end_msg 1
-  fi
-  log_daemon_msg "Stopping Xrdp session manager"
-  if start-stop-daemon --stop --quiet --oknodo --pidfile /var/run/xrdp-sesman.pid --retry 30; then
-    log_end_msg 0
-  else
-    log_end_msg 1
-  fi
-  log_daemon_msg "Stopping Xrdp logging service"
-  if start-stop-daemon --stop --quiet --oknodo --pidfile /var/run/xrdp-logd.pid --retry 30; then
-    log_end_msg 0
-  else
-    log_end_msg 1
-  fi
-  log_daemon_msg "Stopping Xrdp printing service"
-  if start-stop-daemon --stop --quiet --oknodo --pidfile /var/run/xrdp-printerd.pid --retry 30; then
-    log_end_msg 0
-  else
-    log_end_msg 1
-  fi
+  for exe in $BINARIES; do
+      log_begin_msg "Stopping $exe"
+      if ! is_daemon_running $exe; then
+          log_progress_msg " (not loaded)"
+          log_end_msg 1
+          continue
+      fi
+      if start-stop-daemon --stop --quiet --oknodo \
+                           --pidfile /var/run/$exe.pid --retry 30
+      then
+        log_end_msg 0
+      else
+        log_end_msg 1
+      fi
+  done;
   return 0;
 }
 
-is_xrdp_running()
-{
-  if [ -s /var/run/xrdp.pid ] && kill -0 $(cat /var/run/xrdp.pid) >/dev/null 2>&1
-  then
-    return 1;
-  else
-    return 0;
-  fi
-}
-
-is_sesman_running()
-{
-  if [ -s /var/run/xrdp-sesman.pid ] && kill -0 $(cat /var/run/xrdp-sesman.pid) >/dev/null 2>&1
-  then
-    return 1;
-  else
-    return 0;
-  fi
-}
-
-is_logd_running()
-{
-  if [ -s /var/run/xrdp-logd.pid ] && kill -0 $(cat /var/run/xrdp-logd.pid) >/dev/null 2>&1
-  then
-    return 1;
-  else
-    return 0;
-  fi
-}
-
-is_printerd_running()
-{
-  if [ -s /var/run/xrdp-printerd.pid ] && kill -0 $(cat /var/run/xrdp-printerd.pid) >/dev/null 2>&1
-  then
-    return 1;
-  else
-    return 0;
-  fi
-}
-
-
-check_up()
-{
-  # Cleanup : If sesman isn't running, but the pid exists, erase it.
-  is_sesman_running
-  if test $? -eq 0
-  then
-    if test -e /var/run/xrdp-sesman.pid
-    then
-      rm /var/run/xrdp-sesman.pid
-    fi
-  fi
-  # Cleanup : If xrdp isn't running, but the pid exists, erase it.
-  is_xrdp_running
-  if test $? -eq 0
-  then
-    if test -e /var/run/xrdp.pid
-    then
-      rm /var/run/xrdp.pid
-    fi
-  fi
-  # Cleanup : If xrdp-logd isn't running, but the pid exists, erase it.
-  is_logd_running
-  if test $? -eq 0
-  then
-    if test -e /var/run/xrdp-logd.pid
-    then
-      rm /var/run/xrdp-logd.pid
-    fi
-  fi
-  # Cleanup : If printer isn't running, but the pid exists, erase it.
-  is_printerd_running
-  if test $? -eq 0
-  then
-    if test -e /var/run/xrdp-printerd.pid
-    then
-      rm /var/run/xrdp-printerd.pid
-    fi
-  fi
-  return 0;
-}
 
 case "$1" in
+
   start)
-    check_up
     FAILED=0
-    is_xrdp_running
-    if ! test $? -eq 0
-    then
-      FAILED=1
-      log_begin_msg "xrdp is already loaded"
-      log_end_msg 1
-    fi
-    is_sesman_running
-    if ! test $? -eq 0
-    then
-      FAILED=1
-      log_begin_msg "sesman is already loaded"
-      log_end_msg 1
-    fi
-    is_logd_running
-    if ! test $? -eq 0
-    then
-      FAILED=1
-      log_begin_msg "logd is already loaded"
-      log_end_msg 1
-      exit 1
-    fi
-    is_printerd_running
-    if ! test $? -eq 0
-    then
-      FAILED=1
-      log_begin_msg "printerd is already loaded"
-      log_end_msg 1
-      exit 1
-    fi
-    if test $FAILED -eq 1
-    then
-      exit 1
-    fi
+    for exe in $BINARIES; do
+        if is_daemon_running $exe; then
+          FAILED=1
+          log_begin_msg "$exe is already loaded"
+          log_end_msg 1
+        fi
+    done
+    [ $FAILED -eq 1 ] && exit 1
     xrdp_start
     ;;
+
   stop)
-    check_up
-    is_xrdp_running
-    if test $? -eq 0
-    then
-      log_begin_msg "xrdp is not loaded"
-      log_end_msg 1
-    fi
-    is_sesman_running
-    if test $? -eq 0
-    then
-      log_begin_msg "sesman is not loaded"
-      log_end_msg 1
-    fi
-    is_logd_running
-    if test $? -eq 0
-    then
-      log_begin_msg "logd is not loaded"
-      log_end_msg 1
-    fi
-    is_printerd_running
-    if test $? -eq 0
-    then
-      log_begin_msg "printerd is not loaded"
-      log_end_msg 1
-    fi
     xrdp_stop
     ;;
+
   force-reload|restart)
-    check_up
-    echo "Restarting xrdp ..."
+    echo "Restarting xrdp..."
     xrdp_stop
-    is_xrdp_running
-    while ! test $? -eq 0
-    do
-      check_up
+    while ! is_daemon_running xrdp; do
       sleep 1
-      is_xrdp_running
     done
     xrdp_start
     ;;
+
   status)
-    status_of_proc -p "/var/run/xrdp.pid" "xrdp" xrdp || exit $?
-    status_of_proc -p "/var/run/xrdp-sesman.pid" "xrdp-sesman" xrdp-sesman || exit $?
-    status_of_proc -p "/var/run/xrdp-logd.pid" "xrdp-logd" xrdp-logd || exit $?
-    status_of_proc -p "/var/run/xrdp-printerd.pid" "xrdp-printerd" xrdp-printerd || exit $?
+    for exe in $BINARIES; do
+        status_of_proc -p "/var/run/$exe.pid" "$exe" $exe || exit $?
+    done
     ;;
+
   *)
     log_success_msg "Usage: /etc/init.d/xrdp {start|stop|restart|force-reload|status}"
     exit 1
   ;;
+
 esac
 
 exit 0
