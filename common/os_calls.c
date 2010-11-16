@@ -2656,6 +2656,12 @@ g_get_display_num_from_display(char* display_text)
   disp_index = 0;
   scre_index = 0;
   mode = 0;
+
+  if (display_text == NULL)
+  {
+	  return 0;
+  }
+
   while (display_text[index] != 0)
   {
     if (display_text[index] == ':')
