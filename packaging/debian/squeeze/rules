@@ -8,10 +8,8 @@ include /usr/share/cdbs/1/class/autotools.mk
 include /usr/share/cdbs/1/rules/debhelper.mk
 include /usr/share/cdbs/1/class/python-distutils.mk
 
-DEB_SHLIBDEPS_INCLUDE_seamless-xrdp-shell := \
-    $(CURDIR)/debian/xrdp/usr/lib/xrdp
-
+DEB_SHLIBDEPS_INCLUDE_seamless-xrdp-shell := $(CURDIR)/debian/xrdp/usr/lib/xrdp
 DEB_DH_MAKESHLIBS_ARGS_xrdp-sound := --noscripts
+DEB_UPDATE_RCD_PARAMS_xrdp := "defaults 90 10"
 
 binary-install/xrdp:: DEB_DH_INSTALLINIT_ARGS := --onlyscripts
-
