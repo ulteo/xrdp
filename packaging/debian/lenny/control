@@ -48,7 +48,7 @@ Description: XRDP plugin for PulseAudio
 
 Package: xrdp-printer
 Architecture: all
-Depends: ${python:Depends}, xrdp-rdpdr, ghostscript, cupsys
+Depends: ${python:Depends}, xrdp-rdpdr, ghostscript, cups
 Description: cups file converter to ps format
  XRDP Printer converts a ps file from cups in ps
 
