@@ -184,7 +184,7 @@ user_channel_launch_server_channel(char* channel_name)
 	if (pid == 0)
 	{
 		log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[user_channel_launch_server_channel]: "
-					"Unable to launch the channel application %s ", CHANNEL_LAUNCHER_NAME);
+					"Unable to launch the channel application %s ", channel_program_path);
 		return 1;
 	}
 	return 0;

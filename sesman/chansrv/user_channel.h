@@ -43,11 +43,6 @@
 #define CHANNEL_TYPE_USER				"UserChannel"
 #define CHANNEL_TYPE_CUSTOM				"CustomChannel"
 
-/* channel launcher */
-#define CHANNEL_LAUNCHER_NAME		"xrdp-channel-launcher"
-
-
-
 struct user_channel
 {
 	int channel_id;
