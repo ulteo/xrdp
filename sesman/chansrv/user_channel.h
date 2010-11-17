@@ -41,6 +41,7 @@
 #define CHANNEL_TYPE_PROP				"ChannelType"
 #define CHANNEL_TYPE_ROOT				"RootChannel"
 #define CHANNEL_TYPE_USER				"UserChannel"
+#define CHANNEL_TYPE_CUSTOM				"CustomChannel"
 
 /* channel launcher */
 #define CHANNEL_LAUNCHER_NAME		"xrdp-channel-launcher"

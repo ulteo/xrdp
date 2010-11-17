@@ -149,6 +149,14 @@ user_channel_launch_server_channel(char* channel_name)
 				"Channel conf file for %s is not correct", channel_name);
 		return 1;
 	}
+
+	if (g_strcmp(channel_type, CHANNEL_TYPE_CUSTOM) == 0)
+	{
+		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_launch_server_channel]: "
+				"The custom channel %s must be start by the user", channel_name);
+		return 1;
+	}
+
 	g_snprintf(channel_program_path, 256, "%s/%s", XRDP_SBIN_PATH, channel_program_name);
 	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_launch_server_channel]: "
 			"Channel app name for %s: %s", channel_name, channel_program_name);
