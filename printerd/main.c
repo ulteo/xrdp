@@ -135,7 +135,7 @@ printerd_init()
 	names->auto_free = 1;
 	values = list_create();
 	values->auto_free = 1;
-	g_snprintf(filename, 255, "%s/printerd.conf", XRDP_CFG_PATH);
+	g_snprintf(filename, 255, "%s/printerd.ini", XRDP_CFG_PATH);
 
 	if (file_by_name_read_section (filename, PRINTERD_CFG_LOGGING, names, values) == 0) {
 		for (index = 0; index < names->count; index++) {
