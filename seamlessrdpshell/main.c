@@ -296,9 +296,11 @@ void synchronize()
 			window_id, pid, (int)parent_id, flags);
 		send_message(buffer, strlen(buffer));
 
-		sprintf(buffer, "TITLE,%i,%s,%s,0x%08x\n", message_id,
-			window_id, name, 0);
-		send_message(buffer, strlen(buffer));
+		if (name) {
+			sprintf(buffer, "TITLE,%i,%s,%s,0x%08x\n", message_id,
+				window_id, name, 0);
+			send_message(buffer, strlen(buffer));
+		}
 
 		sprintf(buffer, "POSITION,%i,%s,%i,%i,%i,%i,0x%08x\n",
 			message_id, window_id, x, y, width, height, 0);
