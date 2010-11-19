@@ -852,9 +852,6 @@ void create_window(Window win_out)
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[create_window]: "
 			    "Application title : %s", name);
 
-		while (g_str_replace_first((char *)name, ",", "_") == 0) ;
-		while (g_str_replace_first((char *)name, " ", "_") == 0) ;
-
 		sprintf(buffer, "TITLE,%i,%s,%s,0x%08x\n", message_id, window_id, name,
 			0);
 		send_message(buffer, strlen(buffer));

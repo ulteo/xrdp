@@ -141,7 +141,8 @@ int get_window_name(Display * display, Window w, unsigned char **name)
 {
 	unsigned long nitems;
 	int status;
-//TODO replace , par _
+	char * p = NULL;
+
 	status = get_property(display, w, "WM_NAME", &nitems, name);
 	if (status != 0) {
 		log_message(l_config, LOG_LEVEL_DEBUG,
@@ -155,6 +156,17 @@ int get_window_name(Display * display, Window w, unsigned char **name)
 			    " no windows name in atom WM_NAME");
 		return False;
 	}
+
+	p = *name;
+
+	while (*p != '\0') {
+		if (*p < 0x20)
+			*p = '_';
+		p++;
+	}
+
+	while (g_str_replace_first((char *)*name, ",", "_") == 0) ;
+
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_name]: "
 		    " windows name : %s\n", *name);
 	return True;
