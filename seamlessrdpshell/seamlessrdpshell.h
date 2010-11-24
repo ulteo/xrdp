@@ -53,7 +53,7 @@ typedef struct {
 	int normal_y;
 	unsigned int normal_width;
 	unsigned int normal_height;
-
+	char * name;
 } Window_item;
 
 typedef struct {
@@ -80,6 +80,7 @@ typedef struct {
 		window_list.list[count].normal_y = -1;\
 		window_list.list[count].normal_width = 1;\
 		window_list.list[count].normal_height = 1;\
+		window_list.list[count].name = NULL;\
 		window_list.item_count++;\
 	};\
 }\
@@ -111,6 +112,8 @@ typedef struct {
 		temp->normal_y = window_list.list[count-1].normal_y;\
 		temp->normal_width = window_list.list[count-1].normal_width;\
 		temp->normal_height = window_list.list[count-1].normal_height;\
+		g_free(temp->name);\
+		temp->name = window_list.list[count-1].name;\
 		window_list.item_count--;\
 	}\
 }\

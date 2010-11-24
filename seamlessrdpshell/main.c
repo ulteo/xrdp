@@ -223,7 +223,6 @@ void synchronize()
 	Window win_in;
 	Window proper_win = 0;
 	Atom type;
-	unsigned char *name = 0;
 	int flags = 0;
 	int pid;
 
@@ -258,7 +257,6 @@ void synchronize()
 			}
 		}
 
-		get_window_name(display, proper_win, &name);
 		get_window_type(display, proper_win, &type);
 		get_window_pid(display, proper_win, &pid);
 		get_parent_window(display, proper_win, &parent_id);
@@ -295,12 +293,6 @@ void synchronize()
 		sprintf(buffer, "CREATE,%i,%s,%i,0x%08x,0x%08x\n", message_id,
 			window_id, pid, (int)parent_id, flags);
 		send_message(buffer, strlen(buffer));
-
-		if (name) {
-			sprintf(buffer, "TITLE,%i,%s,%s,0x%08x\n", message_id,
-				window_id, name, 0);
-			send_message(buffer, strlen(buffer));
-		}
 
 		sprintf(buffer, "POSITION,%i,%s,%i,%i,%i,%i,0x%08x\n",
 			message_id, window_id, x, y, width, height, 0);
@@ -727,14 +719,11 @@ void create_window(Window win_out)
 	Window win_in;
 	Window proper_win = 0;
 	Atom type;
-	unsigned char *name;
 	int flags = 0;
 	int pid;
 	Atom *states;
 	unsigned long nstates;
 	int i;
-
-	name = '\0';
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[create_window]: "
 		    "Creation of the window : 0x%08lx", win_out);
@@ -789,7 +778,6 @@ void create_window(Window win_out)
 		free(buffer);
 		return;
 	}
-	get_window_name(display, proper_win, &name);
 	get_window_type(display, proper_win, &type);
 	get_window_pid(display, proper_win, &pid);
 	get_parent_window(display, proper_win, &parent_id);
@@ -849,15 +837,6 @@ void create_window(Window win_out)
 	sprintf(buffer, "CREATE,%i,%s,%i,0x%08x,0x%08x\n", message_id,
 		window_id, pid, (int)parent_id, flags);
 	send_message(buffer, strlen(buffer));
-
-	if (name) {
-		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[create_window]: "
-			    "Application title : %s", name);
-
-		sprintf(buffer, "TITLE,%i,%s,%s,0x%08x\n", message_id, window_id, name,
-			0);
-		send_message(buffer, strlen(buffer));
-	}
 	
 	if (!(flags & SEAMLESS_CREATE_POPUP)) {
 		get_icon(proper_win);
@@ -1098,6 +1077,40 @@ void check_window_state()
 }
 
 /*****************************************************************************/
+void check_window_name()
+{
+	char *buffer = NULL;
+	Window_item *witem = NULL;
+	unsigned char * name = NULL;
+	int i = 0;
+	int count = 0;
+
+	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[check_window_name]: "
+		    "Check windows names");
+
+	count = window_list.item_count;
+	for (i = 0; i < count; i++) {
+		witem = &window_list.list[i];
+
+		if (! get_window_name(display, witem->window_id, &name))
+			continue;
+
+		if (! witem->name || g_strlen((char *) name) != g_strlen((char *) witem->name) || g_strcmp((char *) name, (char *) witem->name) != 0) {
+			log_message(l_config, LOG_LEVEL_DEBUG,
+				    "XHook[check_window_name]: "
+				    "Window 0x%08lx name has changed : %s", witem->window_id, name);
+
+			witem->name = g_strdup((char *) name);
+
+			buffer = g_malloc(1024, True);
+			g_sprintf(buffer, "TITLE,%i,0x%08lx,%s,0x%08x\n", message_id, witem->window_id, name, 0);
+			send_message(buffer, strlen(buffer));
+			g_free(buffer);
+		}
+	}
+}
+
+/*****************************************************************************/
 void *thread_Xvent_process(void *arg)
 {
 	Window w;
@@ -1118,6 +1131,7 @@ void *thread_Xvent_process(void *arg)
 		pthread_mutex_lock(&mutex);
 
 		check_window_state();
+		check_window_name();
 
 		switch (ev.type) {
 
