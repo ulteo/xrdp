@@ -143,24 +143,24 @@ int get_window_name(Display * display, Window w, unsigned char **name)
 	int status;
 	char * p = NULL;
 
-	status = get_property(display, w, "WM_NAME", &nitems, name);
+	status = get_property(display, w, "_NET_WM_NAME", &nitems, name);
 	if (status != 0) {
 		log_message(l_config, LOG_LEVEL_DEBUG,
 			    "XHook[get_window_name]: "
-			    " enable to get atom WM_NAME");
+			    " Enable to get atom _NET_WM_NAME");
 		return False;
 	}
 	if (name == 0) {
 		log_message(l_config, LOG_LEVEL_DEBUG,
 			    "XHook[get_window_name]: "
-			    " no windows name in atom WM_NAME");
+			    " No window name in atom _NET_WM_NAME");
 		return False;
 	}
-
+	
 	p = *name;
 
 	while (*p != '\0') {
-		if (*p < 0x20)
+		if (*p < 0x20 && *p > 0)
 			*p = '_';
 		p++;
 	}
