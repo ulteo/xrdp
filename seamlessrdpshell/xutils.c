@@ -19,6 +19,7 @@
  **/
 
 #include "xutils.h"
+#include "os_calls.h"
 #include <log.h>
 #include <stdlib.h>
 
@@ -141,7 +142,7 @@ int get_window_name(Display * display, Window w, unsigned char **name)
 {
 	unsigned long nitems;
 	int status;
-	char * p = NULL;
+	unsigned char * p = NULL;
 
 	status = get_property(display, w, "_NET_WM_NAME", &nitems, name);
 	if (status != 0) {
