@@ -147,7 +147,7 @@ int get_window_name(Display * display, Window w, unsigned char **name)
 	if (status != 0) {
 		log_message(l_config, LOG_LEVEL_DEBUG,
 			    "XHook[get_window_name]: "
-			    "Window 0x%08lx: Enable to get atom _NET_WM_NAME", w);
+			    "Window 0x%08lx: Unable to get atom _NET_WM_NAME", w);
 		return False;
 	}
 	if (name == 0) {

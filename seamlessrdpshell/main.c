@@ -1338,12 +1338,12 @@ int main(int argc, char **argv, char **environ)
 	void *ret;
 	l_config = g_malloc(sizeof(struct log_config), 1);
 	if (XHook_init() != LOG_STARTUP_OK) {
-		g_printf("XHook[main]: Enable to init log system\n");
+		g_printf("XHook[main]: Unable to init log system\n");
 		g_free(l_config);
 		return 1;
 	}
 	if (vchannel_init() == ERROR) {
-		g_printf("XHook[main]: Enable to init channel system\n");
+		g_printf("XHook[main]: Unable to init channel system\n");
 		g_free(l_config);
 		return 1;
 	}
