@@ -46,6 +46,8 @@ static Window_list window_list;
 static int seamrdp_channel;
 struct log_config *l_config;
 
+void check_window_name(Window_item *witem);
+
 /*****************************************************************************/
 int error_handler(Display * display, XErrorEvent * error)
 {
@@ -714,7 +716,7 @@ void create_window(Window win_out)
 	unsigned int width, height, border, depth;
 	Window root;
 	XWindowAttributes attributes;
-	Window_item *witem;
+	Window_item *witem = NULL;
 	Window parent_id;
 	Window win_in;
 	Window proper_win = 0;
@@ -853,6 +855,9 @@ void create_window(Window win_out)
 	free(buffer);
 	Window_add(window_list, proper_win, win_out);
 	//Window_dump(window_list);
+
+	Window_get(window_list, proper_win, witem);
+	check_window_name(witem);
 }
 
 /*****************************************************************************/
