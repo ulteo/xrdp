@@ -1038,75 +1038,71 @@ void move_window(Window w, int x, int y, int width, int height)
 }
 
 /*****************************************************************************/
-void check_window_state()
+void check_window_state(Window_item *witem)
 {
-	char *window_id;
-	char *buffer;
+	char *buffer = NULL;
+	int state = -1;
 
-	Window_item *witem;
-	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[check_window_state]: "
-		    "Check windows states");
-	int i;
-	int state;
-	int count = window_list.item_count;
-	for (i = 0; i < count; i++) {
-		witem = &window_list.list[i];
+	if (! witem)
+		return;
 
-		state = get_state(witem);
+	state = get_state(witem);
+
+	if (state != witem->state) {
 		log_message(l_config, LOG_LEVEL_DEBUG,
 			    "XHook[check_window_state]: "
-			    "State for 0x%08lx: %i\n", witem->window_id, state);
-		if (state != witem->state) {
-			log_message(l_config, LOG_LEVEL_DEBUG,
-				    "XHook[check_window_state]: "
-				    "State for window 0x%08lx has change for : %i",
-				    witem->window_id, state);
-			witem->state = state;
-			window_id = malloc(11);
-			buffer = malloc(1024);
+			    "Window 0x%08lx state has change : %i", witem->window_id, state);
 
-			sprintf(window_id, "0x%08lx",
-				(unsigned long)witem->window_id);
-			sprintf(buffer, "STATE,%i,%s,0x%08x,0x%08x\n",
-				message_id, window_id, state, 0);
-			send_message(buffer, strlen(buffer));
-			free(window_id);
-			free(buffer);
-		}
+		witem->state = state;
+
+		buffer = g_malloc(1024, True);
+		g_sprintf(buffer, "STATE,%i,0x%08lx,0x%08x,0x%08x\n", message_id, witem->window_id, state, 0);
+		send_message(buffer, g_strlen(buffer));
+		g_free(buffer);
 	}
 }
 
 /*****************************************************************************/
-void check_window_name()
+void check_window_name(Window_item *witem)
 {
 	char *buffer = NULL;
-	Window_item *witem = NULL;
 	unsigned char * name = NULL;
+
+	if (! witem)
+		return;
+	
+	if (! get_window_name(display, witem->window_id, &name))
+		return;
+
+	if (! witem->name || g_strlen((char *) name) != g_strlen((char *) witem->name) || g_strcmp((char *) name, (char *) witem->name) != 0) {
+		log_message(l_config, LOG_LEVEL_DEBUG,
+			    "XHook[check_window_name]: "
+			    "Window 0x%08lx name has changed : %s", witem->window_id, name);
+
+		witem->name = g_strdup((char *) name);
+
+		buffer = g_malloc(1024, True);
+		g_sprintf(buffer, "TITLE,%i,0x%08lx,%s,0x%08x\n", message_id, witem->window_id, name, 0);
+		send_message(buffer, g_strlen(buffer));
+		g_free(buffer);
+	}
+}
+
+/*****************************************************************************/
+void check_windows() {
+	Window_item *witem = NULL;
 	int i = 0;
 	int count = 0;
 
-	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[check_window_name]: "
-		    "Check windows names");
+	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[check_windows]: "
+		    "Check windows changes");
 
 	count = window_list.item_count;
 	for (i = 0; i < count; i++) {
 		witem = &window_list.list[i];
 
-		if (! get_window_name(display, witem->window_id, &name))
-			continue;
-
-		if (! witem->name || g_strlen((char *) name) != g_strlen((char *) witem->name) || g_strcmp((char *) name, (char *) witem->name) != 0) {
-			log_message(l_config, LOG_LEVEL_DEBUG,
-				    "XHook[check_window_name]: "
-				    "Window 0x%08lx name has changed : %s", witem->window_id, name);
-
-			witem->name = g_strdup((char *) name);
-
-			buffer = g_malloc(1024, True);
-			g_sprintf(buffer, "TITLE,%i,0x%08lx,%s,0x%08x\n", message_id, witem->window_id, name, 0);
-			send_message(buffer, strlen(buffer));
-			g_free(buffer);
-		}
+		check_window_name(witem);
+		check_window_state(witem);
 	}
 }
 
@@ -1130,8 +1126,7 @@ void *thread_Xvent_process(void *arg)
 		XNextEvent(display, &ev);
 		pthread_mutex_lock(&mutex);
 
-		check_window_state();
-		check_window_name();
+		check_windows();
 
 		switch (ev.type) {
 
