@@ -876,6 +876,9 @@ monit_thread(void* param)
   while (stop == 0)
   {
   	g_sleep(g_cfg->sess.monitoring_delay);
+
+  	while (g_waitchild() > 0);
+
   	lock_chain_acquire();
   	session_monit();
   	lock_chain_release();
