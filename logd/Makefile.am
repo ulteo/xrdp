@@ -20,7 +20,7 @@ xrdp_logd_confdir=$(sysconfdir)/xrdp
 xrdp_logd_conf_DATA = \
   xrdp-log.conf
 
-install-data-hook:
+install-exec-hook:
 	chmod 755 $(DESTDIR)$(sbindir)/xrdp-logd
 
 EXTRA_DIST = \
