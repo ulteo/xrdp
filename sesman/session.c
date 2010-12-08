@@ -512,11 +512,11 @@ session_start_fork(int width, int height, int bpp, char* username,
       env_set_user(username, 0, display);
       if (x_server_running(display))
       {
-    	  int pid2 = g_fork();
-    	  if(pid2 == 0){
-    		  g_execlp3(kb_util, kb_util, get_kbcode(keylayout));
-    		  g_exit(0);
-    	  }
+//    	  int pid2 = g_fork();
+//    	  if(pid2 == 0){
+//    	    g_execlp3(kb_util, kb_util, get_kbcode(keylayout));
+//    	    g_exit(0);
+//    	  }
 
         auth_set_env(data);
 
