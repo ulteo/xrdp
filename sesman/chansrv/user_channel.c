@@ -460,7 +460,7 @@ user_channel_check_wait_objs(void)
 				if ( size != 5)
 				{
 					log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
-							"Channel %s closed : [%s]",user_channels[i].channel_name, strerror());
+							"Channel %s closed : [%s]",user_channels[i].channel_name, g_get_strerror());
 					g_tcp_close(sock);
 					user_channels[i].client_channel_count = 0;
 					user_channels[i].client_channel_socket[0] = 0;
