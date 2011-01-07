@@ -1217,7 +1217,8 @@ void *thread_vchannel_process(void *arg)
 		rv = vchannel_receive(seamrdp_channel, s->data, &length,
 				      &total_length);
 		if (rv == ERROR) {
-			printf("close\n");
+			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
+				    "Closing the connexion to the channel server");
 			vchannel_close(seamrdp_channel);
 			pthread_exit((void *)1);
 		}
