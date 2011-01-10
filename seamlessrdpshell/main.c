@@ -1355,6 +1355,7 @@ int main(int argc, char **argv, char **environ)
 
 	Window_list_init(window_list);
 	pthread_mutex_init(&mutex, NULL);
+	pthread_mutex_init(&send_mutex, NULL);
 	message_id = 0;
 	seamrdp_channel = vchannel_open("seamrdp");
 	if (seamrdp_channel == ERROR) {
