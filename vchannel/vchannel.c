@@ -207,7 +207,7 @@ _vchannel_send(int sock, int type, const char* data, int length)
 	log_message(log_conf, LOG_LEVEL_DEBUG_PLUS ,"vchannel{%s}[vchannel_send]: "
 			"Header send: ", channel->name);
 	log_hexdump(log_conf, LOG_LEVEL_DEBUG_PLUS, header->data, 5);
-	if(write(sock, header->data, 5) < 5)
+	if(g_tcp_send(sock, header->data, 5, 0) < 5)
 	{
 		log_message(log_conf, LOG_LEVEL_ERROR ,"vchannel{%s}[vchannel_send]: "
 				"Failed to send message [%s]", channel->name, strerror(errno));
@@ -215,7 +215,7 @@ _vchannel_send(int sock, int type, const char* data, int length)
 		return ERROR;
 	}
 	free_stream(header);
-	if(write(sock, data, length) < length)
+	if(g_tcp_send(sock, data, length, 0) < length)
 	{
 		log_message(log_conf, LOG_LEVEL_ERROR ,"vchannel{%s}[vchannel_send]: "
 				"Failed to send message data to channel [%s]", channel->name, strerror(errno));
