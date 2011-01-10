@@ -91,3 +91,20 @@ def SessionLogoff(session_id):
 		return False
 	
 	return True
+
+def main():
+	while True:
+		list = SessionGetList()
+		for session_id in list:
+			try:
+				status = SessionGetStatus(session_id)
+				print session_id," -> ", status
+			except:
+				print session_id," -> Unknow"
+
+if __name__ == "__main__":
+	try:
+		main()
+	except KeyboardInterrupt:
+		pass
+
