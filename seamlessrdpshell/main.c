@@ -40,6 +40,7 @@
 extern char **environ;
 
 static pthread_mutex_t mutex;
+static pthread_mutex_t send_mutex;
 static int message_id;
 static Display *display;
 static Window_list window_list;
@@ -67,6 +68,7 @@ int error_handler(Display * display, XErrorEvent * error)
 /*****************************************************************************/
 int send_message(char *data, int data_len)
 {
+	pthread_mutex_lock(&send_mutex);
 	struct stream *s;
 	make_stream(s);
 	init_stream(s, data_len + 1);
@@ -75,9 +77,11 @@ int send_message(char *data, int data_len)
 	if (vchannel_send(seamrdp_channel, s->data, data_len + 1) < 0) {
 		log_message(l_config, LOG_LEVEL_ERROR, "XHook[send_message]: "
 			    "Unable to send message");
+		pthread_mutex_unlock(&send_mutex);
 		return 1;
 	}
 	message_id++;
+	pthread_mutex_unlock(&send_mutex);
 	return 0;
 }
 
