@@ -308,8 +308,8 @@ void synchronize()
 			window_id, 0, 0);
 		send_message(buffer, strlen(buffer));
 
-		free(buffer);
-		free(window_id);
+		g_free(buffer);
+		g_free(window_id);
 	}
 }
 
@@ -486,7 +486,7 @@ void process_message(char *buffer)
 	/* message process */
 	if (strcmp("SPAWN", token1) == 0 && strlen(token3) > 0) {
 		spawn_app(token3);
-		free(buffer2);
+		g_free(buffer2);
 		return;
 	}
 	if (strcmp("STATE", token1) == 0) {
@@ -499,7 +499,7 @@ void process_message(char *buffer)
 		change_state(w, state);
 		sprintf(buffer2, "ACK,%i,%s\n", message_id, token2);
 		send_message(buffer2, strlen(buffer2));
-		free(buffer2);
+		g_free(buffer2);
 		return;
 	}
 
@@ -515,13 +515,13 @@ void process_message(char *buffer)
 		pthread_mutex_unlock(&mutex);
 		sprintf(buffer2, "ACK,%i,%s\n", message_id, token2);
 		send_message(buffer2, strlen(buffer2));
-		free(buffer2);
+		g_free(buffer2);
 		return;
 	}
 
 	if (strcmp("DESTROY", token1) == 0) {
 		Window wnd = (Window) hex2int(token3);
-		free(buffer2);
+		g_free(buffer2);
 		process_destroy_action(wnd);
 		return;
 	}
@@ -532,23 +532,23 @@ void process_message(char *buffer)
 
 		sprintf(buffer2, "ACK,%i,%s\n", message_id, token2);
 		send_message(buffer2, strlen(buffer2));
-		free(buffer2);
+		g_free(buffer2);
 		return;
 	}
 	if (strcmp("ZCHANGE", token1) == 0) {
 		sprintf(buffer2, "ACK,%i,%s\n", message_id, token2);
 		send_message(buffer2, strlen(buffer2));
-		free(buffer2);
+		g_free(buffer2);
 		return;
 	}
 
 	if (strcmp("ACK", token1) == 0) {
-		free(buffer2);
+		g_free(buffer2);
 		return;
 	}
 	if (strcmp("SYNC", token1) == 0) {
 		synchronize();
-		free(buffer2);
+		g_free(buffer2);
 		return;
 	}
 	log_message(l_config, LOG_LEVEL_WARNING, "XHook[process_message]: "
@@ -741,8 +741,8 @@ void create_window(Window win_out)
 		send_message(buffer, strlen(buffer));
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[create_window]: "
 			    "0x%08lx already exist", win_out);
-		free(window_id);
-		free(buffer);
+		g_free(window_id);
+		g_free(buffer);
 		return;
 	}
 	XGetGeometry(display, win_out, &root, &x, &y, &width, &height, &border,
@@ -771,8 +771,8 @@ void create_window(Window win_out)
 		} else {
 			log_message(l_config, LOG_LEVEL_DEBUG,
 				    "XHook[create_window]: " "No good window");
-			free(window_id);
-			free(buffer);
+			g_free(window_id);
+			g_free(buffer);
 			return;
 		}
 	}
@@ -780,8 +780,8 @@ void create_window(Window win_out)
 	if (attributes.class == InputOnly) {
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[create_window]: "
 			    "Bad attributes : 0x%08lx", proper_win);
-		free(window_id);
-		free(buffer);
+		g_free(window_id);
+		g_free(buffer);
 		return;
 	}
 	get_window_type(display, proper_win, &type);
@@ -855,8 +855,8 @@ void create_window(Window win_out)
 	sprintf(buffer, "STATE,%i,%s,0x%08x,0x%08x\n", message_id, window_id, 0,
 		0);
 	send_message(buffer, strlen(buffer));
-	free(window_id);
-	free(buffer);
+	g_free(window_id);
+	g_free(buffer);
 	Window_add(window_list, proper_win, win_out);
 	//Window_dump(window_list);
 
@@ -1007,8 +1007,8 @@ void destroy_window(Window w)
 
 	send_message(buffer, strlen(buffer));
 	Window_del(window_list, w);
-	free(window_id);
-	free(buffer);
+	g_free(window_id);
+	g_free(buffer);
 
 }
 
@@ -1042,8 +1042,8 @@ void move_window(Window w, int x, int y, int width, int height)
 			message_id, window_id, x, y, width, height, 0);
 	}
 	send_message(buffer, strlen(buffer));
-	free(window_id);
-	free(buffer);
+	g_free(window_id);
+	g_free(buffer);
 }
 
 /*****************************************************************************/
