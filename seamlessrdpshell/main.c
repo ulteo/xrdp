@@ -157,7 +157,7 @@ int get_app_path(const char *application_name, char *application_path)
 /*****************************************************************************/
 int spawn_app(char *cmdline)
 {
-	char *path = malloc(256);
+	char *path = g_malloc(256, 1);
 	char *application = NULL;
 	struct list *args;
 	int status = 0;
@@ -292,8 +292,8 @@ void synchronize()
 			win_in = witem->window_id;
 		}
 
-		buffer = malloc(1024);
-		window_id = malloc(11);
+		buffer = g_malloc(1024, 1);
+		window_id = g_malloc(11, 1);
 
 		sprintf(window_id, "0x%08x", (int)witem->window_id);
 		sprintf(buffer, "CREATE,%i,%s,%i,0x%08x,0x%08x\n", message_id,
@@ -471,7 +471,7 @@ void process_message(char *buffer)
 	char *token1, *token2, *token3, *token4, *token5, *token6, *token7;
 	char *temp;
 	temp = buffer;
-	char *buffer2 = malloc(1024);
+	char *buffer2 = g_malloc(1024, 1);
 	XEvent ev;
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[process_message]: "
@@ -714,8 +714,8 @@ int is_window_resizable(Display * display, Window w)
 /*****************************************************************************/
 void create_window(Window win_out)
 {
-	char *window_id = malloc(11);
-	char *buffer = malloc(1024);
+	char *window_id = g_malloc(11, 1);
+	char *buffer = g_malloc(1024, 1);
 	int x, y;
 	unsigned int width, height, border, depth;
 	Window root;
@@ -998,8 +998,8 @@ void destroy_window(Window w)
 			    "Unable to destroy a minimize window ");
 		return;
 	}
-	window_id = malloc(11);
-	buffer = malloc(1024);
+	window_id = g_malloc(11, 1);
+	buffer = g_malloc(1024, 1);
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[destroy]: "
 		    "Destroy of window: 0x%08lx", w);
 	sprintf(window_id, "0x%08x", (int)w);
@@ -1026,8 +1026,8 @@ void move_window(Window w, int x, int y, int width, int height)
 			    "Unknowed window");
 		return;
 	}
-	window_id = malloc(11);
-	buffer = malloc(1024);
+	window_id = g_malloc(11, 1);
+	buffer = g_malloc(1024, 1);
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[move_window]: "
 		    "Windows id : 0x%08lx State: %i", witem->window_id,
@@ -1205,7 +1205,7 @@ void *thread_Xvent_process(void *arg)
 /*****************************************************************************/
 void *thread_vchannel_process(void *arg)
 {
-	char *buffer = malloc(1024);
+	char *buffer = g_malloc(1024, 1);
 	struct stream *s = NULL;
 	int rv;
 	int length;
