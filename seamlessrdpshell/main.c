@@ -394,6 +394,7 @@ int process_move_action(XEvent * ev)
 		break;
 	}
 
+	XFlush(display);
 	return 1;
 }
 
@@ -411,6 +412,7 @@ int process_destroy_action(Window wnd)
 	}
 
 	XDestroyWindow(display, wnd);
+	XFlush(display);
 
 	return 0;
 }
@@ -434,6 +436,7 @@ int process_focus_action(Window wnd)
 	XMapRaised(display, wnd);
 
 	XSetInputFocus(display, wnd, RevertToParent, CurrentTime);
+	XFlush(display);
 
 	return 0;
 }
@@ -460,6 +463,7 @@ int change_state(Window w, int state)
 		win_in = get_in_window(display, w);
 		if (witem->state == SEAMLESSRDP_MINIMIZED) {
 			XMapWindow(display, win_in);
+			XFlush(display);
 		}
 	}
 	return 0;
@@ -1376,7 +1380,6 @@ int main(int argc, char **argv, char **environ)
 		g_free(l_config);
 		return 1;
 	}
-	XSynchronize(display, 1);
 	XSetErrorHandler(error_handler);
 
 	if (pthread_create
