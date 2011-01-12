@@ -86,6 +86,22 @@ int send_message(char *data, int data_len)
 }
 
 /*****************************************************************************/
+int send_ack(int id)
+{
+	int ret;
+	char* buffer = g_malloc(1024, 1);
+
+	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[sendAck]: "
+		    "Sending ack for message %i", id);
+
+	sprintf(buffer, "ACK,%i,%i\n", message_id, id);
+	ret = send_message(buffer, strlen(buffer));
+	g_free(buffer);
+
+	return ret;
+}
+
+/*****************************************************************************/
 void handler(int sig)
 {
 	int pid, statut;
@@ -442,12 +458,12 @@ int process_focus_action(Window wnd)
 }
 
 /*****************************************************************************/
-int change_state(Window w, int state)
+int change_state(Window w, int state, int recv_msg_id)
 {
 	Window_item *witem;
 	Window_get(window_list, w, witem);
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[change_state]: "
-		    "Change state ");
+		    "Change window 0x%08lx state from %i to %i", witem->window_id, witem->state, state);
 
 	if (witem == 0) {
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[change_state]: "
@@ -455,8 +471,13 @@ int change_state(Window w, int state)
 		return 0;
 	}
 
-	if (state == witem->state)
+	if (state == witem->state && witem->waiting_state != NULL) {
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[change_state]: "
+			    "Wnd 0x%08lx already has the state %i", witem->window_id, state);
+		send_ack(witem->waiting_state->ack_id);
+		witem->waiting_state = NULL;
 		return 0;
+	}
 
 	if (state == SEAMLESSRDP_NORMAL) {
 		Window win_in;
@@ -465,6 +486,20 @@ int change_state(Window w, int state)
 			XMapWindow(display, win_in);
 			XFlush(display);
 		}
+	}
+
+	if (state == SEAMLESSRDP_MAXIMIZED) {
+		if (witem->waiting_state) {
+			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[change_state]: "
+			    "Window 0x%08lx is already waiting for state change (ack_id: %i state: %i)", witem->window_id, witem->waiting_state->ack_id, witem->waiting_state->state);
+			return -1;
+		}
+
+		witem->waiting_state = g_malloc(sizeof(StateOrder), 1);
+
+		witem->waiting_state->ack_id = recv_msg_id;
+		witem->waiting_state->state = SEAMLESSRDP_MAXIMIZED;
+		set_wm_state(display, witem->window_id, STATE_MAXIMIZED_BOTH);
 	}
 	return 0;
 }
@@ -477,6 +512,7 @@ void process_message(char *buffer)
 	temp = buffer;
 	char *buffer2 = g_malloc(1024, 1);
 	XEvent ev;
+	int recv_msg_id;
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[process_message]: "
 		    "Message to process : %s", buffer);
@@ -487,6 +523,14 @@ void process_message(char *buffer)
 	get_next_token(&temp, &token5);
 	get_next_token(&temp, &token6);
 	get_next_token(&temp, &token7);
+
+	recv_msg_id = atoi(token2);
+	if (recv_msg_id == 0 && strcmp(token2, "0") != 0) {
+		log_message(l_config, LOG_LEVEL_ERROR, "XHook[process_message]: "
+		    "Received a bad message id : %s", token2);
+		return;
+	}
+
 	/* message process */
 	if (strcmp("SPAWN", token1) == 0 && strlen(token3) > 0) {
 		spawn_app(token3);
@@ -500,10 +544,8 @@ void process_message(char *buffer)
 		log_message(l_config, LOG_LEVEL_DEBUG,
 			    "XHook[process_message]: "
 			    "State : %i for the window 0x%08lx", state, w);
-		change_state(w, state);
-		sprintf(buffer2, "ACK,%i,%s\n", message_id, token2);
-		send_message(buffer2, strlen(buffer2));
-		g_free(buffer2);
+
+		change_state(w, state, recv_msg_id);
 		return;
 	}
 
@@ -1030,6 +1072,13 @@ void move_window(Window w, int x, int y, int width, int height)
 			    "Unknowed window");
 		return;
 	}
+
+	if (witem->state == SEAMLESSRDP_MAXIMIZED) {
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[move_window]: "
+			    "Window 0x%08lx is maximized. Do not update client window size (x: %d y: %d width: %d height: %d)", witem->window_id, x, y, width, height);
+		return;
+	}
+
 	window_id = g_malloc(11, 1);
 	buffer = g_malloc(1024, 1);
 
@@ -1061,18 +1110,27 @@ void check_window_state(Window_item *witem)
 
 	state = get_state(witem);
 
-	if (state != witem->state) {
-		log_message(l_config, LOG_LEVEL_DEBUG,
-			    "XHook[check_window_state]: "
-			    "Window 0x%08lx state has change : %i", witem->window_id, state);
+	if (state == witem->state)
+		return;
 
-		witem->state = state;
+	log_message(l_config, LOG_LEVEL_DEBUG,
+		    "XHook[check_window_state]: "
+		    "Window 0x%08lx state has change : %i", witem->window_id, state);
 
-		buffer = g_malloc(1024, True);
-		g_sprintf(buffer, "STATE,%i,0x%08lx,0x%08x,0x%08x\n", message_id, witem->window_id, state, 0);
-		send_message(buffer, g_strlen(buffer));
-		g_free(buffer);
+	witem->state = state;
+
+	if (witem->waiting_state) {
+		send_ack(witem->waiting_state->ack_id);
+		g_free(witem->waiting_state);
+		witem->waiting_state = NULL;
+
+		return;
 	}
+
+	buffer = g_malloc(1024, True);
+	g_sprintf(buffer, "STATE,%i,0x%08lx,0x%08x,0x%08x\n", message_id, witem->window_id, state, 0);
+	send_message(buffer, g_strlen(buffer));
+	g_free(buffer);
 }
 
 /*****************************************************************************/

@@ -73,6 +73,69 @@ int hex2int(const char *hexa_string)
 
 /*****************************************************************************/
 int
+set_wm_state(Display* display, Window wnd, int state) {
+	Atom atom_net_wm_state  =  XInternAtom(display, "_NET_WM_STATE", False);
+	char *atom1_name = NULL;
+	char *atom2_name = NULL;
+	Atom atom1  =  0;
+	Atom atom2  =  0;
+
+	XEvent xev;
+
+	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[set_wm_state]: "
+			"State request: window 0x%08lx state %d", wnd, state);
+	
+	if (atom_net_wm_state == None) {
+		log_message(l_config, LOG_LEVEL_ERROR, "XHook[set_wm_state]: "
+			"Unable to change state of window 0x%08lx to %d: the atom _NET_WM_STATE does not exist", wnd, state);
+		return -1;
+	}
+
+	switch (state) {
+		case STATE_MAXIMIZED_BOTH:
+			atom1_name = "_NET_WM_STATE_MAXIMIZED_HORZ";
+			atom2_name = "_NET_WM_STATE_MAXIMIZED_VERT";
+			break;
+		default:
+			log_message(l_config, LOG_LEVEL_ERROR, "XHook[set_wm_state]: "
+			"Unable to change state of window 0x%08lx to %d: The state %d is not supported", wnd, state, state);
+			return -1;
+	}
+
+	if (atom1_name) {
+		atom1 = XInternAtom(display, atom1_name, False);
+		if (atom1 == None) {
+			log_message(l_config, LOG_LEVEL_ERROR, "XHook[set_wm_state]: "
+				"Unable to change state of window 0x%08lx to %d: the atom %s does not exist", wnd, state, atom1_name);
+			return -1;
+		}
+	}
+	if (atom2_name) {
+		atom2 = XInternAtom(display, atom2_name, False);
+		if (atom2 == None) {
+			log_message(l_config, LOG_LEVEL_ERROR, "XHook[set_wm_state]: "
+				"Unable to change state of window 0x%08lx to %d: the atom %s does not exist", wnd, state, atom2_name);
+			return -1;
+		}
+	}
+
+	xev.type = ClientMessage;
+	xev.xclient.window = wnd;
+	xev.xclient.message_type = atom_net_wm_state;
+	xev.xclient.format = 32;
+	xev.xclient.data.l[0] = _NET_WM_STATE_ADD;
+	xev.xclient.data.l[1] = atom1;
+	xev.xclient.data.l[2] = atom2;
+	xev.xclient.data.l[3] = 2;
+	xev.xclient.data.l[4] = 0;
+	XSendEvent(display, DefaultRootWindow(display), False, SubstructureNotifyMask|SubstructureRedirectMask, &xev);
+	XFlush(display);
+
+	return state;
+}
+
+/*****************************************************************************/
+int
 get_property(Display * display, Window w, const char *property,
 	     unsigned long *nitems, unsigned char **data)
 {

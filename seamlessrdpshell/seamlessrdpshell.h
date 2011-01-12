@@ -39,10 +39,10 @@
 #define SEAMLESSRDP_MINIMIZED			1
 #define SEAMLESSRDP_VERY_MAXIMIZED		3
 
-/* Xlib constant  */
-#define _NET_WM_STATE_REMOVE        	0	/* remove/unset property */
-#define _NET_WM_STATE_ADD           	1	/* add/set property */
-#define _NET_WM_STATE_TOGGLE        	2	/* toggle property  */
+typedef struct {
+	int state;
+	int ack_id;
+} StateOrder;
 
 typedef struct {
 	int state;
@@ -54,6 +54,7 @@ typedef struct {
 	unsigned int normal_width;
 	unsigned int normal_height;
 	char * name;
+        StateOrder* waiting_state;
 } Window_item;
 
 typedef struct {
@@ -81,6 +82,7 @@ typedef struct {
 		window_list.list[count].normal_width = 1;\
 		window_list.list[count].normal_height = 1;\
 		window_list.list[count].name = NULL;\
+                window_list.list[count].waiting_state = NULL;\
 		window_list.item_count++;\
 	};\
 }\

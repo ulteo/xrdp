@@ -27,6 +27,17 @@
 #include <X11/X.h>
 #include <stdio.h>
 
+/* Xlib constant  */
+#define _NET_WM_STATE_REMOVE		0	/* remove/unset property */
+#define _NET_WM_STATE_ADD		1	/* add/set property */
+#define _NET_WM_STATE_TOGGLE		2	/* toggle property  */
+
+#define STATE_NORMAL			0
+#define STATE_ICONIFIED			1
+#define STATE_MAXIMIZED_HORIZ		2
+#define STATE_MAXIMIZED_VERT		3
+#define STATE_MAXIMIZED_BOTH		4
+
 int hex2int(const char *hexa_string);
 const char *gravityToStr(int gravity);
 Window get_in_window(Display * display, Window w);
@@ -34,6 +45,7 @@ int get_window_name(Display * display, Window w, unsigned char **name);
 int
 get_window_state(Display * display, Window w, Atom ** atoms,
 		 unsigned long *nitems);
+int set_wm_state(Display* display, Window w, int state);
 int get_window_type(Display * display, Window w, Atom * atom);
 int get_window_pid(Display * display, Window w, int *pid);
 int get_parent_window(Display * display, Window w, Window * parent);
