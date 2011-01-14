@@ -865,7 +865,7 @@ void create_window(Window win_out)
 		flags = SEAMLESS_CREATE_POPUP | SEAMLESS_CREATE_TOOLTIP;
 
 	if (flags & SEAMLESS_CREATE_POPUP) {
-		if (parent_id == 0)
+		if (parent_id == 0 || (flags & SEAMLESS_CREATE_TOOLTIP))
 			parent_id = -1;
 	}
 
