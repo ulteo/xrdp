@@ -854,15 +854,17 @@ void create_window(Window win_out)
 		    "Windows type : %s", XGetAtomName(display, type));
 	if (type ==
 	    XInternAtom(display, "_NET_WM_WINDOW_TYPE_DROPDOWN_MENU", False)
-	    || type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_TOOLTIP",
-				   False)
 	    || type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_UTILITY",
 				   False)
 	    || type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_DIALOG", False)
 	    || type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_POPUP_MENU",
 				   False)) {
 		flags = SEAMLESS_CREATE_POPUP;
+	}
+	if (type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_TOOLTIP", False))
+		flags = SEAMLESS_CREATE_POPUP | SEAMLESS_CREATE_TOOLTIP;
 
+	if (flags & SEAMLESS_CREATE_POPUP) {
 		if (parent_id == 0)
 			parent_id = -1;
 	}
