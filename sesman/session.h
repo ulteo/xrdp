@@ -162,6 +162,8 @@ session_get_bypid(int pid);
 struct SCP_DISCONNECTED_SESSION*
 session_get_byuser(char* user, int* cnt, unsigned char flags);
 
+struct session_item*
+session_get_by_display(int display);
 
 char*
 session_get_status_string(int i);
