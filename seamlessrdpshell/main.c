@@ -864,6 +864,11 @@ void create_window(Window win_out)
 	if (type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_TOOLTIP", False))
 		flags = SEAMLESS_CREATE_POPUP | SEAMLESS_CREATE_TOOLTIP;
 
+	if (is_splash_window(display, proper_win)) {
+		flags = SEAMLESS_CREATE_POPUP;
+		parent_id = -1L;
+	}
+
 	if (flags & SEAMLESS_CREATE_POPUP) {
 		if (parent_id == 0 || (flags & SEAMLESS_CREATE_TOOLTIP))
 			parent_id = -1;
@@ -1210,6 +1215,15 @@ void *thread_Xvent_process(void *arg)
 				    "Window move : 0x%08lx", w);
 			move_window(w, ev.xconfigure.x, ev.xconfigure.y,
 				    ev.xconfigure.width, ev.xconfigure.height);
+			break;
+
+		case ReparentNotify:
+			w = ev.xreparent.window;
+			log_message(l_config, LOG_LEVEL_DEBUG,
+				    "XHook[thread_Xvent_process]: "
+				    "Window reparented : 0x%08lx parent:0x%08lx x:%d y:%d", w, ev.xreparent.parent, ev.xreparent.x, ev.xreparent.y);
+			if (is_splash_window(display, w))
+				create_window(ev.xreparent.parent);
 			break;
 
 		case MapNotify:

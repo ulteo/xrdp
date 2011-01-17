@@ -190,6 +190,9 @@ int is_good_window(Display * display, Window w)
 	unsigned long nitems;
 	int status;
 
+	if (is_splash_window(display, w))
+		return 0;
+
 	status = get_property(display, w, "WM_HINTS", &nitems, &data);
 	if ((status != 0) || (data == 0)) {
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[is_good_window]: "
@@ -280,6 +283,15 @@ int get_window_state(Display * display, Window w, Atom ** atoms,
 			    "XHook[get_window_state]: " "Window(0x%08lx) state : %s", w,
 			    XGetAtomName(display, (*atoms)[i]));
 	}
+
+	return 0;
+}
+
+int is_splash_window(Display * display, Window w) {
+	Atom type;
+	get_window_type(display, w, &type);
+	if (type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_SPLASH", False))
+		return 1;
 
 	return 0;
 }
