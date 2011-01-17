@@ -187,8 +187,10 @@ auth_end(long in_val)
       {
         pam_setcred(auth_info->ph, PAM_DELETE_CRED);
       }
-      pam_end(auth_info->ph, PAM_SUCCESS);
-      auth_info->ph = 0;
+      if (auth_info->ph) {
+        pam_end(auth_info->ph, PAM_SUCCESS);
+        auth_info->ph = 0;
+      }
     }
   }
   g_free(auth_info);
