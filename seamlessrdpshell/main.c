@@ -91,7 +91,7 @@ int send_ack(int id)
 	int ret;
 	char* buffer = g_malloc(1024, 1);
 
-	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[sendAck]: "
+	log_message(l_config, LOG_LEVEL_INFO, "XHook[sendAck]: "
 		    "Sending ack for message %i", id);
 
 	sprintf(buffer, "ACK,%i,%i\n", message_id, id);
@@ -190,11 +190,11 @@ int spawn_app(char *cmdline)
 	if (pos != NULL) {
 		*pos = '\0';
 	}
-	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[spawn_app]: "
+	log_message(l_config, LOG_LEVEL_INFO, "XHook[spawn_app]: "
 		    "Exec app %s", application);
 
 	if (get_app_path(application, path) == 1) {
-		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[spawn_app]: "
+		log_message(l_config, LOG_LEVEL_ERROR, "XHook[spawn_app]: "
 			    "Unable to find the application %s", application);
 		return 1;
 	}
@@ -204,7 +204,7 @@ int spawn_app(char *cmdline)
 
 	g_free(application);
 
-	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[spawn_app]: "
+	log_message(l_config, LOG_LEVEL_INFO, "XHook[spawn_app]: "
 		    "with arguments %s", cmdline);
 
 	pid = fork();
@@ -252,8 +252,7 @@ void synchronize()
 		witem = &window_list.list[i];
 		XGetGeometry(display, witem->window_id, &root, &x, &y, &width,
 			     &height, &border, &depth);
-		log_message(l_config, LOG_LEVEL_DEBUG,
-			    "XHook[synchronize]: "
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[synchronize]: "
 			    "GEOM OUT: %i,%i,%i,%i,%i,%i", x, y, width, height,
 			    border, depth);
 
@@ -261,8 +260,7 @@ void synchronize()
 
 		if (is_good_window(display, witem->window_id) == 0) {
 			proper_win = witem->window_id;
-			log_message(l_config, LOG_LEVEL_DEBUG,
-				    "XHook[synchronize]: "
+			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[synchronize]: "
 				    "0x%08lx is a good window", proper_win);
 		} else {
 			if (is_good_window(display, win_in) == 0) {
@@ -272,8 +270,7 @@ void synchronize()
 					    "0x%08lx is a good window",
 					    proper_win);
 			} else {
-				log_message(l_config, LOG_LEVEL_DEBUG,
-					    "XHook[synchronize]: "
+				log_message(l_config, LOG_LEVEL_ERROR, "XHook[synchronize]: "
 					    "No good window");
 				return;
 			}
@@ -285,9 +282,8 @@ void synchronize()
 
 		if (type == XInternAtom(display, "_NET_WM_STATE_MODAL", False)) {
 			flags = SEAMLESSRDP_CREATE_MODAL;
-			log_message(l_config, LOG_LEVEL_DEBUG,
-				    "XHook[synchronize]: "
-				    "%i is a modal windows", proper_win);
+			log_message(l_config, LOG_LEVEL_INFO, "XHook[synchronize]: "
+				    "0x%08lx is a modal windows", proper_win);
 		}
 
 		if (type ==
@@ -361,25 +357,20 @@ int process_move_action(XEvent * ev)
 
 	Window_get(window_list, ev->xconfigure.window, witem);
 	if (witem == 0) {
-		log_message(l_config, LOG_LEVEL_DEBUG,
-			    "XHook[process_move_action]: "
-			    "Window (0x%08lx) remove during the operation",
-			    ev->xconfigure.window);
+		log_message(l_config, LOG_LEVEL_INFO, "XHook[process_move_action]: "
+			    "Window (0x%08lx) remove during the operation", ev->xconfigure.window);
 		return 0;
 	}
 
 	if (witem->state == SEAMLESSRDP_MINIMIZED) {
-		log_message(l_config, LOG_LEVEL_DEBUG,
-			    "XHook[process_move_action]: "
-			    "The window 0x%08lx is minimized",
-			    witem->window_id);
+		log_message(l_config, LOG_LEVEL_INFO, "XHook[process_move_action]: "
+			    "The window 0x%08lx is minimized", witem->window_id);
 		return 1;
 	}
 
 	XGetWindowAttributes(display, witem->window_id, &attr);
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[process_move_action]: "
-		    "Wnd 0x%08lx gravity: %s", witem->window_id,
-		    gravityToStr(attr.win_gravity));
+		    "Wnd 0x%08lx gravity: %s", witem->window_id, gravityToStr(attr.win_gravity));
 
 	if (attr.win_gravity != StaticGravity) {
 		ev->xconfigure.x -= attr.x;
@@ -421,8 +412,7 @@ int process_destroy_action(Window wnd)
 
 	Window_get(window_list, wnd, witem);
 	if (witem == 0) {
-		log_message(l_config, LOG_LEVEL_DEBUG,
-			    "XHook[process_destroy_action]: "
+		log_message(l_config, LOG_LEVEL_INFO, "XHook[process_destroy_action]: "
 			    "Window (0x%08lx) already removed", wnd);
 		return 0;
 	}
@@ -440,13 +430,12 @@ int process_focus_action(Window wnd)
 
 	Window_get(window_list, wnd, witem);
 	if (witem == 0) {
-		log_message(l_config, LOG_LEVEL_DEBUG,
-			    "XHook[process_focus_action]: "
+		log_message(l_config, LOG_LEVEL_INFO, "XHook[process_focus_action]: "
 			    "Window (0x%08lx) no longer exists", wnd);
 		return 0;
 	}
 
-	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[process_focus_action]: "
+	log_message(l_config, LOG_LEVEL_INFO, "XHook[process_focus_action]: "
 		    "Setting focus in window (0x%08lx)", wnd);
 
 	XMapRaised(display, wnd);
@@ -462,17 +451,18 @@ int change_state(Window w, int state, int recv_msg_id)
 {
 	Window_item *witem;
 	Window_get(window_list, w, witem);
-	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[change_state]: "
-		    "Change window 0x%08lx state from %i to %i", witem->window_id, witem->state, state);
 
 	if (witem == 0) {
-		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[change_state]: "
-			    "Unknow window");
+		log_message(l_config, LOG_LEVEL_INFO, "XHook[change_state]: "
+			    "Unknow window 0x%08lx", w);
 		return 0;
 	}
 
+	log_message(l_config, LOG_LEVEL_INFO, "XHook[change_state]: "
+		    "Change window 0x%08lx state from %i to %i", witem->window_id, witem->state, state);
+
 	if (state == witem->state && witem->waiting_state != NULL) {
-		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[change_state]: "
+		log_message(l_config, LOG_LEVEL_INFO, "XHook[change_state]: "
 			    "Wnd 0x%08lx already has the state %i", witem->window_id, state);
 		send_ack(witem->waiting_state->ack_id);
 		witem->waiting_state = NULL;
@@ -490,8 +480,8 @@ int change_state(Window w, int state, int recv_msg_id)
 
 	if (state == SEAMLESSRDP_MAXIMIZED) {
 		if (witem->waiting_state) {
-			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[change_state]: "
-			    "Window 0x%08lx is already waiting for state change (ack_id: %i state: %i)", witem->window_id, witem->waiting_state->ack_id, witem->waiting_state->state);
+			log_message(l_config, LOG_LEVEL_INFO, "XHook[change_state]: "
+				    "Window 0x%08lx is already waiting for state change (ack_id: %i state: %i)", witem->window_id, witem->waiting_state->ack_id, witem->waiting_state->state);
 			return -1;
 		}
 
@@ -514,7 +504,7 @@ void process_message(char *buffer)
 	XEvent ev;
 	int recv_msg_id;
 
-	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[process_message]: "
+	log_message(l_config, LOG_LEVEL_INFO, "XHook[process_message]: "
 		    "Message to process : %s", buffer);
 	get_next_token(&temp, &token1);
 	get_next_token(&temp, &token2);
@@ -526,8 +516,8 @@ void process_message(char *buffer)
 
 	recv_msg_id = atoi(token2);
 	if (recv_msg_id == 0 && strcmp(token2, "0") != 0) {
-		log_message(l_config, LOG_LEVEL_ERROR, "XHook[process_message]: "
-		    "Received a bad message id : %s", token2);
+		log_message(l_config, LOG_LEVEL_WARNING, "XHook[process_message]: "
+			    "Received a bad message id : %s", token2);
 		return;
 	}
 
@@ -540,10 +530,6 @@ void process_message(char *buffer)
 	if (strcmp("STATE", token1) == 0) {
 		int state = hex2int(token4);
 		Window w = (Window) hex2int(token3);
-
-		log_message(l_config, LOG_LEVEL_DEBUG,
-			    "XHook[process_message]: "
-			    "State : %i for the window 0x%08lx", state, w);
 
 		change_state(w, state, recv_msg_id);
 		return;
@@ -624,14 +610,13 @@ int get_icon(Window wnd)
 	if (get_property
 	    (display, wnd, "_NET_WM_ICON", &nitems,
 	     (unsigned char **)&data) != Success) {
-		log_message(l_config, LOG_LEVEL_DEBUG,
-			    "XHook[get_icon]: "
-			    "No icon for the application 0x%08lx", wnd);
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_icon]: "
+			    "No icon for the window 0x%08lx", wnd);
 		return 1;
 	}
 	if (nitems < 16 * 16 + 2) {
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_icon]: "
-			    "No proper icon for the application 0x%08lx", wnd);
+			    "No proper icon for the window 0x%08lx", wnd);
 		return 1;
 	}
 	sprintf(window_id, "0x%08lx", wnd);
@@ -728,27 +713,22 @@ int is_window_resizable(Display * display, Window w)
 		     (*((unsigned char *)data + 2) << 16) |
 		     (*((unsigned char *)data + 3) << 24)
 		    );
-		log_message(l_config, LOG_LEVEL_DEBUG,
-			    "XHook[is_window_resizable]: " "Atom state : %i",
-			    (int)atom);
-		log_message(l_config, LOG_LEVEL_DEBUG,
-			    "XHook[is_window_resizable]: "
-			    "Windows state : %s[%i]\n", XGetAtomName(display,
-								     atom),
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[is_window_resizable]: "
+			    "Atom state : %i", (int)atom);
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[is_window_resizable]: "
+			    "Windows state : %s[%i]\n", XGetAtomName(display, atom),
 			    (int)atom);
 		if (atom ==
 		    XInternAtom(display, "_NET_WM_ACTION_MAXIMIZE_HORZ",
 				True)) {
-			log_message(l_config, LOG_LEVEL_DEBUG,
-				    "XHook[is_window_resizable]: "
+			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[is_window_resizable]: "
 				    "window 0x%08lx is resizable", w);
 			return 0;
 		}
 		if (atom ==
 		    XInternAtom(display, "_NET_WM_ACTION_MAXIMIZE_VERT",
 				True)) {
-			log_message(l_config, LOG_LEVEL_DEBUG,
-				    "XHook[is_window_resizable]: "
+			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[is_window_resizable]: "
 				    "window 0x%08lx is resizable", w);
 			return 0;
 		}
@@ -777,7 +757,7 @@ void create_window(Window win_out)
 	unsigned long nstates;
 	int i;
 
-	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[create_window]: "
+	log_message(l_config, LOG_LEVEL_INFO, "XHook[create_window]: "
 		    "Creation of the window : 0x%08lx", win_out);
 	Window_get(window_list, win_out, witem);
 	if (witem != 0) {
@@ -785,7 +765,7 @@ void create_window(Window win_out)
 		sprintf(buffer, "STATE,%i,%s,0x%08x,0x%08x\n", message_id,
 			window_id, 0, 0);
 		send_message(buffer, strlen(buffer));
-		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[create_window]: "
+		log_message(l_config, LOG_LEVEL_INFO, "XHook[create_window]: "
 			    "0x%08lx already exist", win_out);
 		g_free(window_id);
 		g_free(buffer);
@@ -793,30 +773,29 @@ void create_window(Window win_out)
 	}
 	XGetGeometry(display, win_out, &root, &x, &y, &width, &height, &border,
 		     &depth);
-	log_message(l_config, LOG_LEVEL_DEBUG,
+	log_message(l_config, LOG_LEVEL_INFO,
 		    "XHook[create_window]: " "GEOM OUT: %i,%i,%i,%i,%i,%i", x,
 		    y, width, height, border, depth);
 
 	win_in = get_in_window(display, win_out);
 	XGetGeometry(display, win_in, &root, &x, &y, &width, &height, &border,
 		     &depth);
-	log_message(l_config, LOG_LEVEL_DEBUG,
-		    "XHook[create_window]: " "GEOM IN: %i,%i,%i,%i,%i,%i\n", x,
+	log_message(l_config, LOG_LEVEL_INFO, "XHook[create_window]: "
+		    "GEOM IN: %i,%i,%i,%i,%i,%i\n", x,
 		    y, width, height, border, depth);
 
 	if (is_good_window(display, win_out) == 0) {
 		proper_win = win_out;
-		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[create_window]: "
+		log_message(l_config, LOG_LEVEL_INFO, "XHook[create_window]: "
 			    "0x%08lx is a good window", proper_win);
 	} else {
 		if (is_good_window(display, win_in) == 0) {
 			proper_win = win_in;
-			log_message(l_config, LOG_LEVEL_DEBUG,
-				    "XHook[create_window]: "
+			log_message(l_config, LOG_LEVEL_INFO, "XHook[create_window]: "
 				    "0x%08lx is a good window", proper_win);
 		} else {
-			log_message(l_config, LOG_LEVEL_DEBUG,
-				    "XHook[create_window]: " "No good window");
+			log_message(l_config, LOG_LEVEL_INFO, "XHook[create_window]: "
+				    "No good window");
 			g_free(window_id);
 			g_free(buffer);
 			return;
@@ -824,7 +803,7 @@ void create_window(Window win_out)
 	}
 	XGetWindowAttributes(display, win_out, &attributes);
 	if (attributes.class == InputOnly) {
-		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[create_window]: "
+		log_message(l_config, LOG_LEVEL_INFO, "XHook[create_window]: "
 			    "Bad attributes : 0x%08lx", proper_win);
 		g_free(window_id);
 		g_free(buffer);
@@ -837,8 +816,7 @@ void create_window(Window win_out)
 	if (parent_id != 0) {
 		Window_get(window_list, parent_id, witem);
 		if (witem == 0) {
-			log_message(l_config, LOG_LEVEL_DEBUG,
-				    "XHook[create_window]: "
+			log_message(l_config, LOG_LEVEL_INFO, "XHook[create_window]: "
 				    "Found a parent window (0x%08lx) for the window 0x%08lx, but the windows list does not contain it",
 				    parent_id, proper_win);
 			parent_id = 0;
@@ -850,7 +828,7 @@ void create_window(Window win_out)
 		win_in = win_out;
 	}
 	flags = SEAMLESSRDP_NORMAL;
-	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[create_window]: "
+	log_message(l_config, LOG_LEVEL_INFO, "XHook[create_window]: "
 		    "Windows type : %s", XGetAtomName(display, type));
 	if (type ==
 	    XInternAtom(display, "_NET_WM_WINDOW_TYPE_DROPDOWN_MENU", False)
@@ -880,15 +858,14 @@ void create_window(Window win_out)
 		if (states[i] ==
 		    XInternAtom(display, "_NET_WM_STATE_MODAL", False)) {
 			flags |= SEAMLESSRDP_CREATE_MODAL;
-			log_message(l_config, LOG_LEVEL_DEBUG,
-				    "XHook[create_window]: "
+			log_message(l_config, LOG_LEVEL_INFO, "XHook[create_window]: "
 				    "0x%08lx is a modal windows", proper_win);
 		}
 	}
 
 	if (is_window_resizable(display, proper_win) == 1) {
 		flags |= SEAMLESS_CREATE_FIXEDSIZE;
-		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[create_window]: "
+		log_message(l_config, LOG_LEVEL_INFO, "XHook[create_window]: "
 			    "Windows 0x%08lx is not resizable", proper_win);
 	}
 
@@ -934,7 +911,7 @@ int get_state(Window_item * witem)
 
 	if (witem == 0) {
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_state]: "
-			    "witem = 0\n");
+			    "No window item\n");
 		return 0;
 	}
 
@@ -982,8 +959,7 @@ int get_state(Window_item * witem)
 					    &nitems, &bytes, &data);
 
 		if (status != 0) {
-			log_message(l_config, LOG_LEVEL_DEBUG,
-				    "XHook[get_state]: "
+			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_state]: "
 				    "Window 0x%08lx: Unable to get state\n",
 				    real_window);
 
@@ -991,8 +967,7 @@ int get_state(Window_item * witem)
 		}
 
 		if (nitems == 0) {
-			log_message(l_config, LOG_LEVEL_DEBUG,
-				    "XHook[get_state]: "
+			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_state]: "
 				    "Window 0x%08lx: Contains no state\n",
 				    real_window);
 
@@ -1010,9 +985,6 @@ int get_state(Window_item * witem)
 		     (*((unsigned char *)data + 2) << 16) |
 		     (*((unsigned char *)data + 3) << 24)
 		    );
-		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_state]: "
-			    "Window 0x%08lx: Atom state : %i", real_window,
-			    (int)atom);
 		log_message(l_config, LOG_LEVEL_DEBUG,
 			    "XHook[get_state]: "
 			    "Window 0x%08lx: state : %s[%i]\n", real_window,
@@ -1032,10 +1004,6 @@ int get_state(Window_item * witem)
 
 	}
 
-	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_state]: "
-		    "State for 0x%08lx : %s", real_window, XGetAtomName(display,
-									atom));
-
 	return state;
 }
 
@@ -1047,13 +1015,13 @@ void destroy_window(Window w)
 	Window_item *witem;
 	Window_get(window_list, w, witem);
 	if (witem->state == SEAMLESSRDP_MINIMIZED) {
-		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[destroy]: "
+		log_message(l_config, LOG_LEVEL_INFO, "XHook[destroy]: "
 			    "Unable to destroy a minimize window ");
 		return;
 	}
 	window_id = g_malloc(11, 1);
 	buffer = g_malloc(1024, 1);
-	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[destroy]: "
+	log_message(l_config, LOG_LEVEL_INFO, "XHook[destroy]: "
 		    "Destroy of window: 0x%08lx", w);
 	sprintf(window_id, "0x%08x", (int)w);
 	sprintf(buffer, "DESTROY,%i,%s,%08x\n", message_id, window_id, 0);
@@ -1075,13 +1043,13 @@ void move_window(Window w, int x, int y, int width, int height)
 
 	Window_get(window_list, w, witem);
 	if (witem == 0) {
-		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[move_window]: "
-			    "Unknowed window");
+		log_message(l_config, LOG_LEVEL_INFO, "XHook[move_window]: "
+			    "Unknowed window 0x%08lx", w);
 		return;
 	}
 
 	if (witem->state == SEAMLESSRDP_MAXIMIZED) {
-		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[move_window]: "
+		log_message(l_config, LOG_LEVEL_INFO, "XHook[move_window]: "
 			    "Window 0x%08lx is maximized. Do not update client window size (x: %d y: %d width: %d height: %d)", witem->window_id, x, y, width, height);
 		return;
 	}
@@ -1089,7 +1057,7 @@ void move_window(Window w, int x, int y, int width, int height)
 	window_id = g_malloc(11, 1);
 	buffer = g_malloc(1024, 1);
 
-	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[move_window]: "
+	log_message(l_config, LOG_LEVEL_INFO, "XHook[move_window]: "
 		    "Windows id : 0x%08lx State: %i", witem->window_id,
 		    witem->state);
 	if (witem->state == SEAMLESSRDP_MAXIMIZED) {
@@ -1120,8 +1088,7 @@ void check_window_state(Window_item *witem)
 	if (state == witem->state)
 		return;
 
-	log_message(l_config, LOG_LEVEL_DEBUG,
-		    "XHook[check_window_state]: "
+	log_message(l_config, LOG_LEVEL_INFO, "XHook[check_window_state]: "
 		    "Window 0x%08lx state has change : %i", witem->window_id, state);
 
 	witem->state = state;
@@ -1153,8 +1120,7 @@ void check_window_name(Window_item *witem)
 		return;
 
 	if (! witem->name || g_strlen((char *) name) != g_strlen((char *) witem->name) || g_strcmp((char *) name, (char *) witem->name) != 0) {
-		log_message(l_config, LOG_LEVEL_DEBUG,
-			    "XHook[check_window_name]: "
+		log_message(l_config, LOG_LEVEL_INFO, "XHook[check_window_name]: "
 			    "Window 0x%08lx name has changed : %s", witem->window_id, name);
 
 		witem->name = g_strdup((char *) name);
@@ -1172,7 +1138,7 @@ void check_windows() {
 	int i = 0;
 	int count = 0;
 
-	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[check_windows]: "
+	log_message(l_config, LOG_LEVEL_INFO, "XHook[check_windows]: "
 		    "Check windows changes");
 
 	count = window_list.item_count;
@@ -1210,17 +1176,15 @@ void *thread_Xvent_process(void *arg)
 
 		case ConfigureNotify:
 			w = ev.xconfigure.window;
-			log_message(l_config, LOG_LEVEL_DEBUG,
-				    "XHook[thread_Xvent_process]: "
-				    "Window move : 0x%08lx", w);
+			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
+				    "Window move : 0x%08lx x:%i y:%i w:%i h:%i", w, ev.xconfigure.x, ev.xconfigure.y, ev.xconfigure.width, ev.xconfigure.height);
 			move_window(w, ev.xconfigure.x, ev.xconfigure.y,
 				    ev.xconfigure.width, ev.xconfigure.height);
 			break;
 
 		case ReparentNotify:
 			w = ev.xreparent.window;
-			log_message(l_config, LOG_LEVEL_DEBUG,
-				    "XHook[thread_Xvent_process]: "
+			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
 				    "Window reparented : 0x%08lx parent:0x%08lx x:%d y:%d", w, ev.xreparent.parent, ev.xreparent.x, ev.xreparent.y);
 			if (is_splash_window(display, w))
 				create_window(ev.xreparent.parent);
@@ -1228,36 +1192,34 @@ void *thread_Xvent_process(void *arg)
 
 		case MapNotify:
 			w = ev.xmap.window;
+			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
+				    "Window 0x%08lx mapped", w);
 			create_window(w);
 			break;
 
 		case DestroyNotify:
 			w = ev.xdestroywindow.window;
-			log_message(l_config, LOG_LEVEL_DEBUG,
-				    "XHook[thread_Xvent_process]: "
+			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
 				    "Destroy of the window: 0x%08lx", w);
 			break;
 
 		case UnmapNotify:
 			w = ev.xunmap.window;
-			log_message(l_config, LOG_LEVEL_DEBUG,
-				    "XHook[thread_Xvent_process]: "
+			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
 				    "Unmap of the window: 0x%08lx", w);
 			//Window_dump(window_list);
 
 			Window_get(window_list, w, witem);
 			if (witem == 0) {
-				log_message(l_config, LOG_LEVEL_DEBUG,
-					    "XHook[thread_Xvent_process]: "
+				log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
 					    "Unknowed window\n");
 				break;
 			}
 
 			if (witem->state == SEAMLESSRDP_MINIMIZED) {
-				log_message(l_config, LOG_LEVEL_DEBUG,
-					    "XHook[thread_Xvent_process]: "
+				log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
 					    "Window 0x%08lx is iconified\n",
-					    witem->win_out);
+					    witem->window_id);
 				break;
 			}
 
@@ -1265,8 +1227,7 @@ void *thread_Xvent_process(void *arg)
 			break;
 
 		default:
-			log_message(l_config, LOG_LEVEL_DEBUG,
-				    "XHook[thread_Xvent_process]: "
+			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
 				    "Event type [%i] ignored", ev.type);
 			break;
 
@@ -1299,25 +1260,22 @@ void *thread_vchannel_process(void *arg)
 		rv = vchannel_receive(seamrdp_channel, s->data, &length,
 				      &total_length);
 		if (rv == ERROR) {
-			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
+			log_message(l_config, LOG_LEVEL_ERROR, "XHook[thread_Xvent_process]: "
 				    "Closing the connexion to the channel server");
 			vchannel_close(seamrdp_channel);
 			pthread_exit((void *)1);
 		}
 		switch (rv) {
 		case ERROR:
-			log_message(l_config, LOG_LEVEL_ERROR,
-				    "XHook[thread_vchannel_process]: "
+			log_message(l_config, LOG_LEVEL_ERROR, "XHook[thread_vchannel_process]: "
 				    "Invalid message");
 			break;
 		case STATUS_CONNECTED:
-			log_message(l_config, LOG_LEVEL_DEBUG,
-				    "XHook[thread_vchannel_process]: "
+			log_message(l_config, LOG_LEVEL_INFO, "XHook[thread_vchannel_process]: "
 				    "Status connected");
 			break;
 		case STATUS_DISCONNECTED:
-			log_message(l_config, LOG_LEVEL_DEBUG,
-				    "XHook[thread_vchannel_process]: "
+			log_message(l_config, LOG_LEVEL_INFO, "XHook[thread_vchannel_process]: "
 				    "Status disconnected");
 			break;
 		default:
@@ -1458,16 +1416,14 @@ int main(int argc, char **argv, char **environ)
 
 	if (pthread_create
 	    (&Xevent_thread, NULL, thread_Xvent_process, (void *)0) < 0) {
-		log_message(l_config, LOG_LEVEL_ERROR,
-			    "XHook[main]: "
+		log_message(l_config, LOG_LEVEL_ERROR, "XHook[main]: "
 			    "Pthread_create error for thread : Xevent_thread");
 		g_free(l_config);
 		return 1;
 	}
 	if (pthread_create
 	    (&Vchannel_thread, NULL, thread_vchannel_process, (void *)0) < 0) {
-		log_message(l_config, LOG_LEVEL_ERROR,
-			    "XHook[main]: "
+		log_message(l_config, LOG_LEVEL_ERROR, "XHook[main]: "
 			    "Pthread_create error for thread : Vchannel_thread");
 		g_free(l_config);
 		return 1;

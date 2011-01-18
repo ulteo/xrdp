@@ -83,11 +83,11 @@ set_wm_state(Display* display, Window wnd, int state) {
 	XEvent xev;
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[set_wm_state]: "
-			"State request: window 0x%08lx state %d", wnd, state);
+		    "State request: window 0x%08lx state %d", wnd, state);
 	
 	if (atom_net_wm_state == None) {
 		log_message(l_config, LOG_LEVEL_ERROR, "XHook[set_wm_state]: "
-			"Unable to change state of window 0x%08lx to %d: the atom _NET_WM_STATE does not exist", wnd, state);
+			    "Unable to change state of window 0x%08lx to %d: the atom _NET_WM_STATE does not exist", wnd, state);
 		return -1;
 	}
 
@@ -97,8 +97,8 @@ set_wm_state(Display* display, Window wnd, int state) {
 			atom2_name = "_NET_WM_STATE_MAXIMIZED_VERT";
 			break;
 		default:
-			log_message(l_config, LOG_LEVEL_ERROR, "XHook[set_wm_state]: "
-			"Unable to change state of window 0x%08lx to %d: The state %d is not supported", wnd, state, state);
+			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[set_wm_state]: "
+				    "Unable to change state of window 0x%08lx to %d: The state %d is not supported", wnd, state, state);
 			return -1;
 	}
 
@@ -106,7 +106,7 @@ set_wm_state(Display* display, Window wnd, int state) {
 		atom1 = XInternAtom(display, atom1_name, False);
 		if (atom1 == None) {
 			log_message(l_config, LOG_LEVEL_ERROR, "XHook[set_wm_state]: "
-				"Unable to change state of window 0x%08lx to %d: the atom %s does not exist", wnd, state, atom1_name);
+				    "Unable to change state of window 0x%08lx to %d: the atom %s does not exist", wnd, state, atom1_name);
 			return -1;
 		}
 	}
@@ -114,7 +114,7 @@ set_wm_state(Display* display, Window wnd, int state) {
 		atom2 = XInternAtom(display, atom2_name, False);
 		if (atom2 == None) {
 			log_message(l_config, LOG_LEVEL_ERROR, "XHook[set_wm_state]: "
-				"Unable to change state of window 0x%08lx to %d: the atom %s does not exist", wnd, state, atom2_name);
+				    "Unable to change state of window 0x%08lx to %d: the atom %s does not exist", wnd, state, atom2_name);
 			return -1;
 		}
 	}
@@ -175,12 +175,12 @@ Window get_in_window(Display * display, Window w)
 	if (!XQueryTree(display, w, &root, &parent, &children, &nchildren)
 	    || nchildren == 0) {
 		log_message(l_config, LOG_LEVEL_DEBUG,
-			    "XHook[get_in_window]: " "No child windows");
+			    "XHook[get_in_window]: " "Window 0x%08lx has no child window", w);
 		return 0;
 	}
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_in_window]: "
-		    "In window : 0x%08lx", children[nchildren - 1]);
+		    "In window : 0x%08lx Out window: 0x%08lx", children[nchildren - 1], w);
 	return children[nchildren - 1];
 }
 
@@ -196,8 +196,7 @@ int is_good_window(Display * display, Window w)
 	status = get_property(display, w, "WM_HINTS", &nitems, &data);
 	if ((status != 0) || (data == 0)) {
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[is_good_window]: "
-			    "Window 0x%08lx did not contain the right information",
-			    w);
+			    "Window 0x%08lx did not contain the right information", w);
 	}
 	return status;
 }
@@ -211,27 +210,23 @@ int get_window_name(Display * display, Window w, unsigned char **name)
 
 	status = get_property(display, w, "_NET_WM_NAME", &nitems, name);
 	if (status != 0) {
-		log_message(l_config, LOG_LEVEL_DEBUG,
-			    "XHook[get_window_name]: "
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_name]: "
 			    "Window 0x%08lx: Unable to get atom _NET_WM_NAME", w);
 
 		status = get_property(display, w, "WM_NAME", &nitems, name);
 		if (status != 0) {
-			log_message(l_config, LOG_LEVEL_DEBUG,
-				    "XHook[get_window_name]: "
+			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_name]: "
 				    "Window 0x%08lx: Unable to get atom WM_NAME", w);
 			return False;
 		}
 		if (name == 0) {
-			log_message(l_config, LOG_LEVEL_DEBUG,
-				    "XHook[get_window_name]: "
+			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_name]: "
 				    "Window 0x%08lx has no name in atom WM_NAME", w);
 			return False;
 		}
 	}
 	else if (name == 0) {
-		log_message(l_config, LOG_LEVEL_DEBUG,
-			    "XHook[get_window_name]: "
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_name]: "
 			    "Window 0x%08lx has no name in atom _NET_WM_NAME", w);
 		return False;
 	}
@@ -258,14 +253,13 @@ int get_window_state(Display * display, Window w, Atom ** atoms,
 
 	status = get_property(display, w, "_NET_WM_STATE", nitems, &data);
 	if (status != 0) {
-		log_message(l_config, LOG_LEVEL_DEBUG,
-			    "XHook[get_window_state]: "
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_state]: "
 			    "Unable to get window(0x%08lx) state", w);
 		return 1;
 	}
 	if (*nitems == 0) {
-		log_message(l_config, LOG_LEVEL_DEBUG,
-			    "XHook[get_window_state]: " "Window 0x%08lx has no state");
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_state]: "
+			    "Window 0x%08lx has no state");
 		return 0;
 	}
 
@@ -279,8 +273,8 @@ int get_window_state(Display * display, Window w, Atom ** atoms,
 		     (*((unsigned char *)data + 3) << 24)
 		    );
 
-		log_message(l_config, LOG_LEVEL_DEBUG,
-			    "XHook[get_window_state]: " "Window(0x%08lx) state : %s", w,
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_state]: "
+			    "Window(0x%08lx) state : %s", w,
 			    XGetAtomName(display, (*atoms)[i]));
 	}
 
@@ -306,14 +300,13 @@ int get_window_type(Display * display, Window w, Atom * atom)
 	status =
 	    get_property(display, w, "_NET_WM_WINDOW_TYPE", &nitems, &data);
 	if (status != 0) {
-		log_message(l_config, LOG_LEVEL_DEBUG,
-			    "XHook[get_window_type]: "
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_type]: "
 			    "Unable to get type of window 0x%08lx", w);
 		return 1;
 	}
 	if (data == 0) {
-		log_message(l_config, LOG_LEVEL_DEBUG,
-			    "XHook[get_window_name]: " "Window  0x%08lx has no type", w);
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_type]: "
+			    "Window  0x%08lx has no type", w);
 		return 0;
 	}
 
@@ -324,7 +317,7 @@ int get_window_type(Display * display, Window w, Atom * atom)
 	     (*((unsigned char *)data + 3) << 24)
 	    );
 
-	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_name]: "
+	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_type]: "
 		    "Window(0x%08lx) type : %s", w, XGetAtomName(display, *atom));
 	return 0;
 }
@@ -367,15 +360,13 @@ int get_parent_window(Display * display, Window w, Window * parent)
 
 	status = get_property(display, w, "WM_TRANSIENT_FOR", &nitems, &data);
 	if (status != 0) {
-		log_message(l_config, LOG_LEVEL_DEBUG,
-			    "XHook[get_parent_window]: "
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_parent_window]: "
 			    "Unable to get parent of window 0x%08lx", w);
 		*parent = 0;
 		return False;
 	}
 	if (data == 0) {
-		log_message(l_config, LOG_LEVEL_DEBUG,
-			    "XHook[get_parent_window]: "
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_parent_window]: "
 			    "No parent window for window 0x%08lx", w);
 		*parent = 0;
 		return False;
