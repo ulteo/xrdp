@@ -92,6 +92,8 @@ g_tcp_bind(int sck, char* port);
 int APP_CC
 g_tcp_local_bind(int sck, char* port);
 int APP_CC
+g_get_fd_limit();
+int APP_CC
 g_tcp_listen(int sck);
 int APP_CC
 g_tcp_accept(int sck);
