@@ -28,6 +28,8 @@
 #include "arch.h"
 #include "parse.h"
 
+static int fd_limit = 1024;
+
 /*****************************************************************************/
 struct trans* APP_CC
 trans_create(int mode, int in_size, int out_size)
@@ -117,6 +119,14 @@ trans_check_wait_objs(struct trans* self)
           rv = 1;
         }
       }
+      if (in_sck != -1 && in_sck > fd_limit)
+      {
+        /* max number of connection reached */
+    	printf("The maximum client number authorized by the system configuration was reached\n");
+    	g_tcp_close(in_sck);
+        in_sck = -1;
+      }
+
       if (in_sck != -1)
       {
         if (self->trans_conn_in != 0) /* is function assigned */
@@ -354,6 +364,10 @@ trans_listen(struct trans* self, char* port)
   }
   if (self->mode == TRANS_MODE_TCP) /* tcp */
   {
+    // Check the maximum number of file descriptor that a process can use.
+    // We keep 10 for the xrdp core usage
+    fd_limit = g_get_fd_limit() - 10;
+
     self->sck = g_tcp_socket();
     g_tcp_set_non_blocking(self->sck);
     if (g_tcp_bind(self->sck, port) == 0)
