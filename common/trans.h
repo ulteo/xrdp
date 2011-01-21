@@ -28,6 +28,7 @@
 
 #include "arch.h"
 #include "parse.h"
+#include "xrdp_constants.h"
 
 #define TRANS_MODE_TCP 1
 #define TRANS_MODE_UNIX 2

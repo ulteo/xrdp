@@ -477,4 +477,6 @@
 
 #define CB_ITEMCHANGE  300
 
+/* System limit */
+#define DEFAULT_FD_LIMIT   1024
 #endif

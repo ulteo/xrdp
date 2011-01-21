@@ -469,11 +469,18 @@ g_tcp_local_bind(int sck, char* port)
 }
 
 /*****************************************************************************/
-/* returns the fd limit or -1 if it is unlimited */
+/* returns the fd limit ,0 for unlimited or -1 if there is error */
 int APP_CC
 g_get_fd_limit()
 {
-  return sysconf(_SC_OPEN_MAX);
+  int limit = sysconf(_SC_OPEN_MAX);
+  if (limit == -1) {
+    if (errno == EINVAL) {
+      return -1;
+    }
+    return 0;
+  }
+  return limit;
 }
 
 /*****************************************************************************/

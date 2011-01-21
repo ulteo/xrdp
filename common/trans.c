@@ -28,7 +28,7 @@
 #include "arch.h"
 #include "parse.h"
 
-static int fd_limit = 1024;
+static int fd_limit = DEFAULT_FD_LIMIT;
 
 /*****************************************************************************/
 struct trans* APP_CC
@@ -366,7 +366,11 @@ trans_listen(struct trans* self, char* port)
   {
     // Check the maximum number of file descriptor that a process can use.
     // We keep 10 for the xrdp core usage
-    fd_limit = g_get_fd_limit() - 10;
+    fd_limit = g_get_fd_limit();
+    if (fd_limit < 1) {
+      fd_limit = DEFAULT_FD_LIMIT;
+    }
+    fd_limit -= 10;
 
     self->sck = g_tcp_socket();
     g_tcp_set_non_blocking(self->sck);
