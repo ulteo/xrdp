@@ -156,7 +156,10 @@ get_property(Display * display, Window w, const char *property,
 				    &actual_type,
 				    &actual_format, nitems, &bytes, data);
 
-	if (status != Success || *nitems == 0) {
+	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_property]: "
+		    "Get property for window 0x%08lx : %s return status: %i nitems: %lu ", w, property, status, *nitems);
+
+	if (status != Success) {
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_property]: "
 			    "Unable to get atom %s for window 0x%08lx", property, w);
 		return 1;
@@ -194,11 +197,12 @@ int is_good_window(Display * display, Window w)
 		return 0;
 
 	status = get_property(display, w, "WM_HINTS", &nitems, &data);
-	if ((status != 0) || (data == 0)) {
+	if ((status != 0) || nitems == 0 || (data == 0)) {
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[is_good_window]: "
 			    "Window 0x%08lx did not contain the right information", w);
+		return 1;
 	}
-	return status;
+	return 0;
 }
 
 /*****************************************************************************/
@@ -219,13 +223,13 @@ int get_window_name(Display * display, Window w, unsigned char **name)
 				    "Window 0x%08lx: Unable to get atom WM_NAME", w);
 			return False;
 		}
-		if (name == 0) {
+		if (nitems == 0 || name == 0) {
 			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_name]: "
 				    "Window 0x%08lx has no name in atom WM_NAME", w);
 			return False;
 		}
 	}
-	else if (name == 0) {
+	else if (nitems == 0 || name == 0) {
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_name]: "
 			    "Window 0x%08lx has no name in atom _NET_WM_NAME", w);
 		return False;
@@ -304,7 +308,7 @@ int get_window_type(Display * display, Window w, Atom * atom)
 			    "Unable to get type of window 0x%08lx", w);
 		return 1;
 	}
-	if (data == 0) {
+	if (nitems == 0 || data == 0) {
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_type]: "
 			    "Window  0x%08lx has no type", w);
 		return 0;
@@ -335,7 +339,7 @@ int get_window_pid(Display * display, Window w, int *pid)
 			    "Unable to get pid of window 0x%08lx", w);
 		return False;
 	}
-	if (data == 0) {
+	if (nitems == 0 || data == 0) {
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_pid]: "
 			    "No pid for window 0x%08lx", w);
 		return False;
@@ -365,7 +369,7 @@ int get_parent_window(Display * display, Window w, Window * parent)
 		*parent = 0;
 		return False;
 	}
-	if (data == 0) {
+	if (nitems == 0 || data == 0) {
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_parent_window]: "
 			    "No parent window for window 0x%08lx", w);
 		*parent = 0;

@@ -852,14 +852,13 @@ void create_window(Window win_out)
 			parent_id = -1;
 	}
 
-	get_window_state(display, proper_win, &states, &nstates);
-
-	for (i = 0; i < nstates; i++) {
-		if (states[i] ==
-		    XInternAtom(display, "_NET_WM_STATE_MODAL", False)) {
-			flags |= SEAMLESSRDP_CREATE_MODAL;
-			log_message(l_config, LOG_LEVEL_INFO, "XHook[create_window]: "
-				    "0x%08lx is a modal windows", proper_win);
+	if (get_window_state(display, proper_win, &states, &nstates) == 0) {
+		for (i = 0; i < nstates; i++) {
+			if (states[i] == XInternAtom(display, "_NET_WM_STATE_MODAL", False)) {
+				flags |= SEAMLESSRDP_CREATE_MODAL;
+				log_message(l_config, LOG_LEVEL_INFO, "XHook[create_window]: "
+					    "0x%08lx is a modal windows", proper_win);
+			}
 		}
 	}
 
@@ -897,114 +896,61 @@ void create_window(Window win_out)
 /*****************************************************************************/
 int get_state(Window_item * witem)
 {
-	unsigned char *data;
-	Atom actual_type;
-	int actual_format;
-	unsigned long nitems;
-	unsigned long bytes;
-	Atom atom = 0;
+	Atom *states;
+	Atom atom_net_wm_state_hidden;
+	Atom atom_net_wm_state_maximized_horz;
+	Atom atom_net_wm_state_maximized_vert;
+	unsigned long nstates;
 	int i;
-	int status;
-	Window real_window;
-
-	int state = SEAMLESSRDP_NORMAL;
+	int state = STATE_NORMAL;
+	int state_seamless = SEAMLESSRDP_NORMAL;
 
 	if (witem == 0) {
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_state]: "
 			    "No window item\n");
-		return 0;
+		return -1;
 	}
 
-	real_window = witem->win_out;
-
-	atom = XInternAtom(display, "_NET_WM_STATE", True);
-	if (atom == None) {
-		log_message(l_config, LOG_LEVEL_ERROR, "XHook[get_state]: "
-			    "Unable to find \"_NET_WM_STATE\" on the display %s",
-			    XDisplayString(display));
-		return 0;
+	if (get_window_state(display, witem->win_out, &states, &nstates) != 0) {
+		if (get_window_state(display, witem->window_id, &states, &nstates) != 0)
+			return -1;
 	}
 
-	status = XGetWindowProperty(display,
-				    real_window,
-				    atom,
-				    0,
-				    (~0L),
-				    False,
-				    AnyPropertyType,
-				    &actual_type,
-				    &actual_format, &nitems, &bytes, &data);
+	atom_net_wm_state_hidden = XInternAtom(display, "_NET_WM_STATE_HIDDEN", True);
+	atom_net_wm_state_maximized_horz = XInternAtom(display, "_NET_WM_STATE_MAXIMIZED_HORZ", True);
+	atom_net_wm_state_maximized_vert = XInternAtom(display, "_NET_WM_STATE_MAXIMIZED_VERT", True);
 
-	if (status != 0) {
+	for (i = 0; i < nstates; i++) {
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_state]: "
-			    "Window 0x%08lx: Unable to get state\n",
-			    real_window);
-		return 0;
-	}
-	if (nitems == 0) {
-		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_state]: "
-			    "Window 0x%08lx: Contains no state\n", real_window);
-
-		real_window = witem->window_id;
-
-		status = XGetWindowProperty(display,
-					    real_window,
-					    atom,
-					    0,
-					    (~0L),
-					    False,
-					    AnyPropertyType,
-					    &actual_type,
-					    &actual_format,
-					    &nitems, &bytes, &data);
-
-		if (status != 0) {
-			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_state]: "
-				    "Window 0x%08lx: Unable to get state\n",
-				    real_window);
-
-			return 0;
-		}
-
-		if (nitems == 0) {
-			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_state]: "
-				    "Window 0x%08lx: Contains no state\n",
-				    real_window);
-
-			return 0;
-		}
+			    "State: %s", XGetAtomName(display, states[i]));
+		
+		if (states[i] == atom_net_wm_state_hidden)
+			state |= STATE_ICONIFIED;
+		else if (states[i] == atom_net_wm_state_maximized_horz)
+			state |= STATE_MAXIMIZED_HORIZ;
+		else if (states[i] == atom_net_wm_state_maximized_vert)
+			state |= STATE_MAXIMIZED_VERT;
 	}
 
-	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_state]: "
-		    "Window 0x%08lx: %i state founded", real_window,
-		    (int)nitems);
-	for (i = 0; i < nitems; i++) {
-		atom = (Atom)
-		    ((*((unsigned char *)data + 0) << 0) |
-		     (*((unsigned char *)data + 1) << 8) |
-		     (*((unsigned char *)data + 2) << 16) |
-		     (*((unsigned char *)data + 3) << 24)
-		    );
-		log_message(l_config, LOG_LEVEL_DEBUG,
-			    "XHook[get_state]: "
-			    "Window 0x%08lx: state : %s[%i]\n", real_window,
-			    XGetAtomName(display, atom), (int)atom);
-		if (atom == XInternAtom(display, "_NET_WM_STATE_HIDDEN", True)) {
-			state = SEAMLESSRDP_MINIMIZED;
-			return state;
-		}
-		if (atom ==
-		    XInternAtom(display, "_NET_WM_STATE_MAXIMIZED_HORZ", True)
-		    || atom == XInternAtom(display,
-					   "_NET_WM_STATE_MAXIMIZED_VERT",
-					   True)) {
-			state = SEAMLESSRDP_MAXIMIZED;
-		}
-		data += sizeof(Atom);
-
+	switch (state) {
+		case STATE_ICONIFIED:
+			state_seamless = SEAMLESSRDP_MINIMIZED;
+			break;
+		case STATE_MAXIMIZED_BOTH:
+			state_seamless = SEAMLESSRDP_MAXIMIZED;
+			break;
+		case STATE_MAXIMIZED_HORIZ:
+		case STATE_MAXIMIZED_VERT:
+		case STATE_NORMAL:
+			state_seamless = SEAMLESSRDP_NORMAL;
+			break;
+		default:
+			log_message(l_config, LOG_LEVEL_WARNING, "XHook[get_state]: "
+				    "Window 0x%08lx has an unknown state", witem->window_id);
+			return -1;
 	}
 
-	return state;
+	return state_seamless;
 }
 
 /*****************************************************************************/
@@ -1084,6 +1030,11 @@ void check_window_state(Window_item *witem)
 		return;
 
 	state = get_state(witem);
+	if (state < 0) {
+		log_message(l_config, LOG_LEVEL_INFO, "XHook[check_window_state]: "
+			    "Failed to check window 0x%08lx state", witem->window_id);
+		return;
+	}
 
 	if (state == witem->state)
 		return;
@@ -1115,9 +1066,11 @@ void check_window_name(Window_item *witem)
 
 	if (! witem)
 		return;
-	
-	if (! get_window_name(display, witem->window_id, &name))
-		return;
+
+	if (! get_window_name(display, witem->window_id, &name)) {
+		if (! get_window_name(display, witem->win_out, &name))
+			return;
+	}
 
 	if (! witem->name || g_strlen((char *) name) != g_strlen((char *) witem->name) || g_strcmp((char *) name, (char *) witem->name) != 0) {
 		log_message(l_config, LOG_LEVEL_INFO, "XHook[check_window_name]: "

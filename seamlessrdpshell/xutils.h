@@ -32,11 +32,11 @@
 #define _NET_WM_STATE_ADD		1	/* add/set property */
 #define _NET_WM_STATE_TOGGLE		2	/* toggle property  */
 
-#define STATE_NORMAL			0
-#define STATE_ICONIFIED			1
-#define STATE_MAXIMIZED_HORIZ		2
-#define STATE_MAXIMIZED_VERT		3
-#define STATE_MAXIMIZED_BOTH		4
+#define STATE_NORMAL			0x00
+#define STATE_ICONIFIED			0x01
+#define STATE_MAXIMIZED_HORIZ		0x02
+#define STATE_MAXIMIZED_VERT		0x04
+#define STATE_MAXIMIZED_BOTH		STATE_MAXIMIZED_HORIZ | STATE_MAXIMIZED_VERT
 
 int hex2int(const char *hexa_string);
 const char *gravityToStr(int gravity);
