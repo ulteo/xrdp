@@ -263,7 +263,7 @@ int get_window_state(Display * display, Window w, Atom ** atoms,
 	}
 	if (*nitems == 0) {
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_state]: "
-			    "Window 0x%08lx has no state");
+			    "Window 0x%08lx has no state", w);
 		return 0;
 	}
 
