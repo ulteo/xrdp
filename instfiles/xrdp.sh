@@ -1,4 +1,13 @@
 #!/bin/sh
+
+# xrdp control script
+# Written : 1-13-2006 - Mark Balliet - posicat@pobox.com
+# maintaned by Jay Sorg
+# Author David LECHEVALIER <david@ulteo.com> 2010
+# Author Samuel BOVEE <samuel@ulteo.com> 2010
+# chkconfig: 2345 11 89
+# description: starts xrdp
+
 ### BEGIN INIT INFO
 # Provides:          xrdp
 # Required-Start:    $remote_fs $syslog
@@ -8,12 +17,6 @@
 # Short-Description: Start xrdp daemon
 # Description:       Provide rdp support.
 ### END INIT INFO
-
-# xrdp control script
-# Written : 1-13-2006 - Mark Balliet - posicat@pobox.com
-# maintaned by Jay Sorg
-# chkconfig: 2345 11 89
-# description: starts xrdp
 
 SBINDIR=/usr/sbin
 CFGDIR=/etc/xrdp
