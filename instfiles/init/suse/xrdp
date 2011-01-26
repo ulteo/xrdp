@@ -29,7 +29,7 @@ BINARIES="xrdp-logd xrdp-printerd xrdp xrdp-sesman"
 
 . /lib/lsb/init-functions
 
-for exe in $BINARIES $CFGDIR/startwm.sh; do
+for exe in $(for i in $BINARIES; do echo /usr/sbin/$i; done) $CFGDIR/startwm.sh; do
     if ! [ -x "$exe" ]; then
       log_warning_msg "$exe is not executable"
       rc_failed 1
@@ -41,15 +41,10 @@ is_daemon_running()
 {
   DAEMON=$1
   PID=$PIDDIR/$DAEMON.pid
-  if [ -f $PID ]; then
-    if kill -0 $(cat $PID) 2>$LOGDIR; then
-      return 0;
-    else
-      rm $PID
-      return 1
-    fi
-  else
-    return 1;
+  [ -f $PID ] || return 1
+  if ! kill -0 $(cat $PID) 2>$LOGDIR; then
+    rm $PID
+    return 2
   fi
 }
 
@@ -68,8 +63,8 @@ xrdp_start()
     exit 1
   fi
   for exe in $BINARIES; do
-      log_daemon_msg "Starting $exe"
-      start-daemon -p $PIDDIR/$exe.pid -l $LOGDIR $SBINDIR/$exe
+      echo -n "Starting $exe"
+      start_daemon -p $PIDDIR/$exe.pid -l $LOGDIR $SBINDIR/$exe
       rc_status -v
   done
 }
@@ -78,10 +73,9 @@ xrdp_stop()
 {
   logoff all
   for exe in $(echo $BINARIES | tac -s ' '); do
-    log_begin_msg "Stopping $exe"
+    echo -n "Stopping $exe"
     if is_daemon_running $exe; then
-      kill -15 $PIDDIR/$exe.pid
-      rm $PIDDIR/$exe.pid
+      kill -15 $(cat $PIDDIR/$exe.pid)
     else
       log_failure_msg " (not loaded)"
       rc_failed
