@@ -75,9 +75,11 @@ xrdp_stop()
   for exe in $(echo $BINARIES | tac -s ' '); do
     echo -n "Stopping $exe"
     if is_daemon_running $exe; then
-      kill -15 $(cat $PIDDIR/$exe.pid)
+      PID=$(cat $PIDDIR/$exe.pid)
+      kill -15 $PID
+      strace -q -e '' -s 0 -p $PID 2> /dev/null
     else
-      log_failure_msg " (not loaded)"
+      echo -n " (not loaded)"
       rc_failed
     fi
     rc_status -v
@@ -96,7 +98,7 @@ case "$1" in
   ;;
 
   force-reload|restart)
-    log_success_msg "Restarting xrdp..."
+    echo "Restarting xrdp..."
     xrdp_stop
     xrdp_start
   ;;
