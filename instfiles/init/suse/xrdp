@@ -4,7 +4,7 @@
 # Written : 1-13-2006 - Mark Balliet - posicat@pobox.com
 # maintaned by Jay Sorg
 # Author David LECHEVALIER <david@ulteo.com> 2010
-# Author Samuel BOVEE <samuel@ulteo.com> 2010
+# Author Samuel BOVEE <samuel@ulteo.com> 2010-2011
 # chkconfig: 2345 11 89
 # description: starts xrdp
 
@@ -29,13 +29,13 @@ BINARIES="xrdp-logd xrdp-printerd xrdp xrdp-sesman"
 
 . /lib/lsb/init-functions
 
-is_exec()
-{
-    if ! [ -x "$1" ]; then
-      log_warning_msg "$1 is not executable"
-      exit 1
+for exe in $BINARIES $CFGDIR/startwm.sh; do
+    if ! [ -x "$exe" ]; then
+      log_warning_msg "$exe is not executable"
+      rc_failed 1
+      rc_exit
     fi
-}
+done
 
 is_daemon_running()
 {
@@ -53,11 +53,6 @@ is_daemon_running()
   fi
 }
 
-for exe in $BINARIES; do
-    is_exec $SBINDIR/$exe
-done
-is_exec $CFGDIR/startwm.sh
-
 xrdp_start()
 {
   logoff all
@@ -74,13 +69,8 @@ xrdp_start()
   fi
   for exe in $BINARIES; do
       log_daemon_msg "Starting $exe"
-      if start-stop-daemon --start --quiet --oknodo --pidfile $PIDDIR/$exe.pid \
-                           --exec $SBINDIR/$exe -- >$LOGDIR
-      then
-        log_end_msg 0
-      else
-        log_end_msg 1
-      fi
+      start-daemon -p $PIDDIR/$exe.pid -l $LOGDIR $SBINDIR/$exe
+      rc_status -v
   done
 }
 
@@ -88,19 +78,15 @@ xrdp_stop()
 {
   logoff all
   for exe in $(echo $BINARIES | tac -s ' '); do
-      log_begin_msg "Stopping $exe"
-      if ! is_daemon_running $exe; then
-          log_progress_msg " (not loaded)"
-          log_end_msg 1
-          continue
-      fi
-      if start-stop-daemon --stop --quiet --oknodo \
-                           --pidfile $PIDDIR/$exe.pid --retry 30
-      then
-        log_end_msg 0
-      else
-        log_end_msg 1
-      fi
+    log_begin_msg "Stopping $exe"
+    if is_daemon_running $exe; then
+      kill -15 $PIDDIR/$exe.pid
+      rm $PIDDIR/$exe.pid
+    else
+      log_failure_msg " (not loaded)"
+      rc_failed
+    fi
+    rc_status -v
   done;
 }
 
@@ -123,15 +109,16 @@ case "$1" in
 
   status)
     for exe in $BINARIES; do
-        status_of_proc -p "$PIDDIR/$exe.pid" "$exe" $exe || exit $?
+        checkproc -p "$PIDDIR/$exe.pid" $exe
+        rc_status -v
     done
   ;;
 
   *)
     log_success_msg "Usage: /etc/init.d/xrdp {start|stop|restart|force-reload|status}"
-    exit 1
+    rc_failed
   ;;
 
 esac
 
-exit 0
+rc_exit

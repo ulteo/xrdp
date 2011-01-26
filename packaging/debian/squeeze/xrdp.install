@@ -1,8 +1,8 @@
+instfiles/init/debian/xrdp /etc/init.d
 debian/tmp/etc/xrdp/startwm.sh
 debian/tmp/etc/xrdp/*.ini
 debian/tmp/etc/xrdp/Xserver
 debian/tmp/etc/pam.d
-debian/tmp/etc/init.d
 debian/tmp/usr/lib/xrdp/libmc.so*
 debian/tmp/usr/lib/xrdp/librdp.so*
 debian/tmp/usr/lib/xrdp/libscp.so*

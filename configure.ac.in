@@ -204,32 +204,33 @@ fi
 
 AC_CONFIG_FILES([Makefile
                  common/Makefile
-                 vchannel/Makefile
-                 vnc/Makefile
-                 rdp/Makefile
+                 docs/Makefile
+                 docs/man/Makefile
+                 genkeymap/Makefile
+                 instfiles/Makefile
+                 instfiles/init/Makefile
+                 instfiles/pam.d/Makefile
+                 instfiles/Xserver/Makefile
+                 keygen/Makefile
                  libxrdp/Makefile
-                 xup/Makefile
+                 logd/Makefile
                  mc/Makefile
-                 xrdp/Makefile
                  sesman/Makefile
+                 sesman/chansrv/rdpdr/Makefile
+                 sesman/chansrv/rdpsnd2/Makefile
+                 sesman/chansrv/cliprdr/Makefile
                  sesman/libscp/Makefile
                  sesman/tools/Makefile
                  sesman/sessvc/Makefile
                  sesman/chansrv/Makefile
-                 keygen/Makefile
-                 docs/Makefile
-                 docs/man/Makefile
-                 instfiles/Makefile
-                 instfiles/pam.d/Makefile
-                 instfiles/Xserver/Makefile
-                 genkeymap/Makefile
                  printer/Makefile
                  printerd/Makefile
                  python/Makefile
+                 rdp/Makefile
                  seamlessrdpshell/Makefile
-                 logd/Makefile
-                 sesman/chansrv/rdpdr/Makefile
-                 sesman/chansrv/rdpsnd2/Makefile
-                 sesman/chansrv/cliprdr/Makefile
+                 vchannel/Makefile
+                 vnc/Makefile
+                 xup/Makefile
+                 xrdp/Makefile
 ])
 AC_OUTPUT

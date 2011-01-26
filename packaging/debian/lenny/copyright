@@ -9,14 +9,14 @@ It was downloaded from:
 
 Upstream Authors:
 
-    David LECHEVALIER <david@ulteo.com> 2010
+    David LECHEVALIER <david@ulteo.com> 2010-2011
     Thomas MOUTON <thomas@ulteo.com> 2010
     Julien LANGLOIS <julien@ulteo.com> 2010
-    Samuel BOVEE <samuel@ulteo.com> 2010
+    Samuel BOVEE <samuel@ulteo.com> 2010-2011
 
 Copyright:
 
-    Copyright (C) 2010 Ulteo SAS
+    Copyright (C) 2010-2011 Ulteo SAS
 
 License:
 
@@ -33,5 +33,5 @@ License:
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-The Debian packaging is Copyright (C) 2010, Ulteo SAS and
+The Debian packaging is Copyright (C) 2010-2011, Ulteo SAS and
 is licensed under the GPL, see `/usr/share/common-licenses/GPL'.
