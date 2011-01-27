@@ -47,7 +47,13 @@ many other features such as:
 %setup -q
 
 %build
-./configure --mandir=/usr/share/man
+ARCH=$(getconf LONG_BIT)
+if [ "$ARCH" = "32" ]; then
+    LIBDIR=/usr/lib
+elif [ "$ARCH" = "64" ]; then
+    LIBDIR=/usr/lib64
+fi
+./configure --mandir=/usr/share/man --libdir=$LIBDIR
 make -j 4
 %{__python} setup.py build
 
@@ -70,13 +76,13 @@ rm -rf $RPM_BUILD_ROOT
 %config /etc/xrdp/Xserver/*
 %config /etc/pam.d/*
 %config /etc/init.d/*
-/usr/lib/xrdp/libmc.so.*
-/usr/lib/xrdp/librdp.so.*
-/usr/lib/xrdp/libscp.so.*
-/usr/lib/xrdp/libvnc.so.*
-/usr/lib/xrdp/libxrdp.so.*
-/usr/lib/xrdp/libxup.so.*
-/usr/lib/*.so.*
+/usr/lib*/xrdp/libmc.so.*
+/usr/lib*/xrdp/librdp.so.*
+/usr/lib*/xrdp/libscp.so.*
+/usr/lib*/xrdp/libvnc.so.*
+/usr/lib*/xrdp/libxrdp.so.*
+/usr/lib*/xrdp/libxup.so.*
+/usr/lib*/*.so.*
 /usr/sbin/xrdp*
 /usr/share/xrdp/*
 /usr/bin/logoff
@@ -197,7 +203,7 @@ Xrdpi-Printer convert a ps file from cups in ps
 %files printer
 %defattr(-,root,root)
 %config /etc/cups/xrdp_printer.conf
-/usr/lib/cups/backend/xrdpprinter
+/usr/lib*/cups/backend/xrdpprinter
 /usr/share/cups/model/PostscriptColor.ppd.gz
 %doc /usr/share/man/man1/rdpdr_printer.1.gz
 %defattr(-,lp,root)
@@ -232,9 +238,9 @@ Developpement files for XRDP
 
 %files devel
 %defattr(-,root,root)
-/usr/lib/*.a
-/usr/lib/*.la
-/usr/lib/*.so
-/usr/lib/xrdp/*.a
-/usr/lib/xrdp/*.la
-/usr/lib/xrdp/*.so
+/usr/lib*/*.a
+/usr/lib*/*.la
+/usr/lib*/*.so
+/usr/lib*/xrdp/*.a
+/usr/lib*/xrdp/*.la
+/usr/lib*/xrdp/*.so
