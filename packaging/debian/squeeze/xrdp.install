@@ -1,6 +1,7 @@
 instfiles/init/debian/xrdp /etc/init.d
 debian/tmp/etc/xrdp/startwm.sh
 debian/tmp/etc/xrdp/*.ini
+debian/tmp/etc/xrdp/xrdp-log.conf
 debian/tmp/etc/xrdp/Xserver
 debian/tmp/etc/pam.d
 debian/tmp/usr/lib/xrdp/libmc.so*
