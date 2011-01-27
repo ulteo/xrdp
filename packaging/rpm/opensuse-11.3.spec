@@ -99,12 +99,12 @@ getent group tsusers >/dev/null || groupadd tsusers
 chgrp tsusers /var/spool/xrdp
 
 ldconfig
-chkconfig --add xrdp
+chkconfig --add xrdp > /dev/null
 service xrdp start
 
 %preun
 service xrdp stop
-chkconfig --del xrdp
+chkconfig --del xrdp > /dev/null
 
 %postun
 rm -rf /var/log/xrdp /var/spool/xrdp
