@@ -104,13 +104,13 @@ service xrdp start
 
 %preun
 service xrdp stop
+chkconfig --del xrdp
 
 %postun
 rm -rf /var/log/xrdp /var/spool/xrdp
 getent group tsusers >/dev/null && groupdel tsusers
 
 ldconfig
-chkconfig --del xrdp
 
 ###########################################
 %package seamrdp
