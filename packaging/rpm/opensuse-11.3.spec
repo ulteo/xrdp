@@ -93,14 +93,18 @@ getent group tsusers >/dev/null || groupadd tsusers
 chgrp tsusers /var/spool/xrdp
 
 ldconfig
-insserv
+chkconfig --add xrdp
+service xrdp start
+
+%preun
+service xrdp stop
 
 %postun
 rm -rf /var/log/xrdp /var/spool/xrdp
 getent group tsusers >/dev/null && groupdel tsusers
 
 ldconfig
-insserv
+chkconfig --del xrdp
 
 ###########################################
 %package seamrdp
