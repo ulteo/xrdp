@@ -57,7 +57,7 @@ make install DESTDIR=$RPM_BUILD_ROOT
 %{__python} setup.py install --prefix=%{_prefix} --root=%{buildroot} --record-rpm=INSTALLED_FILES
 mkdir -p $RPM_BUILD_ROOT/var/log/xrdp $RPM_BUILD_ROOT/var/spool/xrdp
 sed -i '/^SESSIONS=/c\SESSION="/usr/bin/startkde"' $RPM_BUILD_ROOT/etc/xrdp/startwm.sh
-install instfiles/init/suse/xrdp $RPM_BUILD_ROOT/etc/init.d/xrdp
+install -D instfiles/init/suse/xrdp $RPM_BUILD_ROOT/etc/init.d/xrdp
 
 %clean
 rm -rf $RPM_BUILD_ROOT
