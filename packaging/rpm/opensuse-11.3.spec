@@ -29,7 +29,7 @@ Packager: Samuel Bovée <samuel@ulteo.com>
 Distribution: OpenSUSE 11.3
 
 Source: %{name}-%{version}.tar.gz
-ExclusiveArch: i386 x86_64
+ExclusiveArch: i586 x86_64
 BuildRequires: libtool, gcc, libxml2-devel, xorg-x11-libX11-devel, xorg-x11-libXfixes, openssl-devel, pam-devel, pulseaudio-devel, cups-devel, fuse-devel
 Requires: python, tightvnc, cups-libs, libcom_err2, libgcrypt11, libgnutls26, krb5, pam, libopenssl1_0_0, xorg-x11-libX11, libxml2, zlib
 
