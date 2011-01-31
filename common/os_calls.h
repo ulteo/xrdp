@@ -256,6 +256,8 @@ void APP_CC
 g_signal_terminate(void (*func)(int));
 void APP_CC
 g_signal_pipe(void (*func)(int));
+void APP_CC
+g_wait_child(int sig);
 int APP_CC
 g_fork(void);
 int APP_CC

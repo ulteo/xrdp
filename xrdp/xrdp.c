@@ -526,6 +526,7 @@ main(int argc, char** argv)
   g_signal_kill(xrdp_shutdown); /* SIGKILL */
   g_signal_pipe(pipe_sig); /* SIGPIPE */
   g_signal_terminate(xrdp_shutdown); /* SIGTERM */
+  g_signal_child_stop(g_wait_child);
   g_sync_mutex = tc_mutex_create();
   g_sync1_mutex = tc_mutex_create();
   pid = g_getpid();

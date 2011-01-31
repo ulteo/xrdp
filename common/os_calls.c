@@ -2250,6 +2250,16 @@ g_signal_pipe(void (*func)(int))
 
 /*****************************************************************************/
 /* does not work in win32 */
+void APP_CC
+g_wait_child(int sig) {
+  pid_t pid;
+  int status;
+
+  while ((pid = waitpid(-1, &status, WNOHANG)) > 0 || (pid < 0 && errno == EINTR));
+}
+
+/*****************************************************************************/
+/* does not work in win32 */
 int APP_CC
 g_fork(void)
 {

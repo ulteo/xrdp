@@ -26,6 +26,7 @@
    g_process and waits for the other to process it */
 static tbus g_process_sem = 0;
 static struct xrdp_process* g_process = 0;
+static int use_multi_process = 0;
 
 /*****************************************************************************/
 struct xrdp_listen* APP_CC
@@ -117,6 +118,15 @@ xrdp_process_run(void* in_val)
   return 0;
 }
 
+int
+xrdp_fork_process(struct xrdp_process* process)
+{
+  DEBUG(("process started"));
+  xrdp_process_main_loop(process);
+  DEBUG(("process done"));
+  return 0;
+}
+
 /*****************************************************************************/
 static int
 xrdp_listen_get_port(char* port, int port_bytes)
@@ -168,12 +178,81 @@ xrdp_listen_get_port(char* port, int port_bytes)
 }
 
 /*****************************************************************************/
+static int
+xrdp_listen_update_process_mode()
+{
+  int index;
+  struct list* items;
+  struct list* values;
+  char* item;
+  char* value;
+  char cfg_file[256];
+
+  items = list_create();
+  items->auto_free = 1;
+  values = list_create();
+  values->auto_free = 1;
+  g_snprintf(cfg_file, 255, "%s/xrdp.ini", XRDP_CFG_PATH);
+  file_by_name_read_section(cfg_file, "globals", items, values);
+  for (index = 0; index < items->count; index++)
+  {
+    item = (char*)list_get_item(items, index);
+    value = (char*)list_get_item(values, index);
+    if (g_strcasecmp(item, "use_multi_process") == 0)
+    {
+      if ((g_strcasecmp(value, "yes") == 0) ||
+          (g_strcasecmp(value, "true") == 0) ||
+          (g_strcasecmp(value, "1") == 0))
+      {
+        use_multi_process = 1;
+      }
+    }
+  }
+  list_delete(items);
+  list_delete(values);
+  return 0;
+}
+
+/*****************************************************************************/
 /* a new connection is coming in */
 int DEFAULT_CC
 xrdp_listen_conn_in(struct trans* self, struct trans* new_self)
 {
   struct xrdp_process* process;
   struct xrdp_listen* lis;
+
+  if (use_multi_process == 1) {
+    int pid = 0;
+
+    pid = g_fork();
+    if (pid < 0) {
+      DEBUG(("Error while forking"));
+      xrdp_process_delete(process);
+      g_tcp_close(new_self->sck);
+      return -1;
+    }
+    if (pid == 0) {
+      g_file_close(self->sck);
+      lis = (struct xrdp_listen*)(self->callback_data);
+      process = xrdp_process_create(lis, lis->pro_done_event);
+
+      if (xrdp_listen_add_pro(lis, process) == 0)
+      {
+        process->server_trans = new_self;
+        xrdp_fork_process(process);
+      }
+      else
+      {
+        xrdp_process_delete(process);
+      }
+      g_exit(0);
+    }
+    else {
+      xrdp_process_delete(process);
+      g_file_close(new_self->sck);
+      return 0;
+    }
+  }
 
   lis = (struct xrdp_listen*)(self->callback_data);
   process = xrdp_process_create(lis, lis->pro_done_event);
@@ -209,6 +288,7 @@ xrdp_listen_main_loop(struct xrdp_listen* self)
   tbus done_obj;
 
   self->status = 1;
+  xrdp_listen_update_process_mode();
   if (xrdp_listen_get_port(port, sizeof(port)) != 0)
   {
     g_writeln("xrdp_listen_main_loop: xrdp_listen_get_port failed");
