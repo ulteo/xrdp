@@ -536,7 +536,7 @@ g_tcp_recv(int sck, void* ptr, int len, int flags)
 #if defined(_WIN32)
   return recv(sck, (char*)ptr, len, flags);
 #else
-  return recv(sck, ptr, len, flags|MSG_NOSIGNAL);
+  return recv(sck, ptr, len, flags|MSG_NOSIGNAL|MSG_WAITALL);
 #endif
 }
 
