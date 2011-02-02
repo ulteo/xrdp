@@ -227,7 +227,6 @@ xrdp_listen_conn_in(struct trans* self, struct trans* new_self)
     pid = g_fork();
     if (pid < 0) {
       DEBUG(("Error while forking"));
-      xrdp_process_delete(process);
       g_tcp_close(new_self->sck);
       return -1;
     }
@@ -248,7 +247,6 @@ xrdp_listen_conn_in(struct trans* self, struct trans* new_self)
       g_exit(0);
     }
     else {
-      xrdp_process_delete(process);
       g_file_close(new_self->sck);
       return 0;
     }
