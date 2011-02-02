@@ -66,6 +66,10 @@ session_copy(struct session_item* src)
 {
   struct session_item* copy;
 
+  if (src == NULL)
+  {
+    return NULL;
+  }
   copy = g_malloc(sizeof(struct session_item), 1);
   if (copy == NULL)
   {
