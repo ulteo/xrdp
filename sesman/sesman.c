@@ -70,87 +70,85 @@ sesman_stop(void)
 static void DEFAULT_CC
 sesman_main_loop(void)
 {
-  int in_sck;
-  int error;
-  int robjs_count;
-  int cont;
-  tbus sck_obj;
-  tbus robjs[8];
+	int in_sck;
+	int error;
+	int robjs_count;
+	int cont;
+	tbus sck_obj;
+	tbus robjs[8];
 
-  /*main program loop*/
-  log_message(&(g_cfg->log), LOG_LEVEL_INFO, "sesman[sesman_main_loop]: "
+	/*main program loop*/
+	log_message(&(g_cfg->log), LOG_LEVEL_INFO, "sesman[sesman_main_loop]: "
 				"listening...");
-  g_sck = g_tcp_socket();
-  g_tcp_set_non_blocking(g_sck);
-  error = scp_tcp_bind(g_sck, g_cfg->listen_address, g_cfg->listen_port);
-  if (error == 0)
-  {
-    error = g_tcp_listen(g_sck);
-    if (error == 0)
-    {
-      sck_obj = g_create_wait_obj_from_socket(g_sck, 0);
-      cont = 1;
-      while (cont)
-      {
-        /* build the wait obj list */
-        robjs_count = 0;
-        robjs[robjs_count++] = sck_obj;
-        robjs[robjs_count++] = g_term_event;
-        robjs[robjs_count++] = g_sync_event;
-        /* wait */
-        if (g_obj_wait(robjs, robjs_count, 0, 0, -1) != 0)
-        {
-          /* error, should not get here */
-          g_sleep(100);
-        }
-        if (g_is_wait_obj_set(g_term_event)) /* term */
-        {
-          break;
-        }
-        if (g_is_wait_obj_set(g_sync_event)) /* sync */
-        {
-          g_reset_wait_obj(g_sync_event);
-          session_sync_start();
-        }
-        if (g_is_wait_obj_set(sck_obj)) /* incomming connection */
-        {
-          in_sck = g_tcp_accept(g_sck);
-          if ((in_sck == -1) && g_tcp_last_error_would_block(g_sck))
-          {
-            /* should not get here */
-            g_sleep(100);
-          }
-          else if (in_sck == -1)
-          {
-            /* error, should not get here */
-            break;
-          }
-          else
-          {
-            /* we've got a connection, so we pass it to scp code */
-          	log_message(&(g_cfg->log), LOG_LEVEL_INFO, "sesman[sesman_main_loop]: "
-									"new connection");
-            thread_scp_start(in_sck);
-            /* todo, do we have to wait here ? */
-          }
-        }
-      }
-      g_delete_wait_obj_from_socket(sck_obj);
-    }
-    else
-    {
-    	log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "sesman[sesman_main_loop]: "
-						"listen error %d (%s)",
-                  g_get_errno(), g_get_strerror());
-    }
-  }
-  else
-  {
-    log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "bind error on "
-                "port '%s': %d (%s)", g_cfg->listen_port,
-                g_get_errno(), g_get_strerror());
-  }
-  g_tcp_close(g_sck);
+	g_sck = g_tcp_socket();
+	g_tcp_set_non_blocking(g_sck);
+	error = scp_tcp_bind(g_sck, g_cfg->listen_address, g_cfg->listen_port);
+	if (error == 0)
+	{
+		error = g_tcp_listen(g_sck);
+		if (error == 0)
+		{
+			sck_obj = g_create_wait_obj_from_socket(g_sck, 0);
+			cont = 1;
+			while (cont)
+			{
+				/* build the wait obj list */
+				robjs_count = 0;
+				robjs[robjs_count++] = sck_obj;
+				robjs[robjs_count++] = g_term_event;
+				robjs[robjs_count++] = g_sync_event;
+				/* wait */
+				if (g_obj_wait(robjs, robjs_count, 0, 0, -1) != 0)
+				{
+					/* error, should not get here */
+					g_sleep(100);
+				}
+				if (g_is_wait_obj_set(g_term_event)) /* term */
+				{
+					break;
+				}
+				if (g_is_wait_obj_set(g_sync_event)) /* sync */
+				{
+					g_reset_wait_obj(g_sync_event);
+					session_sync_start();
+				}
+				if (g_is_wait_obj_set(sck_obj)) /* incomming connection */
+				{
+					in_sck = g_tcp_accept(g_sck);
+					if ((in_sck == -1) && g_tcp_last_error_would_block(g_sck))
+					{
+						/* should not get here */
+						g_sleep(100);
+					}
+					else if (in_sck == -1)
+					{
+						/* error, should not get here */
+						break;
+					}
+					else
+					{
+						/* we've got a connection, so we pass it to scp code */
+						log_message(&(g_cfg->log), LOG_LEVEL_INFO, "sesman[sesman_main_loop]: "
+								"new connection");
+						thread_scp_start(in_sck);
+						/* todo, do we have to wait here ? */
+					}
+				}
+			}
+			g_delete_wait_obj_from_socket(sck_obj);
+		}
+		else
+		{
+			log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "sesman[sesman_main_loop]: "
+					"listen error %d (%s)", g_get_errno(), g_get_strerror());
+		}
+	}
+	else
+	{
+		log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "bind error on "
+				"port '%s': %d (%s)", g_cfg->listen_port, g_get_errno(), g_get_strerror());
+	}
+	g_tcp_close(g_sck);
 }
 
 
@@ -159,7 +157,7 @@ sesman_main_loop(void)
 int DEFAULT_CC
 xml_get_xpath(xmlDocPtr doc, char* xpath, char* value)
 {
-  xmlXPathObjectPtr xpathObj;
+	xmlXPathObjectPtr xpathObj;
 	xmlXPathContextPtr context;
 	xmlNodeSetPtr nodeset;
 	xmlChar *keyword;
@@ -274,8 +272,8 @@ xml_send_error(int client, const char* message)
 		log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[xml_send_error]: "
 				"Unable to send xml response: %s, cause: %s", xmlbuff, strerror(g_get_errno()));
 	}
-  free_stream(s);
-  xmlFreeDoc(doc);
+	free_stream(s);
+	xmlFreeDoc(doc);
 	xmlFree(xmlbuff);
 	xmlFree(version);
 	xmlFree(error);
@@ -323,7 +321,7 @@ xml_send_success(int client, char* message)
 		log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[xml_send_success]: "
 				"Unable to send xml response: %s, cause: %s", xmlbuff, strerror(g_get_errno()));
 	}
-  free_stream(s);
+	free_stream(s);
 	xmlFree(xmlbuff);
 	return buff_size;
 }
@@ -333,10 +331,10 @@ xml_send_success(int client, char* message)
 int DEFAULT_CC
 xml_send_key_value(int client, char* username, char* key, char* value)
 {
-  xmlNodePtr node, node2;
-  xmlDocPtr doc;
+	xmlNodePtr node, node2;
+	xmlDocPtr doc;
 
-  doc = xmlNewDoc(xmlCharStrdup("1.0"));
+	doc = xmlNewDoc(xmlCharStrdup("1.0"));
 	if (doc ==NULL)
 	{
 		log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[xml_send_key_value]: "
@@ -361,10 +359,10 @@ xml_send_key_value(int client, char* username, char* key, char* value)
 xmlDocPtr DEFAULT_CC
 xml_receive_message(int client)
 {
-  struct stream* s;
-  int data_length;
+	struct stream* s;
+	int data_length;
 	int res = 0;
-  make_stream(s);
+	make_stream(s);
 	init_stream(s, 1024);
 	xmlDocPtr doc;
 
@@ -383,13 +381,13 @@ xml_receive_message(int client)
 	make_stream(s);
 	init_stream(s, data_length + 1);
 
-  g_tcp_recv(client, s->data, data_length, 0);
-  s->data[data_length] = 0;
-  log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[xml_received_message]: "
+	g_tcp_recv(client, s->data, data_length, 0);
+	s->data[data_length] = 0;
+	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[xml_received_message]: "
 			"data : %s",s->data);
-  doc = xmlReadMemory(s->data, data_length, "noname.xml", NULL, 0);
-  free_stream(s);
-  return doc;
+	doc = xmlReadMemory(s->data, data_length, "noname.xml", NULL, 0);
+	free_stream(s);
+	return doc;
 }
 
 
@@ -397,16 +395,16 @@ xml_receive_message(int client)
 int DEFAULT_CC
 send_sessions(int client)
 {
-  struct session_item* sess;
-  xmlNodePtr node, node2, node3;
-  xmlDocPtr doc;
-  int count, i;
-  xmlChar* version;
-  xmlChar* encoding;
-  xmlChar* s_node;
-  xmlChar* s_node2;
+	struct session_item* sess;
+	xmlNodePtr node, node2, node3;
+	xmlDocPtr doc;
+	int count, i;
+	xmlChar* version;
+	xmlChar* encoding;
+	xmlChar* s_node;
+	xmlChar* s_node2;
 
-  log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[send_sessions]: "
+	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[send_sessions]: "
 			"request for sessions list");
 
 	lock_chain_acquire();
@@ -444,7 +442,7 @@ send_sessions(int client)
 
 		node3 = xmlNewNode(NULL, s_session);
 		xmlSetProp(node3, s_id, s_id_value );
-		xmlSetProp(node3, s_username,  s_username_value);
+		xmlSetProp(node3, s_username,	s_username_value);
 		xmlSetProp(node3, s_status, s_status_value );
 		xmlAddChild(node2, node3);
 		xmlFree(s_session);
@@ -471,34 +469,34 @@ send_sessions(int client)
 int DEFAULT_CC
 send_session(int client, int session_id)
 {
-  struct session_item* sess = 0;
-  xmlNodePtr node, node2;
-  xmlDocPtr doc;
-  xmlChar* version;
-  xmlChar* response;
-  xmlChar* session;
-  xmlChar* id;
-  xmlChar* id_value;
-  xmlChar* username;
-  xmlChar* username_value;
-  xmlChar* status;
-  xmlChar* status_value;
+	struct session_item* sess = 0;
+	xmlNodePtr node, node2;
+	xmlDocPtr doc;
+	xmlChar* version;
+	xmlChar* response;
+	xmlChar* session;
+	xmlChar* id;
+	xmlChar* id_value;
+	xmlChar* username;
+	xmlChar* username_value;
+	xmlChar* status;
+	xmlChar* status_value;
 
-  log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[send_session]: "
+	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[send_session]: "
 			"request for session\n");
 
-  lock_chain_acquire();
-  sess = session_get_by_display(session_id);
-  lock_chain_release();
+	lock_chain_acquire();
+	sess = session_get_by_display(session_id);
+	lock_chain_release();
 
-  if( sess == NULL)
-  {
-  	log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[send_session]: "
+	if( sess == NULL)
+	{
+		log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[send_session]: "
 				"the session %i did not exist",session_id);
-    xml_send_error(client, "the session id of the request did not exist");
-    return 1;
-  }
-  version = xmlCharStrdup("1.0");
+		xml_send_error(client, "the session id of the request did not exist");
+		return 1;
+	}
+	version = xmlCharStrdup("1.0");
 	doc = xmlNewDoc(version);
 	if (doc == NULL)
 	{
@@ -559,18 +557,18 @@ send_session(int client, int session_id)
 int DEFAULT_CC
 send_logoff(int client, int session_id)
 {
-  struct session_item* sess;
-  xmlNodePtr node, node2;
-  xmlDocPtr doc;
-  xmlChar* version;
-  xmlChar* response;
-  xmlChar* session;
-  xmlChar* username;
-  xmlChar* username_value;
-  xmlChar* id;
-  xmlChar* id_value;
-  xmlChar* status;
-  xmlChar* status_value;
+	struct session_item* sess;
+	xmlNodePtr node, node2;
+	xmlDocPtr doc;
+	xmlChar* version;
+	xmlChar* response;
+	xmlChar* session;
+	xmlChar* username;
+	xmlChar* username_value;
+	xmlChar* id;
+	xmlChar* id_value;
+	xmlChar* status;
+	xmlChar* status_value;
 
 
 	char prop[128];
@@ -581,15 +579,15 @@ send_logoff(int client, int session_id)
 
 	lock_chain_acquire();
 	sess = session_get_by_display(session_id);
-  lock_chain_release();
+	lock_chain_release();
 
-  if( sess == NULL)
-  {
-    log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[send_logoff]: "
-        "The session %i did not exist", session_id);
-    xml_send_error(client, "the session id of the request did not exist");
-    return 1;
-  }
+	if( sess == NULL)
+	{
+		log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[send_logoff]: "
+				"The session %i did not exist", session_id);
+		xml_send_error(client, "the session id of the request did not exist");
+		return 1;
+	}
 
 	session_update_status_by_user(sess->name, SESMAN_SESSION_STATUS_TO_DESTROY);
 	version = xmlCharStrdup("1.0");
@@ -654,7 +652,7 @@ int thread_routine()
 	while(1)
 	{
 		log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[thread_routine]: "
-  			"Wait job");
+				"Wait job");
 
 		thread_pool_wait_job(pool);
 
@@ -672,165 +670,165 @@ int thread_routine()
 int
 process_request(int client)
 {
-  int session_id;
-  char request_type[128];
-  char request_action[128];
-  char session_id_string[12];
-  xmlDocPtr doc;
+	int session_id;
+	char request_type[128];
+	char request_action[128];
+	char session_id_string[12];
+	xmlDocPtr doc;
 
-  doc = xml_receive_message(client);
-  if ( doc == NULL)
-  {
-  	return close_management_connection(NULL, client);
-  }
+	doc = xml_receive_message(client);
+	if ( doc == NULL)
+	{
+		return close_management_connection(NULL, client);
+	}
 
-  if (xml_get_xpath(doc, "/request/@type", request_type) == 1)
-  {
-  	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[process_request]: "
-  			"Unable to get the request type");
-  	xml_send_error(client, "Unable to get the request type");
-  	return close_management_connection(doc, client);
-  }
+	if (xml_get_xpath(doc, "/request/@type", request_type) == 1)
+	{
+		log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[process_request]: "
+				"Unable to get the request type");
+		xml_send_error(client, "Unable to get the request type");
+		return close_management_connection(doc, client);
+	}
 
-  if (xml_get_xpath(doc, "/request/@action", request_action) == 1)
-  {
-  	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[process_request]: "
+	if (xml_get_xpath(doc, "/request/@action", request_action) == 1)
+	{
+		log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[process_request]: "
 				"Unable to get the request action");
-  	xml_send_error(client, "Unable to get the request type");
-  	return close_management_connection(doc, client);
-  }
-  log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[process_request]: "
+		xml_send_error(client, "Unable to get the request type");
+		return close_management_connection(doc, client);
+	}
+	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[process_request]: "
 				"Request_type : '%s' ", request_type);
-  log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[process_request]: "
+	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[process_request]: "
 				"Request_action : '%s' ", request_action);
 
-  if( g_strcmp(request_type, "sessions") == 0)
-  {
-    if( g_strcmp(request_action, "list") != 0)
-    {
-    	xml_send_error(client, "For session request type only"
-    			"the list action is supported");
-    	return close_management_connection(doc, client);
-    }
-    send_sessions(client);
-    //xml_send_error(client,"test");
-  	return close_management_connection(doc, client);
-  }
+	if( g_strcmp(request_type, "sessions") == 0)
+	{
+		if( g_strcmp(request_action, "list") != 0)
+		{
+			xml_send_error(client, "For session request type only"
+					"the list action is supported");
+			return close_management_connection(doc, client);
+		}
+		send_sessions(client);
+		//xml_send_error(client,"test");
+		return close_management_connection(doc, client);
+	}
 
-  if( g_strcmp(request_type, "session") == 0)
-  {
-    if (xml_get_xpath(doc, "/request/@id", session_id_string) == 1)
-    {
-    	log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[process_request]: "
-						"Unable to get the request session id");
-    	xml_send_error(client, "Unable to get the request session id");
-    	return close_management_connection(doc, client);
-    }
-    session_id = g_atoi(session_id_string);
-    if(session_id == 0)
-    {
-    	log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[process_request]: "
-						"%i is not a numeric value", session_id);
-      xml_send_error(client, "Unable to convert the session id");
-    	return close_management_connection(doc, client);
-    }
-    if( g_strcmp(request_action, "status") == 0)
-    {
-    	send_session(client, session_id);
-    	return close_management_connection(doc, client);
-    }
-    if( g_strcmp(request_action, "logoff") == 0)
-    {
-    	send_logoff(client, session_id);
-    	return close_management_connection(doc, client);
-    }
-  	xml_send_error(client, "Unknown message for session");
-  	return close_management_connection(doc, client);
-  }
-  if( g_strcmp(request_type, "internal") == 0)
-  {
-  	char username[256];
-  	if( g_strcmp(request_action, "disconnect") == 0)
-  	{
-      if (xml_get_xpath(doc, "/request/@username", username) == 1)
-      {
-      	log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[process_request]: "
-							"Unable to get the username\n");
-      	xml_send_error(client, "Unable to get the username");
-      	return close_management_connection(doc, client);
-      }
-  		session_update_status_by_user(username, SESMAN_SESSION_STATUS_DISCONNECTED);
-    	return close_management_connection(doc, client);
-  	}
-  	if( g_strcmp(request_action, "logoff") == 0)
-  	{
-      if (xml_get_xpath(doc, "/request/@username", username) == 1)
-      {
-      	log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[process_request]: "
-							"Unable to get the username\n");
-      	xml_send_error(client, "Unable to get the username");
-      	return close_management_connection(doc, client);
-      }
-  		session_update_status_by_user(username, SESMAN_SESSION_STATUS_TO_DESTROY);
-    	return close_management_connection(doc, client);
-  	}
-  	xml_send_error(client, "Unknown message for internal");
-  	return close_management_connection(doc, client);
-  }
-  if( g_strcmp(request_type, "user_conf") == 0)
-  {
-  	char username[256];
-  	char key[128];
-  	char value[256];
-    if (xml_get_xpath(doc, "/request/@username", username) == 1)
-    {
-    	log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[process_request]: "
+	if( g_strcmp(request_type, "session") == 0)
+	{
+		if (xml_get_xpath(doc, "/request/@id", session_id_string) == 1)
+		{
+			log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[process_request]: "
+					"Unable to get the request session id");
+			xml_send_error(client, "Unable to get the request session id");
+			return close_management_connection(doc, client);
+		}
+		session_id = g_atoi(session_id_string);
+		if(session_id == 0)
+		{
+			log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[process_request]: "
+					"%i is not a numeric value", session_id);
+			xml_send_error(client, "Unable to convert the session id");
+			return close_management_connection(doc, client);
+		}
+		if( g_strcmp(request_action, "status") == 0)
+		{
+			send_session(client, session_id);
+			return close_management_connection(doc, client);
+		}
+		if( g_strcmp(request_action, "logoff") == 0)
+		{
+			send_logoff(client, session_id);
+			return close_management_connection(doc, client);
+		}
+		xml_send_error(client, "Unknown message for session");
+		return close_management_connection(doc, client);
+	}
+	if( g_strcmp(request_type, "internal") == 0)
+	{
+		char username[256];
+		if( g_strcmp(request_action, "disconnect") == 0)
+		{
+			if (xml_get_xpath(doc, "/request/@username", username) == 1)
+			{
+				log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[process_request]: "
 						"Unable to get the username\n");
-    	xml_send_error(client, "Unable to get the username");
-    	return close_management_connection(doc, client);
-    }
-    if (xml_get_xpath(doc, "/request/@key", key) == 1)
-    {
-    	log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[process_request]: "
-    			"Unable to get the key in the request");
-    	xml_send_error(client, "Unable to get the key in the request");
-    	return close_management_connection(doc, client);
-    }
-  	if( g_strcmp(request_action, "set") == 0)
-  	{
-      if (xml_get_xpath(doc, "/request/@value", value) == 1)
-      {
-      	log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[process_request]: "
-							"Unable to get the value int the request\n");
-      	xml_send_error(client, "Unable to get the value in the request");
-      	return close_management_connection(doc, client);
-      }
-  		if (session_set_user_pref(username, key, value) == 0 )
-  		{
-  			xml_send_success(client, "SUCCESS");
-  		}
-  		else
-  		{
-  			xml_send_error(client, "Unable to set preference");
-  		}
-    	return close_management_connection(doc, client);
-  	}
+				xml_send_error(client, "Unable to get the username");
+				return close_management_connection(doc, client);
+			}
+			session_update_status_by_user(username, SESMAN_SESSION_STATUS_DISCONNECTED);
+			return close_management_connection(doc, client);
+		}
+		if( g_strcmp(request_action, "logoff") == 0)
+		{
+			if (xml_get_xpath(doc, "/request/@username", username) == 1)
+			{
+				log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[process_request]: "
+						"Unable to get the username\n");
+				xml_send_error(client, "Unable to get the username");
+				return close_management_connection(doc, client);
+			}
+			session_update_status_by_user(username, SESMAN_SESSION_STATUS_TO_DESTROY);
+			return close_management_connection(doc, client);
+		}
+		xml_send_error(client, "Unknown message for internal");
+		return close_management_connection(doc, client);
+	}
+	if( g_strcmp(request_type, "user_conf") == 0)
+	{
+		char username[256];
+		char key[128];
+		char value[256];
+		if (xml_get_xpath(doc, "/request/@username", username) == 1)
+		{
+			log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[process_request]: "
+					"Unable to get the username\n");
+			xml_send_error(client, "Unable to get the username");
+			return close_management_connection(doc, client);
+		}
+		if (xml_get_xpath(doc, "/request/@key", key) == 1)
+		{
+			log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[process_request]: "
+					"Unable to get the key in the request");
+			xml_send_error(client, "Unable to get the key in the request");
+			return close_management_connection(doc, client);
+		}
+		if( g_strcmp(request_action, "set") == 0)
+		{
+			if (xml_get_xpath(doc, "/request/@value", value) == 1)
+			{
+				log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[process_request]: "
+						"Unable to get the value int the request\n");
+				xml_send_error(client, "Unable to get the value in the request");
+				return close_management_connection(doc, client);
+			}
+			if (session_set_user_pref(username, key, value) == 0 )
+			{
+				xml_send_success(client, "SUCCESS");
+			}
+			else
+			{
+				xml_send_error(client, "Unable to set preference");
+			}
+			return close_management_connection(doc, client);
+		}
 
-  	if( g_strcmp(request_action, "get") == 0)
-  	{
-  		if(session_get_user_pref(username, key, value) == 0)
-  		{
-  			xml_send_key_value(client, username, key, value);
-  		}
-  		else
-  		{
-  			xml_send_error(client, "Unable to get preference");
-  		}
-    	return close_management_connection(doc, client);
-  	}
-  	xml_send_error(client, "Unknown message for internal");
-  	return close_management_connection(doc, client);
-  }
+		if( g_strcmp(request_action, "get") == 0)
+		{
+			if(session_get_user_pref(username, key, value) == 0)
+			{
+				xml_send_key_value(client, username, key, value);
+			}
+			else
+			{
+				xml_send_error(client, "Unable to get preference");
+			}
+			return close_management_connection(doc, client);
+		}
+		xml_send_error(client, "Unknown message for internal");
+		return close_management_connection(doc, client);
+	}
 	xml_send_error(client, "Unknown message");
 	return close_management_connection(doc, client);
 }
@@ -838,51 +836,51 @@ process_request(int client)
 THREAD_RV THREAD_CC
 admin_thread(void* param)
 {
-  int server = g_create_unix_socket(MANAGEMENT_SOCKET_NAME);
-  g_chmod_hex(MANAGEMENT_SOCKET_NAME, 0xFFFF);
+	int server = g_create_unix_socket(MANAGEMENT_SOCKET_NAME);
+	g_chmod_hex(MANAGEMENT_SOCKET_NAME, 0xFFFF);
 
-  log_message(&(g_cfg->log), LOG_LEVEL_INFO, "sesman[admin_thread]: "
-					"Create pool thread");
-  pool = thread_pool_init_pool(g_cfg->sess.management_thread_count);
+	log_message(&(g_cfg->log), LOG_LEVEL_INFO, "sesman[admin_thread]: "
+			"Create pool thread");
+	pool = thread_pool_init_pool(g_cfg->sess.management_thread_count);
 
-  log_message(&(g_cfg->log), LOG_LEVEL_INFO, "sesman[admin_thread]: "
-					"Start pool thread");
-  thread_pool_start_pool_thread(pool, thread_routine);
+	log_message(&(g_cfg->log), LOG_LEVEL_INFO, "sesman[admin_thread]: "
+			"Start pool thread");
+	thread_pool_start_pool_thread(pool, thread_routine);
 
-  xmlInitParser();
-  while(1)
-  {
-  	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[admin_thread]: "
-					"wait connection");
-    int client = g_wait_connection(server);
-    log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[process_request]: "
-						"New client connection [%i]",client);
+	xmlInitParser();
+	while(1)
+	{
+		log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[admin_thread]: "
+				"wait connection");
+		int client = g_wait_connection(server);
+		log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[process_request]: "
+				"New client connection [%i]",client);
 
-    if (client < 0)
-    {
-    	log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[process_request]: "
-							"Unable to get client from management socket [%s]", strerror(g_get_errno()));
-    	continue;
-    }
+		if (client < 0)
+		{
+			log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[process_request]: "
+					"Unable to get client from management socket [%s]", strerror(g_get_errno()));
+			continue;
+		}
 
-    thread_pool_push_job(pool, client);
-  }
+		thread_pool_push_job(pool, client);
+	}
 }
 
 THREAD_RV THREAD_CC
 monit_thread(void* param)
 {
-  lock_stopwait_acquire();
-  while (stop == 0)
-  {
-  	g_sleep(g_cfg->sess.monitoring_delay);
+	lock_stopwait_acquire();
+	while (stop == 0)
+	{
+		g_sleep(g_cfg->sess.monitoring_delay);
 
-  	while (g_waitchild() > 0);
+		while (g_waitchild() > 0);
 
-  	lock_chain_acquire();
-  	session_monit();
-  	lock_chain_release();
-  }
+		lock_chain_acquire();
+		session_monit();
+		lock_chain_release();
+	}
 	session_sigkill_all();
 
 	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[monit_thread]: remove XRDP temp dir");
@@ -899,207 +897,207 @@ monit_thread(void* param)
 int DEFAULT_CC
 main(int argc, char** argv)
 {
-  int fd;
-  int error;
-  int daemon = 1;
-  int pid;
-  char pid_s[8];
-  char text[256];
+	int fd;
+	int error;
+	int daemon = 1;
+	int pid;
+	char pid_s[8];
+	char text[256];
 
-  if(g_is_root() != 0){
-  	g_printf("Error, xrdp-sesman service must be start with root privilege\n");
-  	return 0;
-  }
+	if(g_is_root() != 0){
+		g_printf("Error, xrdp-sesman service must be start with root privilege\n");
+		return 0;
+	}
 
 
-  g_snprintf(pid_file, 255, "%s/xrdp-sesman.pid", XRDP_PID_PATH);
-  if (1 == argc)
-  {
-    /* no options on command line. normal startup */
-  	g_printf("starting sesman...");
-    daemon = 1;
-  }
-  else if ((2 == argc) && ((0 == g_strcasecmp(argv[1], "--nodaemon")) ||
-                           (0 == g_strcasecmp(argv[1], "-n")) ||
-                           (0 == g_strcasecmp(argv[1], "-ns"))))
-  {
-    /* starts sesman not daemonized */
-  	g_printf("starting sesman in foregroud...");
-    daemon = 0;
-  }
-  else if ((2 == argc) && ((0 == g_strcasecmp(argv[1], "--help")) ||
-                           (0 == g_strcasecmp(argv[1], "-h"))))
-  {
-    /* help screen */
-    g_printf("sesman - xrdp session manager\n\n");
-    g_printf("usage: sesman [command]\n\n");
-    g_printf("command can be one of the following:\n");
-    g_printf("-n, -ns, --nodaemon  starts sesman in foreground\n");
-    g_printf("-k, --kill           kills running sesman\n");
-    g_printf("-h, --help           shows this help\n");
-    g_printf("if no command is specified, sesman is started in background");
-    g_exit(0);
-  }
-  else if ((2 == argc) && ((0 == g_strcasecmp(argv[1], "--kill")) ||
-                           (0 == g_strcasecmp(argv[1], "-k"))))
-  {
-    /* killing running sesman */
-    /* check if sesman is running */
-    if (!g_file_exist(pid_file))
-    {
-      g_printf("sesman is not running (pid file not found - %s)\n", pid_file);
-      g_exit(1);
-    }
+	g_snprintf(pid_file, 255, "%s/xrdp-sesman.pid", XRDP_PID_PATH);
+	if (1 == argc)
+	{
+		/* no options on command line. normal startup */
+		g_printf("starting sesman...");
+		daemon = 1;
+	}
+	else if ((2 == argc) && ((0 == g_strcasecmp(argv[1], "--nodaemon")) ||
+			(0 == g_strcasecmp(argv[1], "-n")) ||
+			(0 == g_strcasecmp(argv[1], "-ns"))))
+	{
+		/* starts sesman not daemonized */
+		g_printf("starting sesman in foregroud...");
+		daemon = 0;
+	}
+	else if ((2 == argc) && ((0 == g_strcasecmp(argv[1], "--help")) ||
+			(0 == g_strcasecmp(argv[1], "-h"))))
+	{
+		/* help screen */
+		g_printf("sesman - xrdp session manager\n\n");
+		g_printf("usage: sesman [command]\n\n");
+		g_printf("command can be one of the following:\n");
+		g_printf("-n, -ns, --nodaemon	starts sesman in foreground\n");
+		g_printf("-k, --kill           kills running sesman\n");
+		g_printf("-h, --help           shows this help\n");
+		g_printf("if no command is specified, sesman is started in background");
+		g_exit(0);
+	}
+	else if ((2 == argc) && ((0 == g_strcasecmp(argv[1], "--kill")) ||
+			(0 == g_strcasecmp(argv[1], "-k"))))
+	{
+		/* killing running sesman */
+		/* check if sesman is running */
+		if (!g_file_exist(pid_file))
+		{
+			g_printf("sesman is not running (pid file not found - %s)\n", pid_file);
+			g_exit(1);
+		}
 
-    fd = g_file_open(pid_file);
+		fd = g_file_open(pid_file);
 
-    if (-1 == fd)
-    {
-      g_printf("error opening pid file[%s]: %s\n", pid_file, g_get_strerror());
-      return 1;
-    }
+		if (-1 == fd)
+		{
+			g_printf("error opening pid file[%s]: %s\n", pid_file, g_get_strerror());
+			return 1;
+		}
 
-    error = g_file_read(fd, pid_s, 7);
-    if (-1 == error)
-    {
-      g_printf("error reading pid file: %s\n", g_get_strerror());
-      g_file_close(fd);
-      g_exit(error);
-    }
-    g_file_close(fd);
-    pid = g_atoi(pid_s);
+		error = g_file_read(fd, pid_s, 7);
+		if (-1 == error)
+		{
+			g_printf("error reading pid file: %s\n", g_get_strerror());
+			g_file_close(fd);
+			g_exit(error);
+		}
+		g_file_close(fd);
+		pid = g_atoi(pid_s);
 
-    error = g_sigterm(pid);
-    if (0 != error)
-    {
-      g_printf("error killing sesman: %s\n", g_get_strerror());
-    }
-    else
-    {
-      g_file_delete(pid_file);
-    }
+		error = g_sigterm(pid);
+		if (0 != error)
+		{
+			g_printf("error killing sesman: %s\n", g_get_strerror());
+		}
+		else
+		{
+			g_file_delete(pid_file);
+		}
 
-    g_exit(error);
-  }
-  else
-  {
-    /* there's something strange on the command line */
-    g_printf("sesman - xrdp session manager\n\n");
-    g_printf("error: invalid command line\n");
-    g_printf("usage: sesman [ --nodaemon | --kill | --help ]\n");
-    g_exit(1);
-  }
+		g_exit(error);
+	}
+	else
+	{
+		/* there's something strange on the command line */
+		g_printf("sesman - xrdp session manager\n\n");
+		g_printf("error: invalid command line\n");
+		g_printf("usage: sesman [ --nodaemon | --kill | --help ]\n");
+		g_exit(1);
+	}
 
-  if (g_file_exist(pid_file))
-  {
-    g_printf("sesman is already running.\n");
-    g_printf("if it's not running, try removing ");
-    g_printf(pid_file);
-    g_printf("\n");
-    g_exit(1);
-  }
+	if (g_file_exist(pid_file))
+	{
+		g_printf("sesman is already running.\n");
+		g_printf("if it's not running, try removing ");
+		g_printf(pid_file);
+		g_printf("\n");
+		g_exit(1);
+	}
 
-  /* reading config */
-  g_cfg = g_malloc(sizeof(struct config_sesman), 1);
-  if (0 == g_cfg)
-  {
-    g_printf("error creating config: quitting.\n");
-    g_exit(1);
-  }
-  g_cfg->log.fd = -1; /* don't use logging before reading its config */
-  if (0 != config_read(g_cfg))
-  {
-    g_printf("error reading config: %s\nquitting.\n", g_get_strerror());
-    g_exit(1);
-  }
+	/* reading config */
+	g_cfg = g_malloc(sizeof(struct config_sesman), 1);
+	if (0 == g_cfg)
+	{
+		g_printf("error creating config: quitting.\n");
+		g_exit(1);
+	}
+	g_cfg->log.fd = -1; /* don't use logging before reading its config */
+	if (0 != config_read(g_cfg))
+	{
+		g_printf("error reading config: %s\nquitting.\n", g_get_strerror());
+		g_exit(1);
+	}
 
-  /* starting logging subsystem */
-  error = log_start(&(g_cfg->log));
+	/* starting logging subsystem */
+	error = log_start(&(g_cfg->log));
 
-  if (error != LOG_STARTUP_OK)
-  {
-    switch (error)
-    {
-      case LOG_ERROR_MALLOC:
-        g_printf("error on malloc. cannot start logging. quitting.\n");
-        break;
-      case LOG_ERROR_FILE_OPEN:
-        g_printf("error opening log file [%s]. quitting.\n", g_cfg->log.log_file);
-        break;
-    }
-    g_exit(1);
-  }
+	if (error != LOG_STARTUP_OK)
+	{
+		switch (error)
+		{
+			case LOG_ERROR_MALLOC:
+				g_printf("error on malloc. cannot start logging. quitting.\n");
+				break;
+			case LOG_ERROR_FILE_OPEN:
+				g_printf("error opening log file [%s]. quitting.\n", g_cfg->log.log_file);
+				break;
+		}
+		g_exit(1);
+	}
 
-  /* libscp initialization */
-  scp_init(&(g_cfg->log));
+	/* libscp initialization */
+	scp_init(&(g_cfg->log));
 
-  if (daemon)
-  {
-    /* start of daemonizing code */
-    if (g_daemonize(pid_file) == 0)
-    {
-      g_writeln("problem daemonize");
-      g_exit(1);
-    }
-  }
+	if (daemon)
+	{
+		/* start of daemonizing code */
+		if (g_daemonize(pid_file) == 0)
+		{
+			g_writeln("problem daemonize");
+			g_exit(1);
+		}
+	}
 
-  /* initializing locks */
-  lock_init();
+	/* initializing locks */
+	lock_init();
 
-  /* signal handling */
-  g_pid = g_getpid();
-  /* old style signal handling is now managed synchronously by a
-   * separate thread. uncomment this block if you need old style
-   * signal handling and comment out thread_sighandler_start()
-   * going back to old style for the time being
-   * problem with the sigaddset functions in sig.c - jts */
+	/* signal handling */
+	g_pid = g_getpid();
+	/* old style signal handling is now managed synchronously by a
+	 * separate thread. uncomment this block if you need old style
+	 * signal handling and comment out thread_sighandler_start()
+	 * going back to old style for the time being
+	 * problem with the sigaddset functions in sig.c - jts */
 #if 1
-  g_signal_hang_up(sig_sesman_reload_cfg); /* SIGHUP  */
-  g_signal_user_interrupt(sig_sesman_shutdown); /* SIGINT  */
-  g_signal_kill(sig_sesman_shutdown); /* SIGKILL */
-  g_signal_terminate(sig_sesman_shutdown); /* SIGTERM */
-//  g_signal_child_stop(sig_sesman_session_end); /* SIGCHLD */
+	g_signal_hang_up(sig_sesman_reload_cfg); /* SIGHUP	*/
+	g_signal_user_interrupt(sig_sesman_shutdown); /* SIGINT	*/
+	g_signal_kill(sig_sesman_shutdown); /* SIGKILL */
+	g_signal_terminate(sig_sesman_shutdown); /* SIGTERM */
+//	g_signal_child_stop(sig_sesman_session_end); /* SIGCHLD */
 #endif
 #if 0
-  thread_sighandler_start();
+	thread_sighandler_start();
 #endif
 
-  /* start program main loop */
-  log_message(&(g_cfg->log), LOG_LEVEL_INFO,
-              "starting sesman with pid %d", g_pid);
+	/* start program main loop */
+	log_message(&(g_cfg->log), LOG_LEVEL_INFO,
+			"starting sesman with pid %d", g_pid);
 
-  /* make sure the /tmp/.X11-unix directory exist */
-  if (!g_directory_exist("/tmp/.X11-unix"))
-  {
-    g_create_dir("/tmp/.X11-unix");
-    g_chmod_hex("/tmp/.X11-unix", 0x1777);
-  }
+	/* make sure the /tmp/.X11-unix directory exist */
+	if (!g_directory_exist("/tmp/.X11-unix"))
+	{
+		g_create_dir("/tmp/.X11-unix");
+		g_chmod_hex("/tmp/.X11-unix", 0x1777);
+	}
 
-  if (!g_directory_exist(XRDP_SOCKET_PATH))
-  {
-    g_create_dir(XRDP_SOCKET_PATH);
-    g_chmod_hex(XRDP_SOCKET_PATH, 0x1777);
-  }
+	if (!g_directory_exist(XRDP_SOCKET_PATH))
+	{
+		g_create_dir(XRDP_SOCKET_PATH);
+		g_chmod_hex(XRDP_SOCKET_PATH, 0x1777);
+	}
 
-  g_snprintf(text, 255, "xrdp_sesman_%8.8x_main_term", g_pid);
-  g_term_event = g_create_wait_obj(text);
-  g_snprintf(text, 255, "xrdp_sesman_%8.8x_main_sync", g_pid);
-  g_sync_event = g_create_wait_obj(text);
+	g_snprintf(text, 255, "xrdp_sesman_%8.8x_main_term", g_pid);
+	g_term_event = g_create_wait_obj(text);
+	g_snprintf(text, 255, "xrdp_sesman_%8.8x_main_sync", g_pid);
+	g_sync_event = g_create_wait_obj(text);
 
-  scp_init_mutex();
-  tc_thread_create(admin_thread, 0);
-  tc_thread_create(monit_thread, 0);
-  sesman_main_loop();
-  scp_remove_mutex();
+	scp_init_mutex();
+	tc_thread_create(admin_thread, 0);
+	tc_thread_create(monit_thread, 0);
+	sesman_main_loop();
+	scp_remove_mutex();
 
-  g_delete_wait_obj(g_term_event);
-  g_delete_wait_obj(g_sync_event);
+	g_delete_wait_obj(g_term_event);
+	g_delete_wait_obj(g_sync_event);
 
-  if (!daemon)
-  {
-    log_end(&(g_cfg->log));
-  }
+	if (!daemon)
+	{
+		log_end(&(g_cfg->log));
+	}
 
-  return 0;
+	return 0;
 }
 
