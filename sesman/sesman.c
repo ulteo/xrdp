@@ -645,7 +645,7 @@ int close_management_connection(xmlDocPtr doc, int socket)
 	g_tcp_close(socket);
 }
 
-int thread_routine()
+void* thread_routine(void* val)
 {
 	int job = 0;
 
