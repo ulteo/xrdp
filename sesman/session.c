@@ -1515,7 +1515,7 @@ session_get_byuser(char* user, int* cnt, unsigned char flags)
 
 
 /******************************************************************************/
-void
+void DEFAULT_CC
 session_update_status_by_user(char* user, int status)
 {
   struct session_chain* tmp;

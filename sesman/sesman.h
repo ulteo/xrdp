@@ -63,5 +63,7 @@ void DEFAULT_CC
 sesman_stop(void);
 int DEFAULT_CC
 session_destroy(struct session_item* sess);
+void DEFAULT_CC
+session_update_status_by_user(char* user, int status);
 
 #endif
