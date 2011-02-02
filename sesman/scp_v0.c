@@ -63,6 +63,8 @@ scp_v0_process(struct SCP_CONNECTION* c, struct SCP_SESSION* s)
 	}
 	lock_chain_acquire();
 	s_item = session_get_bydata(s->username);
+	lock_chain_release();
+
 	if (s_item != 0)
 	{
 		log_message(&(g_cfg->log), LOG_LEVEL_INFO, "A session for User %s already exist", s->username);
@@ -74,17 +76,15 @@ scp_v0_process(struct SCP_CONNECTION* c, struct SCP_SESSION* s)
 		}
 		else
 		{
-			s_item->status = SESMAN_SESSION_STATUS_ACTIVE;
+			session_update_status_by_user(s_item->name, SESMAN_SESSION_STATUS_ACTIVE);
 			log_message(&(g_cfg->log), LOG_LEVEL_INFO, "switch from status DISCONNECTED to ACTIVE");
 			scp_v0s_allow_connection(c, display);
 		}
 
 		auth_end(data);
-		lock_chain_release();
 		tc_mutex_unlock(session_creation_lock);
 		return;
 	}
-	lock_chain_release();
 	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "No session already started for the user %s", s->username);
 	if (access_login_allowed(s->username) == 0)
 	{

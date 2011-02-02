@@ -112,7 +112,7 @@ session_get_bydata(char* name)
   {
     if (g_strncmp(name, tmp->item->name, 255) == 0)
     {
-      return tmp->item;
+      return session_copy(tmp->item);
     }
     tmp = tmp->next;
   }
