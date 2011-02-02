@@ -89,6 +89,9 @@ def _ManagementProcessRequest(request):
 		raise XrdpException("Xrdp not available (packet recv syntax error)")
 	
 	data = s.recv(packet_len)
+	while len(data) < packet_len:
+		data += s.recv(packet_len-len(data))
+	
 	s.close()
 	
 	try:

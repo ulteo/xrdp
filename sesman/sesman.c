@@ -212,13 +212,34 @@ xml_send_info(int client, xmlDocPtr doc)
 	size = s->p - s->data;
 	if (g_tcp_can_send(client, 10))
 	{
-		buff_size = g_tcp_send(client, s->data, size, 0);
+		int sended = 0;
+		int send = 0;
+		while(sended < size)
+		{
+			send = (size-sended) > 2048 ? 2048 : size-sended;
+			sended += g_tcp_send(client, s->data+sended, send, 0);
+			if (sended < size)
+			{
+				if (g_get_errno() != 0)
+				{
+					log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[xml_send_info]: "
+							"Error while send %s\n",g_get_strerror());
+					goto end;
+				}
+			}
+		}
+		if (sended != size)
+		{
+			log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[xml_send_info]: "
+					"Error while sending data %i != %i\n",sended, size);
+		}
 	}
 	else
 	{
 		log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[xml_send_info]: "
 				"Unable to send xml response: %s, cause: %s", xmlbuff, strerror(g_get_errno()));
 	}
+end:
 	free_stream(s);
 	xmlFree(xmlbuff);
 	return buff_size;
