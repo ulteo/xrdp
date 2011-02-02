@@ -175,7 +175,7 @@ xml_get_xpath(xmlDocPtr doc, char* xpath, char* value)
 	if(xmlXPathNodeSetIsEmpty(nodeset))
 	{
 		xmlXPathFreeObject(xpathObj);
-		log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[xml_get_xpath]: "
+		log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[xml_get_xpath]: "
 				"no result");
 		return 1;
 	}
@@ -488,7 +488,7 @@ send_sessions(int client)
 
 /************************************************************************/
 int DEFAULT_CC
-send_session(int client, int session_id)
+send_session(int client, int session_id, char* user)
 {
 	struct session_item* sess = 0;
 	xmlNodePtr node, node2;
@@ -507,7 +507,14 @@ send_session(int client, int session_id)
 			"request for session\n");
 
 	lock_chain_acquire();
-	sess = session_get_by_display(session_id);
+	if (user == NULL || user[0] == '\0')
+	{
+		sess = session_get_by_display(session_id);
+	}
+	else
+	{
+		sess = session_get_bydata(user);
+	}
 	lock_chain_release();
 
 	if( sess == NULL)
@@ -541,7 +548,7 @@ send_session(int client, int session_id)
 		g_sprintf(prop, "%i", sess->display);
 		id = xmlCharStrdup("id");
 		id_value = xmlCharStrdup(prop);
-		username = xmlCharStrdup("id");
+		username = xmlCharStrdup("username");
 		username_value = xmlCharStrdup(sess->name);
 		status = xmlCharStrdup("status");
 		status_value = xmlCharStrdup(session_get_status_string(sess->status));
@@ -594,6 +601,12 @@ send_logoff(int client, int session_id)
 
 	char prop[128];
 	int display;
+
+	if (session_id == 0) {
+		log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[send_logoff]: "
+				"%i is not a valid session id", session_id);
+		return 1;
+	}
 
 	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[send_logoff]: "
 			"request session %i logoff", session_id);
@@ -691,10 +704,11 @@ void* thread_routine(void* val)
 int
 process_request(int client)
 {
-	int session_id;
+	int session_id = 0;
 	char request_type[128];
 	char request_action[128];
 	char session_id_string[12];
+	char username[256];
 	xmlDocPtr doc;
 
 	doc = xml_receive_message(client);
@@ -740,22 +754,26 @@ process_request(int client)
 	{
 		if (xml_get_xpath(doc, "/request/@id", session_id_string) == 1)
 		{
-			log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[process_request]: "
-					"Unable to get the request session id");
-			xml_send_error(client, "Unable to get the request session id");
-			return close_management_connection(doc, client);
+			session_id_string[0] = '\0';
 		}
-		session_id = g_atoi(session_id_string);
-		if(session_id == 0)
+		if (xml_get_xpath(doc, "/request/@username", username) == 1)
 		{
-			log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[process_request]: "
-					"%i is not a numeric value", session_id);
-			xml_send_error(client, "Unable to convert the session id");
-			return close_management_connection(doc, client);
+			username[0] = '\0';
+		}
+		if (session_id_string[0] != '\0')
+		{
+			session_id = g_atoi(session_id_string);
+			if(session_id == 0)
+			{
+				log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[process_request]: "
+						"%i is not a numeric value", session_id);
+				xml_send_error(client, "Unable to convert the session id");
+				return close_management_connection(doc, client);
+			}
 		}
 		if( g_strcmp(request_action, "status") == 0)
 		{
-			send_session(client, session_id);
+			send_session(client, session_id, username);
 			return close_management_connection(doc, client);
 		}
 		if( g_strcmp(request_action, "logoff") == 0)

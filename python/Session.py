@@ -28,13 +28,15 @@ SESSION_STATUS_UNKNOWN		= "UNKNOWN"
 SESSION_STATUS_CLOSED		= "CLOSED"
 
 
-def _SessionFormatRequest(type_, action_, id_ = None):
+def _SessionFormatRequest(type_, action_, id_ = None, username_ = None):
 	doc = minidom.Document()
 	rootNode = doc.createElement("request")
 	rootNode.setAttribute("type", type_)
 	rootNode.setAttribute("action", action_)
 	if id_ is not None:
 		rootNode.setAttribute("id", id_)
+	if username_ is not None:
+		rootNode.setAttribute("username", username_)
 		
 	doc.appendChild(rootNode)
 	return doc
@@ -74,6 +76,25 @@ def SessionGetStatus(session_id):
 	sessionNode = sessions[0]
 	status = sessionNode.getAttribute("status")
 	return status
+
+
+def SessionGetId(username):
+	doc = None
+	try:
+		doc = _ManagementProcessRequest(_SessionFormatRequest("session", "status", None, username))
+	except Exception, e:
+		return None
+	
+	if doc is None:
+		return None
+	
+	sessions = doc.getElementsByTagName("session")
+	if len(sessions) == 0:
+		return None
+	
+	sessionNode = sessions[0]
+	session_id = sessionNode.getAttribute("id")
+	return session_id
 
 
 def SessionLogoff(session_id):
