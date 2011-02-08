@@ -47,6 +47,7 @@ get_window_state(Display * display, Window w, Atom ** atoms,
 		 unsigned long *nitems);
 int set_wm_state(Display* display, Window w, int state);
 int is_splash_window(Display * display, Window w);
+int is_modal_window(Display * display, Window w);
 int get_window_type(Display * display, Window w, Atom * atom);
 int get_window_pid(Display * display, Window w, int *pid);
 int get_parent_window(Display * display, Window w, Window * parent);

@@ -753,9 +753,6 @@ void create_window(Window win_out)
 	Atom type;
 	int flags = 0;
 	int pid;
-	Atom *states;
-	unsigned long nstates;
-	int i;
 
 	log_message(l_config, LOG_LEVEL_INFO, "XHook[create_window]: "
 		    "Creation of the window : 0x%08lx", win_out);
@@ -852,14 +849,10 @@ void create_window(Window win_out)
 			parent_id = -1;
 	}
 
-	if (get_window_state(display, proper_win, &states, &nstates) == 0) {
-		for (i = 0; i < nstates; i++) {
-			if (states[i] == XInternAtom(display, "_NET_WM_STATE_MODAL", False)) {
-				flags |= SEAMLESSRDP_CREATE_MODAL;
-				log_message(l_config, LOG_LEVEL_INFO, "XHook[create_window]: "
-					    "0x%08lx is a modal windows", proper_win);
-			}
-		}
+	if (is_modal_window(display, proper_win)) {
+		flags |= SEAMLESSRDP_CREATE_MODAL;
+		log_message(l_config, LOG_LEVEL_INFO, "XHook[create_window]: "
+			    "0x%08lx is a modal windows", proper_win);
 	}
 
 	if (is_window_resizable(display, proper_win) == 1) {

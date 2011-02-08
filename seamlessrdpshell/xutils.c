@@ -42,6 +42,7 @@ static Display *g_display;
 static Atom g_atom_net_wm_state = None;
 static Atom g_atom_net_wm_state_maximized_horz = None;
 static Atom g_atom_net_wm_state_maximized_vert = None;
+static Atom g_atom_net_wm_state_modal = None;
 static Atom g_atom_net_wm_window_type_normal = None;
 static Atom g_atom_net_wm_window_type_splash = None;
 
@@ -51,6 +52,7 @@ void initializeXUtils(Display *dpy) {
 	g_atom_net_wm_state = XInternAtom(g_display, "_NET_WM_STATE", False);
 	g_atom_net_wm_state_maximized_horz = XInternAtom(g_display, "_NET_WM_STATE_MAXIMIZED_HORZ", False);
 	g_atom_net_wm_state_maximized_vert = XInternAtom(g_display, "_NET_WM_STATE_MAXIMIZED_VERT", False);
+	g_atom_net_wm_state_modal = XInternAtom(g_display, "_NET_WM_STATE_MODAL", False);
 	g_atom_net_wm_window_type_normal = XInternAtom(g_display, "_NET_WM_WINDOW_TYPE_NORMAL", False);
 	g_atom_net_wm_window_type_splash = XInternAtom(g_display, "_NET_WM_WINDOW_TYPE_SPLASH", False);
 }
@@ -294,6 +296,21 @@ int is_splash_window(Display * display, Window w) {
 	get_window_type(display, w, &type);
 	if (type == g_atom_net_wm_window_type_splash)
 		return 1;
+
+	return 0;
+}
+
+int is_modal_window(Display * display, Window w) {
+	Atom *states;
+	unsigned long nstates;
+	int i;
+	
+	if (get_window_state(display, w, &states, &nstates) == 0) {
+		for (i = 0; i < nstates; i++) {
+			if (states[i] == XInternAtom(display, "_NET_WM_STATE_MODAL", False))
+				return 1;
+		}
+	}
 
 	return 0;
 }
