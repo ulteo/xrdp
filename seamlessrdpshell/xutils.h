@@ -36,7 +36,7 @@
 #define STATE_ICONIFIED			0x01
 #define STATE_MAXIMIZED_HORIZ		0x02
 #define STATE_MAXIMIZED_VERT		0x04
-#define STATE_MAXIMIZED_BOTH		STATE_MAXIMIZED_HORIZ | STATE_MAXIMIZED_VERT
+#define STATE_MAXIMIZED_BOTH		(STATE_MAXIMIZED_HORIZ | STATE_MAXIMIZED_VERT)
 
 int hex2int(const char *hexa_string);
 const char *gravityToStr(int gravity);
