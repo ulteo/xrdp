@@ -55,4 +55,6 @@ int
 get_property(Display * display, Window w, const char *property,
 	     unsigned long *nitems, unsigned char **data);
 
+void initializeXUtils(Display *dpy);
+
 #endif				/* XUTILS_H_ */

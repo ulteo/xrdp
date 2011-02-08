@@ -1367,6 +1367,8 @@ int main(int argc, char **argv, char **environ)
 	}
 	XSetErrorHandler(error_handler);
 
+	initializeXUtils(display);
+
 	if (pthread_create
 	    (&Xevent_thread, NULL, thread_Xvent_process, (void *)0) < 0) {
 		log_message(l_config, LOG_LEVEL_ERROR, "XHook[main]: "

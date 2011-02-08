@@ -37,6 +37,24 @@ static char *gravity_strs[] = { "ForgetGravity",
 	"StaticGravity"
 };
 
+static Display *g_display;
+
+static Atom g_atom_net_wm_state = None;
+static Atom g_atom_net_wm_state_maximized_horz = None;
+static Atom g_atom_net_wm_state_maximized_vert = None;
+static Atom g_atom_net_wm_window_type_normal = None;
+static Atom g_atom_net_wm_window_type_splash = None;
+
+void initializeXUtils(Display *dpy) {
+	g_display = dpy;
+
+	g_atom_net_wm_state = XInternAtom(g_display, "_NET_WM_STATE", False);
+	g_atom_net_wm_state_maximized_horz = XInternAtom(g_display, "_NET_WM_STATE_MAXIMIZED_HORZ", False);
+	g_atom_net_wm_state_maximized_vert = XInternAtom(g_display, "_NET_WM_STATE_MAXIMIZED_VERT", False);
+	g_atom_net_wm_window_type_normal = XInternAtom(g_display, "_NET_WM_WINDOW_TYPE_NORMAL", False);
+	g_atom_net_wm_window_type_splash = XInternAtom(g_display, "_NET_WM_WINDOW_TYPE_SPLASH", False);
+}
+
 /*****************************************************************************/
 const char *gravityToStr(int gravity)
 {
@@ -74,9 +92,6 @@ int hex2int(const char *hexa_string)
 /*****************************************************************************/
 int
 set_wm_state(Display* display, Window wnd, int state) {
-	Atom atom_net_wm_state  =  XInternAtom(display, "_NET_WM_STATE", False);
-	char *atom1_name = NULL;
-	char *atom2_name = NULL;
 	Atom atom1  =  0;
 	Atom atom2  =  0;
 
@@ -85,7 +100,7 @@ set_wm_state(Display* display, Window wnd, int state) {
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[set_wm_state]: "
 		    "State request: window 0x%08lx state %d", wnd, state);
 	
-	if (atom_net_wm_state == None) {
+	if (g_atom_net_wm_state == None) {
 		log_message(l_config, LOG_LEVEL_ERROR, "XHook[set_wm_state]: "
 			    "Unable to change state of window 0x%08lx to %d: the atom _NET_WM_STATE does not exist", wnd, state);
 		return -1;
@@ -93,8 +108,8 @@ set_wm_state(Display* display, Window wnd, int state) {
 
 	switch (state) {
 		case STATE_MAXIMIZED_BOTH:
-			atom1_name = "_NET_WM_STATE_MAXIMIZED_HORZ";
-			atom2_name = "_NET_WM_STATE_MAXIMIZED_VERT";
+			atom1 = g_atom_net_wm_state_maximized_horz;
+			atom2 = g_atom_net_wm_state_maximized_vert;
 			break;
 		default:
 			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[set_wm_state]: "
@@ -102,26 +117,15 @@ set_wm_state(Display* display, Window wnd, int state) {
 			return -1;
 	}
 
-	if (atom1_name) {
-		atom1 = XInternAtom(display, atom1_name, False);
-		if (atom1 == None) {
-			log_message(l_config, LOG_LEVEL_ERROR, "XHook[set_wm_state]: "
-				    "Unable to change state of window 0x%08lx to %d: the atom %s does not exist", wnd, state, atom1_name);
-			return -1;
-		}
-	}
-	if (atom2_name) {
-		atom2 = XInternAtom(display, atom2_name, False);
-		if (atom2 == None) {
-			log_message(l_config, LOG_LEVEL_ERROR, "XHook[set_wm_state]: "
-				    "Unable to change state of window 0x%08lx to %d: the atom %s does not exist", wnd, state, atom2_name);
-			return -1;
-		}
+	if (atom1 == None) {
+		log_message(l_config, LOG_LEVEL_ERROR, "XHook[set_wm_state]: "
+			    "Unable to change state of window 0x%08lx to %d: Needed atoms do not exist", wnd, state);
+		return -1;
 	}
 
 	xev.type = ClientMessage;
 	xev.xclient.window = wnd;
-	xev.xclient.message_type = atom_net_wm_state;
+	xev.xclient.message_type = g_atom_net_wm_state;
 	xev.xclient.format = 32;
 	xev.xclient.data.l[0] = _NET_WM_STATE_ADD;
 	xev.xclient.data.l[1] = atom1;
@@ -288,7 +292,7 @@ int get_window_state(Display * display, Window w, Atom ** atoms,
 int is_splash_window(Display * display, Window w) {
 	Atom type;
 	get_window_type(display, w, &type);
-	if (type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_SPLASH", False))
+	if (type == g_atom_net_wm_window_type_splash)
 		return 1;
 
 	return 0;
@@ -299,7 +303,7 @@ int get_window_type(Display * display, Window w, Atom * atom)
 	unsigned char *data;
 	unsigned long nitems;
 	int status;
-	*atom = XInternAtom(display, "_NET_WM_WINDOW_TYPE_NORMAL", False);
+	*atom = g_atom_net_wm_window_type_normal;
 
 	status =
 	    get_property(display, w, "_NET_WM_WINDOW_TYPE", &nitems, &data);
