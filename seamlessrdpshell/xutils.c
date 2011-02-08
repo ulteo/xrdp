@@ -282,6 +282,7 @@ int get_window_state(Display * display, Window w, Atom ** atoms,
 		     (*((unsigned char *)data + 2) << 16) |
 		     (*((unsigned char *)data + 3) << 24)
 		    );
+		data += 4;
 
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_state]: "
 			    "Window(0x%08lx) state : %s", w,
