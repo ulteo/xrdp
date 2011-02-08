@@ -42,6 +42,7 @@ static Display *g_display;
 static Atom g_atom_net_wm_state = None;
 static Atom g_atom_net_wm_state_maximized_horz = None;
 static Atom g_atom_net_wm_state_maximized_vert = None;
+static Atom g_atom_net_wm_state_hidden = None;
 static Atom g_atom_net_wm_state_modal = None;
 static Atom g_atom_net_wm_window_type_normal = None;
 static Atom g_atom_net_wm_window_type_splash = None;
@@ -52,6 +53,7 @@ void initializeXUtils(Display *dpy) {
 	g_atom_net_wm_state = XInternAtom(g_display, "_NET_WM_STATE", False);
 	g_atom_net_wm_state_maximized_horz = XInternAtom(g_display, "_NET_WM_STATE_MAXIMIZED_HORZ", False);
 	g_atom_net_wm_state_maximized_vert = XInternAtom(g_display, "_NET_WM_STATE_MAXIMIZED_VERT", False);
+	g_atom_net_wm_state_hidden = XInternAtom(g_display, "_NET_WM_STATE_HIDDEN", False);
 	g_atom_net_wm_state_modal = XInternAtom(g_display, "_NET_WM_STATE_MODAL", False);
 	g_atom_net_wm_window_type_normal = XInternAtom(g_display, "_NET_WM_WINDOW_TYPE_NORMAL", False);
 	g_atom_net_wm_window_type_splash = XInternAtom(g_display, "_NET_WM_WINDOW_TYPE_SPLASH", False);
@@ -254,8 +256,7 @@ int get_window_name(Display * display, Window w, unsigned char **name)
 	return True;
 }
 
-int get_window_state(Display * display, Window w, Atom ** atoms,
-		     unsigned long *nitems)
+static int get_net_wm_state(Display * display, Window w, Atom ** atoms, unsigned long *nitems)
 {
 	unsigned char *data;
 	int status;
@@ -292,6 +293,33 @@ int get_window_state(Display * display, Window w, Atom ** atoms,
 	return 0;
 }
 
+int get_window_state(Display * display, Window wnd) {
+	Atom *states;
+	unsigned long nstates;
+	int i;
+	int state = STATE_NORMAL;
+
+	if (get_net_wm_state(display, wnd, &states, &nstates) != 0)
+		return -2;
+
+	if (nstates == 0)
+		return -1;
+
+	for (i = 0; i < nstates; i++) {
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_state]: "
+			    "%iWindow 0x%08lx has state: %s", i, wnd, XGetAtomName(display, states[i]));
+
+		if (states[i] == g_atom_net_wm_state_hidden)
+			state |= STATE_ICONIFIED;
+		else if (states[i] == g_atom_net_wm_state_maximized_horz)
+			state |= STATE_MAXIMIZED_HORIZ;
+		else if (states[i] == g_atom_net_wm_state_maximized_vert)
+			state |= STATE_MAXIMIZED_VERT;
+	}
+
+	return state;
+}
+
 int is_splash_window(Display * display, Window w) {
 	Atom type;
 	get_window_type(display, w, &type);
@@ -306,7 +334,7 @@ int is_modal_window(Display * display, Window w) {
 	unsigned long nstates;
 	int i;
 	
-	if (get_window_state(display, w, &states, &nstates) == 0) {
+	if (get_net_wm_state(display, w, &states, &nstates) == 0) {
 		for (i = 0; i < nstates; i++) {
 			if (states[i] == XInternAtom(display, "_NET_WM_STATE_MODAL", False))
 				return 1;

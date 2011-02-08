@@ -889,12 +889,6 @@ void create_window(Window win_out)
 /*****************************************************************************/
 int get_state(Window_item * witem)
 {
-	Atom *states;
-	Atom atom_net_wm_state_hidden;
-	Atom atom_net_wm_state_maximized_horz;
-	Atom atom_net_wm_state_maximized_vert;
-	unsigned long nstates;
-	int i;
 	int state = STATE_NORMAL;
 	int state_seamless = SEAMLESSRDP_NORMAL;
 
@@ -904,25 +898,16 @@ int get_state(Window_item * witem)
 		return -1;
 	}
 
-	if (get_window_state(display, witem->win_out, &states, &nstates) != 0) {
-		if (get_window_state(display, witem->window_id, &states, &nstates) != 0)
+	state = get_window_state(display, witem->win_out);
+	if (state < 0) {
+		state = get_window_state(display, witem->window_id);
+		if (state < 0)
 			return -1;
 	}
 
-	atom_net_wm_state_hidden = XInternAtom(display, "_NET_WM_STATE_HIDDEN", True);
-	atom_net_wm_state_maximized_horz = XInternAtom(display, "_NET_WM_STATE_MAXIMIZED_HORZ", True);
-	atom_net_wm_state_maximized_vert = XInternAtom(display, "_NET_WM_STATE_MAXIMIZED_VERT", True);
-
-	for (i = 0; i < nstates; i++) {
-		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_state]: "
-			    "State: %s", XGetAtomName(display, states[i]));
-		
-		if (states[i] == atom_net_wm_state_hidden)
-			state |= STATE_ICONIFIED;
-		else if (states[i] == atom_net_wm_state_maximized_horz)
-			state |= STATE_MAXIMIZED_HORIZ;
-		else if (states[i] == atom_net_wm_state_maximized_vert)
-			state |= STATE_MAXIMIZED_VERT;
+	if (state != STATE_MAXIMIZED_BOTH) {
+		state &= ~STATE_MAXIMIZED_HORIZ;
+		state &= ~STATE_MAXIMIZED_VERT;
 	}
 
 	switch (state) {
@@ -932,8 +917,6 @@ int get_state(Window_item * witem)
 		case STATE_MAXIMIZED_BOTH:
 			state_seamless = SEAMLESSRDP_MAXIMIZED;
 			break;
-		case STATE_MAXIMIZED_HORIZ:
-		case STATE_MAXIMIZED_VERT:
 		case STATE_NORMAL:
 			state_seamless = SEAMLESSRDP_NORMAL;
 			break;
