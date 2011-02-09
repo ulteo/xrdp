@@ -43,7 +43,7 @@ const char *gravityToStr(int gravity);
 Window get_in_window(Display * display, Window w);
 int get_window_name(Display * display, Window w, unsigned char **name);
 int get_window_state(Display * display, Window wnd);
-int set_wm_state(Display* display, Window w, int state);
+int set_window_state(Display* display, Window w, int state);
 int is_splash_window(Display * display, Window w);
 int is_modal_window(Display * display, Window w);
 int get_window_type(Display * display, Window w, Atom * atom);

@@ -451,6 +451,7 @@ int change_state(Window w, int state, int recv_msg_id)
 {
 	Window_item *witem;
 	Window_get(window_list, w, witem);
+	int xState;
 
 	if (witem == 0) {
 		log_message(l_config, LOG_LEVEL_INFO, "XHook[change_state]: "
@@ -458,39 +459,43 @@ int change_state(Window w, int state, int recv_msg_id)
 		return 0;
 	}
 
-	log_message(l_config, LOG_LEVEL_INFO, "XHook[change_state]: "
-		    "Change window 0x%08lx state from %i to %i", witem->window_id, witem->state, state);
+	switch (state) {
+		case SEAMLESSRDP_MINIMIZED:
+			xState = STATE_ICONIFIED;
+			break;
+		case SEAMLESSRDP_NORMAL:
+			xState = STATE_NORMAL;
+			break;
+		case SEAMLESSRDP_MAXIMIZED:
+			xState = STATE_MAXIMIZED_BOTH;
+			break;
+		default:
+			log_message(l_config, LOG_LEVEL_INFO, "XHook[change_state]: "
+				    "Unable to change window 0x%08lx state from %i to %i: Unknown state", witem->window_id, witem->state, state);
+			return -1;
+	}
 
-	if (state == witem->state && witem->waiting_state != NULL) {
+	log_message(l_config, LOG_LEVEL_INFO, "XHook[change_state]: "
+		    "Change window 0x%08lx state from %i to %i(%i)", witem->window_id, witem->state, state, xState);
+
+	if (state == witem->state) {
 		log_message(l_config, LOG_LEVEL_INFO, "XHook[change_state]: "
 			    "Wnd 0x%08lx already has the state %i", witem->window_id, state);
-		send_ack(witem->waiting_state->ack_id);
-		witem->waiting_state = NULL;
 		return 0;
 	}
 
-	if (state == SEAMLESSRDP_NORMAL) {
-		Window win_in;
-		win_in = get_in_window(display, w);
-		if (witem->state == SEAMLESSRDP_MINIMIZED) {
-			XMapWindow(display, win_in);
-			XFlush(display);
-		}
+	if (witem->waiting_state) {
+		log_message(l_config, LOG_LEVEL_INFO, "XHook[change_state]: "
+			    "Window 0x%08lx is already waiting for state change (ack_id: %i state: %i)", witem->window_id, witem->waiting_state->ack_id, witem->waiting_state->state);
+		return -1;
 	}
 
-	if (state == SEAMLESSRDP_MAXIMIZED) {
-		if (witem->waiting_state) {
-			log_message(l_config, LOG_LEVEL_INFO, "XHook[change_state]: "
-				    "Window 0x%08lx is already waiting for state change (ack_id: %i state: %i)", witem->window_id, witem->waiting_state->ack_id, witem->waiting_state->state);
-			return -1;
-		}
+	witem->waiting_state = g_malloc(sizeof(StateOrder), 1);
 
-		witem->waiting_state = g_malloc(sizeof(StateOrder), 1);
-
-		witem->waiting_state->ack_id = recv_msg_id;
-		witem->waiting_state->state = SEAMLESSRDP_MAXIMIZED;
-		set_wm_state(display, witem->window_id, STATE_MAXIMIZED_BOTH);
-	}
+	witem->waiting_state->ack_id = recv_msg_id;
+	witem->waiting_state->state = state;
+	set_window_state(display, witem->window_id, xState);
+	
 	return 0;
 }
 
@@ -756,18 +761,6 @@ void create_window(Window win_out)
 
 	log_message(l_config, LOG_LEVEL_INFO, "XHook[create_window]: "
 		    "Creation of the window : 0x%08lx", win_out);
-	Window_get(window_list, win_out, witem);
-	if (witem != 0) {
-		sprintf(window_id, "0x%08x", (int)win_out);
-		sprintf(buffer, "STATE,%i,%s,0x%08x,0x%08x\n", message_id,
-			window_id, 0, 0);
-		send_message(buffer, strlen(buffer));
-		log_message(l_config, LOG_LEVEL_INFO, "XHook[create_window]: "
-			    "0x%08lx already exist", win_out);
-		g_free(window_id);
-		g_free(buffer);
-		return;
-	}
 	XGetGeometry(display, win_out, &root, &x, &y, &width, &height, &border,
 		     &depth);
 	log_message(l_config, LOG_LEVEL_INFO,
@@ -898,9 +891,9 @@ int get_state(Window_item * witem)
 		return -1;
 	}
 
-	state = get_window_state(display, witem->win_out);
+	state = get_window_state(display, witem->window_id);
 	if (state < 0) {
-		state = get_window_state(display, witem->window_id);
+		state = get_window_state(display, witem->win_out);
 		if (state < 0)
 			return -1;
 	}
@@ -1020,7 +1013,7 @@ void check_window_state(Window_item *witem)
 
 	witem->state = state;
 
-	if (witem->waiting_state) {
+	if (witem->waiting_state && witem->waiting_state->state == state) {
 		send_ack(witem->waiting_state->ack_id);
 		g_free(witem->waiting_state);
 		witem->waiting_state = NULL;
@@ -1123,7 +1116,9 @@ void *thread_Xvent_process(void *arg)
 			w = ev.xmap.window;
 			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
 				    "Window 0x%08lx mapped", w);
-			create_window(w);
+			Window_get(window_list, w, witem);
+			if (! witem)
+				create_window(w);
 			break;
 
 		case DestroyNotify:

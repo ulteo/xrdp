@@ -37,6 +37,13 @@ static char *gravity_strs[] = { "ForgetGravity",
 	"StaticGravity"
 };
 
+static char *wmstate_strs[] = {
+	"WithdrawnState",
+	"NormalState",
+	"UnknownState",
+	"IconicState"
+};
+
 static Display *g_display;
 
 static Atom g_atom_net_wm_state = None;
@@ -46,6 +53,9 @@ static Atom g_atom_net_wm_state_hidden = None;
 static Atom g_atom_net_wm_state_modal = None;
 static Atom g_atom_net_wm_window_type_normal = None;
 static Atom g_atom_net_wm_window_type_splash = None;
+
+static Atom g_atom_wm_state = None;
+static Atom g_atom_wm_change_state = None;
 
 void initializeXUtils(Display *dpy) {
 	g_display = dpy;
@@ -57,6 +67,9 @@ void initializeXUtils(Display *dpy) {
 	g_atom_net_wm_state_modal = XInternAtom(g_display, "_NET_WM_STATE_MODAL", False);
 	g_atom_net_wm_window_type_normal = XInternAtom(g_display, "_NET_WM_WINDOW_TYPE_NORMAL", False);
 	g_atom_net_wm_window_type_splash = XInternAtom(g_display, "_NET_WM_WINDOW_TYPE_SPLASH", False);
+
+	g_atom_wm_state = XInternAtom(g_display, "WM_STATE", False);
+	g_atom_wm_change_state = XInternAtom(g_display, "WM_CHANGE_STATE", False);
 }
 
 /*****************************************************************************/
@@ -66,6 +79,15 @@ const char *gravityToStr(int gravity)
 		return "BadGravity";
 
 	return gravity_strs[gravity];
+}
+
+/*****************************************************************************/
+const char *wmstateToStr(int wmstate)
+{
+	if (wmstate >= (sizeof(wmstate_strs) / sizeof(wmstate_strs[0])))
+		return wmstate_strs[2];
+
+	return wmstate_strs[wmstate];
 }
 
 /*****************************************************************************/
@@ -91,55 +113,6 @@ int hex2int(const char *hexa_string)
 			break;
 	}
 	return ret;
-}
-
-/*****************************************************************************/
-int
-set_wm_state(Display* display, Window wnd, int state) {
-	Atom atom1  =  0;
-	Atom atom2  =  0;
-
-	XEvent xev;
-
-	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[set_wm_state]: "
-		    "State request: window 0x%08lx state %d", wnd, state);
-	
-	if (g_atom_net_wm_state == None) {
-		log_message(l_config, LOG_LEVEL_ERROR, "XHook[set_wm_state]: "
-			    "Unable to change state of window 0x%08lx to %d: the atom _NET_WM_STATE does not exist", wnd, state);
-		return -1;
-	}
-
-	switch (state) {
-		case STATE_MAXIMIZED_BOTH:
-			atom1 = g_atom_net_wm_state_maximized_horz;
-			atom2 = g_atom_net_wm_state_maximized_vert;
-			break;
-		default:
-			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[set_wm_state]: "
-				    "Unable to change state of window 0x%08lx to %d: The state %d is not supported", wnd, state, state);
-			return -1;
-	}
-
-	if (atom1 == None) {
-		log_message(l_config, LOG_LEVEL_ERROR, "XHook[set_wm_state]: "
-			    "Unable to change state of window 0x%08lx to %d: Needed atoms do not exist", wnd, state);
-		return -1;
-	}
-
-	xev.type = ClientMessage;
-	xev.xclient.window = wnd;
-	xev.xclient.message_type = g_atom_net_wm_state;
-	xev.xclient.format = 32;
-	xev.xclient.data.l[0] = _NET_WM_STATE_ADD;
-	xev.xclient.data.l[1] = atom1;
-	xev.xclient.data.l[2] = atom2;
-	xev.xclient.data.l[3] = 2;
-	xev.xclient.data.l[4] = 0;
-	XSendEvent(display, DefaultRootWindow(display), False, SubstructureNotifyMask|SubstructureRedirectMask, &xev);
-	XFlush(display);
-
-	return state;
 }
 
 /*****************************************************************************/
@@ -264,12 +237,12 @@ static int get_net_wm_state(Display * display, Window w, Atom ** atoms, unsigned
 
 	status = get_property(display, w, "_NET_WM_STATE", nitems, &data);
 	if (status != 0) {
-		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_state]: "
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_net_wm_state]: "
 			    "Unable to get window(0x%08lx) state", w);
 		return 1;
 	}
 	if (*nitems == 0) {
-		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_state]: "
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_net_wm_state]: "
 			    "Window 0x%08lx has no state", w);
 		return 0;
 	}
@@ -285,7 +258,7 @@ static int get_net_wm_state(Display * display, Window w, Atom ** atoms, unsigned
 		    );
 		data += 4;
 
-		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_state]: "
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_net_wm_state]: "
 			    "Window(0x%08lx) state : %s", w,
 			    XGetAtomName(display, (*atoms)[i]));
 	}
@@ -293,28 +266,213 @@ static int get_net_wm_state(Display * display, Window w, Atom ** atoms, unsigned
 	return 0;
 }
 
+static int get_wm_state(Display* display, Window wnd) {
+	unsigned long nitems;
+	unsigned char *data;
+	int status;
+
+	int wmstate;
+
+	status = get_property(display, wnd, "WM_STATE", &nitems, &data);
+	if (status != 0) {
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_wm_state]: "
+			    "Unable to get window(0x%08lx) WM state", wnd);
+		return -1;
+	}
+	if (nitems == 0) {
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_wm_state]: "
+			    "Window 0x%08lx has no WM state", wnd);
+		return -2;
+	}
+
+	wmstate = (int)
+		((*((unsigned char *)data + 0) << 0) |
+		 (*((unsigned char *)data + 1) << 8) |
+		 (*((unsigned char *)data + 2) << 16) |
+		 (*((unsigned char *)data + 3) << 24)
+		);
+
+	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_wm_state]: "
+		    "Window(0x%08lx) WM state : %s(%i)", wnd, wmstateToStr(wmstate), wmstate);
+
+	return wmstate;
+}
+
 int get_window_state(Display * display, Window wnd) {
 	Atom *states;
 	unsigned long nstates;
 	int i;
 	int state = STATE_NORMAL;
+	int wmstate;
+
+	wmstate = get_wm_state(display, wnd);
+	switch (wmstate) {
+		case IconicState:
+		case NormalState:
+			break;
+		default:
+			return -1;
+	}
 
 	if (get_net_wm_state(display, wnd, &states, &nstates) != 0)
 		return -2;
 
-	if (nstates == 0)
-		return -1;
+	if (nstates == 0) {
+		if (wmstate == NormalState)
+			return state;
+		else
+			return -3;
+	}
 
 	for (i = 0; i < nstates; i++) {
-		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_state]: "
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_state]: "
 			    "%iWindow 0x%08lx has state: %s", i, wnd, XGetAtomName(display, states[i]));
 
-		if (states[i] == g_atom_net_wm_state_hidden)
+		if (states[i] == g_atom_net_wm_state_hidden && wmstate == IconicState)
 			state |= STATE_ICONIFIED;
-		else if (states[i] == g_atom_net_wm_state_maximized_horz)
+		else if (states[i] == g_atom_net_wm_state_maximized_horz && wmstate == NormalState)
 			state |= STATE_MAXIMIZED_HORIZ;
-		else if (states[i] == g_atom_net_wm_state_maximized_vert)
+		else if (states[i] == g_atom_net_wm_state_maximized_vert && wmstate == NormalState)
 			state |= STATE_MAXIMIZED_VERT;
+	}
+
+	return state;
+}
+
+static void change_wm_state(Display* display, Window wnd, int wmstate) {
+	int old_wmstate;
+	XEvent xev;
+
+	switch (wmstate) {
+		case IconicState:
+		case NormalState:
+			break;
+		default:
+			log_message(l_config, LOG_LEVEL_ERROR, "XHook[change_wm_state]: "
+				    "Unknown state %i", wmstate);
+			return;
+	}
+
+	old_wmstate = get_wm_state(display, wnd);
+
+	// see http://tronche.com/gui/x/icccm/sec-4.html#s-4.1.4
+	
+	if (old_wmstate == IconicState && wmstate == NormalState) {
+		XMapWindow(display, wnd);
+		XFlush(display);
+
+		return;
+	}
+	else if (old_wmstate == NormalState && wmstate == IconicState) {
+		if (g_atom_wm_change_state == None) {
+			log_message(l_config, LOG_LEVEL_ERROR, "XHook[change_wm_state]: "
+				"Window 0x%08lx: Unable to change WM state from %s(%i) to %s(%i): the atom WM_CHANGE_STATE does not exist", wnd, wmstateToStr(old_wmstate), old_wmstate, wmstateToStr(wmstate), wmstate);
+			return;
+		}
+
+		xev.type = ClientMessage;
+		xev.xclient.window = wnd;
+		xev.xclient.message_type = g_atom_wm_change_state;
+		xev.xclient.format = 32;
+		xev.xclient.data.l[0] = wmstate;
+		XSendEvent(display, DefaultRootWindow(display), False, SubstructureNotifyMask|SubstructureRedirectMask, &xev);
+	}
+
+	XFlush(display);
+}
+
+static void remove_net_wm_state(Display* display, Window wnd, Atom state) {
+	XEvent xev;
+
+	if (state == None) {
+		log_message(l_config, LOG_LEVEL_ERROR, "XHook[remove_net_wm_state]: "
+			    "No state to remove");
+		return;
+	}
+
+	if (g_atom_net_wm_state == None) {
+		log_message(l_config, LOG_LEVEL_ERROR, "XHook[remove_net_wm_state]: "
+			"Unable to remove state %s of window 0x%08lx: the atom _NET_WM_STATE does not exist", XGetAtomName(display, state), wnd);
+		return;
+	}
+
+	xev.type = ClientMessage;
+	xev.xclient.window = wnd;
+	xev.xclient.message_type = g_atom_net_wm_state;
+	xev.xclient.format = 32;
+	xev.xclient.data.l[0] = _NET_WM_STATE_REMOVE;
+	xev.xclient.data.l[1] = state;
+	xev.xclient.data.l[2] = 0;
+	xev.xclient.data.l[3] = 2;
+	xev.xclient.data.l[4] = 0;
+	XSendEvent(display, DefaultRootWindow(display), False, SubstructureNotifyMask|SubstructureRedirectMask, &xev);
+	XFlush(display);
+}
+
+static void add_net_wm_state(Display* display, Window wnd, Atom state1, Atom state2) {
+	XEvent xev;
+
+	if (state1 == None) {
+		log_message(l_config, LOG_LEVEL_ERROR, "XHook[add_net_wm_state]: "
+			    "No state to add");
+		return;
+	}
+
+	if (g_atom_net_wm_state == None) {
+		log_message(l_config, LOG_LEVEL_ERROR, "XHook[add_net_wm_state]: "
+			"Unable to add state(s) to window 0x%08lx: the atom _NET_WM_STATE does not exist", wnd);
+		return;
+	}
+
+	xev.type = ClientMessage;
+	xev.xclient.window = wnd;
+	xev.xclient.message_type = g_atom_net_wm_state;
+	xev.xclient.format = 32;
+	xev.xclient.data.l[0] = _NET_WM_STATE_ADD;
+	xev.xclient.data.l[1] = state1;
+	xev.xclient.data.l[2] = state2;
+	xev.xclient.data.l[3] = 2;
+	xev.xclient.data.l[4] = 0;
+	XSendEvent(display, DefaultRootWindow(display), False, SubstructureNotifyMask|SubstructureRedirectMask, &xev);
+	XFlush(display);
+}
+
+/*****************************************************************************/
+int
+set_window_state(Display* display, Window wnd, int state) {
+	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[set_window_state]: "
+		    "State request: window 0x%08lx state %d", wnd, state);
+
+	if (g_atom_net_wm_state == None) {
+		log_message(l_config, LOG_LEVEL_ERROR, "XHook[set_window_state]: "
+			    "Unable to change state of window 0x%08lx to %d: the atom _NET_WM_STATE does not exist", wnd, state);
+		return -1;
+	}
+
+	switch (state) {
+		case STATE_MAXIMIZED_BOTH:
+			remove_net_wm_state(display, wnd, g_atom_net_wm_state_hidden);
+
+			change_wm_state(display, wnd, NormalState);
+
+			add_net_wm_state(display, wnd, g_atom_net_wm_state_maximized_horz, g_atom_net_wm_state_maximized_vert);
+			break;
+		case STATE_NORMAL:
+			remove_net_wm_state(display, wnd, g_atom_net_wm_state_hidden);
+			remove_net_wm_state(display, wnd, g_atom_net_wm_state_maximized_horz);
+			remove_net_wm_state(display, wnd, g_atom_net_wm_state_maximized_vert);
+
+			change_wm_state(display, wnd, NormalState);
+			break;
+		case STATE_ICONIFIED:
+			change_wm_state(display, wnd, IconicState);
+			
+			add_net_wm_state(display, wnd, g_atom_net_wm_state_hidden, None);
+			break;
+		default:
+			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[set_window_state]: "
+				    "Unable to change state of window 0x%08lx to %d: The state %d is not supported", wnd, state, state);
+			return -1;
 	}
 
 	return state;
