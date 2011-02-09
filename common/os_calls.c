@@ -536,7 +536,26 @@ g_tcp_recv(int sck, void* ptr, int len, int flags)
 #if defined(_WIN32)
   return recv(sck, (char*)ptr, len, flags);
 #else
-  return recv(sck, ptr, len, flags|MSG_NOSIGNAL|MSG_WAITALL);
+  int size_read = 0;
+  int res = 0;
+
+  do
+  {
+    res = recv(sck, ptr + size_read, len - size_read, flags|MSG_NOSIGNAL|MSG_WAITALL);
+
+    if (res < 0)
+    {
+      return res;
+    }
+    size_read += res;
+    if (size_read != len && errno != 0)
+    {
+      return size_read;
+    }
+  }
+  while (size_read < len);
+
+  return size_read;
 #endif
 }
 
@@ -547,7 +566,26 @@ g_tcp_send(int sck, const void* ptr, int len, int flags)
 #if defined(_WIN32)
   return send(sck, (const char*)ptr, len, flags);
 #else
-  return send(sck, ptr, len, flags|MSG_NOSIGNAL);
+  int size_send = 0;
+  int res = 0;
+
+  do
+  {
+    res = send(sck, ptr + size_send, len - size_send, flags|MSG_NOSIGNAL);
+    if (res < 0)
+    {
+    	return res;
+    }
+    size_send += res;
+    if (res != len && errno != 0)
+    {
+      return size_send;
+    }
+  }
+  while (size_send < len);
+
+
+  return size_send;
 #endif
 }
 
