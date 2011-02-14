@@ -1,7 +1,8 @@
 /**
- * Copyright (C) 2009 Ulteo SAS
+ * Copyright (C) 2009-2011 Ulteo SAS
  * http://www.ulteo.com
  * Author David LECHEVALIER <david@ulteo.com>
+ * Author Thomas MOUTON <thomas@ulteo.com> 2010-2011
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -51,6 +52,8 @@ static Atom g_atom_net_wm_state_maximized_horz = None;
 static Atom g_atom_net_wm_state_maximized_vert = None;
 static Atom g_atom_net_wm_state_hidden = None;
 static Atom g_atom_net_wm_state_modal = None;
+
+static Atom g_atom_net_wm_window_type = None;
 static Atom g_atom_net_wm_window_type_normal = None;
 static Atom g_atom_net_wm_window_type_splash = None;
 
@@ -65,6 +68,8 @@ void initializeXUtils(Display *dpy) {
 	g_atom_net_wm_state_maximized_vert = XInternAtom(g_display, "_NET_WM_STATE_MAXIMIZED_VERT", False);
 	g_atom_net_wm_state_hidden = XInternAtom(g_display, "_NET_WM_STATE_HIDDEN", False);
 	g_atom_net_wm_state_modal = XInternAtom(g_display, "_NET_WM_STATE_MODAL", False);
+
+	g_atom_net_wm_window_type = XInternAtom(g_display, "_NET_WM_WINDOW_TYPE", False);
 	g_atom_net_wm_window_type_normal = XInternAtom(g_display, "_NET_WM_WINDOW_TYPE_NORMAL", False);
 	g_atom_net_wm_window_type_splash = XInternAtom(g_display, "_NET_WM_WINDOW_TYPE_SPLASH", False);
 
@@ -168,6 +173,60 @@ Window get_in_window(Display * display, Window w)
 	return children[nchildren - 1];
 }
 
+static int get_atoms_from_atom(Display *display, Window wnd, Atom atom, Atom **return_atoms, unsigned long *nitems) {
+	char *atom_name;
+	unsigned char *data;
+	int status;
+	int i;
+
+	if (atom == None)
+		return -1;
+
+	if (! (atom_name = XGetAtomName(display, atom))) {
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_atoms_from_atom]: "
+			    "Atom does not exist on display %s", XDisplayString(display));
+		return -2;
+	}
+	
+	status = get_property(display, wnd, atom_name, nitems, &data);
+	if (status != 0) {
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_atoms_from_atom]: "
+			    "Window(0x%08lx): Failed to get atom %s", wnd, atom_name);
+		return -3;
+	}
+	
+	if (*nitems == 0) {
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_atoms_from_atom]: "
+			    "Window 0x%08lx: atom %s is empty", wnd, atom_name);
+		return 0;
+	}
+
+	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_wm_protocols]: "
+			    "Window 0x%08lx: atom %s contains %ul atom(s)", wnd, atom_name, *nitems);
+
+	*return_atoms = malloc(sizeof(Atom) * *nitems);
+	if (! (*return_atoms)) {
+		log_message(l_config, LOG_LEVEL_WARNING, "XHook[get_wm_protocols]: "
+			    "Failed to allocate memory(%i bytes)", (sizeof(Atom) * *nitems));
+		return -4;
+	}
+
+	for (i = 0; i < *nitems; i++) {
+		(*return_atoms)[i] = (Atom)
+		    ((*((unsigned char *)data + 0) << 0) |
+		     (*((unsigned char *)data + 1) << 8) |
+		     (*((unsigned char *)data + 2) << 16) |
+		     (*((unsigned char *)data + 3) << 24)
+		    );
+		data += 4;
+
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_wm_protocols]: "
+			    "Window 0x%08lx: atom %s contains atom: %ul", wnd, atom_name, (*return_atoms)[i]);
+	}
+
+	return 0;
+}
+
 int is_good_window(Display * display, Window w)
 {
 	unsigned char *data;
@@ -231,52 +290,27 @@ int get_window_name(Display * display, Window w, unsigned char **name)
 
 static int get_net_wm_state(Display * display, Window w, Atom ** atoms, unsigned long *nitems)
 {
-	unsigned char *data;
 	int status;
-	int i;
 
-	status = get_property(display, w, "_NET_WM_STATE", nitems, &data);
+	status = get_atoms_from_atom(display, w, g_atom_net_wm_state, atoms, nitems);
 	if (status != 0) {
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_net_wm_state]: "
-			    "Unable to get window(0x%08lx) state", w);
+			    "Unable to get window(0x%08lx) states", w);
 		return 1;
-	}
-	if (*nitems == 0) {
-		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_net_wm_state]: "
-			    "Window 0x%08lx has no state", w);
-		return 0;
-	}
-
-	*atoms = malloc(sizeof(Atom) * *nitems);
-
-	for (i = 0; i < *nitems; i++) {
-		(*atoms)[i] = (Atom)
-		    ((*((unsigned char *)data + 0) << 0) |
-		     (*((unsigned char *)data + 1) << 8) |
-		     (*((unsigned char *)data + 2) << 16) |
-		     (*((unsigned char *)data + 3) << 24)
-		    );
-		data += 4;
-
-		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_net_wm_state]: "
-			    "Window(0x%08lx) state : %s", w,
-			    XGetAtomName(display, (*atoms)[i]));
 	}
 
 	return 0;
 }
 
 static int get_wm_state(Display* display, Window wnd) {
+	Atom *wm_states;
 	unsigned long nitems;
-	unsigned char *data;
 	int status;
 
-	int wmstate;
-
-	status = get_property(display, wnd, "WM_STATE", &nitems, &data);
+	status = get_atoms_from_atom(display, wnd, g_atom_wm_state, &wm_states, &nitems);
 	if (status != 0) {
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_wm_state]: "
-			    "Unable to get window(0x%08lx) WM state", wnd);
+			    "Unable to get window(0x%08lx) WM states", wnd);
 		return -1;
 	}
 	if (nitems == 0) {
@@ -285,17 +319,7 @@ static int get_wm_state(Display* display, Window wnd) {
 		return -2;
 	}
 
-	wmstate = (int)
-		((*((unsigned char *)data + 0) << 0) |
-		 (*((unsigned char *)data + 1) << 8) |
-		 (*((unsigned char *)data + 2) << 16) |
-		 (*((unsigned char *)data + 3) << 24)
-		);
-
-	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_wm_state]: "
-		    "Window(0x%08lx) WM state : %s(%i)", wnd, wmstateToStr(wmstate), wmstate);
-
-	return wmstate;
+	return wm_states[0];
 }
 
 int get_window_state(Display * display, Window wnd) {
@@ -504,93 +528,72 @@ int is_modal_window(Display * display, Window w) {
 
 int get_window_type(Display * display, Window w, Atom * atom)
 {
-	unsigned char *data;
+	Atom *types;
 	unsigned long nitems;
 	int status;
-	*atom = g_atom_net_wm_window_type_normal;
 
-	status =
-	    get_property(display, w, "_NET_WM_WINDOW_TYPE", &nitems, &data);
+	status = get_atoms_from_atom(display, w, g_atom_net_wm_window_type, &types, &nitems);
 	if (status != 0) {
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_type]: "
-			    "Unable to get type of window 0x%08lx", w);
+			    "Unable to get window(0x%08lx) type", w);
 		return 1;
 	}
-	if (nitems == 0 || data == 0) {
+	if (nitems == 0) {
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_type]: "
-			    "Window  0x%08lx has no type", w);
-		return 0;
+			    "Window 0x%08lx has no type", w);
+		*atom = None;
+	}
+	else {
+		*atom = types[0];
 	}
 
-	*atom = (Atom)
-	    ((*((unsigned char *)data + 0) << 0) |
-	     (*((unsigned char *)data + 1) << 8) |
-	     (*((unsigned char *)data + 2) << 16) |
-	     (*((unsigned char *)data + 3) << 24)
-	    );
-
-	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_type]: "
-		    "Window(0x%08lx) type : %s", w, XGetAtomName(display, *atom));
 	return 0;
 }
 
 /*****************************************************************************/
 int get_window_pid(Display * display, Window w, int *pid)
 {
-	unsigned char *data;
+	Atom *types;
 	unsigned long nitems;
 	int status;
 
-	status = get_property(display, w, "_NET_WM_PID", &nitems, &data);
+	status = get_atoms_from_atom(display, w, g_atom_net_wm_window_type, &types, &nitems);
 	if (status != 0) {
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_pid]: "
-			    "Unable to get pid of window 0x%08lx", w);
+			    "Unable to get window(0x%08lx) pid", w);
 		return False;
 	}
-	if (nitems == 0 || data == 0) {
+	if (nitems == 0) {
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_pid]: "
-			    "No pid for window 0x%08lx", w);
+			    "Window 0x%08lx has no pid", w);
 		return False;
 	}
-	*pid = (int)
-	    ((*((unsigned char *)data + 0) << 0) |
-	     (*((unsigned char *)data + 1) << 8) |
-	     (*((unsigned char *)data + 2) << 16) |
-	     (*((unsigned char *)data + 3) << 24)
-	    );
-	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_pid]: "
-		    "Window(0x%08lx) pid: %i", w, *pid);
+
+	*pid = (int) types[0];
+
 	return True;
 }
 
 /*****************************************************************************/
 int get_parent_window(Display * display, Window w, Window * parent)
 {
-	unsigned char *data;
+	Atom *types;
 	unsigned long nitems;
 	int status;
 
-	status = get_property(display, w, "WM_TRANSIENT_FOR", &nitems, &data);
+	status = get_atoms_from_atom(display, w, g_atom_net_wm_window_type, &types, &nitems);
 	if (status != 0) {
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_parent_window]: "
 			    "Unable to get parent of window 0x%08lx", w);
-		*parent = 0;
 		return False;
 	}
-	if (nitems == 0 || data == 0) {
+	if (nitems == 0) {
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_parent_window]: "
 			    "No parent window for window 0x%08lx", w);
-		*parent = 0;
 		return False;
 	}
 
-	*parent = (Window)
-	    ((*((unsigned char *)data + 0) << 0) |
-	     (*((unsigned char *)data + 1) << 8) |
-	     (*((unsigned char *)data + 2) << 16) |
-	     (*((unsigned char *)data + 3) << 24)
-	    );
-	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_parent_window]: "
-		    "Parent window for window 0x%08lx : 0x%08lx\n", w, *parent);
+	*parent = (Window) types[0];
+
 	return True;
 }
