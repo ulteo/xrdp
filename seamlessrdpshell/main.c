@@ -66,6 +66,14 @@ int error_handler(Display * display, XErrorEvent * error)
 }
 
 /*****************************************************************************/
+int IOerror_handler(Display * display)
+{
+	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[IOerror_handler]: "
+		    "IO error on display %s", XDisplayString(display));
+	return 0;
+}
+
+/*****************************************************************************/
 int send_message(char *data, int data_len)
 {
 	pthread_mutex_lock(&send_mutex);
@@ -1337,6 +1345,7 @@ int main(int argc, char **argv, char **environ)
 		return 1;
 	}
 	XSetErrorHandler(error_handler);
+	XSetIOErrorHandler(IOerror_handler);
 
 	initializeXUtils(display);
 
