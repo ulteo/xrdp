@@ -57,8 +57,12 @@ static Atom g_atom_net_wm_window_type = None;
 static Atom g_atom_net_wm_window_type_normal = None;
 static Atom g_atom_net_wm_window_type_splash = None;
 
+static Atom g_atom_net_wm_pid = None;
+
 static Atom g_atom_wm_state = None;
 static Atom g_atom_wm_change_state = None;
+
+static Atom g_atom_wm_transient_for = None;
 
 void initializeXUtils(Display *dpy) {
 	g_display = dpy;
@@ -73,8 +77,12 @@ void initializeXUtils(Display *dpy) {
 	g_atom_net_wm_window_type_normal = XInternAtom(g_display, "_NET_WM_WINDOW_TYPE_NORMAL", False);
 	g_atom_net_wm_window_type_splash = XInternAtom(g_display, "_NET_WM_WINDOW_TYPE_SPLASH", False);
 
+	g_atom_net_wm_pid = XInternAtom(g_display, "_NET_WM_PID", False);
+
 	g_atom_wm_state = XInternAtom(g_display, "WM_STATE", False);
 	g_atom_wm_change_state = XInternAtom(g_display, "WM_CHANGE_STATE", False);
+
+	g_atom_wm_transient_for = XInternAtom(g_display, "WM_TRANSIENT_FOR", False);
 }
 
 /*****************************************************************************/
@@ -557,7 +565,7 @@ int get_window_pid(Display * display, Window w, int *pid)
 	unsigned long nitems;
 	int status;
 
-	status = get_atoms_from_atom(display, w, g_atom_net_wm_window_type, &types, &nitems);
+	status = get_atoms_from_atom(display, w, g_atom_net_wm_pid, &types, &nitems);
 	if (status != 0) {
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_pid]: "
 			    "Unable to get window(0x%08lx) pid", w);
@@ -581,7 +589,7 @@ int get_parent_window(Display * display, Window w, Window * parent)
 	unsigned long nitems;
 	int status;
 
-	status = get_atoms_from_atom(display, w, g_atom_net_wm_window_type, &types, &nitems);
+	status = get_atoms_from_atom(display, w, g_atom_wm_transient_for, &types, &nitems);
 	if (status != 0) {
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_parent_window]: "
 			    "Unable to get parent of window 0x%08lx", w);
