@@ -543,7 +543,7 @@ g_tcp_recv(int sck, void* ptr, int len, int flags)
   {
     res = recv(sck, ptr + size_read, len - size_read, flags|MSG_NOSIGNAL|MSG_WAITALL);
 
-    if (res < 0)
+    if (res <= 0)
     {
       return res;
     }
@@ -572,7 +572,7 @@ g_tcp_send(int sck, const void* ptr, int len, int flags)
   do
   {
     res = send(sck, ptr + size_send, len - size_send, flags|MSG_NOSIGNAL);
-    if (res < 0)
+    if (res <= 0)
     {
     	return res;
     }
