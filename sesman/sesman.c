@@ -490,7 +490,7 @@ send_sessions(int client)
 int DEFAULT_CC
 send_session(int client, int session_id, char* user)
 {
-	struct session_item* sess = 0;
+	struct session_item* sess = NULL;
 	xmlNodePtr node, node2;
 	xmlDocPtr doc;
 	xmlChar* version;
@@ -517,12 +517,15 @@ send_session(int client, int session_id, char* user)
 	}
 	lock_chain_release();
 
-	if( sess == NULL)
+	if( sess == NULL && session_id != 0)
 	{
-		log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[send_session]: "
+		log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[send_session]: "
 				"the session %i did not exist",session_id);
-		xml_send_error(client, "the session id of the request did not exist");
-		return 1;
+
+		sess = g_malloc(sizeof(struct session_item), 1);
+		sess->display = session_id;
+		sess->status = SESMAN_SESSION_STATUS_UNKNOWN;
+		g_snprintf(sess->name, sizeof(sess->name), "UNKNOW");
 	}
 	version = xmlCharStrdup("1.0");
 	doc = xmlNewDoc(version);
