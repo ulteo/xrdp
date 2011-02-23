@@ -64,6 +64,9 @@ static Atom g_atom_wm_change_state = None;
 
 static Atom g_atom_wm_transient_for = None;
 
+static Atom g_atom_wm_protocols = None;
+static Atom g_atom_wm_delete_window = None;
+
 void initializeXUtils(Display *dpy) {
 	g_display = dpy;
 
@@ -83,6 +86,9 @@ void initializeXUtils(Display *dpy) {
 	g_atom_wm_change_state = XInternAtom(g_display, "WM_CHANGE_STATE", False);
 
 	g_atom_wm_transient_for = XInternAtom(g_display, "WM_TRANSIENT_FOR", False);
+
+	g_atom_wm_protocols = XInternAtom(g_display, "WM_PROTOCOLS", False);
+	g_atom_wm_delete_window = XInternAtom(g_display, "WM_DELETE_WINDOW", False);
 }
 
 /*****************************************************************************/
@@ -294,6 +300,19 @@ int get_window_name(Display * display, Window w, unsigned char **name)
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_name]: "
 		    "Window(0x%08lx) name : %s\n", w, *name);
 	return True;
+}
+
+static int get_wm_protocols(Display *display, Window wnd, Atom **wm_protocols, unsigned long *nitems) {
+	int status;
+
+	status = get_atoms_from_atom(display, wnd, g_atom_wm_protocols, wm_protocols, nitems);
+	if (status != 0) {
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_wm_protocols]: "
+			    "Unable to get window(0x%08lx) WM protocols", wnd);
+		return 1;
+	}
+
+	return 0;
 }
 
 static int get_net_wm_state(Display * display, Window w, Atom ** atoms, unsigned long *nitems)
@@ -508,6 +527,42 @@ set_window_state(Display* display, Window wnd, int state) {
 	}
 
 	return state;
+}
+
+void close_window(Display* display, Window wnd) {
+	Atom *wm_protocols = NULL;
+	unsigned long nitems;
+	int i;
+	Bool isWMDeleteWindowSupported = False;
+
+	if (get_wm_protocols(display, wnd, &wm_protocols, &nitems) == 0) {
+		for (i = 0; i < nitems; i++) {
+			if (wm_protocols[i] != g_atom_wm_delete_window)
+				continue;
+
+			isWMDeleteWindowSupported = True;
+			break;
+		}
+	}
+
+	if (isWMDeleteWindowSupported) {
+		// see http://tronche.com/gui/x/icccm/sec-4.html#s-4.2.8.1
+		XEvent xev;
+
+		xev.type = ClientMessage;
+		xev.xclient.format = 32;
+		xev.xclient.message_type = g_atom_wm_protocols;
+		xev.xclient.window = wnd;
+		xev.xclient.data.l[0] = g_atom_wm_delete_window;
+		xev.xclient.data.l[1] = CurrentTime;
+		XSendEvent(display, wnd, False, 0, &xev);
+	}
+	else {
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[close_window]: "
+			    "Window 0x%08lx does not support WM_DELETE_WINDOW protocol, will use an alternate method which can crash the window", wnd);
+		XDestroyWindow(display, wnd);
+	}
+	XFlush(display);
 }
 
 int is_splash_window(Display * display, Window w) {

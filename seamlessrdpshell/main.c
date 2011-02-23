@@ -421,12 +421,11 @@ int process_destroy_action(Window wnd)
 	Window_get(window_list, wnd, witem);
 	if (witem == 0) {
 		log_message(l_config, LOG_LEVEL_INFO, "XHook[process_destroy_action]: "
-			    "Window (0x%08lx) already removed", wnd);
+			    "Window (0x%08lx) is not registered. Maybe it has already been destroyed", wnd);
 		return 0;
 	}
 
-	XDestroyWindow(display, wnd);
-	XFlush(display);
+	close_window(display, witem->window_id);
 
 	return 0;
 }
