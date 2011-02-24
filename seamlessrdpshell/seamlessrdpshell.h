@@ -51,10 +51,6 @@ typedef struct {
 	Window window_id;
 	Window win_out;
 	Window parent;
-	int normal_x;
-	int normal_y;
-	unsigned int normal_width;
-	unsigned int normal_height;
 	char * name;
         StateOrder* waiting_state;
 } Window_item;
@@ -79,10 +75,6 @@ typedef struct {
 		window_list.list[count].window_id = window;\
 		window_list.list[count].win_out = win_out;\
 		window_list.list[count].parent = (Window) 0;\
-		window_list.list[count].normal_x = -1;\
-		window_list.list[count].normal_y = -1;\
-		window_list.list[count].normal_width = 1;\
-		window_list.list[count].normal_height = 1;\
 		window_list.list[count].name = NULL;\
                 window_list.list[count].waiting_state = NULL;\
 		window_list.item_count++;\
@@ -112,10 +104,6 @@ typedef struct {
 		temp->window_id = window_list.list[count-1].window_id;\
 		temp->win_out = window_list.list[count-1].win_out;\
 		temp->parent = window_list.list[count-1].parent;\
-		temp->normal_x = window_list.list[count-1].normal_x;\
-		temp->normal_y = window_list.list[count-1].normal_y;\
-		temp->normal_width = window_list.list[count-1].normal_width;\
-		temp->normal_height = window_list.list[count-1].normal_height;\
 		g_free(temp->name);\
 		temp->name = window_list.list[count-1].name;\
 		window_list.item_count--;\
@@ -129,17 +117,12 @@ typedef struct {
 	for(i=0 ; i < count; i++){\
 		printf("\t elem %i :: state->%i || lock->%i || iconify->%i || "\
 			"window_id->0x%08lx || win_out->0x%08lx || "\
-			"parent->0x%08lx || normal_x->%i || normal_y->%i || "\
-			"normal_width->%u || normal_height->%u\n", \
+			"parent->0x%08lx\n", \
 			i, \
 			window_list.list[i].state, \
 			window_list.list[i].window_id, \
 			window_list.list[i].win_out, \
-			window_list.list[i].parent, \
-			window_list.list[i].normal_x, \
-			window_list.list[i].normal_y, \
-			window_list.list[i].normal_width, \
-			window_list.list[i].normal_height);\
+			window_list.list[i].parent);\
 	}\
 }\
 
