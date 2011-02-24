@@ -409,6 +409,10 @@ xrdp_rdp_parse_client_mcs_data(struct xrdp_rdp* self)
       self->client_info.bpp = 24;
       break;
   }
+  if (self->client_info.bpp > 24)
+  {
+    self->client_info.bpp = 24;
+  }
   p->p = p->data;
   DEBUG(("client width %d, client height %d bpp %d",
          self->client_info.width, self->client_info.height,
