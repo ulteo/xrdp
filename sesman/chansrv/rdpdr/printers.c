@@ -25,6 +25,45 @@ extern struct log_config *l_config;
 extern char username[256];
 
 
+char* DEFAULT_CC
+printer_convert_name(const char *name)
+{
+	char *new_name = NULL;
+	char *pnew_name = NULL;
+	char *pname = NULL;
+
+	new_name = g_malloc(g_strlen(name) + 1, 1);
+	if (new_name == NULL)
+	{
+		return NULL;
+	}
+
+	pnew_name = new_name;
+	pname = (char*)name;
+
+	while(*pname)
+	{
+		if (*pname == '@')
+		{
+			*pnew_name = '_';
+		}
+		else
+		{
+			if ((*pname >= 0 && *pname <= ' ') || *pname == 127 || *pname == '/' || *pname == '#' || *pname == '!')
+			{
+				*pnew_name = '_';
+			}
+			else
+			{
+				*pnew_name = *pname;
+			}
+		}
+		pname++;
+		pnew_name++;
+	}
+	return new_name;
+}
+
 /************************************************************************/
 int DEFAULT_CC
 xml_get_xpath(xmlDocPtr doc, const char* xpath, char* value)

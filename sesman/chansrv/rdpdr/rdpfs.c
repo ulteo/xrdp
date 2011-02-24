@@ -185,7 +185,7 @@ rdpfs_get_device_from_path(const char* path)
 
 	if (rdpfs_is_printer_device(path))
 	{
-		path += g_strlen(PRINTER_DIR) + 1;
+		path += g_strlen(PRINTER_DIR) + 2;
 	}
 	else
 	{
@@ -204,7 +204,6 @@ rdpfs_get_device_from_path(const char* path)
 
 	for (i=0 ; i< disk_devices_count ; i++)
 	{
-
 		if(g_strncmp(path, disk_devices[i].dir_name, count) == 0)
 		{
 			log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[disk_dev_get_device_from_path]: "
@@ -703,9 +702,19 @@ rdpfs_add(struct stream* s, int device_data_length, int device_id, char* device_
 
 	if ( device_type == RDPDR_DTYP_PRINT)
 	{
+		char* converted_name = printer_convert_name(device_name);
+		if (converted_name == NULL)
+		{
+			log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpfs_add]: "
+					"Unable to add printer [%s], the name is invalid", device_name);
+			return 0;
+		}
+		g_strcpy(disk_devices[disk_devices_count].dir_name, converted_name);
 		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpfs_add]: "
 				"Succedd to add printer %s", disk_devices[disk_devices_count].dir_name);
 		printer_add(username, disk_devices[disk_devices_count].dir_name);
+
+		g_free(converted_name);
 		return disk_devices_count++;
 	}
 

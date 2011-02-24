@@ -43,6 +43,8 @@ int DEFAULT_CC
 printer_del(const char* username, const char* printer);
 int DEFAULT_CC
 printer_purge(const char* username);
+char* DEFAULT_CC
+printer_convert_name(const char *name);
 
 
 #endif /* PRINTER_H_ */
