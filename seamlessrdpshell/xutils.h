@@ -54,6 +54,7 @@ int get_window_type(Display * display, Window w, Atom * atom);
 int get_window_pid(Display * display, Window w, int *pid);
 int get_parent_window(Display * display, Window w, Window * parent);
 int is_good_window(Display * display, Window w);
+Bool is_button_proxy_window(Display * display, Window wnd);
 int
 get_property(Display * display, Window w, const char *property,
 	     unsigned long *nitems, unsigned char **data);

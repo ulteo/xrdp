@@ -71,6 +71,8 @@ static Atom g_atom_wm_transient_for = None;
 static Atom g_atom_wm_protocols = None;
 static Atom g_atom_wm_delete_window = None;
 
+static Atom g_atom_win_desktop_button_proxy = None;
+
 void initializeXUtils(Display *dpy) {
 	g_display = dpy;
 
@@ -98,6 +100,8 @@ void initializeXUtils(Display *dpy) {
 
 	g_atom_wm_protocols = XInternAtom(g_display, "WM_PROTOCOLS", False);
 	g_atom_wm_delete_window = XInternAtom(g_display, "WM_DELETE_WINDOW", False);
+
+	g_atom_win_desktop_button_proxy = XInternAtom(g_display, "_WIN_DESKTOP_BUTTON_PROXY", False);
 }
 
 /*****************************************************************************/
@@ -670,6 +674,22 @@ int get_parent_window(Display * display, Window w, Window * parent)
 		return False;
 
 	*parent = (Window) xid;
+
+	return True;
+}
+
+Bool is_button_proxy_window(Display * display, Window wnd)
+{
+	// see ftp://ftp.math.utah.edu/u/ma/hohn/linux/gnome/gnome-libs/devel-docs/WM-GOME.txt Chapter 3 Section 1
+	XID xid;
+
+	if (getCardinalFromAtom(display, wnd, g_atom_win_desktop_button_proxy, &xid)) {
+		if (((Window) xid) == wnd) {
+			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[is_window_displayable]: "
+				    "Window 0x%08lx is not displayable: _WIN_DESKTOP_BUTTON_PROXY is this window", wnd);
+			return False;
+		}
+	}
 
 	return True;
 }

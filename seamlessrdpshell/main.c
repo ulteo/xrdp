@@ -782,6 +782,9 @@ void create_window(Window win_out)
 		    "GEOM IN: %i,%i,%i,%i,%i,%i\n", x,
 		    y, width, height, border, depth);
 
+	if (! is_button_proxy_window(display, win_out) || ! is_button_proxy_window(display, win_in))
+		return;
+
 	if (is_good_window(display, win_out) == 0) {
 		proper_win = win_out;
 		log_message(l_config, LOG_LEVEL_INFO, "XHook[create_window]: "
