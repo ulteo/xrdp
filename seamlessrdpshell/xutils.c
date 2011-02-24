@@ -57,6 +57,10 @@ static Atom g_atom_net_wm_window_type = None;
 static Atom g_atom_net_wm_window_type_normal = None;
 static Atom g_atom_net_wm_window_type_splash = None;
 
+static Atom g_atom_net_wm_allowed_actions = None;
+static Atom g_atom_net_wm_action_close = None;
+static Atom g_atom_net_close_window = None;
+
 static Atom g_atom_net_wm_pid = None;
 
 static Atom g_atom_wm_state = None;
@@ -79,6 +83,11 @@ void initializeXUtils(Display *dpy) {
 	g_atom_net_wm_window_type = XInternAtom(g_display, "_NET_WM_WINDOW_TYPE", False);
 	g_atom_net_wm_window_type_normal = XInternAtom(g_display, "_NET_WM_WINDOW_TYPE_NORMAL", False);
 	g_atom_net_wm_window_type_splash = XInternAtom(g_display, "_NET_WM_WINDOW_TYPE_SPLASH", False);
+
+	g_atom_net_wm_allowed_actions = XInternAtom(g_display, "_NET_WM_ALLOWED_ACTIONS", False);
+	g_atom_net_wm_action_close = XInternAtom(g_display, "_NET_WM_ACTION_CLOSE", False);
+
+	g_atom_net_close_window = XInternAtom(g_display, "_NET_CLOSE_WINDOW", False);
 
 	g_atom_net_wm_pid = XInternAtom(g_display, "_NET_WM_PID", False);
 
@@ -240,6 +249,36 @@ static int get_atoms_from_atom(Display *display, Window wnd, Atom atom, Atom **r
 
 	return 0;
 }
+static Bool isAtomContainedInAtom(Display *display, Window wnd, Atom atom_container, Atom atom_requested) {
+	Atom *atoms = NULL;
+	unsigned long nitems;
+	int status;
+	int i;
+	Bool isAtomContained = False;
+
+	if (atom_container == None || atom_requested == None)
+		return False;
+
+	status = get_atoms_from_atom(display, wnd, atom_container, &atoms, &nitems);
+	if (status != 0) {
+		char *name = XGetAtomName(display, atom_container);
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[isAtomContainedInAtom]: "
+			    "Unable to get atom %s on window 0x%08lx", name, wnd);
+		XFree(name);
+
+		return False;
+	}
+
+	for (i = 0; i < nitems; i++) {
+		if (atoms[i] != atom_requested)
+			continue;
+
+		isAtomContained = True;
+		break;
+	}
+
+	return isAtomContained;
+}
 
 int is_good_window(Display * display, Window w)
 {
@@ -300,19 +339,6 @@ int get_window_name(Display * display, Window w, unsigned char **name)
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_name]: "
 		    "Window(0x%08lx) name : %s\n", w, *name);
 	return True;
-}
-
-static int get_wm_protocols(Display *display, Window wnd, Atom **wm_protocols, unsigned long *nitems) {
-	int status;
-
-	status = get_atoms_from_atom(display, wnd, g_atom_wm_protocols, wm_protocols, nitems);
-	if (status != 0) {
-		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_wm_protocols]: "
-			    "Unable to get window(0x%08lx) WM protocols", wnd);
-		return 1;
-	}
-
-	return 0;
 }
 
 static int get_net_wm_state(Display * display, Window w, Atom ** atoms, unsigned long *nitems)
@@ -530,38 +556,55 @@ set_window_state(Display* display, Window wnd, int state) {
 }
 
 void close_window(Display* display, Window wnd) {
-	Atom *wm_protocols = NULL;
-	unsigned long nitems;
-	int i;
-	Bool isWMDeleteWindowSupported = False;
-
-	if (get_wm_protocols(display, wnd, &wm_protocols, &nitems) == 0) {
-		for (i = 0; i < nitems; i++) {
-			if (wm_protocols[i] != g_atom_wm_delete_window)
-				continue;
-
-			isWMDeleteWindowSupported = True;
-			break;
-		}
-	}
-
-	if (isWMDeleteWindowSupported) {
-		// see http://tronche.com/gui/x/icccm/sec-4.html#s-4.2.8.1
+	if (isAtomContainedInAtom(display, wnd, g_atom_net_wm_allowed_actions, g_atom_net_wm_action_close)) {
+		// see http://standards.freedesktop.org/wm-spec/wm-spec-1.4.html#id2551096
 		XEvent xev;
 
 		xev.type = ClientMessage;
 		xev.xclient.format = 32;
-		xev.xclient.message_type = g_atom_wm_protocols;
+		xev.xclient.message_type = g_atom_net_close_window;
 		xev.xclient.window = wnd;
+		xev.xclient.data.l[0] = CurrentTime;
+		xev.xclient.data.l[1] = REQUEST_FROM_USER;
+		xev.xclient.data.l[2] = 0;
+
+
+		xev.xclient.data.l[3] = 0;
+		xev.xclient.data.l[4] = 0;
+
+		XSendEvent(display, DefaultRootWindow(display), False, SubstructureNotifyMask, &xev);
+	}
+	else if (isAtomContainedInAtom(display, wnd, g_atom_wm_protocols, g_atom_wm_delete_window)) {
+		// see http://standards.freedesktop.org/wm-spec/wm-spec-1.4.html#id2551096
+ 		XEvent xev;
+
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[close_window]: "
+			    "Window 0x%08lx does not support _NET_WM_ACTION_CLOSE, will directly use WM_DELETE_WINDOW protocol", wnd);
+
+ 		xev.type = ClientMessage;
+ 		xev.xclient.format = 32;
+		xev.xclient.message_type = g_atom_wm_protocols;
+ 		xev.xclient.window = wnd;
 		xev.xclient.data.l[0] = g_atom_wm_delete_window;
 		xev.xclient.data.l[1] = CurrentTime;
+		xev.xclient.data.l[2] = 0;
+		xev.xclient.data.l[3] = 0;
+		xev.xclient.data.l[4] = 0;
+		
 		XSendEvent(display, wnd, False, 0, &xev);
 	}
 	else {
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[close_window]: "
-			    "Window 0x%08lx does not support WM_DELETE_WINDOW protocol, will use an alternate method which can crash the window", wnd);
+			    "Window 0x%08lx does not support _NET_CLOSE_WINDOW action nor the WM_DELETE_WINDOW protocol, will use an alternate method which would crash the window", wnd);
+
+		/* To improve:
+		 * XDestroyWindow kills the window but the process is alive.
+		 * XKillClient kills the process of wnd but if wnd is not the main window, the process is also killed
+		 */
 		XDestroyWindow(display, wnd);
+		//XKillClient(display, wnd);
 	}
+
 	XFlush(display);
 }
 

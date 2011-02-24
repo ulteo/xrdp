@@ -32,6 +32,9 @@
 #define _NET_WM_STATE_ADD		1	/* add/set property */
 #define _NET_WM_STATE_TOGGLE		2	/* toggle property  */
 
+#define REQUEST_FROM_APPLICATION	1	/* normal applications request */
+#define REQUEST_FROM_USER		2	/* direct user action */
+
 #define STATE_NORMAL			0x00
 #define STATE_ICONIFIED			0x01
 #define STATE_MAXIMIZED_HORIZ		0x02
