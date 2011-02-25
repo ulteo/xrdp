@@ -248,6 +248,10 @@ static int fuse_dev_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 			}
 		}
 	}
+
+	rdpfs_request_close(completion_id, disk->device_id);
+	rdpfs_wait_reply(completion_id);
+
 	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[fuse_dev_readdir]: "
 				"Fin");
 
