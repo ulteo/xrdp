@@ -1,7 +1,7 @@
 /**
  * Copyright (C) 2009-2011 Ulteo SAS
  * http://www.ulteo.com
- * Author David LECHEVALIER <david@ulteo.com>
+ * Author David LECHEVALIER <david@ulteo.com> 2009-2011
  * Author Thomas MOUTON <thomas@ulteo.com> 2010-2011
  *
  * This program is free software; you can redistribute it and/or
@@ -19,6 +19,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  **/
 
+#include "os_calls.h"
 #include "xutils.h"
 #include <log.h>
 #include <stdlib.h>
@@ -44,6 +45,11 @@ static char *wmstate_strs[] = {
 	"UnknownState",
 	"IconicState"
 };
+
+static char *window_class_exceptions[] = {
+	"Xfwm4"
+};
+
 
 static Display *g_display;
 
@@ -692,4 +698,42 @@ Bool is_button_proxy_window(Display * display, Window wnd)
 	}
 
 	return True;
+}
+
+Bool is_windows_class_exception(Display * display, Window wnd)
+{
+	XClassHint *class_hint;
+	int i = 0;
+	int exception_length = sizeof(window_class_exceptions) / sizeof(char*);
+
+	class_hint = XAllocClassHint();
+	if (class_hint == NULL) {
+		log_message(l_config, LOG_LEVEL_ERROR, "XHook[is_windows_class_exception]: "
+			    "Unable to allocate memory for 'XClassHint' structure");
+		return False;
+	}
+
+	if (XGetClassHint(display, wnd, class_hint)) {
+		for (i = 0; i < exception_length; i++) {
+			if (g_strncasecmp(class_hint->res_class, window_class_exceptions[i], g_strlen(window_class_exceptions[i])) == 0) {
+				log_message(l_config, LOG_LEVEL_DEBUG, "XHook[is_windows_class_exception]: "
+					    "Window 0x%08lx is member of the class %s, which is not displayable", wnd, window_class_exceptions[i]);
+
+				if (class_hint) {
+					if (class_hint->res_class)
+						XFree(class_hint->res_class);
+					if (class_hint->res_name)
+						XFree(class_hint->res_name);
+				}
+				return True;
+			}
+		}
+	}
+	if (class_hint) {
+		if (class_hint->res_class)
+			XFree(class_hint->res_class);
+		if (class_hint->res_name)
+			XFree(class_hint->res_name);
+	}
+	return False;
 }

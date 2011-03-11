@@ -1,7 +1,7 @@
 /**
  * Copyright (C) 2008-2011 Ulteo SAS
  * http://www.ulteo.com
- * Author David LECHEVALIER <david@ulteo.com> 2009 2010
+ * Author David LECHEVALIER <david@ulteo.com> 2009-2011
  * Author Thomas MOUTON <thomas@ulteo.com> 2010-2011
  *
  * This program is free software; you can redistribute it and/or
@@ -781,6 +781,10 @@ void create_window(Window win_out)
 	log_message(l_config, LOG_LEVEL_INFO, "XHook[create_window]: "
 		    "GEOM IN: %i,%i,%i,%i,%i,%i\n", x,
 		    y, width, height, border, depth);
+
+	if (is_windows_class_exception(display, win_out) || is_windows_class_exception(display, win_in)) {
+		return;
+	}
 
 	if (! is_button_proxy_window(display, win_out) || ! is_button_proxy_window(display, win_in))
 		return;

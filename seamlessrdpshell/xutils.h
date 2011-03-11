@@ -1,7 +1,7 @@
 /**
  * Copyright (C) 2009-2011 Ulteo SAS
  * http://www.ulteo.com
- * Author David LECHEVALIER <david@ulteo.com>
+ * Author David LECHEVALIER <david@ulteo.com> 2009-2011
  * Author Thomas MOUTON <thomas@ulteo.com> 2010-2011
  *
  * This program is free software; you can redistribute it and/or
@@ -61,5 +61,6 @@ get_property(Display * display, Window w, const char *property,
 
 void initializeXUtils(Display *dpy);
 void close_window(Display* display, Window wnd);
+Bool is_windows_class_exception(Display * display, Window wnd);
 
 #endif				/* XUTILS_H_ */
