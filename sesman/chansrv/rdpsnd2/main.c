@@ -79,6 +79,7 @@ void *thread_sound_process (void * arg)
   int error;
   int block_size;
   int factor;
+  int i = 0;
 
   pa_sample_spec ss;
   if (server_format.wBitsPerSample == 16)
@@ -126,7 +127,12 @@ void *thread_sound_process (void * arg)
       			"pa_simple_read() failed: %s", pa_strerror(error));
       	goto finish;
       }
-      sound_process(buffer , block_size);
+      for (i = 0 ; i < block_size ; i++) {
+        if (buffer[i]) {
+          sound_process(buffer , block_size);
+          break;
+        }
+      }
   }
 
 
