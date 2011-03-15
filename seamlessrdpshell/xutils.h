@@ -41,6 +41,7 @@
 #define STATE_MAXIMIZED_HORIZ		0x02
 #define STATE_MAXIMIZED_VERT		0x04
 #define STATE_MAXIMIZED_BOTH		(STATE_MAXIMIZED_HORIZ | STATE_MAXIMIZED_VERT)
+#define STATE_FULLSCREEN		0x08
 
 int hex2int(const char *hexa_string);
 const char *gravityToStr(int gravity);

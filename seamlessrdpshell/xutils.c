@@ -56,6 +56,7 @@ static Display *g_display;
 static Atom g_atom_net_wm_state = None;
 static Atom g_atom_net_wm_state_maximized_horz = None;
 static Atom g_atom_net_wm_state_maximized_vert = None;
+static Atom g_atom_net_wm_state_fullscreen = None;
 static Atom g_atom_net_wm_state_hidden = None;
 static Atom g_atom_net_wm_state_modal = None;
 
@@ -85,6 +86,7 @@ void initializeXUtils(Display *dpy) {
 	g_atom_net_wm_state = XInternAtom(g_display, "_NET_WM_STATE", False);
 	g_atom_net_wm_state_maximized_horz = XInternAtom(g_display, "_NET_WM_STATE_MAXIMIZED_HORZ", False);
 	g_atom_net_wm_state_maximized_vert = XInternAtom(g_display, "_NET_WM_STATE_MAXIMIZED_VERT", False);
+	g_atom_net_wm_state_fullscreen = XInternAtom(g_display, "_NET_WM_STATE_FULLSCREEN", False);
 	g_atom_net_wm_state_hidden = XInternAtom(g_display, "_NET_WM_STATE_HIDDEN", False);
 	g_atom_net_wm_state_modal = XInternAtom(g_display, "_NET_WM_STATE_MODAL", False);
 
@@ -425,6 +427,8 @@ int get_window_state(Display * display, Window wnd) {
 			state |= STATE_MAXIMIZED_HORIZ;
 		else if (states[i] == g_atom_net_wm_state_maximized_vert && wmstate == NormalState)
 			state |= STATE_MAXIMIZED_VERT;
+		else if (states[i] == g_atom_net_wm_state_fullscreen && wmstate == NormalState)
+			state |= STATE_FULLSCREEN;
 	}
 
 	return state;

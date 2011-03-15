@@ -928,6 +928,9 @@ int get_state(Window_item * witem)
 		case STATE_NORMAL:
 			state_seamless = SEAMLESSRDP_NORMAL;
 			break;
+		case STATE_FULLSCREEN:
+			state_seamless = SEAMLESSRDP_FULLSCREEN;
+			break;
 		default:
 			log_message(l_config, LOG_LEVEL_WARNING, "XHook[get_state]: "
 				    "Window 0x%08lx has an unknown state", witem->window_id);
@@ -978,9 +981,9 @@ void move_window(Window w, int x, int y, int width, int height)
 		return;
 	}
 
-	if (witem->state == SEAMLESSRDP_MAXIMIZED) {
+	if (witem->state == SEAMLESSRDP_MAXIMIZED || witem->state == SEAMLESSRDP_FULLSCREEN) {
 		log_message(l_config, LOG_LEVEL_INFO, "XHook[move_window]: "
-			    "Window 0x%08lx is maximized. Do not update client window size (x: %d y: %d width: %d height: %d)", witem->window_id, x, y, width, height);
+			    "Window 0x%08lx is maximized or in fullscreen state. Do not update client window size (x: %d y: %d width: %d height: %d)", witem->window_id, x, y, width, height);
 		return;
 	}
 

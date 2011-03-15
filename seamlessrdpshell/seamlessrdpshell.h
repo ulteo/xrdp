@@ -53,7 +53,7 @@
 #define SEAMLESSRDP_NORMAL				0
 #define SEAMLESSRDP_MAXIMIZED			2
 #define SEAMLESSRDP_MINIMIZED			1
-#define SEAMLESSRDP_VERY_MAXIMIZED		3
+#define SEAMLESSRDP_FULLSCREEN                  3
 
 typedef struct {
 	int state;
