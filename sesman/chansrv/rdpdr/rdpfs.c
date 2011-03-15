@@ -1,7 +1,7 @@
 /**
- * Copyright (C) 2008 Ulteo SAS
+ * Copyright (C) 2010-2011 Ulteo SAS
  * http://www.ulteo.com
- * Author David LECHEVALIER <david@ulteo.com> 2010
+ * Author David LECHEVALIER <david@ulteo.com> 2010-2011
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -689,7 +689,11 @@ rdpfs_list_reply(int device_id, int status)
 int APP_CC
 rdpfs_add(struct stream* s, int device_data_length, int device_id, char* device_name, int device_type)
 {
-	if (disk_devices_count == MAX_SHARE)
+	if (device_id < 0)
+	{
+		return -1;
+	}
+	if (disk_devices_count >= MAX_SHARE)
 	{
 		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr[rdpfs_add]: "
 				"Failed to add device %s, max number of share reached",
@@ -881,7 +885,7 @@ rdpfs_list_announce(struct stream* s)
 		{
 			log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpfs_list_announce]: "
 				"Unable to add disk device");
-			rdpfs_list_reply(0, STATUS_INVALID_PARAMETER);
+			rdpfs_list_reply(device_id, STATUS_INVALID_PARAMETER);
 			continue;
 		}
 		rdpfs_list_reply(device_id, STATUS_SUCCESS);
