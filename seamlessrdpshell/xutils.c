@@ -234,12 +234,12 @@ static int get_atoms_from_atom(Display *display, Window wnd, Atom atom, Atom **r
 		return 0;
 	}
 
-	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_wm_protocols]: "
+	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_atoms_from_atom]: "
 			    "Window 0x%08lx: atom %s contains %ul atom(s)", wnd, atom_name, *nitems);
 
 	*return_atoms = malloc(sizeof(Atom) * *nitems);
 	if (! (*return_atoms)) {
-		log_message(l_config, LOG_LEVEL_WARNING, "XHook[get_wm_protocols]: "
+		log_message(l_config, LOG_LEVEL_WARNING, "XHook[get_atoms_from_atom]: "
 			    "Failed to allocate memory(%i bytes)", (sizeof(Atom) * *nitems));
 		return -4;
 	}
@@ -253,7 +253,7 @@ static int get_atoms_from_atom(Display *display, Window wnd, Atom atom, Atom **r
 		    );
 		data += 4;
 
-		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_wm_protocols]: "
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_atoms_from_atom]: "
 			    "Window 0x%08lx: atom %s contains atom: %ul", wnd, atom_name, (*return_atoms)[i]);
 	}
 
