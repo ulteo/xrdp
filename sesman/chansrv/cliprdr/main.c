@@ -1,7 +1,7 @@
 /**
- * Copyright (C) 2010 Ulteo SAS
+ * Copyright (C) 2010-2011 Ulteo SAS
  * http://www.ulteo.com
- * Author David LECHEVALIER <david@ulteo.com> 2010
+ * Author David LECHEVALIER <david@ulteo.com> 2010-2011
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -579,6 +579,7 @@ void *thread_Xvent_process (void * arg)
 			log_message(l_config, LOG_LEVEL_DEBUG, "cliprdr[thread_Xvent_process]: "
 						"SelectionNotify");
 			cliprdr_get_clipboard(&ev);
+			cliprdr_send_format_list();
 			break;
 
 		default:
