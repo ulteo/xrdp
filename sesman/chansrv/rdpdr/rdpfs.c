@@ -577,6 +577,7 @@ rdpfs_query_setinformation(int completion_id, int information, struct fs_info* f
 	case FileBasicInformation:
 		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpfs_query_setinformation]: "
 				"set FileBasicInformation");
+		out_uint8s(s, 28);                    /* padding */
 		time = convert_filetime_to_1970(fs->create_access_time);
 		out_uint64_le(s, time);
 		time = convert_filetime_to_1970(fs->last_access_time);
@@ -608,8 +609,8 @@ rdpfs_query_setinformation(int completion_id, int information, struct fs_info* f
 		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpfs_query_setinformation]: "
 				"set FileRenameInformation");
 		out_uint8(s, 0);                      /* replaceIf exist */
-		out_uint8s(s, 3);                     /* reserved */
-		out_uint8s(s, 4);                     /* rootDirectory must be set to 0 */
+		out_uint8s(s, 2);                     /* rootDirectory must be set to 0 */
+		out_uint8s(s, 28);                    /* padding */
 		out_uint32_le(s, (strlen(fs->filename)+1)*2); /* PathLength */
 		uni_rdp_out_str(s, (char*)fs->filename, (strlen(fs->filename)+1)*2);			/* Path */
 		break;

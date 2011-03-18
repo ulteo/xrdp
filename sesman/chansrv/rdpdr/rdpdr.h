@@ -1,7 +1,7 @@
 /**
- * Copyright (C) 2008 Ulteo SAS
+ * Copyright (C) 2010-2011 Ulteo SAS
  * http://www.ulteo.com
- * Author David Lechevalier <david@ulteo.com> 2010
+ * Author David Lechevalier <david@ulteo.com> 2010-2011
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -149,7 +149,7 @@
 #define FileBasicInformation                    0x00000004
 #define FileEndOfFileInformation                0x00000020
 #define FileDispositionInformation              0x0000000D
-#define FileRenameInformation                   0x00000010
+#define FileRenameInformation                   0x0000000A
 #define FileAllocationInformation               0x00000019
 
 
