@@ -548,7 +548,7 @@ set_window_state(Display* display, Window wnd, int state) {
 		case STATE_MAXIMIZED_BOTH:
 			remove_net_wm_state(display, wnd, g_atom_net_wm_state_hidden);
 
-			change_wm_state(display, wnd, NormalState);
+			// change_wm_state(display, wnd, NormalState); /* Window may become in normal state from iconic state (instead of maximized state) */
 
 			add_net_wm_state(display, wnd, g_atom_net_wm_state_maximized_horz, g_atom_net_wm_state_maximized_vert);
 			break;
