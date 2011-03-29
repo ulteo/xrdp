@@ -49,6 +49,7 @@ static int seamrdp_channel;
 struct log_config *l_config;
 
 void check_window_name(Window_item *witem);
+void check_window_state(Window_item *witem);
 
 /*****************************************************************************/
 int error_handler(Display * display, XErrorEvent * error)
@@ -882,9 +883,6 @@ void create_window(Window win_out)
 		window_id, attributes.x, attributes.y, attributes.width,
 		attributes.height, 0);
 	send_message(buffer, strlen(buffer));
-	sprintf(buffer, "STATE,%i,%s,0x%08x,0x%08x\n", message_id, window_id, 0,
-		0);
-	send_message(buffer, strlen(buffer));
 	g_free(window_id);
 	g_free(buffer);
 	Window_add(window_list, proper_win, win_out);
@@ -892,6 +890,7 @@ void create_window(Window win_out)
 
 	Window_get(window_list, proper_win, witem);
 	check_window_name(witem);
+	check_window_state(witem);
 }
 
 /*****************************************************************************/

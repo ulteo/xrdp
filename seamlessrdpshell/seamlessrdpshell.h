@@ -85,7 +85,7 @@ typedef struct {
 	Window_item* temp;\
 	Window_get(window_list, window,temp);\
 	if(temp == 0){\
-		window_list.list[count].state = SEAMLESSRDP_NORMAL;\
+		window_list.list[count].state = SEAMLESSRDP_NOTYETMAPPED;\
 		window_list.list[count].window_id = window;\
 		window_list.list[count].win_out = win_out;\
 		window_list.list[count].parent = (Window) 0;\
