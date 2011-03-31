@@ -898,11 +898,20 @@ int get_state(Window_item * witem)
 {
 	int state = STATE_NORMAL;
 	int state_seamless = SEAMLESSRDP_NORMAL;
+	Atom type;
 
 	if (witem == 0) {
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_state]: "
 			    "No window item\n");
 		return -1;
+	}
+
+	get_window_type(display, witem->window_id, &type);
+	if (type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_UTILITY", False)
+	    || type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_POPUP_MENU", False)
+	    || type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_DROPDOWN_MENU", False)
+	    || type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_TOOLTIP", False)) {
+		return SEAMLESSRDP_NORMAL;
 	}
 
 	state = get_window_state(display, witem->window_id);
