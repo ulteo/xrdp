@@ -112,6 +112,22 @@ int send_ack(int id)
 }
 
 /*****************************************************************************/
+int send_focus(Window wnd)
+{
+	int ret;
+	char* buffer = g_malloc(1024, 1);
+
+	log_message(l_config, LOG_LEVEL_INFO, "XHook[sendAck]: "
+		    "Sending focus message for window 0x%08lx", wnd);
+
+	sprintf(buffer, "FOCUS,%i,0x%08lx\n", message_id, wnd);
+	ret = send_message(buffer, strlen(buffer));
+	g_free(buffer);
+
+	return ret;
+}
+
+/*****************************************************************************/
 void handler(int sig)
 {
 	int pid, statut;
@@ -1104,12 +1120,13 @@ void *thread_Xvent_process(void *arg)
 	Window w;
 	Window root_windows;
 	Window_item *witem;
+	Window lastActivatedWindow = None;
 
 	root_windows = DefaultRootWindow(display);
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
 		    "Windows root ID : 0x%08lx", root_windows);
 
-	XSelectInput(display, root_windows, SubstructureNotifyMask);
+	XSelectInput(display, root_windows, SubstructureNotifyMask | PropertyChangeMask);
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
 		    "Begin the event loop ");
 
@@ -1174,6 +1191,25 @@ void *thread_Xvent_process(void *arg)
 			}
 
 			destroy_window(witem->window_id);
+			break;
+
+		case PropertyNotify:
+			if (ev.xproperty.atom == getActiveWindowAtom()) {
+				Window activeWindow = getActiveWindow(display);
+				if (activeWindow == lastActivatedWindow)
+					break;
+				
+				Window_get(window_list, activeWindow, witem);
+				if (witem) {
+					log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
+						    "Window 0x%08lx gained the focus", activeWindow);
+
+					send_focus(activeWindow);
+				}
+				
+				lastActivatedWindow = activeWindow;
+			}
+
 			break;
 
 		default:

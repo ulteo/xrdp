@@ -53,6 +53,8 @@ static char *window_class_exceptions[] = {
 
 static Display *g_display;
 
+static Atom g_atom_net_active_window = None;
+
 static Atom g_atom_net_wm_state = None;
 static Atom g_atom_net_wm_state_maximized_horz = None;
 static Atom g_atom_net_wm_state_maximized_vert = None;
@@ -82,6 +84,8 @@ static Atom g_atom_win_desktop_button_proxy = None;
 
 void initializeXUtils(Display *dpy) {
 	g_display = dpy;
+
+	g_atom_net_active_window = XInternAtom(g_display, "_NET_ACTIVE_WINDOW", False);
 
 	g_atom_net_wm_state = XInternAtom(g_display, "_NET_WM_STATE", False);
 	g_atom_net_wm_state_maximized_horz = XInternAtom(g_display, "_NET_WM_STATE_MAXIMIZED_HORZ", False);
@@ -740,4 +744,16 @@ Bool is_windows_class_exception(Display * display, Window wnd)
 			XFree(class_hint->res_name);
 	}
 	return False;
+}
+
+Atom getActiveWindowAtom() {
+	return g_atom_net_active_window;
+}
+
+Window getActiveWindow(Display * display) {
+	Window activeWindow = None;
+
+	getCardinalFromAtom(display, DefaultRootWindow(display), g_atom_net_active_window, &activeWindow);
+
+	return activeWindow;
 }
