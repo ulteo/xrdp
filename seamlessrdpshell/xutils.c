@@ -55,6 +55,8 @@ static Display *g_display;
 
 static Atom g_atom_net_active_window = None;
 
+static Atom g_atom_net_frame_extends = None;
+
 static Atom g_atom_net_wm_state = None;
 static Atom g_atom_net_wm_state_maximized_horz = None;
 static Atom g_atom_net_wm_state_maximized_vert = None;
@@ -86,6 +88,8 @@ void initializeXUtils(Display *dpy) {
 	g_display = dpy;
 
 	g_atom_net_active_window = XInternAtom(g_display, "_NET_ACTIVE_WINDOW", False);
+
+	g_atom_net_frame_extends = XInternAtom(g_display, "_NET_FRAME_EXTENTS", False);
 
 	g_atom_net_wm_state = XInternAtom(g_display, "_NET_WM_STATE", False);
 	g_atom_net_wm_state_maximized_horz = XInternAtom(g_display, "_NET_WM_STATE_MAXIMIZED_HORZ", False);
@@ -756,4 +760,38 @@ Window getActiveWindow(Display * display) {
 	getCardinalFromAtom(display, DefaultRootWindow(display), g_atom_net_active_window, &activeWindow);
 
 	return activeWindow;
+}
+
+Bool getFrameExtents(Display * display, Window wnd, int * left, int * right, int * top, int * bottom) {
+	Atom *atoms = NULL;
+	unsigned long nitems;
+	int status;
+
+	if (! left || ! right || ! top || ! bottom)
+		return False;
+
+	if (g_atom_net_frame_extends == None)
+		return False;
+
+	status = get_atoms_from_atom(display, wnd, g_atom_net_frame_extends, &atoms, &nitems);
+	if (status != 0) {
+		char *name = XGetAtomName(display, g_atom_net_frame_extends);
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[getFrameExtents]: "
+			    "Unable to get atom %s on window 0x%08lx", name, wnd);
+		XFree(name);
+
+		return False;
+	}
+	if (nitems != 4) {
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[getFrameExtents]: "
+			    "Window 0x%08lx. Bad content(size: %lu)", wnd, nitems);
+		return False;
+	}
+
+	*left = atoms[0];
+	*right = atoms[1];
+	*top = atoms[2];
+	*bottom = atoms[3];
+
+	return True;
 }

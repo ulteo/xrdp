@@ -379,7 +379,9 @@ int process_move_action(XEvent * ev)
 	int y;
 	unsigned int width, height, border, depth;
 	short flag = 0;
-	XWindowAttributes attr;
+	int left, right, top, bottom;
+	XSizeHints hints;
+	long hints_return;
 
 	Window_get(window_list, ev->xconfigure.window, witem);
 	if (witem == 0) {
@@ -394,17 +396,19 @@ int process_move_action(XEvent * ev)
 		return 1;
 	}
 
-	XGetWindowAttributes(display, witem->window_id, &attr);
-	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[process_move_action]: "
-		    "Wnd 0x%08lx gravity: %s", witem->window_id, gravityToStr(attr.win_gravity));
-
-	if (attr.win_gravity != StaticGravity) {
-		ev->xconfigure.x -= attr.x;
-		ev->xconfigure.y -= attr.y;
+	if (getFrameExtents(display, witem->window_id, &left, &right, &top, &bottom)) {
+		ev->xconfigure.width -= left + right;
+		ev->xconfigure.height -= top + bottom;
 	}
 
-	XGetGeometry(display, witem->win_out, &root, &x, &y, &width, &height,
-		     &border, &depth);
+	if (XGetWMNormalHints(display, witem->window_id, &hints, &hints_return) != 0) {
+		if ((hints_return & PWinGravity) != 0 && hints.win_gravity == StaticGravity) {
+			ev->xconfigure.x += left;
+			ev->xconfigure.y += top;
+		}
+	}
+
+	XGetGeometry(display, witem->window_id, &root, &x, &y, &width, &height, &border, &depth);
 
 	if (x != ev->xconfigure.x || y != ev->xconfigure.y)
 		flag += 1;
@@ -413,15 +417,15 @@ int process_move_action(XEvent * ev)
 
 	switch (flag) {
 	case 1:
-		XMoveWindow(display, witem->win_out, ev->xconfigure.x,
+		XMoveWindow(display, witem->window_id, ev->xconfigure.x,
 			    ev->xconfigure.y);
 		break;
 	case 2:
-		XResizeWindow(display, witem->win_out, ev->xconfigure.width,
+		XResizeWindow(display, witem->window_id, ev->xconfigure.width,
 			      ev->xconfigure.height);
 		break;
 	case 3:
-		XMoveResizeWindow(display, witem->win_out, ev->xconfigure.x,
+		XMoveResizeWindow(display, witem->window_id, ev->xconfigure.x,
 				  ev->xconfigure.y, ev->xconfigure.width,
 				  ev->xconfigure.height);
 		break;
