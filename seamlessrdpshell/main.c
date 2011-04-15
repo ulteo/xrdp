@@ -911,6 +911,8 @@ void create_window(Window win_out)
 	Window_get(window_list, proper_win, witem);
 	check_window_name(witem);
 	check_window_state(witem);
+
+	XSelectInput(display, proper_win, PropertyChangeMask);
 }
 
 /*****************************************************************************/
@@ -1101,24 +1103,6 @@ void check_window_name(Window_item *witem)
 }
 
 /*****************************************************************************/
-void check_windows() {
-	Window_item *witem = NULL;
-	int i = 0;
-	int count = 0;
-
-	log_message(l_config, LOG_LEVEL_INFO, "XHook[check_windows]: "
-		    "Check windows changes");
-
-	count = window_list.item_count;
-	for (i = 0; i < count; i++) {
-		witem = &window_list.list[i];
-
-		check_window_name(witem);
-		check_window_state(witem);
-	}
-}
-
-/*****************************************************************************/
 void *thread_Xvent_process(void *arg)
 {
 	Window w;
@@ -1138,8 +1122,6 @@ void *thread_Xvent_process(void *arg)
 		XEvent ev;
 		XNextEvent(display, &ev);
 		pthread_mutex_lock(&mutex);
-
-		check_windows();
 
 		switch (ev.type) {
 
@@ -1198,21 +1180,34 @@ void *thread_Xvent_process(void *arg)
 			break;
 
 		case PropertyNotify:
-			if (ev.xproperty.atom == getActiveWindowAtom()) {
-				Window activeWindow = getActiveWindow(display);
-				if (activeWindow == lastActivatedWindow)
-					break;
-				
-				Window_get(window_list, activeWindow, witem);
-				if (witem) {
-					log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
-						    "Window 0x%08lx gained the focus", activeWindow);
+			w = ev.xproperty.window;
+			if (w == root_windows) {
+				if (ev.xproperty.atom == getActiveWindowAtom()) {
+					Window activeWindow = getActiveWindow(display);
+					if (activeWindow == lastActivatedWindow)
+						break;
 
-					send_focus(activeWindow);
+					Window_get(window_list, activeWindow, witem);
+					if (witem) {
+						log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
+							    "Window 0x%08lx gained the focus", activeWindow);
+
+						send_focus(activeWindow);
+					}
+
+					lastActivatedWindow = activeWindow;
 				}
-				
-				lastActivatedWindow = activeWindow;
+				break;
 			}
+
+			Window_get(window_list, w, witem);
+			if (! witem)
+				break;
+
+			if (isNameAtom(display, ev.xproperty.atom))
+				check_window_name(witem);
+			else if (isStateAtom(display, ev.xproperty.atom))
+				check_window_state(witem);
 
 			break;
 

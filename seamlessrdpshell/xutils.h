@@ -66,5 +66,7 @@ Bool is_windows_class_exception(Display * display, Window wnd);
 Bool getFrameExtents(Display * display, Window wnd, int * left, int * right, int * top, int * bottom);
 Atom getActiveWindowAtom();
 Window getActiveWindow(Display * display);
+Bool isNameAtom(Display * display, Atom atom);
+Bool isStateAtom(Display * display, Atom atom);
 
 #endif				/* XUTILS_H_ */

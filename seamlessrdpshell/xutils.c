@@ -795,3 +795,23 @@ Bool getFrameExtents(Display * display, Window wnd, int * left, int * right, int
 
 	return True;
 }
+
+Bool isStateAtom(Display * display, Atom atom) {
+	if (! display || atom == None)
+		return False;
+
+	if (atom == g_atom_net_wm_state || atom == g_atom_wm_state)
+		return True;
+
+	return False;
+}
+
+Bool isNameAtom(Display * display, Atom atom) {
+	if (! display || atom == None)
+		return False;
+
+	if (atom == XInternAtom(display, "_NET_WM_NAME", False) || atom == XInternAtom(display, "WM_NAME", False))
+		return True;
+
+	return False;
+}
