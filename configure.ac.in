@@ -57,6 +57,9 @@ AC_CHECK_HEADER([X11/Xlib.h], [], [AC_MSG_ERROR([please install libx11-dev])])
 AC_CHECK_HEADER([X11/extensions/Xfixes.h], [], [AC_MSG_ERROR([please install libxfixes-dev])],
   [#include <X11/Xlib.h>])
 
+# checking libjpeg
+AC_CHECK_HEADER([jpeglib.h], [], [AC_MSG_ERROR([please install libjpeg-dev])])
+
 # checking for libcups2
 AC_CHECK_HEADER([cups/cups.h], [], [AC_MSG_ERROR([please install libcups2-dev])])
 

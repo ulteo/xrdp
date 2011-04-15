@@ -1,3 +1,23 @@
+/**
+ * Copyright (C) 2011 Ulteo SAS
+ * http://www.ulteo.com
+ * Author David LECHEVALIER <david@ulteo.com> 2011
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; version 2
+ * of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ **/
+
 /*
    rdesktop: A Remote Desktop Protocol client.
    Miscellaneous protocol constants
@@ -222,6 +242,9 @@
 #define RDP_CAPSET_BMPCACHE            4
 #define RDP_CAPLEN_BMPCACHE            0x28
 
+#define RDP_CAPSET_JPEGCACHE           99
+#define RDP_CAPLEN_JPEGCACHE           0x06
+
 #define RDP_CAPSET_CONTROL             5
 #define RDP_CAPLEN_CONTROL             0x0C
 
@@ -441,6 +464,7 @@
 #define RDP_ORDER_RAW_BMPCACHE2 4
 #define RDP_ORDER_BMPCACHE2     5
 #define RDP_ORDER_BRUSHCACHE    7
+#define RDP_ORDER_JPEGCACHE    99
 
 /* drawable types */
 #define WND_TYPE_BITMAP  0

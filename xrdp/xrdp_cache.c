@@ -1,3 +1,23 @@
+/**
+ * Copyright (C) 2011 Ulteo SAS
+ * http://www.ulteo.com
+ * Author David LECHEVALIER <david@ulteo.com> 2011
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; version 2
+ * of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ **/
+
 /*
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -34,6 +54,12 @@ xrdp_cache_create(struct xrdp_wm* owner,
   self->wm = owner;
   self->session = session;
   self->use_bitmap_comp = client_info->use_bitmap_comp;
+  self->use_jpeg_comp = 0;
+  if (client_info->use_jpeg == 1 && client_info->can_use_jpeg == 1)
+  {
+    self->use_jpeg_comp = 1;
+  }
+  self->jpeg_quality = client_info->jpeg_quality;
   self->cache1_entries = client_info->cache1_entries;
   self->cache1_size = client_info->cache1_size;
   self->cache2_entries = client_info->cache2_entries;
@@ -252,34 +278,43 @@ xrdp_cache_add_bitmap(struct xrdp_cache* self, struct xrdp_bitmap* bitmap)
   xrdp_bitmap_delete(self->bitmap_items[cache_id][cache_idx].bitmap);
   self->bitmap_items[cache_id][cache_idx].bitmap = bitmap;
   self->bitmap_items[cache_id][cache_idx].stamp = self->bitmap_stamp;
-  if (self->bitmap_cache_version == 0) /* orginal version */
+  if (self->use_jpeg_comp == 1)
   {
-    if (self->use_bitmap_comp)
-    {
-      libxrdp_orders_send_bitmap(self->session, bitmap->width,
-                                 bitmap->height, bitmap->bpp,
-                                 bitmap->data, cache_id, cache_idx);
-    }
-    else
-    {
-      libxrdp_orders_send_raw_bitmap(self->session, bitmap->width,
-                                     bitmap->height, bitmap->bpp,
-                                     bitmap->data, cache_id, cache_idx);
-    }
+    libxrdp_orders_send_jpeg(self->session, bitmap->width,
+                             bitmap->height, bitmap->bpp,
+                             bitmap->data, cache_id, cache_idx, self->jpeg_quality);
   }
   else
   {
-    if (self->use_bitmap_comp)
+    if (self->bitmap_cache_version == 0) /* orginal version */
     {
-      libxrdp_orders_send_bitmap2(self->session, bitmap->width,
-                                  bitmap->height, bitmap->bpp,
-                                  bitmap->data, cache_id, cache_idx);
+      if (self->use_bitmap_comp)
+      {
+        libxrdp_orders_send_bitmap(self->session, bitmap->width,
+                                   bitmap->height, bitmap->bpp,
+                                   bitmap->data, cache_id, cache_idx);
+      }
+      else
+      {
+        libxrdp_orders_send_raw_bitmap(self->session, bitmap->width,
+                                       bitmap->height, bitmap->bpp,
+                                       bitmap->data, cache_id, cache_idx);
+      }
     }
     else
     {
-      libxrdp_orders_send_raw_bitmap2(self->session, bitmap->width,
-                                      bitmap->height, bitmap->bpp,
-                                      bitmap->data, cache_id, cache_idx);
+      if (self->use_bitmap_comp)
+      {
+        libxrdp_orders_send_bitmap2(self->session, bitmap->width,
+                                    bitmap->height, bitmap->bpp,
+                                    bitmap->data, cache_id, cache_idx);
+      }
+      else
+      {
+        libxrdp_orders_send_raw_bitmap2(self->session, bitmap->width,
+                                        bitmap->height, bitmap->bpp,
+                                        bitmap->data, cache_id, cache_idx);
+      }
     }
   }
   return MAKELONG(cache_idx, cache_id);

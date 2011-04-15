@@ -1,3 +1,23 @@
+/**
+ * Copyright (C) 2011 Ulteo SAS
+ * http://www.ulteo.com
+ * Author David LECHEVALIER <david@ulteo.com> 2011
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; version 2
+ * of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ **/
+
 /*
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -122,6 +142,29 @@ xrdp_rdp_read_config(struct xrdp_client_info* client_info)
       if (g_strcasecmp(value, "1") == 0)
       {
         client_info->channel_code = 1;
+      }
+    }
+    else if (g_strcasecmp(item, "jpeg_quality") == 0)
+    {
+      client_info->jpeg_quality = g_atoi(value);
+      if (client_info->jpeg_quality == 0)
+      {
+        printf("Invalid value for jpeg quality: %s\n", value);
+      }
+      if (client_info->jpeg_quality < 0 || client_info->jpeg_quality > 100)
+      {
+        printf("Invalid value for jpeg quality: %s. Quality must be set between in [1-100]\n", value);
+      }
+    }
+    else if (g_strcasecmp(item, "use_jpeg") == 0)
+    {
+      if (g_strcasecmp(value, "1") == 0)
+      {
+        client_info->can_use_jpeg = 1;
+      }
+      if (client_info->jpeg_quality == 0 )
+      {
+        client_info->jpeg_quality = 80;
       }
     }
   }
@@ -696,6 +739,21 @@ xrdp_process_capset_bmpcache(struct xrdp_rdp* self, struct stream* s,
 /*****************************************************************************/
 /* get the bitmap cache size */
 static int APP_CC
+xrdp_process_capset_jpegcache(struct xrdp_rdp* self, struct stream* s, int len)
+{
+  int active = 0;
+  in_uint16_le(s, active);
+  if (self->client_info.can_use_jpeg == 1)
+  {
+    self->client_info.use_jpeg = active;
+  }
+  return 0;
+}
+
+
+/*****************************************************************************/
+/* get the bitmap cache size */
+static int APP_CC
 xrdp_process_capset_bmpcache2(struct xrdp_rdp* self, struct stream* s,
                               int len)
 {
@@ -848,6 +906,9 @@ xrdp_rdp_process_confirm_active(struct xrdp_rdp* self, struct stream* s)
         break;
       case 26: /* 26 */
         DEBUG(("--26"));
+      case RDP_CAPSET_JPEGCACHE: /* 99 */
+        DEBUG(("RDP_CAPSET_JPEGCACHE"));
+        xrdp_process_capset_jpegcache(self, s, len);
         break;
       default:
         g_writeln("unknown in xrdp_rdp_process_confirm_active %d", type);

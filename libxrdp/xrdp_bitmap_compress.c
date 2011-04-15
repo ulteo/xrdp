@@ -1,3 +1,23 @@
+/**
+ * Copyright (C) 2011 Ulteo SAS
+ * http://www.ulteo.com
+ * Author David LECHEVALIER <david@ulteo.com> 2011
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; version 2
+ * of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ **/
+
 /*
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -21,6 +41,8 @@
 */
 
 #include "libxrdp.h"
+#include <jpeglib.h>
+#include <jerror.h>
 
 /*****************************************************************************/
 #define IN_PIXEL8(in_ptr, in_x, in_y, in_w, in_last_pixel, in_pixel); \
@@ -640,6 +662,139 @@
   fom_mask_len = 0; \
   bicolor_spin = 0; \
 }
+
+#define JPEG_BUFFER_SIZE    16384
+
+struct jpeg_compress_struct cinfo;
+struct jpeg_error_mgr jerr;
+struct jpeg_destination_mgr my_mgr;
+char* dest;
+
+
+void my_init_destination(j_compress_ptr cinfo)
+{
+  cinfo->dest->next_output_byte = dest;
+  cinfo->dest->free_in_buffer = JPEG_BUFFER_SIZE;
+}
+
+boolean my_empty_output_buffer(j_compress_ptr cinfo)
+{
+  return 0;
+}
+
+void my_term_destination(j_compress_ptr cinfo)
+{
+}
+
+int init_compressor() {
+  cinfo.err = jpeg_std_error( &jerr );
+  jpeg_create_compress(&cinfo);
+  my_mgr.init_destination = &my_init_destination;
+  my_mgr.empty_output_buffer = &my_empty_output_buffer;
+  my_mgr.term_destination = &my_term_destination;
+  cinfo.dest = &my_mgr;
+}
+
+int release_processor() {
+  jpeg_finish_compress( &cinfo );
+  jpeg_destroy_compress( &cinfo );
+}
+
+int jpeg_compress(char* in_data, int width, int height, int bpp, int quality)
+{
+  /* This is a pointer to one row of image data */
+  JSAMPROW row_pointer[1];
+
+  /* Setting the parameters of the output file here */
+  cinfo.image_width = width;
+  cinfo.image_height = height;
+  cinfo.input_components = 3;
+  cinfo.in_color_space = JCS_RGB;
+  cinfo.num_components = 3;
+  cinfo.dct_method = JDCT_FLOAT;
+
+  jpeg_set_defaults( &cinfo );
+
+  jpeg_set_quality(&cinfo, quality, TRUE);
+  /* Now do the compression .. */
+  jpeg_start_compress( &cinfo, TRUE );
+  /* Like reading a file, this time write one row at a time */
+  while( cinfo.next_scanline < cinfo.image_height )
+  {
+    row_pointer[0] = &in_data[ cinfo.next_scanline * cinfo.image_width * cinfo.input_components];
+    jpeg_write_scanlines( &cinfo, row_pointer, 1 );
+  }
+  return 1;
+}
+
+/*****************************************************************************/
+int APP_CC
+xrdp_bitmap_jpeg_compress(char* in_data, int width, int height, struct stream* s, int bpp, int quality)
+{
+  int pixel = 0;
+  int index = 0;
+  int i = 0;
+  int j = 0;
+  int e = width % 4;
+  int out_size = 0;
+  int Bpp = (bpp + 7) / 8;
+  int bufsize = (width + e) * height * Bpp;
+
+  if (e != 0)
+  {
+    e = 4 - e;
+  }
+  init_compressor();
+
+  if (Bpp == 2) {
+    bufsize = (width + e) * height * 3;
+  }
+  char* buf = g_malloc(bufsize, 1);
+
+  for (i = 0; i < height; i++)
+  {
+    for (j = 0; j < width; j++)
+    {
+      if (Bpp == 3)
+      {
+        pixel = GETPIXEL32(in_data, j, i, width);
+        buf[index] = pixel >> 16;
+        index++;
+        buf[index] = pixel >> 8;
+        index++;
+        buf[index] = pixel ;
+        index++;
+      }
+      else if (Bpp == 2)
+      {
+        pixel = GETPIXEL16(in_data, j, i, width);
+        buf[index] = (pixel >> 8) & 0xF8;
+        index++;
+        buf[index] = (pixel >> 3) & 0xFC;
+        index++;
+        buf[index] = (pixel << 3) & 0xFF;
+        index++;
+      }
+      else if (Bpp == 1)
+      {
+        pixel = GETPIXEL8(in_data, j, i, width);
+        buf[index] = pixel;
+        index++;
+      }
+    }
+  }
+  dest = g_malloc(JPEG_BUFFER_SIZE, 1);
+  jpeg_compress(buf, width, height, Bpp, quality);
+
+  release_processor();
+  out_size = JPEG_BUFFER_SIZE - cinfo.dest->free_in_buffer;
+
+  out_uint8p(s, dest, out_size);
+  g_free(dest);
+  g_free(buf);
+  return height;
+}
+
 
 /*****************************************************************************/
 int APP_CC

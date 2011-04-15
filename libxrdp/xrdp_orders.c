@@ -1,3 +1,23 @@
+/**
+ * Copyright (C) 2011 Ulteo SAS
+ * http://www.ulteo.com
+ * Author David LECHEVALIER <david@ulteo.com> 2011
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; version 2
+ * of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ **/
+
 /*
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -1896,6 +1916,82 @@ height(%d)", lines_sending, height);
   free_stream(temp_s);
   return 0;
 }
+
+/*****************************************************************************/
+/* returns error */
+/* max size width * height * Bpp + 14 */
+int APP_CC
+xrdp_orders_send_jpeg(struct xrdp_orders* self,
+                         int width, int height, int bpp, char* data,
+                         int cache_id, int cache_idx, int quality)
+{
+  int order_flags;
+  int len;
+  int bufsize;
+  int Bpp;
+  int i;
+  int lines_sending;
+  int e;
+  struct stream* s;
+  struct stream* temp_s;
+  char* p;
+
+  if (width > 64)
+  {
+    g_writeln("error, width > 64");
+    return 1;
+  }
+  if (height > 64)
+  {
+    g_writeln("error, height > 64");
+    return 1;
+  }
+  e = width % 4;
+  if (e != 0)
+  {
+    e = 4 - e;
+  }
+  make_stream(s);
+  init_stream(s, 16384);
+  make_stream(temp_s);
+  init_stream(temp_s, 16384);
+  p = s->p;
+  i = height;
+  lines_sending = xrdp_bitmap_jpeg_compress(data, width, height, s, bpp, quality);
+  if (lines_sending != height)
+  {
+    free_stream(s);
+    free_stream(temp_s);
+    g_writeln("error in xrdp_orders_send_bitmap2, lines_sending(%d) != \
+height(%d)", lines_sending, height);
+    return 1;
+  }
+  bufsize = (int)(s->p - p);
+  Bpp = (bpp + 7) / 8;
+  xrdp_orders_check(self, bufsize + 14);
+  self->order_count++;
+  order_flags = RDP_ORDER_STANDARD | RDP_ORDER_SECONDARY;
+  out_uint8(self->out_s, order_flags);
+  len = (bufsize + 6) - 7; /* length after type minus 7 */
+  out_uint16_le(self->out_s, len);
+  i = (((Bpp + 2) << 3) & 0x38) | (cache_id & 7);
+  i = i | 0x400;
+  out_uint16_le(self->out_s, i); /* flags */
+  out_uint8(self->out_s, RDP_ORDER_JPEGCACHE); /* type */
+  out_uint8(self->out_s, width + e);
+  out_uint8(self->out_s, height);
+  out_uint16_be(self->out_s, bufsize | 0x4000);
+  i = ((cache_idx >> 8) & 0xff) | 0x80;
+  out_uint8(self->out_s, i);
+  i = cache_idx & 0xff;
+  out_uint8(self->out_s, i);
+  out_uint8a(self->out_s, s->data, bufsize);
+  free_stream(s);
+  free_stream(temp_s);
+  return 0;
+}
+
+
 
 /*****************************************************************************/
 /* returns error */
