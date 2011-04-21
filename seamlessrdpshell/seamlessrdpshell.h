@@ -55,6 +55,14 @@
 #define SEAMLESSRDP_MINIMIZED			1
 #define SEAMLESSRDP_FULLSCREEN                  3
 
+#define SEAMLESS_ICON_SIZE 32
+
+typedef struct {
+	int width;
+	int height;
+	int* p;
+} WindowIcon;
+
 typedef struct {
 	int state;
 	int ack_id;

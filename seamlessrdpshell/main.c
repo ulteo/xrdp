@@ -3,6 +3,7 @@
  * http://www.ulteo.com
  * Author David LECHEVALIER <david@ulteo.com> 2009-2011
  * Author Thomas MOUTON <thomas@ulteo.com> 2010-2011
+ * Author Guillaume DUPAS <guillaume@ulteo.com> 2011
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -34,6 +35,7 @@
 #include <vchannel.h>
 #include <os_calls.h>
 #include <file.h>
+#include <ImageMagick/wand/MagickWand.h>
 #include "seamlessrdpshell.h"
 #include "xutils.h"
 
@@ -623,6 +625,117 @@ void process_message(char *buffer)
 }
 
 /*****************************************************************************/
+void send_icon(Window wnd, WindowIcon* item) {
+  	int i, count, message_id, message_length, pixel, width, height;
+	char a, r, g, b;
+	char buffer[1024] = {0};
+	char *buffer_pos = buffer;
+	char window_id[11] = {0};
+
+	sprintf(window_id, "0x%08lx", wnd);
+	width = item->width;
+	height = item->height;
+	message_length = 0;
+	message_id = 0;
+	buffer_pos = buffer;
+	count = sprintf(buffer, "SETICON,%i,%s,%i,%s,%i,%i,", message_id,
+			window_id, message_id, "RGBA", width, height);
+
+	buffer_pos += count;
+	message_length += count;
+
+	for (i = 0; i < width * height; i++) {
+		a = (item->p[i] >> 24);
+		r = (item->p[i] >> 16);
+		g = (item->p[i] >> 8);
+		b = (item->p[i] >> 0);
+	  
+		pixel = (r << 24) + (g << 16) + (b << 8) + (a << 0);
+
+		count = sprintf(buffer_pos, "%08x", pixel);
+		buffer_pos += count;
+		message_length += count;
+
+		if (message_length > 1000 || i == width * height - 1) {
+			count = sprintf(buffer_pos, "\n");
+			send_message(buffer, message_length);
+
+			message_id++;
+			buffer_pos = buffer;
+			message_length = 0;
+			count = sprintf(buffer, "SETICON,%i,%s,%i,%s,%i,%i,", message_id, window_id, message_id,
+						"RGBA", width, height);
+			buffer_pos += count;
+			message_length += count;
+		}
+	}
+}
+
+#ifdef IMAGE_MAGICK_SUPPORT
+/*****************************************************************************/
+void resize_and_send_icon(Window wnd, WindowIcon *icon) {
+	size_t size = 0;
+	MagickWand *m_wand = NULL;
+
+	MagickBooleanType ret;
+	MagickWandGenesis();
+
+	m_wand = NewMagickWand();
+
+	ret = MagickSetSize(m_wand, icon->width, icon->height);
+	if (ret == MagickFalse) {
+		log_message(l_config, LOG_LEVEL_ERROR, "XHook[resize_and_send_icon]: "
+				"error at MagickSetSize : %d", ret);
+		goto end;
+	}
+
+	ret = MagickSetDepth(m_wand, 8);
+	if (ret == MagickFalse) {
+		log_message(l_config, LOG_LEVEL_ERROR, "XHook[resize_and_send_icon]: "
+				"error at MagickSetDepth : %d", ret);
+		goto end;
+	}
+
+	ret = MagickSetFormat(m_wand, "RGBA");
+	if (ret == MagickFalse) {
+		log_message(l_config, LOG_LEVEL_ERROR, "XHook[resize_and_send_icon]: "
+				"error at MagickSetFormat : %d", ret);
+		goto end;
+	}
+
+	ret = MagickReadImageBlob(m_wand,icon->p, icon->width*icon->height*4);
+	if (ret == MagickFalse) {
+		log_message(l_config, LOG_LEVEL_ERROR, "XHook[resize_and_send_icon]: "
+				"error at MagickReadImageBlob : %d", ret);
+		goto end;
+	}
+
+	ret = MagickResizeImage(m_wand, SEAMLESS_ICON_SIZE, SEAMLESS_ICON_SIZE, LanczosFilter,1);
+	if (ret == MagickFalse) {
+		log_message(l_config, LOG_LEVEL_ERROR, "XHook[resize_and_send_icon]: "
+				"error at MagickResizeImage : %d", ret);
+		goto end;
+	}
+
+	icon->p = (int*)MagickGetImageBlob(m_wand, &size);
+	icon->width = SEAMLESS_ICON_SIZE;
+	icon->height = SEAMLESS_ICON_SIZE;
+
+	if (size != SEAMLESS_ICON_SIZE*SEAMLESS_ICON_SIZE*4) {
+		log_message(l_config, LOG_LEVEL_ERROR, "XHook[resize_and_send_icon]: "
+				"error at MagickGetImageBlob: invalid size. Received: %d, expected: %d", size, SEAMLESS_ICON_SIZE*SEAMLESS_ICON_SIZE*4);
+		goto end;
+	}
+	send_icon(wnd, icon);
+
+end:
+	DestroyMagickWand(m_wand);
+
+	MagickWandTerminus();
+}
+#endif
+
+/*****************************************************************************/
 int get_icon(Window wnd)
 {
 #if __WORDSIZE==64
@@ -634,26 +747,27 @@ int get_icon(Window wnd)
 #else
 	int *data = NULL;
 #endif
-	int i, k, message_id, height, width, count, message_length, pixel;
-	char a, r, g, b;
+	int k, message_id, height, width, message_length;
 	unsigned long nitems;
-	char *buffer = g_malloc(1024, 1);
-	char *buffer_pos = buffer;
-	char *window_id = g_malloc(11, 1);
+	WindowIcon icon;
+	int ret = 1;
+
+	icon.width = 0;
+	icon.height = 0;
 
 	if (get_property
 	    (display, wnd, "_NET_WM_ICON", &nitems,
 	     (unsigned char **)&data) != Success) {
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_icon]: "
 			    "No icon for the window 0x%08lx", wnd);
-		return 1;
+		goto end;
 	}
 	if (nitems < 16 * 16 + 2) {
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_icon]: "
 			    "No proper icon for the window 0x%08lx", wnd);
-		return 1;
+		goto end;
 	}
-	sprintf(window_id, "0x%08lx", wnd);
+
 	//analyzing of _NET_WM_ICON atom content
 	k = 0;
 	while (k < nitems) {
@@ -665,48 +779,32 @@ int get_icon(Window wnd)
 
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_icon]: "
 			    "new Icon : %i X %i\n", width, height);
-		if (width > 32) {
-			k += height * width;
-			continue;
+
+		if (width == SEAMLESS_ICON_SIZE) {
+			icon.width = width;
+			icon.height = height;
+			icon.p = data + k;
+			send_icon(wnd, &icon);
+			ret = 0;
+			goto end;
 		}
-		buffer_pos = buffer;
-		count =
-		    sprintf(buffer, "SETICON,%i,%s,%i,%s,%i,%i,", message_id,
-			    window_id, message_id, "RGBA", width, height);
 
-		buffer_pos += count;
-		message_length += count;
 
-		for (i = 0; i < width * height; i++) {
-			a = ((data[k + i] >> 24));
-			r = ((data[k + i] >> 16));
-			g = ((data[k + i] >> 8));
-			b = ((data[k + i] >> 0));
-
-			pixel = (r << 24) + (g << 16) + (b << 8) + (a << 0);
-
-			count = sprintf(buffer_pos, "%08x", pixel);
-			buffer_pos += count;
-			message_length += count;
-
-			if (message_length > 1000 || i == width * height - 1) {
-				count = sprintf(buffer_pos, "\n");
-				send_message(buffer, message_length);
-
-				message_id++;
-				buffer_pos = buffer;
-				message_length = 0;
-				count =
-				    sprintf(buffer,
-					    "SETICON,%i,%s,%i,%s,%i,%i,",
-					    message_id, window_id, message_id,
-					    "RGBA", width, height);
-				buffer_pos += count;
-				message_length += count;
-			}
+		if (width > icon.width) {
+			icon.width = width;
+			icon.height = height;
+			icon.p = data + k;
 		}
+
 		k += height * width;
 	}
+#ifdef IMAGE_MAGICK_SUPPORT
+	if (icon.width != 0)
+		resize_and_send_icon(wnd, &icon);
+#endif
+	ret = 0;
+end:
+	XFree(data);
 	return 0;
 
 }
