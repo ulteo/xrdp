@@ -993,7 +993,7 @@ void create_window(Window win_out)
 		window_id, pid, (int)parent_id, flags);
 	send_message(buffer, strlen(buffer));
 	
-	if (!(flags & SEAMLESS_CREATE_POPUP)) {
+	if (! (flags & SEAMLESS_CREATE_POPUP) || (parent_id == -1L)) {
 		get_icon(proper_win);
 	}
 
