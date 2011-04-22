@@ -57,10 +57,17 @@
 
 #define SEAMLESS_ICON_SIZE 32
 
+#if __WORDSIZE==64
+	typedef long int Icon_data;
+#else
+	typedef int Icon_data;
+#endif
+
 typedef struct {
 	int width;
 	int height;
-	int* p;
+	Icon_data *p;
+
 } WindowIcon;
 
 typedef struct {

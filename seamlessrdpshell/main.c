@@ -35,7 +35,7 @@
 #include <vchannel.h>
 #include <os_calls.h>
 #include <file.h>
-#include <ImageMagick/wand/MagickWand.h>
+#include <wand/MagickWand.h>
 #include "seamlessrdpshell.h"
 #include "xutils.h"
 
@@ -717,7 +717,7 @@ void resize_and_send_icon(Window wnd, WindowIcon *icon) {
 		goto end;
 	}
 
-	icon->p = (int*)MagickGetImageBlob(m_wand, &size);
+	icon->p = (Icon_data*)MagickGetImageBlob(m_wand, &size);
 	icon->width = SEAMLESS_ICON_SIZE;
 	icon->height = SEAMLESS_ICON_SIZE;
 
