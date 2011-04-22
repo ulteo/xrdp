@@ -378,6 +378,7 @@ static int fuse_dev_unlink(const char *path)
 	g_str_replace_first(rdp_path, "//", "/");
 
 	fs.delele_request = 1;
+	rdpfs_cache_remove_fs(path);
 
 	attributes = FILE_SYNCHRONOUS_IO_NONALERT;
 	desired_access = GENERIC_READ|FILE_EXECUTE_ATTRIBUTES;
@@ -424,6 +425,7 @@ static int fuse_dev_rmdir(const char *path)
 	g_str_replace_first(rdp_path, "//", "/");
 
 	fs.delele_request = 1;
+	rdpfs_cache_remove_fs(path);
 
 	attributes = FILE_SYNCHRONOUS_IO_NONALERT;
 	desired_access = GENERIC_READ|FILE_EXECUTE_ATTRIBUTES;
