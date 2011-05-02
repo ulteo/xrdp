@@ -392,6 +392,7 @@ int process_move_action(XEvent * ev)
 		return 0;
 	}
 
+	check_window_state(witem);
 	if (witem->state == SEAMLESSRDP_MINIMIZED) {
 		log_message(l_config, LOG_LEVEL_INFO, "XHook[process_move_action]: "
 			    "The window 0x%08lx is minimized", witem->window_id);
@@ -1109,6 +1110,7 @@ void move_window(Window w, int x, int y, int width, int height)
 		return;
 	}
 
+	check_window_state(witem);
 	if (witem->state == SEAMLESSRDP_MAXIMIZED || witem->state == SEAMLESSRDP_FULLSCREEN) {
 		log_message(l_config, LOG_LEVEL_INFO, "XHook[move_window]: "
 			    "Window 0x%08lx is maximized or in fullscreen state. Do not update client window size (x: %d y: %d width: %d height: %d)", witem->window_id, x, y, width, height);
@@ -1267,6 +1269,7 @@ void *thread_Xvent_process(void *arg)
 				break;
 			}
 
+			check_window_state(witem);
 			if (witem->state == SEAMLESSRDP_MINIMIZED) {
 				log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
 					    "Window 0x%08lx is iconified\n",
