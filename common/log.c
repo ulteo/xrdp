@@ -73,7 +73,7 @@ log_message(struct log_config* l_cfg, const unsigned int lvl, const char* msg, .
   {
     return 0;
   }
-  char buff[LOG_BUFFER_SIZE + 31]; /* 19 (datetime) 4 (space+cr+lf+\0) */
+  char buff[LOG_BUFFER_SIZE + 31] = {0};
   va_list ap;
   int len = 0;
   int rv;
