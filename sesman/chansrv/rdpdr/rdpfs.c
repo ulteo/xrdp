@@ -608,9 +608,9 @@ rdpfs_query_setinformation(int completion_id, int information, struct fs_info* f
 	case FileRenameInformation:
 		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpfs_query_setinformation]: "
 				"set FileRenameInformation");
-		out_uint8(s, 0);                      /* replaceIf exist */
-		out_uint8s(s, 2);                     /* rootDirectory must be set to 0 */
 		out_uint8s(s, 28);                    /* padding */
+		out_uint8(s, 0);                      /* replaceIf exist */
+		out_uint8(s, 0);                     /* rootDirectory must be set to 0 */
 		out_uint32_le(s, (strlen(fs->filename)+1)*2); /* PathLength */
 		uni_rdp_out_str(s, (char*)fs->filename, (strlen(fs->filename)+1)*2);			/* Path */
 		break;
