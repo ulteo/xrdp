@@ -896,6 +896,9 @@ void create_window(Window win_out)
 		    y, width, height, border, depth);
 
 	win_in = get_in_window(display, win_out);
+	if (win_in == 0) {
+		win_in = win_out;
+	}
 	XGetGeometry(display, win_in, &root, &x, &y, &width, &height, &border,
 		     &depth);
 	log_message(l_config, LOG_LEVEL_INFO, "XHook[create_window]: "
@@ -949,9 +952,6 @@ void create_window(Window win_out)
 		witem = NULL;
 	}
 
-	if (win_in == 0) {
-		win_in = win_out;
-	}
 	flags = SEAMLESSRDP_NORMAL;
 	log_message(l_config, LOG_LEVEL_INFO, "XHook[create_window]: "
 		    "Windows type : %s", XGetAtomName(display, type));
