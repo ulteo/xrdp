@@ -1931,7 +1931,6 @@ xrdp_orders_send_jpeg(struct xrdp_orders* self,
   int Bpp;
   int i;
   int lines_sending;
-  int e;
   struct stream* s;
   struct stream* temp_s;
   char* p;
@@ -1946,11 +1945,7 @@ xrdp_orders_send_jpeg(struct xrdp_orders* self,
     g_writeln("error, height > 64");
     return 1;
   }
-  e = width % 4;
-  if (e != 0)
-  {
-    e = 4 - e;
-  }
+
   make_stream(s);
   init_stream(s, 16384);
   make_stream(temp_s);
@@ -1978,7 +1973,7 @@ height(%d)", lines_sending, height);
   i = i | 0x400;
   out_uint16_le(self->out_s, i); /* flags */
   out_uint8(self->out_s, RDP_ORDER_JPEGCACHE); /* type */
-  out_uint8(self->out_s, width + e);
+  out_uint8(self->out_s, width);
   out_uint8(self->out_s, height);
   out_uint16_be(self->out_s, bufsize | 0x4000);
   i = ((cache_idx >> 8) & 0xff) | 0x80;

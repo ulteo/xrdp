@@ -743,19 +743,14 @@ xrdp_bitmap_jpeg_compress(char* in_data, int width, int height, struct stream* s
   int index = 0;
   int i = 0;
   int j = 0;
-  int e = width % 4;
   int out_size = 0;
   int Bpp = (bpp + 7) / 8;
-  int bufsize = (width + e) * height * Bpp;
+  int bufsize = width * height * Bpp;
 
-  if (e != 0)
-  {
-    e = 4 - e;
-  }
   init_compressor();
 
   if (Bpp == 2) {
-    bufsize = (width + e) * height * 3;
+    bufsize = width * height * 3;
   }
   char* buf = g_malloc(bufsize, 1);
 
