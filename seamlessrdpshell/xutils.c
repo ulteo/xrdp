@@ -815,3 +815,16 @@ Bool isNameAtom(Display * display, Atom atom) {
 
 	return False;
 }
+
+Bool exists_window(Display * display, Window wnd) {
+	Window root;
+	int x, y;
+	unsigned int width, height, border_width, depth;
+
+	if (XGetGeometry(display, wnd, &root, &x, &y, &width, &height, &border_width, &depth))
+		return True;
+
+	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[exists_window]: "
+		    "Window 0x%08lx does not exist", wnd);
+	return False;
+}

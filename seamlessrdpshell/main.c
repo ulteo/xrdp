@@ -1269,12 +1269,13 @@ void *thread_Xvent_process(void *arg)
 				break;
 			}
 
-			check_window_state(witem);
-			if (witem->state == SEAMLESSRDP_MINIMIZED) {
-				log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
-					    "Window 0x%08lx is iconified\n",
-					    witem->window_id);
-				break;
+			if (exists_window(display, witem->window_id)) {
+				check_window_state(witem);
+				if (witem->state == SEAMLESSRDP_MINIMIZED) {
+					log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
+						    "Window 0x%08lx is iconified\n", witem->window_id);
+					break;
+				}
 			}
 
 			destroy_window(witem->window_id);

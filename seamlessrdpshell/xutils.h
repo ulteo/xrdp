@@ -68,5 +68,6 @@ Atom getActiveWindowAtom();
 Window getActiveWindow(Display * display);
 Bool isNameAtom(Display * display, Atom atom);
 Bool isStateAtom(Display * display, Atom atom);
+Bool exists_window(Display * display, Window wnd);
 
 #endif				/* XUTILS_H_ */
