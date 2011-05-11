@@ -147,7 +147,7 @@
 
 /* InformationClass for setinformation */
 #define FileBasicInformation                    0x00000004
-#define FileEndOfFileInformation                0x00000020
+#define FileEndOfFileInformation                0x00000014
 #define FileDispositionInformation              0x0000000D
 #define FileRenameInformation                   0x0000000A
 #define FileAllocationInformation               0x00000019
