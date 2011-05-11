@@ -715,6 +715,14 @@ int jpeg_compress(char* in_data, int width, int height, int bpp, int quality)
 
   jpeg_set_defaults( &cinfo );
 
+  // Subsampling parameter: preserver picture border but decrease compression
+  cinfo.comp_info[0].h_samp_factor = 1;  
+  cinfo.comp_info[0].v_samp_factor = 1;  
+  cinfo.comp_info[1].h_samp_factor = 1;  
+  cinfo.comp_info[1].v_samp_factor = 1;  
+  cinfo.comp_info[2].h_samp_factor = 1;  
+  cinfo.comp_info[2].v_samp_factor = 1;
+
   jpeg_set_quality(&cinfo, quality, TRUE);
   /* Now do the compression .. */
   jpeg_start_compress( &cinfo, TRUE );
