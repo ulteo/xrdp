@@ -1,7 +1,7 @@
 /**
- * Copyright (C) 2008 Ulteo SAS
+ * Copyright (C) 2010-2011 Ulteo SAS
  * http://www.ulteo.com
- * Author David Lechevalier <david@ulteo.com> 2010
+ * Author David Lechevalier <david@ulteo.com> 2010-2011
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -115,6 +115,31 @@ rdpfs_cache_add_fs(const char* path, struct fs_info* fs_inf)
 
 	addToHashMap(direntry_cache.fs_map, path, fs);
 	rdpfs_update_fs_cache_index();
+
+	tc_mutex_unlock(cache_mutex);
+	return;
+}
+
+/************************************************************************/
+void APP_CC
+rdpfs_cache_update_size(const char* path, size_t size)
+{
+	struct fs_info* fs;
+	tc_mutex_lock(cache_mutex);
+
+	/* Test if present */
+	fs = (struct fs_info*)getFromHashMap(direntry_cache.fs_map, path);
+
+	if( fs == NULL)
+	{
+		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpfs_cache_update_size]: "
+		    		"Unable to find %s", path);
+		tc_mutex_unlock(cache_mutex);
+		return;
+	}
+
+	fs->allocation_size = size;
+	fs->file_size = size;
 
 	tc_mutex_unlock(cache_mutex);
 	return;

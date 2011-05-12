@@ -1,7 +1,7 @@
 /**
- * Copyright (C) 2008 Ulteo SAS
+ * Copyright (C) 2010-2011 Ulteo SAS
  * http://www.ulteo.com
- * Author David Lechevalier <david@ulteo.com> 2010
+ * Author David Lechevalier <david@ulteo.com> 2010-2011
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -611,6 +611,12 @@ static int fuse_dev_truncate(const char *path, off_t size)
 	}
 	rdpfs_query_setinformation(completion_id, FileEndOfFileInformation, &fs);
 	rdpfs_wait_reply(completion_id);
+
+	if( rdpfs_response[completion_id].request_status == 0 )
+	{
+		rdpfs_cache_update_size(path, size);
+	}
+
 	rdpfs_request_close(completion_id, disk->device_id);
 	rdpfs_wait_reply(completion_id);
 
