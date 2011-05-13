@@ -1,3 +1,23 @@
+/**
+ * Copyright (C) 2011 Ulteo SAS
+ * http://www.ulteo.com
+ * Author David LECHEVALIER <david@ulteo.com> 2011
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; version 2
+ * of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ **/
+
 /*
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -52,6 +72,8 @@ xrdp_wm_create(struct xrdp_process* owner,
   self->default_font = xrdp_font_create(self);
   /* this will use built in keymap or load from file */
   get_keymaps(self->session->client_info->keylayout, &(self->keymap));
+  get_unicode_exception(&(self->keymap));
+
   xrdp_wm_set_login_mode(self, 0);
   return self;
 }
@@ -1183,6 +1205,29 @@ xrdp_wm_key_sync(struct xrdp_wm* self, int device_flags, int key_flags)
 }
 
 /*****************************************************************************/
+/* happens when client gets focus and sends unicode key info */
+int APP_CC
+xrdp_wm_unicode_key(struct xrdp_wm* self, int unicode_key)
+{
+  int key_sym = 0;
+  key_sym = get_keysym_from_unicode(unicode_key, self->keymap);
+
+  if (self->mm->mod != 0)
+  {
+    if (self->mm->mod->mod_event != 0)
+    {
+      self->mm->mod->mod_event(self->mm->mod, WM_KEYDOWN, 0, key_sym, 0, 0);
+      self->mm->mod->mod_event(self->mm->mod, WM_KEYUP, 0, key_sym, 0, 0);
+    }
+  }
+  else if (self->focused_window != 0)
+  {
+    xrdp_bitmap_def_proc(self->focused_window, WM_KEYUNICODE, unicode_key, 0);
+  }
+  return 0;
+}
+
+/*****************************************************************************/
 int APP_CC
 xrdp_wm_pu(struct xrdp_wm* self, struct xrdp_bitmap* control)
 {
@@ -1327,6 +1372,9 @@ callback(long id, int msg, long param1, long param2, long param3, long param4)
       break;
     case 4: /* RDP_INPUT_SCANCODE */
       rv = xrdp_wm_key(wm, param3, param1);
+      break;
+    case 5: /* RDP_INPUT_UNICODE */
+      rv = xrdp_wm_unicode_key(wm, param1&0xffff);
       break;
     case 0x8001: /* RDP_INPUT_MOUSE */
       rv = xrdp_wm_process_input_mouse(wm, param3, param1, param2);

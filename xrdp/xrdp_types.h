@@ -227,6 +227,7 @@ struct xrdp_keymap
   struct xrdp_key_info keys_altgr[128];
   struct xrdp_key_info keys_capslock[128];
   struct xrdp_key_info keys_shiftcapslock[128];
+  struct xrdp_key_info *keys_unicode;
 };
 
 /* the window manager */

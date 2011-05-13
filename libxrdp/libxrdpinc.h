@@ -87,6 +87,7 @@ struct xrdp_client_info
   int use_jpeg;
   int can_use_jpeg;
   int jpeg_quality;
+  int use_unicode;
 };
 
 struct xrdp_brush

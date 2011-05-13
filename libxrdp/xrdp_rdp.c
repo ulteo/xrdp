@@ -167,6 +167,13 @@ xrdp_rdp_read_config(struct xrdp_client_info* client_info)
         client_info->jpeg_quality = 80;
       }
     }
+    else if (g_strcasecmp(item, "use_unicode") == 0)
+    {
+      if (g_strcasecmp(value, "1") == 0)
+      {
+        client_info->use_unicode = 1;
+      }
+    }
   }
   list_delete(items);
   list_delete(values);
@@ -489,6 +496,7 @@ xrdp_rdp_send_demand_active(struct xrdp_rdp* self)
   char* caps_count_ptr;
   char* caps_size_ptr;
   char* caps_ptr;
+  int input_flags = INPUT_FLAG_SCANCODES;
 
   make_stream(s);
   init_stream(s, 8192);
@@ -625,7 +633,10 @@ xrdp_rdp_send_demand_active(struct xrdp_rdp* self)
   caps_count++;
   out_uint16_le(s, RDP_CAPSET_INPUT); /* 13(0xd) */
   out_uint16_le(s, RDP_CAPLEN_INPUT); /* 88(0x58) */
-  out_uint8(s, 1);
+  if (self->client_info.use_unicode)
+	  input_flags |= INPUT_FLAG_UNICODE;
+
+  out_uint8(s, input_flags);
   out_uint8s(s, 83);
 
   out_uint8s(s, 4); /* pad */

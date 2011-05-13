@@ -263,6 +263,8 @@
 
 #define RDP_CAPSET_INPUT               13
 #define RDP_CAPLEN_INPUT               0x58
+#define INPUT_FLAG_UNICODE             0x10
+#define INPUT_FLAG_SCANCODES           0x01
 
 #define RDP_CAPSET_FONT                14
 #define RDP_CAPLEN_FONT                0x04
@@ -486,6 +488,7 @@
 #define WM_PAINT       3
 #define WM_KEYDOWN     15
 #define WM_KEYUP       16
+#define WM_KEYUNICODE  17
 #define WM_MOUSEMOVE   100
 #define WM_LBUTTONUP   101
 #define WM_LBUTTONDOWN 102

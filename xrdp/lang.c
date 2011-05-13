@@ -1,3 +1,23 @@
+/**
+ * Copyright (C) 2011 Ulteo SAS
+ * http://www.ulteo.com
+ * Author David LECHEVALIER <david@ulteo.com> 2011
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; version 2
+ * of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ **/
+
 /*
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -150,6 +170,13 @@ get_char_from_scan_code(int device_flags, int scan_code, int* keys,
 }
 
 /*****************************************************************************/
+int APP_CC
+get_keysym_from_unicode(int unicode, struct xrdp_keymap* keymap)
+{
+  return unicode;
+}
+
+/*****************************************************************************/
 static int APP_CC
 km_read_section(int fd, const char* section_name, struct xrdp_key_info* keymap)
 {
@@ -195,6 +222,62 @@ km_read_section(int fd, const char* section_name, struct xrdp_key_info* keymap)
   }
   list_delete(names);
   list_delete(values);
+  return 0;
+}
+
+/*****************************************************************************/
+struct xrdp_key_info* APP_CC
+km_get_unicode_exception(int fd)
+{
+  struct list* unicodes;
+  struct list* keysyms;
+  int index;
+  char* unicode;
+  char* keysym;
+  struct xrdp_key_info* unicode_keys = NULL;
+
+  unicodes = list_create();
+  unicodes->auto_free = 1;
+  keysyms = list_create();
+  keysyms->auto_free = 1;
+  if (file_read_section(fd, "unicode_exception", unicodes, keysyms) == 0)
+  {
+    unicode_keys = g_malloc(sizeof(struct xrdp_key_info) * unicodes->count, 1);
+    for (index = unicodes->count - 1; index >= 0; index--)
+    {
+      unicode = (char*)list_get_item(unicodes, index);
+      keysym = (char*)list_get_item(keysyms, index);
+      unicode_keys[index].chr = g_atoi(unicode);
+      unicode_keys[index].sym = g_atoi(keysym);
+
+    }
+  }
+  list_delete(unicodes);
+  list_delete(keysyms);
+  return unicode_keys;
+}
+
+/*****************************************************************************/
+int APP_CC
+get_unicode_exception(struct xrdp_keymap* keymap)
+{
+  int fd;
+  char* filename;
+  struct xrdp_keymap* lkeymap;
+
+  filename = (char*)g_malloc(256, 0);
+  /* check if there is a keymap file */
+  g_snprintf(filename, 255, "%s/%s", XRDP_CFG_PATH, XRDP_UNICODE_EXCEPTION_FILENAME);
+  if (g_file_exist(filename))
+  {
+    fd = g_file_open(filename);
+    if (fd > 0)
+    {
+      keymap->keys_unicode = km_get_unicode_exception(fd);
+    }
+  }
+  g_file_close(fd);
+  g_free(filename);
   return 0;
 }
 

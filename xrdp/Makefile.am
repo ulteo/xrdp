@@ -1,7 +1,7 @@
-# Copyright (C) 2010 Ulteo SAS
+# Copyright (C) 2010-2011 Ulteo SAS
 # http://www.ulteo.com
 # Author Samuel BOVEE <samuel@ulteo.com> 2010
-# Author David LECHEVALIER <david@ulteo.com> 2010
+# Author David LECHEVALIER <david@ulteo.com> 2010-2011
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -21,7 +21,8 @@ AM_CFLAGS = \
   -DXRDP_CFG_PATH=\"${sysconfdir}/xrdp\" \
   -DXRDP_SBIN_PATH=\"${sbindir}\" \
   -DXRDP_SHARE_PATH=\"${datadir}/xrdp\" \
-  -DXRDP_PID_PATH=\"${localstatedir}/run\"
+  -DXRDP_PID_PATH=\"${localstatedir}/run\" \
+  -DXRDP_UNICODE_EXCEPTION_FILENAME=\"unicode_exception.ini\"
 
 INCLUDES = \
   -I$(top_srcdir)/common \

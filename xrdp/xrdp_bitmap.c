@@ -1,3 +1,23 @@
+/**
+ * Copyright (C) 2011 Ulteo SAS
+ * http://www.ulteo.com
+ * Author David LECHEVALIER <david@ulteo.com> 2011
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; version 2
+ * of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ **/
+
 /*
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -1468,6 +1488,17 @@ xrdp_bitmap_def_proc(struct xrdp_bitmap* self, int msg,
   }
   else if (self->type == WND_TYPE_EDIT)
   {
+    if (msg == WM_KEYUNICODE)
+    {
+      num_chars = g_mbstowcs(0, self->caption1, 0);
+      num_bytes = g_strlen(self->caption1);
+      if ((param1 >= 32) && (num_chars < 127) && (num_bytes < 250))
+      {
+        add_char_at(self->caption1, 255, param1, self->edit_pos);
+        self->edit_pos++;
+        xrdp_bitmap_invalidate(self, 0);
+      }
+    }
     if (msg == WM_KEYDOWN)
     {
       scan_code = param1 % 128;
