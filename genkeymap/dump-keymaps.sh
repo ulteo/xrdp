@@ -122,5 +122,10 @@ echo "Sweden"
 setxkbmap -model pc104 -layout se
 ./xrdp-genkeymap ../instfiles/km-041d.ini
 
+# Sweden 'hu' 0x040e
+echo "Hungary"
+setxkbmap -model pc104 -layout hu
+./xrdp-genkeymap ../instfiles/km-040e.ini
+
 # set back to en-us
 setxkbmap -model pc104 -layout us
