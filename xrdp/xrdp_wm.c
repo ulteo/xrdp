@@ -1154,7 +1154,7 @@ xrdp_wm_key(struct xrdp_wm* self, int device_flags, int scan_code)
   {
     if (self->mm->mod->mod_event != 0)
     {
-      if (scan_code == 56) { /* ALT key */
+      if (scan_code == 56 && !(device_flags & KBD_FLAG_EXT)) { /* ALT key */
         self->mm->mod->mod_event(self->mm->mod, msg, 0, 65513, 64, device_flags);
         return 0;
       }
