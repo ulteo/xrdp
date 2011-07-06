@@ -399,15 +399,15 @@ int process_move_action(XEvent * ev)
 		return 1;
 	}
 
-	if (ev->xconfigure.width <= 0 || ev->xconfigure.height <= 0) {
-		log_message(l_config, LOG_LEVEL_INFO, "XHook[process_move_action]: "
-			    "Cannot move window 0x%08lx because of bad coordinates (x: %d, y: %d, width: %d, height: %d)", witem->window_id, ev->xconfigure.x, ev->xconfigure.y, ev->xconfigure.width, ev->xconfigure.height);
-		return 2;
-	}
-
 	if (getFrameExtents(display, witem->window_id, &left, &right, &top, &bottom)) {
 		ev->xconfigure.width -= left + right;
 		ev->xconfigure.height -= top + bottom;
+	}
+
+	if (ev->xconfigure.width < 0 || ev->xconfigure.height < 0) {
+		log_message(l_config, LOG_LEVEL_INFO, "XHook[process_move_action]: "
+			    "Cannot move window 0x%08lx because of bad coordinates (x: %d, y: %d, width: %d, height: %d)", witem->window_id, ev->xconfigure.x, ev->xconfigure.y, ev->xconfigure.width, ev->xconfigure.height);
+		return 2;
 	}
 
 	if (XGetWMNormalHints(display, witem->window_id, &hints, &hints_return) != 0) {
