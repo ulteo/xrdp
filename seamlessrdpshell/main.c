@@ -20,6 +20,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  **/
 
+#include <list.h>
 #include <log.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -461,8 +462,99 @@ int process_destroy_action(Window wnd)
 	return 0;
 }
 
+void process_focus_request(Window_item* witem) {
+	if (! witem)
+		return;
+
+	log_message(l_config, LOG_LEVEL_INFO, "XHook[process_focus_request]: "
+			    "Setting focus in window (0x%08lx)", witem->window_id);
+
+	XMapRaised(display, witem->window_id);
+
+	setActiveWindow(display, witem->window_id);
+}
+
+void close_children_windows(Display* display, Window_item* parent, struct list* windows) {
+	int cpt;
+
+	if (! parent || ! windows)
+		return;
+
+	for (cpt = 0; cpt < windows->count; cpt++) {
+		Window_item *child = None;
+
+		child = (Window_item*) list_get_item(windows, cpt);
+		if (! child)
+			continue;
+
+		if (child->parent != parent->window_id && child->parent != parent->win_out)
+			continue;
+
+		close_children_windows(display, child, windows);
+
+		if (is_dropdown_menu(display, child->window_id)) {
+			close_dropdown_menu(display, child->window_id);
+			continue;
+		}
+
+		close_window(display, child->window_id);
+	}
+}
+
+void process_focus_release(Window_item* witem) {
+	struct list* seamless_menu_windows = list_create();
+	struct list* first_level_menus = list_create();
+	int child_cpt;
+	
+	if (! witem)
+		return;
+	
+	log_message(l_config, LOG_LEVEL_INFO, "XHook[process_focus_release]: "
+			    "Window 0x%08lx is releasing focus", witem->window_id);
+	
+	for (child_cpt = 0; child_cpt < window_list.item_count; child_cpt++) {
+		Window_item *child_item = NULL;
+
+		child_item = &window_list.list[child_cpt];
+
+		list_add_item(seamless_menu_windows, (tbus) child_item);
+
+		if (child_item->parent == witem->window_id) {
+			list_add_item(first_level_menus, (tbus) child_item);
+		}
+	}
+
+	for (child_cpt = 0; child_cpt < first_level_menus->count; child_cpt++) {
+		Window_item *first_level_item;
+
+		first_level_item = (Window_item*) list_get_item(first_level_menus, child_cpt);
+		if (! first_level_item)
+			continue;
+
+		close_children_windows(display, first_level_item, seamless_menu_windows);
+		
+		if (is_dropdown_menu(display, first_level_item->window_id)) {
+			close_dropdown_menu(display, first_level_item->window_id);
+
+			continue;
+		}
+
+		close_window(display, first_level_item->window_id);
+	}
+
+	list_clear(seamless_menu_windows);
+	list_delete(seamless_menu_windows);
+	seamless_menu_windows = NULL;
+
+	list_clear(first_level_menus);
+	list_delete(first_level_menus);
+	first_level_menus = NULL;
+
+	setActiveWindow(display, None);
+}
+
 /*****************************************************************************/
-int process_focus_action(Window wnd)
+int process_focus_action(Window wnd, int action)
 {
 	Window_item *witem = NULL;
 
@@ -473,13 +565,18 @@ int process_focus_action(Window wnd)
 		return 0;
 	}
 
-	log_message(l_config, LOG_LEVEL_INFO, "XHook[process_focus_action]: "
-		    "Setting focus in window (0x%08lx)", wnd);
-
-	XMapRaised(display, wnd);
-
-	XSetInputFocus(display, wnd, RevertToParent, CurrentTime);
-	XFlush(display);
+	switch (action) {
+		case SEAMLESS_FOCUS_REQUEST:
+			process_focus_request(witem);
+			break;
+		case SEAMLESS_FOCUS_RELEASE:
+			process_focus_release(witem);
+			break;
+		default:
+			log_message(l_config, LOG_LEVEL_INFO, "XHook[process_focus_action]: "
+				    "Unknown action: 0x%04x", action);
+			break;
+	}
 
 	return 0;
 }
@@ -603,7 +700,9 @@ void process_message(char *buffer)
 
 	if (strcmp("FOCUS", token1) == 0) {
 		Window wnd = (Window) hex2int(token3);
-		process_focus_action(wnd);
+		int action = hex2int(token4);
+
+		process_focus_action(wnd, action);
 
 		sprintf(buffer2, "ACK,%i,%s\n", message_id, token2);
 		send_message(buffer2, strlen(buffer2));
@@ -1014,6 +1113,7 @@ void create_window(Window win_out)
 	//Window_dump(window_list);
 
 	Window_get(window_list, proper_win, witem);
+	witem->parent = parent_id;
 	check_window_name(witem);
 	check_window_state(witem);
 

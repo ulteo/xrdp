@@ -65,6 +65,7 @@ static Atom g_atom_net_wm_state_hidden = None;
 static Atom g_atom_net_wm_state_modal = None;
 
 static Atom g_atom_net_wm_window_type = None;
+static Atom g_atom_net_wm_window_type_dropdown_menu = None;
 static Atom g_atom_net_wm_window_type_normal = None;
 static Atom g_atom_net_wm_window_type_splash = None;
 
@@ -99,6 +100,7 @@ void initializeXUtils(Display *dpy) {
 	g_atom_net_wm_state_modal = XInternAtom(g_display, "_NET_WM_STATE_MODAL", False);
 
 	g_atom_net_wm_window_type = XInternAtom(g_display, "_NET_WM_WINDOW_TYPE", False);
+	g_atom_net_wm_window_type_dropdown_menu = XInternAtom(g_display, "_NET_WM_WINDOW_TYPE_DROPDOWN_MENU", False);
 	g_atom_net_wm_window_type_normal = XInternAtom(g_display, "_NET_WM_WINDOW_TYPE_NORMAL", False);
 	g_atom_net_wm_window_type_splash = XInternAtom(g_display, "_NET_WM_WINDOW_TYPE_SPLASH", False);
 
@@ -581,7 +583,17 @@ set_window_state(Display* display, Window wnd, int state) {
 	return state;
 }
 
+void close_dropdown_menu(Display * display, Window wnd) {
+	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[close_dropdown_window]: "
+			    "Window 0x%08lx", wnd);
+	XUnmapWindow(display, wnd);
+
+	XFlush(display);
+}
+
 void close_window(Display* display, Window wnd) {
+	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[close_window]: "
+			    "Window 0x%08lx", wnd);
 	if (isAtomContainedInAtom(display, wnd, g_atom_net_wm_allowed_actions, g_atom_net_wm_action_close)) {
 		// see http://standards.freedesktop.org/wm-spec/wm-spec-1.4.html#id2551096
 		XEvent xev;
@@ -750,6 +762,21 @@ Bool is_windows_class_exception(Display * display, Window wnd)
 	return False;
 }
 
+Bool is_dropdown_menu(Display * display, Window wnd) {
+	Atom window_type = None;
+
+	if (! get_window_type(display, wnd, &window_type)) {
+		log_message(l_config, LOG_LEVEL_WARNING, "XHook[is_dropdown_menu]: "
+			    "[Window 0x%08lx] Failed to get window type", wnd);
+		return False;
+	}
+
+	if (window_type == g_atom_net_wm_window_type_dropdown_menu)
+		return True;
+
+	return False;
+}
+
 Atom getActiveWindowAtom() {
 	return g_atom_net_active_window;
 }
@@ -760,6 +787,11 @@ Window getActiveWindow(Display * display) {
 	getCardinalFromAtom(display, DefaultRootWindow(display), g_atom_net_active_window, &activeWindow);
 
 	return activeWindow;
+}
+
+void setActiveWindow(Display * display, Window wnd) {
+	XSetInputFocus(display, wnd, RevertToParent, CurrentTime);
+	XFlush(display);
 }
 
 Bool getFrameExtents(Display * display, Window wnd, int * left, int * right, int * top, int * bottom) {

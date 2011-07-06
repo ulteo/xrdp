@@ -62,10 +62,13 @@ get_property(Display * display, Window w, const char *property,
 
 void initializeXUtils(Display *dpy);
 void close_window(Display* display, Window wnd);
+void close_dropdown_menu(Display * display, Window wnd);
 Bool is_windows_class_exception(Display * display, Window wnd);
 Bool getFrameExtents(Display * display, Window wnd, int * left, int * right, int * top, int * bottom);
 Atom getActiveWindowAtom();
 Window getActiveWindow(Display * display);
+void setActiveWindow(Display * display, Window wnd);
+Bool is_dropdown_menu(Display * display, Window wnd);
 Bool isNameAtom(Display * display, Atom atom);
 Bool isStateAtom(Display * display, Atom atom);
 Bool exists_window(Display * display, Window wnd);
