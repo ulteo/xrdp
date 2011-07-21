@@ -170,10 +170,53 @@ get_char_from_scan_code(int device_flags, int scan_code, int* keys,
 }
 
 /*****************************************************************************/
-int APP_CC
+int* APP_CC
 get_keysym_from_unicode(int unicode, struct xrdp_keymap* keymap)
 {
-  return unicode;
+  int i=0;
+  int* ret = g_malloc(sizeof(int)*4, 1);
+  char* cpy = NULL;
+  char* p1 = NULL;
+  char* p2 = NULL;
+  int index = 0;
+
+  ret[0] = unicode;
+  if (keymap->keys_unicode_combinaisons == NULL)
+	  return ret;
+
+  if (keymap->keys_unicode_exceptions == NULL)
+	  return ret;
+
+  for (i = 0; i < keymap->keys_unicode_combinaisons_count ; i++) {
+    if (keymap->keys_unicode_combinaisons[i].chr == unicode)
+    {
+      cpy = g_strdup(keymap->keys_unicode_combinaisons[i].sym);
+      if (cpy == NULL) {
+    	  return NULL;
+      }
+
+      p2 = cpy;
+      while ( (p1 = g_strchr(p2, '-')) != NULL)
+      {
+    	  *p1 = '\0';
+    	  ret[index] = g_htoi(p2);
+    	  p2 = p1+1;
+
+    	  index++;
+      }
+      ret[index] = g_htoi(p2);
+      return ret;
+    }
+  }
+
+  for (i = 0 ; i < keymap->keys_unicode_exceptions_count ; i++) {
+    if (keymap->keys_unicode_exceptions[i].chr == unicode)
+    {
+      ret[0] = keymap->keys_unicode_exceptions[i].sym;
+      return ret;
+    }
+  }
+  return ret;
 }
 
 /*****************************************************************************/
@@ -226,15 +269,14 @@ km_read_section(int fd, const char* section_name, struct xrdp_key_info* keymap)
 }
 
 /*****************************************************************************/
-struct xrdp_key_info* APP_CC
-km_get_unicode_exception(int fd)
+void APP_CC
+km_get_unicode_exception(int fd, struct xrdp_keymap* keymap)
 {
   struct list* unicodes;
   struct list* keysyms;
   int index;
   char* unicode;
   char* keysym;
-  struct xrdp_key_info* unicode_keys = NULL;
 
   unicodes = list_create();
   unicodes->auto_free = 1;
@@ -242,19 +284,52 @@ km_get_unicode_exception(int fd)
   keysyms->auto_free = 1;
   if (file_read_section(fd, "unicode_exception", unicodes, keysyms) == 0)
   {
-    unicode_keys = g_malloc(sizeof(struct xrdp_key_info) * unicodes->count, 1);
-    for (index = unicodes->count - 1; index >= 0; index--)
+    keymap->keys_unicode_exceptions_count = unicodes->count;
+    keymap->keys_unicode_exceptions = g_malloc(sizeof(struct xrdp_key_info) * unicodes->count, 1);
+
+    for (index = 0; index < unicodes->count ; index++)
     {
       unicode = (char*)list_get_item(unicodes, index);
       keysym = (char*)list_get_item(keysyms, index);
-      unicode_keys[index].chr = g_atoi(unicode);
-      unicode_keys[index].sym = g_atoi(keysym);
-
+      keymap->keys_unicode_exceptions[index].chr = g_htoi(unicode);
+      keymap->keys_unicode_exceptions[index].sym = g_htoi(keysym);
     }
   }
+
   list_delete(unicodes);
   list_delete(keysyms);
-  return unicode_keys;
+}
+
+/*****************************************************************************/
+struct xrdp_key_info2* APP_CC
+km_get_unicode_combinaison(int fd, struct xrdp_keymap* keymap)
+{
+  struct list* unicodes;
+  struct list* combinaisons;
+  int index;
+  char* unicode;
+  char* combinaison;
+
+  unicodes = list_create();
+  unicodes->auto_free = 1;
+  combinaisons = list_create();
+  combinaisons->auto_free = 0;
+
+  if (file_read_section(fd, "unicode_combination", unicodes, combinaisons) == 0)
+  {
+    keymap->keys_unicode_combinaisons_count = unicodes->count;
+    keymap->keys_unicode_combinaisons = g_malloc(sizeof(struct xrdp_key_info2) * unicodes->count, 1);
+    for (index = 0; index < unicodes->count ; index++)
+    {
+      unicode = (char*)list_get_item(unicodes, index);
+      combinaison = (char*)list_get_item(combinaisons, index);
+      keymap->keys_unicode_combinaisons[index].chr = g_htoi(unicode);
+      keymap->keys_unicode_combinaisons[index].sym = g_strdup(combinaison);
+    }
+  }
+
+  list_delete(unicodes);
+  list_delete(combinaisons);
 }
 
 /*****************************************************************************/
@@ -273,7 +348,9 @@ get_unicode_exception(struct xrdp_keymap* keymap)
     fd = g_file_open(filename);
     if (fd > 0)
     {
-      keymap->keys_unicode = km_get_unicode_exception(fd);
+      km_get_unicode_exception(fd, keymap);
+      km_get_unicode_combinaison(fd, keymap);
+
     }
   }
   g_file_close(fd);

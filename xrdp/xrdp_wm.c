@@ -1213,15 +1213,23 @@ xrdp_wm_key_sync(struct xrdp_wm* self, int device_flags, int key_flags)
 int APP_CC
 xrdp_wm_unicode_key(struct xrdp_wm* self, int unicode_key)
 {
-  int key_sym = 0;
-  key_sym = get_keysym_from_unicode(unicode_key, self->keymap);
+  int* key_sym = NULL;
+  int i = 0;
 
   if (self->mm->mod != 0)
   {
     if (self->mm->mod->mod_event != 0)
     {
-      self->mm->mod->mod_event(self->mm->mod, WM_KEYDOWN, 0, key_sym, 0, 0);
-      self->mm->mod->mod_event(self->mm->mod, WM_KEYUP, 0, key_sym, 0, 0);
+    	key_sym = get_keysym_from_unicode(unicode_key, &(self->keymap));
+
+    	while (i<4) {
+    		if (key_sym[i] == 0)
+    			break;
+    		self->mm->mod->mod_event(self->mm->mod, WM_KEYDOWN, 0, key_sym[i], 0, 0);
+    		self->mm->mod->mod_event(self->mm->mod, WM_KEYUP, 0, key_sym[i], 0, 0);
+    		i++;
+    	}
+    	g_free(key_sym);
     }
   }
   else if (self->focused_window != 0)

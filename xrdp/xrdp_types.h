@@ -220,6 +220,12 @@ struct xrdp_key_info
   int chr;
 };
 
+struct xrdp_key_info2
+{
+  char* sym;
+  int chr ;
+};
+
 struct xrdp_keymap
 {
   struct xrdp_key_info keys_noshift[128];
@@ -227,7 +233,10 @@ struct xrdp_keymap
   struct xrdp_key_info keys_altgr[128];
   struct xrdp_key_info keys_capslock[128];
   struct xrdp_key_info keys_shiftcapslock[128];
-  struct xrdp_key_info *keys_unicode;
+  struct xrdp_key_info *keys_unicode_exceptions;
+  struct xrdp_key_info2 *keys_unicode_combinaisons;
+  int keys_unicode_exceptions_count;
+  int keys_unicode_combinaisons_count;
 };
 
 /* the window manager */

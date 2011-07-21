@@ -348,6 +348,9 @@ get_keymaps(int keylayout, struct xrdp_keymap* keymap);
 int APP_CC
 get_unicode_exception(struct xrdp_keymap* keymap);
 
+int* APP_CC
+get_keysym_from_unicode(int unicode, struct xrdp_keymap* keymap);
+
 /* xrdp_login_wnd.c */
 int APP_CC
 xrdp_login_wnd_create(struct xrdp_wm* self);
