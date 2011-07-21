@@ -66,6 +66,8 @@ static Atom g_atom_net_wm_state_modal = None;
 
 static Atom g_atom_net_wm_window_type = None;
 static Atom g_atom_net_wm_window_type_dropdown_menu = None;
+static Atom g_atom_net_wm_window_type_popup_menu = None;
+static Atom g_atom_net_wm_window_type_utility = None;
 static Atom g_atom_net_wm_window_type_normal = None;
 static Atom g_atom_net_wm_window_type_splash = None;
 
@@ -101,6 +103,8 @@ void initializeXUtils(Display *dpy) {
 
 	g_atom_net_wm_window_type = XInternAtom(g_display, "_NET_WM_WINDOW_TYPE", False);
 	g_atom_net_wm_window_type_dropdown_menu = XInternAtom(g_display, "_NET_WM_WINDOW_TYPE_DROPDOWN_MENU", False);
+	g_atom_net_wm_window_type_popup_menu = XInternAtom(g_display, "_NET_WM_WINDOW_TYPE_POPUP_MENU", False);
+	g_atom_net_wm_window_type_utility = XInternAtom(g_display, "_NET_WM_WINDOW_TYPE_UTILITY", False);
 	g_atom_net_wm_window_type_normal = XInternAtom(g_display, "_NET_WM_WINDOW_TYPE_NORMAL", False);
 	g_atom_net_wm_window_type_splash = XInternAtom(g_display, "_NET_WM_WINDOW_TYPE_SPLASH", False);
 
@@ -196,6 +200,37 @@ get_property(Display * display, Window w, const char *property,
 		return 1;
 	}
 	return 0;
+}
+
+void close_menu(Display* display)
+{
+	int i = 0;
+	Window root;
+	Window parent;
+	Window *children;
+	unsigned int nchildren;
+
+	if (!XQueryTree(display, DefaultRootWindow(display), &root, &parent, &children, &nchildren) || nchildren == 0)
+	{
+		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_in_window]: "
+				"Unable to get child of root windows");
+		return;
+	}
+
+	for (i = 0 ; i< nchildren; i++)
+	{
+		if (is_menu(display, children[i]))
+			XUnmapWindow(display, children[i]);
+	}
+}
+
+void set_focus(Display* display, Window w) {
+	close_menu(display);
+
+	XMapRaised(display, w);
+	XSetInputFocus(display, w, RevertToPointerRoot, CurrentTime);
+
+	XFlush(display);
 }
 
 /*****************************************************************************/
@@ -583,14 +618,6 @@ set_window_state(Display* display, Window wnd, int state) {
 	return state;
 }
 
-void close_dropdown_menu(Display * display, Window wnd) {
-	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[close_dropdown_window]: "
-			    "Window 0x%08lx", wnd);
-	XUnmapWindow(display, wnd);
-
-	XFlush(display);
-}
-
 void close_window(Display* display, Window wnd) {
 	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[close_window]: "
 			    "Window 0x%08lx", wnd);
@@ -644,6 +671,24 @@ void close_window(Display* display, Window wnd) {
 	}
 
 	XFlush(display);
+}
+
+Bool is_menu(Display * display, Window wnd) {
+	Atom window_type = None;
+
+	if (! get_window_type(display, wnd, &window_type))
+		return False;
+
+	if (window_type == g_atom_net_wm_window_type_dropdown_menu)
+		return True;
+
+	if (window_type == g_atom_net_wm_window_type_popup_menu)
+		return True;
+
+	if (window_type == g_atom_net_wm_window_type_utility)
+		return True;
+
+	return False;
 }
 
 int is_splash_window(Display * display, Window w) {

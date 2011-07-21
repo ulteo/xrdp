@@ -28,6 +28,18 @@
 #include <X11/X.h>
 #include <stdio.h>
 
+#define MWM_HINTS_DECORATIONS   (1L << 1)
+#define PROP_MOTIF_WM_HINTS_ELEMENTS    5
+typedef struct
+{
+	unsigned long flags;
+	unsigned long functions;
+	unsigned long decorations;
+	long inputMode;
+	unsigned long status;
+}
+PropMotifWmHints;
+
 /* Xlib constant  */
 #define _NET_WM_STATE_REMOVE		0	/* remove/unset property */
 #define _NET_WM_STATE_ADD		1	/* add/set property */
@@ -49,6 +61,7 @@ Window get_in_window(Display * display, Window w);
 int get_window_name(Display * display, Window w, unsigned char **name);
 int get_window_state(Display * display, Window wnd);
 int set_window_state(Display* display, Window w, int state);
+Bool is_menu(Display * display, Window wnd);
 int is_splash_window(Display * display, Window w);
 int is_modal_window(Display * display, Window w);
 int get_window_type(Display * display, Window w, Atom * atom);
@@ -61,8 +74,8 @@ get_property(Display * display, Window w, const char *property,
 	     unsigned long *nitems, unsigned char **data);
 
 void initializeXUtils(Display *dpy);
+void close_menu(Display* display);
 void close_window(Display* display, Window wnd);
-void close_dropdown_menu(Display * display, Window wnd);
 Bool is_windows_class_exception(Display * display, Window wnd);
 Bool getFrameExtents(Display * display, Window wnd, int * left, int * right, int * top, int * bottom);
 Atom getActiveWindowAtom();
@@ -72,5 +85,6 @@ Bool is_dropdown_menu(Display * display, Window wnd);
 Bool isNameAtom(Display * display, Atom atom);
 Bool isStateAtom(Display * display, Atom atom);
 Bool exists_window(Display * display, Window wnd);
+void set_focus(Display* display, Window w);
 
 #endif				/* XUTILS_H_ */

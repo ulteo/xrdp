@@ -40,6 +40,8 @@
 #include "seamlessrdpshell.h"
 #include "xutils.h"
 
+const char seamless_class[] = "InternalSeamlessClass";
+
 /* external function declaration */
 extern char **environ;
 
@@ -50,6 +52,7 @@ static Display *display;
 static Window_list window_list;
 static int seamrdp_channel;
 struct log_config *l_config;
+Window internal_window;
 
 void check_window_name(Window_item *witem);
 void check_window_state(Window_item *witem);
@@ -469,88 +472,13 @@ void process_focus_request(Window_item* witem) {
 	log_message(l_config, LOG_LEVEL_INFO, "XHook[process_focus_request]: "
 			    "Setting focus in window (0x%08lx)", witem->window_id);
 
-	XMapRaised(display, witem->window_id);
-
-	setActiveWindow(display, witem->window_id);
+	set_focus(display, witem->window_id);
 }
 
-void close_children_windows(Display* display, Window_item* parent, struct list* windows) {
-	int cpt;
+void process_focus_release() {
+	log_message(l_config, LOG_LEVEL_INFO, "XHook[process_focus_request]: Setting focus on seamless internal window (0x%08lx)", internal_window);
 
-	if (! parent || ! windows)
-		return;
-
-	for (cpt = 0; cpt < windows->count; cpt++) {
-		Window_item *child = None;
-
-		child = (Window_item*) list_get_item(windows, cpt);
-		if (! child)
-			continue;
-
-		if (child->parent != parent->window_id && child->parent != parent->win_out)
-			continue;
-
-		close_children_windows(display, child, windows);
-
-		if (is_dropdown_menu(display, child->window_id)) {
-			close_dropdown_menu(display, child->window_id);
-			continue;
-		}
-
-		close_window(display, child->window_id);
-	}
-}
-
-void process_focus_release(Window_item* witem) {
-	struct list* seamless_menu_windows = list_create();
-	struct list* first_level_menus = list_create();
-	int child_cpt;
-	
-	if (! witem)
-		return;
-	
-	log_message(l_config, LOG_LEVEL_INFO, "XHook[process_focus_release]: "
-			    "Window 0x%08lx is releasing focus", witem->window_id);
-	
-	for (child_cpt = 0; child_cpt < window_list.item_count; child_cpt++) {
-		Window_item *child_item = NULL;
-
-		child_item = &window_list.list[child_cpt];
-
-		list_add_item(seamless_menu_windows, (tbus) child_item);
-
-		if (child_item->parent == witem->window_id) {
-			list_add_item(first_level_menus, (tbus) child_item);
-		}
-	}
-
-	for (child_cpt = 0; child_cpt < first_level_menus->count; child_cpt++) {
-		Window_item *first_level_item;
-
-		first_level_item = (Window_item*) list_get_item(first_level_menus, child_cpt);
-		if (! first_level_item)
-			continue;
-
-		close_children_windows(display, first_level_item, seamless_menu_windows);
-		
-		if (is_dropdown_menu(display, first_level_item->window_id)) {
-			close_dropdown_menu(display, first_level_item->window_id);
-
-			continue;
-		}
-
-		close_window(display, first_level_item->window_id);
-	}
-
-	list_clear(seamless_menu_windows);
-	list_delete(seamless_menu_windows);
-	seamless_menu_windows = NULL;
-
-	list_clear(first_level_menus);
-	list_delete(first_level_menus);
-	first_level_menus = NULL;
-
-	setActiveWindow(display, None);
+	set_focus(display, internal_window);
 }
 
 /*****************************************************************************/
@@ -1481,6 +1409,60 @@ void *thread_vchannel_process(void *arg)
 	pthread_exit(0);
 }
 
+int init_internal_window()
+{
+   	XSetWindowAttributes attributes;
+	XClassHint class;
+	Visual* visual = NULL;
+	Window root = 0;
+	int screen = 0;
+	int depth = 0;
+
+	screen = DefaultScreen(display);
+	root = DefaultRootWindow(display);
+	depth = DefaultDepth(display, screen);
+	visual = DefaultVisual(display, screen);
+	internal_window = None;
+	attributes.background_pixel = 0xFF0000;
+
+	internal_window = XCreateWindow(display, root, 1, 1, 1, 1, 0, depth, InputOutput, visual, 0, &attributes);
+	if (internal_window == 0) {
+		log_message(l_config, LOG_LEVEL_WARNING, "XHook[init_internal_window]: Unable to create seamless internal window");
+		return 1;
+	}
+	XSelectInput(display, internal_window, 0);
+
+	// set internalclass
+	class.res_name = strdup(seamless_class);
+	class.res_class = strdup(seamless_class);
+	XSetClassHint(display, internal_window, &class);
+
+	//hide decoration
+	PropMotifWmHints motif_hints;
+	Atom hintsatom;
+
+	/* setup the property */
+	motif_hints.flags = MWM_HINTS_DECORATIONS;
+	motif_hints.decorations = 0;
+
+	/* get the atom for the property */
+	hintsatom = XInternAtom(display, "_MOTIF_WM_HINTS", False);
+	if (!hintsatom)
+	{
+		log_message(l_config, LOG_LEVEL_WARNING, "Failed to get atom _MOTIF_WM_HINTS: probably your window manager does not support MWM hints\n");
+		return 1;
+	}
+
+	XChangeProperty(display, internal_window, hintsatom, hintsatom, 32, PropModeReplace, (unsigned char *) &motif_hints, PROP_MOTIF_WM_HINTS_ELEMENTS);
+
+
+	XMapWindow(display, internal_window);
+	XMoveWindow(display, internal_window, 1, 1);
+	XFlush(display);
+
+	return 0;
+}
+
 int XHook_init()
 {
 	char filename[256];
@@ -1609,6 +1591,8 @@ int main(int argc, char **argv, char **environ)
 	XSetIOErrorHandler(IOerror_handler);
 
 	initializeXUtils(display);
+
+	init_internal_window();
 
 	if (pthread_create
 	    (&Xevent_thread, NULL, thread_Xvent_process, (void *)0) < 0) {
