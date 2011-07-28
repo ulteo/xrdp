@@ -344,24 +344,36 @@ xrdp_sec_process_logon_info(struct xrdp_sec* self, struct stream* s)
   in_uint16_le(s, len_password);
   in_uint16_le(s, len_program);
   in_uint16_le(s, len_directory);
+
+  // Add the size of the final UTF-16 null character
+  len_domain += 2;
+  len_user += 2;
+  len_password += 2;
+  len_program += 2;
+  len_directory += 2;
+
   /* todo, we should error out in any of the above lengths are > 512 */
   /* to avoid buffer overruns */
-  unicode_in(s, len_domain, self->rdp_layer->client_info.domain, 255);
+  uni_rdp_in_str(s, self->rdp_layer->client_info.domain, 255, len_domain);
   DEBUG(("domain %s", self->rdp_layer->client_info.domain));
-  unicode_in(s, len_user, self->rdp_layer->client_info.username, 255);
+
+  uni_rdp_in_str(s, self->rdp_layer->client_info.username, 255, len_user);
   DEBUG(("username %s", self->rdp_layer->client_info.username));
+
   if (flags & RDP_LOGON_AUTO)
   {
-    unicode_in(s, len_password, self->rdp_layer->client_info.password, 255);
+    uni_rdp_in_str(s, self->rdp_layer->client_info.password, 255, len_password);
     DEBUG(("flag RDP_LOGON_AUTO found"));
   }
   else
   {
-    in_uint8s(s, len_password + 2);
+    in_uint8s(s, len_password);
   }
-  unicode_in(s, len_program, self->rdp_layer->client_info.program, 255);
+
+  uni_rdp_in_str(s, self->rdp_layer->client_info.program, 255, len_program);
   DEBUG(("program %s", self->rdp_layer->client_info.program));
-  unicode_in(s, len_directory, self->rdp_layer->client_info.directory, 255);
+
+  uni_rdp_in_str(s, self->rdp_layer->client_info.directory, 255, len_directory);
   DEBUG(("directory %s", self->rdp_layer->client_info.directory));
   if (flags & RDP_LOGON_BLOB)
   {
