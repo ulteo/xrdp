@@ -421,7 +421,7 @@ int process_move_action(XEvent * ev)
 		}
 	}
 
-	XGetGeometry(display, witem->window_id, &root, &x, &y, &width, &height, &border, &depth);
+	XGetGeometry(display, witem->win_out, &root, &x, &y, &width, &height, &border, &depth);
 
 	if (x != ev->xconfigure.x || y != ev->xconfigure.y)
 		flag += 1;
