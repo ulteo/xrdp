@@ -502,8 +502,8 @@ printer_set_restrict_user_list(http_t* http, char* printer_name, struct list* us
 
 	request = ippNewRequest(CUPS_ADD_MODIFY_PRINTER);
 	ippAddString(request, IPP_TAG_OPERATION, IPP_TAG_URI, "printer-uri", NULL, uri);
-	num_options = cupsAddOption("requesting-user-name-denied",
-								"all", num_options, &options);
+
+	// Configure user allowed to print, the other can not print
 	num_options = cupsAddOption("requesting-user-name-allowed",
                           user_list_str, num_options,&options);
 	cupsEncodeOptions2(request, num_options, options, IPP_TAG_PRINTER);
