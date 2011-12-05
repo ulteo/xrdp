@@ -1288,6 +1288,16 @@ void *thread_Xvent_process(void *arg)
 			w = ev.xdestroywindow.window;
 			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
 				    "Destroy of the window: 0x%08lx", w);
+
+			Window_get(window_list, w, witem);
+			if (witem == 0) {
+				log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
+					    "Unknowed window\n");
+				break;
+			}
+
+			destroy_window(witem->window_id);
+
 			break;
 
 		case UnmapNotify:
