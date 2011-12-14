@@ -57,6 +57,8 @@ static Atom timestamp_atom;
 static Atom format_string_atom;
 static Atom format_utf8_string_atom;
 static Atom format_unicode_atom;
+static Atom format_file_gnome_atom;
+static Atom format_file_text_uri_list_atom;
 static Atom xrdp_clipboard;
 Clipboard clipboard;
 
@@ -522,9 +524,10 @@ cliprdr_get_clipboard(XEvent* e)
 			{
 				XSetSelectionOwner(display, clipboard_atom, wclip, CurrentTime);
 				XSync(display, False);
-				cliprdr_send_format_list();
+				// File content is not supported for now
+				if ((! clipboard_current_clipboard_format_exist(&clipboard, format_file_gnome_atom)) && (! clipboard_current_clipboard_format_exist(&clipboard, format_file_text_uri_list_atom)))
+					cliprdr_send_format_list();
 			}
-
 		}
 		else
 		{
@@ -610,10 +613,14 @@ void *thread_Xvent_process (void * arg)
 	format_string_atom = XInternAtom(display, "STRING", False);
 	format_utf8_string_atom = XInternAtom(display, "UTF8_STRING", False);
 	format_unicode_atom = XInternAtom(display, "text/unicode", False);
+	format_file_gnome_atom = XInternAtom(display, "x-special/gnome-copied-files", False);
+	format_file_text_uri_list_atom = XInternAtom(display, "text/uri-list", False);
 	xrdp_clipboard = XInternAtom(display,"XRDP_CLIPBOARD", False);
 
 	clipboard_init(&clipboard, 3);
 	clipboard_add_format_support(&clipboard, format_utf8_string_atom);
+	clipboard_add_format_support(&clipboard, format_file_gnome_atom);
+	clipboard_add_format_support(&clipboard, format_file_text_uri_list_atom);
 
 	root_windows = DefaultRootWindow(display);
 	log_message(l_config, LOG_LEVEL_DEBUG, "cliprdr[thread_Xvent_process]: "
