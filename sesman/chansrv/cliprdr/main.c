@@ -34,6 +34,7 @@
 #include <os_calls.h>
 #include <file.h>
 #include "cliprdr.h"
+#include "Clipboard.h"
 #include "xutils.h"
 #include "uni_rdp.h"
 
@@ -57,10 +58,7 @@ static Atom format_string_atom;
 static Atom format_utf8_string_atom;
 static Atom format_unicode_atom;
 static Atom xrdp_clipboard;
-static Atom targets[MAX_TARGETS];
-static int num_targets;
-static char* clipboard_data = 0;
-static int clipboard_size;
+Clipboard clipboard;
 
 /*****************************************************************************/
 void APP_CC
@@ -234,6 +232,9 @@ void cliprdr_send_data_request()
 void cliprdr_send_data(int request_type)
 {
 	struct stream* s;
+	int clipboard_size = clipboard_get_current_clipboard_data_size(&clipboard, format_utf8_string_atom);
+	char* clipboard_data = (char*)clipboard_get_current_clipboard_data(&clipboard, format_utf8_string_atom);
+
 	int uni_clipboard_len = (clipboard_size+1)*2;
 	int packet_len = uni_clipboard_len + 12;
 	char* temp;
@@ -281,6 +282,13 @@ int cliprdr_process_format_list(struct stream* s, int msg_flags, int size)
 	cliprdr_send_format_list_response();
 	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_process_format_list]: "
 			"get the clipboard");
+
+	// We only support unicode content
+	clipboard_current_clipboard_clear(&clipboard);
+	clipboard_add_current_clipboard_format(&clipboard, format_utf8_string_atom);
+
+	cliprdr_send_data_request();
+
 	XSetSelectionOwner(display, clipboard_atom, wclip, CurrentTime);
 	if (XGetSelectionOwner(display, clipboard_atom) != wclip)
 	{
@@ -295,6 +303,7 @@ int cliprdr_process_format_list(struct stream* s, int msg_flags, int size)
 int cliprdr_process_data_request(struct stream* s, int msg_flags, int size)
 {
 	int request_type = 0;
+	char* clipboard_data = (char*)clipboard_get_current_clipboard_data(&clipboard, format_utf8_string_atom);
 	if (clipboard_data == 0)
 	{
 		log_message(l_config, LOG_LEVEL_WARNING, "vchannel_cliprdr[cliprdr_process_data_request]: "
@@ -312,6 +321,9 @@ int cliprdr_process_data_request(struct stream* s, int msg_flags, int size)
 /*****************************************************************************/
 int cliprdr_process_data_request_response(struct stream* s, int msg_flags, int size)
 {
+	int clipboard_size = 0;
+	unsigned char* clipboard_data = NULL;
+
 	if (msg_flags == CB_RESPONSE_FAIL)
 	{
 		log_message(l_config, LOG_LEVEL_WARNING, "vchannel_cliprdr[cliprdr_process_data_request_response]: "
@@ -340,6 +352,8 @@ int cliprdr_process_data_request_response(struct stream* s, int msg_flags, int s
 			clipboard_size--;
 		}
 	}
+
+	clipboard_add_current_clipboard_data(&clipboard, clipboard_data, clipboard_size, format_utf8_string_atom);
 
 	return 0;
 }
@@ -405,8 +419,9 @@ cliprdr_clear_selection(XEvent* e)
 	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[clear_selection]: "
 			"New windows owner : %i", (int)newOwner);
 
-	XConvertSelection(e->xselectionclear.display, clipboard_atom, XA_STRING, xrdp_clipboard, wclip, CurrentTime);
-  XSync (e->xselectionclear.display, False);
+	clipboard_current_clipboard_clear(&clipboard);
+	XConvertSelection(display, clipboard_atom, targets_atom, xrdp_clipboard, wclip, CurrentTime);
+	XSync (e->xselectionclear.display, False);
 }
 
 /*****************************************************************************/
@@ -432,42 +447,81 @@ cliprdr_get_clipboard(XEvent* e)
 											&format,
 											&len, &bytes_left,
 											&data);
+	// Check Format list
+	if (type == XA_ATOM || format == 32)
+	{
+		result = XGetWindowProperty (e->xselection.display, e->xselection.requestor, e->xselection.property, 0, bytes_left, 0, XA_ATOM, &type, &format, &len, &dummy, &data);
+		if (result == Success)
+		{
+			int i = 0;
+			Atom atom;
+			for (i = 0; i < len ; i++)
+			{
+				atom = ((Atom*)data)[i];
+				log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_get_clipboard]: "
+						"format : %s", XGetAtomName(display, atom));
+				if (clipboard_format_supported(&clipboard, atom))
+				{
+					clipboard_add_current_clipboard_format(&clipboard, atom);
+				}
+			}
+			if (clipboard_current_clipboard_size(&clipboard) > 0)
+			{
+				atom = clipboard_get_current_clipboard_format(&clipboard, 0);
+				log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_get_clipboard]: "
+						"Request for format %s", XGetAtomName(display, atom));
+
+				XConvertSelection(display, clipboard_atom, atom, xrdp_clipboard, wclip, CurrentTime);
+				XSync (e->xselectionclear.display, False);
+			}
+			return;
+		}
+
+		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_get_clipboard]: "
+				"Failed to parse atom list");
+		return;
+	}
 
 	// DATA is There
 	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_get_clipboard]: "
 			"Data type : %s\n", XGetAtomName(e->xselection.display, e->xselection.property));
 
-	if (bytes_left > 0)
+	if (bytes_left > 0 && clipboard_format_supported(&clipboard, e->xselection.target))
 	{
-		result = XGetWindowProperty (	e->xselection.display,
-																	e->xselection.requestor,
-																	e->xselection.property,
-																	0, bytes_left,
-																	0,
-																	XA_STRING,
-																	&type,
-																	&format,
-																	&len, &dummy, &data);
+		unsigned char* clipboard_data = NULL;
+		int clipboard_size = 0;
+
+		result = XGetWindowProperty(e->xselection.display, e->xselection.requestor, e->xselection.property, 0, bytes_left, 0, e->xselection.target, &type, &format, &len, &dummy, &data);
 		if (result == Success)
 		{
 			log_message(l_config, LOG_LEVEL_DEBUG_PLUS, "vchannel_cliprdr[cliprdr_get_clipboard]: "
 					"New data in clipboard: %s", data);
+			int index = -1;
+			index = clipboard_get_current_clipboard_format_index(&clipboard, e->xselection.target);
+			if (e->xselection.target == format_utf8_string_atom)
+				bytes_left += 4;
 
-			if (clipboard_data == 0){
+			clipboard_data = g_malloc(bytes_left, 1);
+			clipboard_size = bytes_left;
+			g_memcpy(clipboard_data, data, bytes_left);
+			log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_get_clipboard]: "
+					"clipboard %s[%i] updated with '%s'", XGetAtomName(display, e->xselection.target), index, data);
+
+			clipboard_add_current_clipboard_data(&clipboard, clipboard_data, clipboard_size, e->xselection.target);
+
+			if (index < (clipboard_current_clipboard_size(&clipboard) - 1))
+			{
+				Atom format = clipboard_get_current_clipboard_format(&clipboard, index + 1);
 				log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_get_clipboard]: "
-						"Update internal clipboard");
-				clipboard_data = g_malloc(bytes_left+4, 1);
-				g_memcpy(clipboard_data, data, bytes_left);
-				clipboard_size = bytes_left;
+						"Request for format %s", XGetAtomName(display, format));
+
+				XConvertSelection(display, clipboard_atom, format, xrdp_clipboard, wclip, CurrentTime);
+				XSync (e->xselectionclear.display, False);
 			}
 			else
 			{
-				g_free(clipboard_data);
-				clipboard_data = g_malloc(bytes_left+4, 1);
-				g_memcpy(clipboard_data, data, bytes_left);
-				clipboard_size = bytes_left;
-				log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_get_clipboard]: "
-						"Send format list");
+				XSetSelectionOwner(display, clipboard_atom, wclip, CurrentTime);
+				XSync(display, False);
 				cliprdr_send_format_list();
 			}
 
@@ -479,7 +533,6 @@ cliprdr_get_clipboard(XEvent* e)
 		}
 		XFree (data);
 	}
-	XSetSelectionOwner(e->xselection.display, clipboard_atom, wclip, CurrentTime);
 }
 
 /*****************************************************************************/
@@ -488,17 +541,31 @@ cliprdr_process_selection_request(XEvent* e)
 {
 	XSelectionRequestEvent *req;
 	XEvent respond;
+	int clipboard_size;
+	unsigned char* clipboard_data = NULL;
+
 	req=&(e->xselectionrequest);
-	if (req->target == format_utf8_string_atom)
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_process_selection_request]: "
+			"Request for %s\n", XGetAtomName(display, req->target));
+
+	if (clipboard_format_supported(&clipboard, req->target))
 	{
+		if (!clipboard_current_clipboard_format_exist(&clipboard, req->target))
+		{
+			log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_process_selection_request]: "
+					"Unable to find format %s", XGetAtomName(display, req->target));
+			return;
+		}
+
+		clipboard_data = clipboard_get_current_clipboard_data(&clipboard, req->target);
+		clipboard_size = clipboard_get_current_clipboard_data_size(&clipboard, req->target);
 		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_process_selection_request]: "
-				"Update data with %s", clipboard_data);
-		cliprdr_send_data_request();
-		cliprdr_wait_reply();
+				"Update data with '%s'", clipboard_data);
+
 		XChangeProperty (req->display,
 			req->requestor,
 			req->property,
-			format_utf8_string_atom,
+			req->target,
 			8,
 			PropModeReplace,
 			(unsigned char*) clipboard_data,
@@ -509,7 +576,7 @@ cliprdr_process_selection_request(XEvent* e)
 	{
 		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_process_selection_request]: "
 				"Targets : '%s'", XGetAtomName(req->display, req->property));
-		XChangeProperty (req->display, req->requestor, req->property, XA_ATOM, 32, PropModeReplace, (unsigned char*)targets, 1);
+		XChangeProperty (req->display, req->requestor, req->property, XA_ATOM, 32, PropModeReplace, (unsigned char*)clipboard.current_clipboard_formats->items, clipboard.current_clipboard_formats->count);
 		respond.xselection.property=req->property;
 	}
 	else // Strings only please
@@ -545,9 +612,8 @@ void *thread_Xvent_process (void * arg)
 	format_unicode_atom = XInternAtom(display, "text/unicode", False);
 	xrdp_clipboard = XInternAtom(display,"XRDP_CLIPBOARD", False);
 
-
-	num_targets = 0;
-	targets[num_targets++] = format_utf8_string_atom;
+	clipboard_init(&clipboard, 3);
+	clipboard_add_format_support(&clipboard, format_utf8_string_atom);
 
 	root_windows = DefaultRootWindow(display);
 	log_message(l_config, LOG_LEVEL_DEBUG, "cliprdr[thread_Xvent_process]: "
@@ -579,7 +645,6 @@ void *thread_Xvent_process (void * arg)
 			log_message(l_config, LOG_LEVEL_DEBUG, "cliprdr[thread_Xvent_process]: "
 						"SelectionNotify");
 			cliprdr_get_clipboard(&ev);
-			cliprdr_send_format_list();
 			break;
 
 		default:
@@ -588,6 +653,8 @@ void *thread_Xvent_process (void * arg)
 			break;
 		}
 	}
+
+	clipboard_release(&clipboard);
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "cliprdr[thread_Xvent_process]: "
 			"Closing display");

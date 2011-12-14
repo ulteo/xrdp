@@ -12,6 +12,7 @@ sbin_PROGRAMS = \
 
 vchannel_cliprdr_SOURCES = \
   main.c cliprdr.h \
+  Clipboard.c Clipboard.h \
   xutils.c xutils.h 
   
 
