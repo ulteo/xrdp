@@ -114,14 +114,13 @@ def SessionLogoff(session_id):
 	return True
 
 def main():
-	while True:
-		list = SessionGetList()
-		for session_id in list:
-			try:
-				status = SessionGetStatus(session_id)
-				print session_id," -> ", status
-			except:
-				print session_id," -> Unknow"
+	list = SessionGetList()
+	for session_id in list:
+		try:
+			status = SessionGetStatus(session_id)
+			print session_id," -> ", status
+		except:
+			print session_id," -> Unknow"
 
 if __name__ == "__main__":
 	try:
