@@ -1,7 +1,7 @@
 /**
- * Copyright (C) 2010-2011 Ulteo SAS
+ * Copyright (C) 2010-2012 Ulteo SAS
  * http://www.ulteo.com
- * Author David LECHEVALIER <david@ulteo.com> 2010-2011
+ * Author David LECHEVALIER <david@ulteo.com> 2010, 2011, 2012
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -48,6 +48,10 @@ static Window wclip;
 static int running;
 pthread_cond_t reply_cond;
 pthread_mutex_t mutex;
+
+static int is_fragmented_packet = 0;
+static int fragment_size;
+static struct stream* splitted_packet;
 
 /* Atoms of the two X selections we're dealing with: CLIPBOARD (explicit-copy) and PRIMARY (selection-copy) */
 static Atom clipboard_atom;
@@ -362,12 +366,52 @@ int cliprdr_process_data_request_response(struct stream* s, int msg_flags, int s
 
 
 /*****************************************************************************/
-void cliprdr_process_message(struct stream* s){
+void cliprdr_process_message(struct stream* packet, int length, int total_length) {
 	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[process_message]: "
 			"New message for clipchannel");
 	int msg_type;
 	int msg_flags;
 	int msg_size;
+
+	struct stream* s;
+
+	if(length != total_length)
+	{
+		log_message(l_config, LOG_LEVEL_DEBUG_PLUS, "vchannel_cliprdr[cliprdr_process_message]: "
+			"Packet is fragmented");
+		if(is_fragmented_packet == 0)
+		{
+			log_message(l_config, LOG_LEVEL_DEBUG_PLUS, "vchannel_cliprdr[cliprdr_process_message]: "
+				"Packet is fragmented : first part");
+			is_fragmented_packet = 1;
+			fragment_size = length;
+			make_stream(splitted_packet);
+			init_stream(splitted_packet, total_length);
+			g_memcpy(splitted_packet->p, packet->p, length);
+			return;
+		}
+		else
+		{
+			g_memcpy(splitted_packet->p+fragment_size, packet->p, length);
+			fragment_size += length;
+			if (fragment_size == total_length)
+			{
+				log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_process_message]: "
+					"Packet is fragmented : last part");
+				s = splitted_packet;
+			}
+			else
+			{
+				log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_process_message]: "
+					"Packet is fragmented : next part");
+				return;
+			}
+		}
+	}
+	else
+	{
+		s = packet;
+	}
 
 	in_uint16_le(s, msg_type);
 	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[process_message]: "
@@ -410,6 +454,12 @@ void cliprdr_process_message(struct stream* s){
 		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[process_message]: "
 				"Unknow message type : %i", msg_type);
 
+	}
+	if(is_fragmented_packet == 1)
+	{
+		is_fragmented_packet = 0;
+		fragment_size = 0;
+		free_stream(s);
 	}
 }
 
@@ -709,7 +759,7 @@ void *thread_vchannel_process (void * arg)
 			running = 0;
 			break;
 		default:
-			cliprdr_process_message(s);
+			cliprdr_process_message(s, length, total_length);
 			break;
 		}
 		free_stream(s);
