@@ -550,10 +550,9 @@ cliprdr_get_clipboard(XEvent* e)
 					"New data in clipboard: %s", data);
 			int index = -1;
 			index = clipboard_get_current_clipboard_format_index(&clipboard, e->xselection.target);
-			if (e->xselection.target == format_utf8_string_atom)
-				bytes_left += 4;
 
-			clipboard_data = g_malloc(bytes_left, 1);
+			// Don't forget the null terminated character
+			clipboard_data = g_malloc(bytes_left + 1, 1);
 			clipboard_size = bytes_left;
 			g_memcpy(clipboard_data, data, bytes_left);
 			log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[cliprdr_get_clipboard]: "
