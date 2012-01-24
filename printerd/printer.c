@@ -1,7 +1,7 @@
 /**
- * Copyright (C) 2010 Ulteo SAS
+ * Copyright (C) 2010-2012 Ulteo SAS
  * http://www.ulteo.com
- * Author David Lechevalier <david@ulteo.com>
+ * Author David LECHEVALIER <david@ulteo.com> 2010, 2012
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -147,6 +147,7 @@ printer_get_printer_list(http_t* http)
 	char uri[HTTP_MAX_URI] = {0};  /* URI for printer/class */
 	ipp_attribute_t *attr = NULL;  /* IPP attribute */
 	struct list* printers = NULL;
+	char* printer_name = NULL;
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "printerd[printer_get_printer_list]: "
 			"Get printer list");
@@ -173,13 +174,21 @@ printer_get_printer_list(http_t* http)
 		goto fail;
 	}
 	printers = list_create();
-	attr = ippFindNextAttribute(response, "printer-name", IPP_TAG_NAME);
-	while (attr != NULL)
-	{
-		list_add_item(printers, (long)g_strdup(attr->values[0].string.text));
-		attr = ippFindNextAttribute( response, "printer-name", IPP_TAG_NAME);
-		if (attr == NULL) {
-			break;
+
+	for (attr = response->attrs; attr != NULL; attr = attr->next) {
+		if (attr->name == NULL)
+		{
+			continue;
+		}
+
+		if (g_strcmp(attr->name, "printer-name") == 0)
+		{
+			printer_name = attr->values[0].string.text;
+		}
+
+		if ((g_strcmp(attr->name, "device-uri") == 0) && (g_strcmp(attr->values[0].string.text, DEVICE_URI) == 0))
+		{
+			list_add_item(printers, (long)g_strdup(printer_name));
 		}
 	}
 
