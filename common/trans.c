@@ -207,6 +207,7 @@ trans_force_read_s(struct trans* self, struct stream* in_s, int size)
     return 1;
   }
   rv = 0;
+  self->last_time = g_time2();
   while (size > 0 && self->status == TRANS_STATUS_UP)
   {
     rcvd = g_tcp_recv(self->sck, in_s->end, size, 0);
@@ -266,6 +267,7 @@ trans_force_write_s(struct trans* self, struct stream* out_s)
   size = (int)(out_s->end - out_s->data);
   total = 0;
   rv = 0;
+  self->last_time = g_time2();
   while (total < size && self->status == TRANS_STATUS_UP)
   {
     sent = g_tcp_send(self->sck, out_s->data + total, size - total, 0);

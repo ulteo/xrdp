@@ -1,7 +1,7 @@
 /**
- * Copyright (C) 2011 Ulteo SAS
+ * Copyright (C) 2011-2012 Ulteo SAS
  * http://www.ulteo.com
- * Author David LECHEVALIER <david@ulteo.com> 2011
+ * Author David LECHEVALIER <david@ulteo.com> 2011, 2012
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -88,6 +88,8 @@ struct xrdp_client_info
   int can_use_jpeg;
   int jpeg_quality;
   int use_unicode;
+  int connectivity_check;
+  int connectivity_check_interval;
 };
 
 struct xrdp_brush
@@ -239,5 +241,8 @@ int DEFAULT_CC
 libxrdp_orders_send_brush(struct xrdp_session* session,
                           int width, int height, int bpp, int type,
                           int size, char* data, int cache_id);
+
+int DEFAULT_CC
+libxrdp_send_keepalive(struct xrdp_session* session);
 
 #endif

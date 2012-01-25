@@ -1,7 +1,7 @@
 /**
- * Copyright (C) 2011 Ulteo SAS
+ * Copyright (C) 2011-2012 Ulteo SAS
  * http://www.ulteo.com
- * Author David LECHEVALIER <david@ulteo.com> 2011
+ * Author David LECHEVALIER <david@ulteo.com> 2011, 2012
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -757,4 +757,12 @@ libxrdp_orders_send_brush(struct xrdp_session* session,
   return xrdp_orders_send_brush((struct xrdp_orders*)session->orders,
                                 width, height, bpp, type, size, data,
                                 cache_id);
+}
+
+/******************************************************************************/
+int EXPORT_CC
+libxrdp_send_keepalive(struct xrdp_session* session)
+{
+  xrdp_rdp_send_keepalive((struct xrdp_rdp*)session->rdp);
+  return 0;
 }

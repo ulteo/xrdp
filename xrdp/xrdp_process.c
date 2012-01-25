@@ -15,6 +15,9 @@
 
    xrdp: A Remote Desktop Protocol server.
    Copyright (C) Jay Sorg 2004-2009
+   Copyright (C) 2011-2012 Ulteo SAS
+   http://www.ulteo.com
+   Author David LECHEVALIER <david@ulteo.com> 2011, 2012
 
    main rdp process
 
@@ -137,6 +140,7 @@ xrdp_process_main_loop(struct xrdp_process* self)
   tbus robjs[32];
   tbus wobjs[32];
   tbus term_obj;
+  int current_time = 0;
 
   DEBUG(("xrdp_process_main_loop"));
   self->status = 1;
@@ -147,20 +151,39 @@ xrdp_process_main_loop(struct xrdp_process* self)
   self->session->callback = callback;
   /* this function is just above */
   self->session->is_term = xrdp_is_term;
+  self->server_trans->last_time = g_time2();
   if (libxrdp_process_incomming(self->session) == 0)
   {
+    int connectivity_check_interval = self->session->client_info->connectivity_check_interval * 1000;
     term_obj = g_get_term_event();
     cont = 1;
+
     while (cont)
     {
       /* build the wait obj list */
-      timeout = -1;
+      timeout = 1000;
       robjs_count = 0;
       wobjs_count = 0;
       robjs[robjs_count++] = term_obj;
       robjs[robjs_count++] = self->self_term_event;
       xrdp_wm_get_wait_objs(self->wm, robjs, &robjs_count,
                             wobjs, &wobjs_count, &timeout);
+
+      if (self->session->client_info->connectivity_check)
+      {
+        current_time =  g_time2();
+        if (current_time - self->server_trans->last_time >= connectivity_check_interval)
+        {
+          libxrdp_send_keepalive(self->session);
+          self->server_trans->last_time = current_time;
+          if (g_tcp_socket_ok(self->server_trans->sck) == 0)
+          {
+            printf("Connection end due to keepalive\n");
+            break;
+          }
+        }
+      }
+
       trans_get_wait_objs(self->server_trans, robjs, &robjs_count, &timeout);
       /* wait */
       if (g_obj_wait(robjs, robjs_count, wobjs, wobjs_count, timeout) != 0)

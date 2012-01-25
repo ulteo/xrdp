@@ -15,6 +15,9 @@
 
    xrdp: A Remote Desktop Protocol server.
    Copyright (C) Jay Sorg 2004-2009
+   Copyright (C) 2011-2012 Ulteo SAS
+   http://www.ulteo.com
+   Author David LECHEVALIER <david@ulteo.com> 2011, 2012
 
    libxrdp header
 
@@ -309,6 +312,8 @@ int APP_CC
 xrdp_rdp_disconnect(struct xrdp_rdp* self);
 int APP_CC
 xrdp_rdp_send_deactive(struct xrdp_rdp* self);
+int APP_CC
+xrdp_rdp_send_keepalive(struct xrdp_rdp* self);
 
 /* xrdp_orders.c */
 struct xrdp_orders* APP_CC

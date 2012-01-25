@@ -1,5 +1,8 @@
 /*
    Copyright (c) 2008-2010 Jay Sorg
+   Copyright (C) 2011-2012 Ulteo SAS
+   http://www.ulteo.com
+   Author David LECHEVALIER <david@ulteo.com> 2011, 2012
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
@@ -49,6 +52,7 @@ struct trans
 {
   tbus sck;
   int mode; /* 1 tcp, 2 unix socket */
+  int last_time;
   int status;
   int type1; /* 1 listener 2 server 3 client */
   ttrans_data_in trans_data_in;

@@ -1,7 +1,7 @@
 /**
- * Copyright (C) 2011 Ulteo SAS
+ * Copyright (C) 2011-2012 Ulteo SAS
  * http://www.ulteo.com
- * Author David LECHEVALIER <david@ulteo.com> 2011
+ * Author David LECHEVALIER <david@ulteo.com> 2011, 2012
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -91,6 +91,10 @@ xrdp_rdp_read_config(struct xrdp_client_info* client_info)
   values->auto_free = 1;
   g_snprintf(cfg_file, 255, "%s/xrdp.ini", XRDP_CFG_PATH);
   file_by_name_read_section(cfg_file, "globals", items, values);
+
+  client_info->connectivity_check= 0;
+  client_info->connectivity_check_interval= DEFAULT_XRDP_CONNECTIVITY_CHECK_INTERVAL;
+
   for (index = 0; index < items->count; index++)
   {
     item = (char*)list_get_item(items, index);
@@ -173,6 +177,25 @@ xrdp_rdp_read_config(struct xrdp_client_info* client_info)
       {
         client_info->use_unicode = 1;
       }
+    }
+    else if (g_strcasecmp(item, "connectivity_check") == 0)
+    {
+      if (g_strcasecmp(value, "1") == 0)
+      {
+        printf("Connectivity_check activated\n");
+        client_info->connectivity_check = 1;
+      }
+    }
+    else if (g_strcasecmp(item, "connectivity_check_interval") == 0)
+    {
+      client_info->connectivity_check_interval = g_atoi(value);
+      if (client_info->connectivity_check_interval <= 0)
+      {
+        printf("Invalid value for 'connectivity_check_interval': %s\n", value);
+        client_info->connectivity_check_interval = DEFAULT_XRDP_CONNECTIVITY_CHECK_INTERVAL;
+      }
+
+      printf("Connectivity_check_interval: %i\n", client_info->connectivity_check_interval);
     }
   }
   list_delete(items);
@@ -761,7 +784,6 @@ xrdp_process_capset_jpegcache(struct xrdp_rdp* self, struct stream* s, int len)
   return 0;
 }
 
-
 /*****************************************************************************/
 /* get the bitmap cache size */
 static int APP_CC
@@ -1280,5 +1302,38 @@ xrdp_rdp_send_deactive(struct xrdp_rdp* self)
   }
   free_stream(s);
   DEBUG(("out xrdp_rdp_send_deactive"));
+  return 0;
+}
+
+/*****************************************************************************/
+int APP_CC
+xrdp_rdp_send_keepalive(struct xrdp_rdp* self)
+{
+  struct stream* s;
+
+  DEBUG(("in xrdp_rdp_send_keepalive"));
+  make_stream(s);
+  init_stream(s, 8192);
+  if (xrdp_rdp_init(self, s) != 0)
+  {
+    free_stream(s);
+    DEBUG(("out xrdp_rdp_send_keepalive error"));
+    return 1;
+  }
+  s_mark_end(s);
+
+  s_pop_layer(s, rdp_hdr);
+  out_uint16_le(s, 0x8000);
+  out_uint16_le(s, 0x10);
+  out_uint16_le(s, self->mcs_channel);
+  if (xrdp_sec_send(self->sec_layer, s, MCS_GLOBAL_CHANNEL) != 0)
+  {
+    free_stream(s);
+    DEBUG(("out xrdp_rdp_send_keepalive error"));
+    return 1;
+  }
+
+  free_stream(s);
+  DEBUG(("out xrdp_rdp_send_keepalive"));
   return 0;
 }
