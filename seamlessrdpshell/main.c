@@ -1384,6 +1384,7 @@ void *thread_vchannel_process(void *arg)
 	signal(SIGCHLD, handler);
 	sprintf(buffer, "HELLO,%i,0x%08x\n", 0, 0);
 	send_message(buffer, strlen(buffer));
+	g_free(buffer);
 	while (1) {
 		make_stream(s);
 		init_stream(s, 1600);
