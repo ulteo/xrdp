@@ -147,7 +147,7 @@ typedef struct {
 	int count = window_list.item_count;\
 	printf("\tdump list of %i elements\n",count);\
 	for(i=0 ; i < count; i++){\
-		printf("\t elem %i :: state->%i || lock->%i || iconify->%i || "\
+		printf("\t elem %i :: state->%i || "\
 			"window_id->0x%08lx || win_out->0x%08lx || "\
 			"parent->0x%08lx\n", \
 			i, \
