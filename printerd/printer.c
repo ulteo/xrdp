@@ -94,10 +94,7 @@ printer_server_connect(http_t **http )
 int
 printer_server_disconnect(http_t *http )
 {
-	if (! http)
-	{
-		httpClose(http);
-	}
+	httpClose(http);
 	return 0;
 }
 
@@ -641,12 +638,14 @@ printer_del(const char* username, const char* printer_name)
 	g_free(cups_printer_name);
 	list_delete(user_list);
 	list_delete(new_user_list);
+	printer_server_disconnect(http);
 	return 0;
 
 fail:
 	g_free(cups_printer_name);
 	list_delete(user_list);
 	list_delete(new_user_list);
+	printer_server_disconnect(http);
 	return 1;
 }
 
@@ -671,6 +670,7 @@ printer_purge(const char* username)
 	printer_list = printer_get_printer_list(http);
 	if (printer_list == NULL)
 	{
+		printer_server_disconnect(http);
 		return 0;
 	}
 
@@ -682,6 +682,7 @@ printer_purge(const char* username)
 			printer_del(username, current_printer);
 		}
 	}
+	printer_server_disconnect(http);
 	list_delete(printer_list);
 	return 0;
 }
@@ -707,6 +708,7 @@ printer_purge_all()
 	printer_list = printer_get_printer_list(http);
 	if (printer_list == NULL)
 	{
+		printer_server_disconnect(http);
 		return 0;
 	}
 
@@ -718,6 +720,8 @@ printer_purge_all()
 			printer_del_printer(http, current_printer);
 		}
 	}
+
+	printer_server_disconnect(http);
 	list_delete(printer_list);
 	return 0;
 }
