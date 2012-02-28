@@ -48,8 +48,8 @@ Description: XRDP plugin for PulseAudio
  and WIN32 systems.
 
 Package: xrdp-printer
-Architecture: all
-Depends: ${python:Depends}, xrdp-rdpdr, ghostscript, cups
+Architecture: any
+Depends: ${python:Depends}, ${shlibs:Depends}, xrdp-rdpdr, ghostscript, cups
 Description: cups file converter to ps format
  XRDP Printer converts a ps file from cups in ps
 

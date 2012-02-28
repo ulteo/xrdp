@@ -5,6 +5,7 @@
 # maintaned by Jay Sorg
 # Author David LECHEVALIER <david@ulteo.com> 2010
 # Author Samuel BOVEE <samuel@ulteo.com> 2010-2011
+# Author David PHAM-VAN <d.pham-van@ulteo.com> 2012
 # chkconfig: 2345 11 89
 # description: starts xrdp
 
@@ -25,7 +26,11 @@ SPOOLDIR=/var/spool/xrdp
 PIDDIR=/var/run
 LOGDIR=/dev/null
 
-BINARIES="xrdp-logd xrdp-printerd xrdp xrdp-sesman"
+BINARIES="xrdp-logd xrdp xrdp-sesman"
+
+if [ -f "/usr/sbin/xrdp-printerd" ]; then
+  BINARIES="$BINARIES xrdp-printerd"
+fi
 
 . /lib/lsb/init-functions
 
