@@ -1,3 +1,22 @@
+/**
+ * Copyright (C) 2012 Ulteo SAS
+ * http://www.ulteo.com
+ * Author David Lechevalier <david@ulteo.com> 2012
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; version 2
+ * of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ **/
 /*
    Copyright (c) 2004-2009 Jay Sorg
 
@@ -2064,7 +2083,7 @@ int APP_CC
 g_su(const char* username, int display, struct list* command, int tag)
 {
   int pid = 0;
-  int session_handle = 0;
+  long session_handle = 0;
   int error = 0;
   int pw_uid = 0;
   int pw_gid = 0;
