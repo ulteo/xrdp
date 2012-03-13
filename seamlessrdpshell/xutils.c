@@ -774,6 +774,12 @@ Bool is_windows_class_exception(Display * display, Window wnd)
 	XClassHint *class_hint = NULL;
 	int i = 0;
 	int exception_length = sizeof(window_class_exceptions) / sizeof(char*);
+	Atom type = None;
+	
+	get_window_type(display, wnd, &type);
+	// Allow WM's windows (only menus) to display
+	if (type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_POPUP_MENU", False))
+		return False;
 
 	class_hint = XAllocClassHint();
 	if (class_hint == NULL) {
