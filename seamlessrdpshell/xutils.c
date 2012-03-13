@@ -771,7 +771,7 @@ Bool is_button_proxy_window(Display * display, Window wnd)
 
 Bool is_windows_class_exception(Display * display, Window wnd)
 {
-	XClassHint *class_hint;
+	XClassHint *class_hint = NULL;
 	int i = 0;
 	int exception_length = sizeof(window_class_exceptions) / sizeof(char*);
 
