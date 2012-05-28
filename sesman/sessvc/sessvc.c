@@ -15,6 +15,8 @@
 
    xrdp: A Remote Desktop Protocol server.
    Copyright (C) Jay Sorg 2005-2009
+   Copyright (C) 2012 Ulteo SAS
+    Author David LECHEVALIER <david@ulteo.com> 2012
 */
 
 /**
@@ -136,10 +138,7 @@ main(int argc, char** argv)
     g_writeln("xrdp-sessvc: exiting, not enough params");
     return 1;
   }
-  g_signal_kill(term_signal_handler); /* SIGKILL */
-  g_signal_terminate(term_signal_handler); /* SIGTERM */
-  g_signal_user_interrupt(term_signal_handler); /* SIGINT */
-  g_signal_pipe(nil_signal_handler); /* SIGPIPE */
+
   x_pid = g_atoi(argv[1]);
   wm_pid = g_atoi(argv[2]);
   username = argv[3];
@@ -163,6 +162,12 @@ main(int argc, char** argv)
     g_exit(1);
   }
   lerror = 0;
+
+  g_signal_kill(term_signal_handler); /* SIGKILL */
+  g_signal_terminate(term_signal_handler); /* SIGTERM */
+  g_signal_user_interrupt(term_signal_handler); /* SIGINT */
+  g_signal_pipe(nil_signal_handler); /* SIGPIPE */
+
   /* wait for window manager to get done */
   ret = g_waitpid(wm_pid);
   while ((ret == 0) && !g_term)
