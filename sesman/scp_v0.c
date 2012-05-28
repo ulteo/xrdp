@@ -71,7 +71,7 @@ scp_v0_process(struct SCP_CONNECTION* c, struct SCP_SESSION* s)
 		display = s_item->display;
 		if (s_item->status == SESMAN_SESSION_STATUS_TO_DESTROY)
 		{
-			log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "Session for user %s is in destroy, unable to initialize a new session", s_item->display);
+			log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "Session for user %s is in destroy, unable to initialize a new session", s->username);
 			scp_v0s_deny_connection(c, "Your last session is currently \nended, retry later");
 		}
 		else
