@@ -1,7 +1,7 @@
 /**
- * Copyright (C) 2011 Ulteo SAS
+ * Copyright (C) 2011-2012 Ulteo SAS
  * http://www.ulteo.com
- * Author David LECHEVALIER <david@ulteo.com> 2011
+ * Author David LECHEVALIER <david@ulteo.com> 2011, 2012
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -58,5 +58,6 @@ int clipboard_current_clipboard_size(Clipboard* clip);
 Bool clipboard_current_clipboard_format_exist(Clipboard* clip, Atom format);
 Bool clipboard_format_supported(Clipboard* clip, Atom format);
 
+void send_dummy_event();
 
 #endif /* CLIPBOARD_H_ */

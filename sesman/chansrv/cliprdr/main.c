@@ -703,6 +703,9 @@ void *thread_Xvent_process (void * arg)
 			cliprdr_get_clipboard(&ev);
 			break;
 
+		case ClientMessage:
+			break;
+
 		default:
 			log_message(l_config, LOG_LEVEL_DEBUG, "cliprdr[thread_Xvent_process]: "
 						"event type :  %i", ev.type);
@@ -713,6 +716,18 @@ void *thread_Xvent_process (void * arg)
 	clipboard_release(&clipboard);
 
 	pthread_exit (0);
+}
+
+
+void send_dummy_event() {
+	XClientMessageEvent dummy_event;
+
+	dummy_event.type = ClientMessage;
+	dummy_event.window = wclip;
+	dummy_event.format = 32;
+	XSendEvent(display, wclip, 0, 0, (XEvent*)&dummy_event);
+
+	XFlush(display);
 }
 
 /*****************************************************************************/
@@ -753,6 +768,10 @@ void *thread_vchannel_process (void * arg)
 			log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_cliprdr[thread_vchannel_process]: "
 					"Status disconnected");
 			running = 0;
+
+			// Send a dummy event in order to unblock XNextEvent function
+			send_dummy_event();
+
 			break;
 		default:
 			cliprdr_process_message(s, length, total_length);
