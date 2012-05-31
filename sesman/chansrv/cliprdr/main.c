@@ -712,9 +712,6 @@ void *thread_Xvent_process (void * arg)
 
 	clipboard_release(&clipboard);
 
-	log_message(l_config, LOG_LEVEL_DEBUG, "cliprdr[thread_Xvent_process]: "
-			"Closing display");
-	XCloseDisplay(display);
 	pthread_exit (0);
 }
 
