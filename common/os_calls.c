@@ -1722,6 +1722,14 @@ g_str_replace_first(char * buffer, char * s, char * by)
 
 /*****************************************************************************/
 int APP_CC
+g_str_replace_all(char * buffer, char * s, char * by) {
+	while (g_str_replace_first(buffer, s, by) == 0);
+
+	return 0;
+}
+
+/*****************************************************************************/
+int APP_CC
 g_str_end_with(char * buffer, char * end)
 {
 	int buffer_len = strlen(buffer);

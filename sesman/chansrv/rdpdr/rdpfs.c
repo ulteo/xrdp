@@ -1,7 +1,7 @@
 /**
- * Copyright (C) 2010-2011 Ulteo SAS
+ * Copyright (C) 2010-2012 Ulteo SAS
  * http://www.ulteo.com
- * Author David LECHEVALIER <david@ulteo.com> 2010-2011
+ * Author David LECHEVALIER <david@ulteo.com> 2010, 2011, 2012
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -19,6 +19,7 @@
  **/
 #include "rdpfs.h"
 #include <xrdp_constants.h>
+#include <limits.h>
 #include <fuse.h>
 
 
@@ -100,6 +101,22 @@ get_attributes_from_mode(int mode_t)
 {
 	return 0;
 
+}
+
+void
+convert_to_win_path(const char* posix_path, char* win_path)
+{
+	if (posix_path == NULL)
+	{
+		win_path[0] = '\0';
+		return;
+	}
+
+	if (win_path == NULL)
+		return;
+
+	g_strncpy(win_path, posix_path, PATH_MAX);
+	g_str_replace_all(win_path, "/", "\\");
 }
 
 /*****************************************************************************/
@@ -355,9 +372,10 @@ rdpfs_create(int device_id, int desired_access, int shared_access,
 {
 	struct stream* s;
 	int completion_id;
+	char win_path[PATH_MAX];
 
 	make_stream(s);
-	init_stream(s,1024);
+	init_stream(s, 2 * PATH_MAX +100);
 
 	completion_id = get_next_action_index();
 
@@ -367,6 +385,7 @@ rdpfs_create(int device_id, int desired_access, int shared_access,
 
 
 	g_strcpy(actions[completion_id].path, path);
+	convert_to_win_path(path, win_path);
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpfs_create]:"
   		"Process job[%s]",path);
@@ -384,8 +403,8 @@ rdpfs_create(int device_id, int desired_access, int shared_access,
 	out_uint32_le(s, shared_access);                      /* SharedMode */
 	out_uint32_le(s, creation_disposition);               /* Disposition */
 	out_uint32_le(s, flags);                              /* CreateOptions */
-	out_uint32_le(s, (strlen(path)+1)*2);                 /* PathLength */
-	uni_rdp_out_str(s, (char*)path, (strlen(path)+1)*2);  /* Path */
+	out_uint32_le(s, (strlen(win_path) + 1) * 2);                     /* PathLength */
+	uni_rdp_out_str(s, (char*)win_path, (strlen(win_path) + 1) * 2);  /* Path */
 
 	s_mark_end(s);
 	rdpfs_send(s);
@@ -486,17 +505,21 @@ void APP_CC
 rdpfs_query_volume_information(int completion_id, int device_id, int information, const char* query )
 {
 	struct stream* s;
-	int query_length;
+	int win_path_length;
+	char win_path[PATH_MAX];
+
 	make_stream(s);
-	init_stream(s,1024);
+	init_stream(s, 2* PATH_MAX + 100);
 
 	g_strcpy(actions[completion_id].path, query);
+	convert_to_win_path(query, win_path);
+
 	actions[completion_id].last_req = IRP_MJ_QUERY_VOLUME_INFORMATION;
 	actions[completion_id].request_param = information;
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpfs_query_volume_information]:"
   		"Process job[%s]",query);
-	query_length = (g_strlen(query)+1)*2;
+	win_path_length = (g_strlen(win_path)+1)*2;
 	out_uint16_le(s, RDPDR_CTYP_CORE);
 	out_uint16_le(s, PAKID_CORE_DEVICE_IOREQUEST);
 	out_uint32_le(s, actions[completion_id].device);
@@ -506,9 +529,9 @@ rdpfs_query_volume_information(int completion_id, int device_id, int information
 	out_uint32_le(s, 0);                                    /* minor version */
 
 	out_uint32_le(s, information);                          /* FsInformationClass */
-	out_uint32_le(s, query_length);                         /* length */
+	out_uint32_le(s, win_path_length);                      /* length */
 	out_uint8s(s, 24);                                      /* padding */
-	out_uint8p(s, query, query_length);                     /* query */
+	out_uint8p(s, win_path, win_path_length);               /* query */
 
 	s_mark_end(s);
 	rdpfs_send(s);
@@ -521,10 +544,14 @@ void APP_CC
 rdpfs_query_information(int completion_id, int device_id, int information, const char* query )
 {
 	struct stream* s;
+	char win_path[PATH_MAX];
+
 	make_stream(s);
-	init_stream(s,1024);
+	init_stream(s, 2* PATH_MAX + 100);
 
 	g_strcpy(actions[completion_id].path, query);
+	convert_to_win_path(query, win_path);
+
 	actions[completion_id].last_req = IRP_MJ_QUERY_INFORMATION;
 	actions[completion_id].request_param = information;
 
@@ -539,9 +566,9 @@ rdpfs_query_information(int completion_id, int device_id, int information, const
 	out_uint32_le(s,0);                                     /* minor version */
 
 	out_uint32_le(s, information);                          /* FsInformationClass */
-	out_uint32_le(s, g_strlen(query));                      /* length */
+	out_uint32_le(s, g_strlen(win_path));                   /* length */
 	out_uint8s(s, 24);                                      /* padding */
-	out_uint8p(s, query, g_strlen(query));                  /* query */
+	out_uint8p(s, win_path, g_strlen(win_path));            /* query */
 
 	s_mark_end(s);
 	rdpfs_send(s);
@@ -630,18 +657,24 @@ void APP_CC
 rdpfs_query_directory(int completion_id, int device_id, int information, const char* query )
 {
 	struct stream* s;
-	int query_length;
+	int win_path_length;
+	int considerPath = 0;
+	char win_path[PATH_MAX];
+
 	make_stream(s);
-	init_stream(s,1024);
+	init_stream(s, 2* PATH_MAX + 100);
 
 	if (g_strcmp(query, "") != 0)
 	{
+		considerPath = 1;
 		g_strcpy(actions[completion_id].path, query);
+		convert_to_win_path(query, win_path);
 	}
+
 	actions[completion_id].last_req = IRP_MN_QUERY_DIRECTORY;
 	actions[completion_id].request_param = information;
 
-	query_length = (g_strlen(query)+1)*2;
+	win_path_length = (g_strlen(win_path)+1)*2;
 	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpfs_query_directory]:"
   		"Process query[%s]",query);
 	out_uint16_le(s, RDPDR_CTYP_CORE);
@@ -653,10 +686,10 @@ rdpfs_query_directory(int completion_id, int device_id, int information, const c
 	out_uint32_le(s, IRP_MN_QUERY_DIRECTORY);             /* minor version */
 
 	out_uint32_le(s, information);                        /* FsInformationClass */
-	out_uint8(s, 1);                                      /* path is considered ? */
-	out_uint32_le(s, query_length);                       /* length */
+	out_uint8(s, considerPath);                           /* path is considered ? */
+	out_uint32_le(s, win_path_length);                    /* length */
 	out_uint8s(s, 23);                                    /* padding */
-	uni_rdp_out_str(s, (char*)query, query_length);     /* query */
+	uni_rdp_out_str(s, (char*)win_path, win_path_length); /* query */
 
 	s_mark_end(s);
 	rdpfs_send(s);
