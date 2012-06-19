@@ -1,8 +1,8 @@
 /**
- * Copyright (C) 2008-2011 Ulteo SAS
+ * Copyright (C) 2008-2012 Ulteo SAS
  * http://www.ulteo.com
  * Author David LECHEVALIER <david@ulteo.com> 2009-2011
- * Author Thomas MOUTON <thomas@ulteo.com> 2010-2011
+ * Author Thomas MOUTON <thomas@ulteo.com> 2010-2012
  * Author Guillaume DUPAS <guillaume@ulteo.com> 2011
  *
  * This program is free software; you can redistribute it and/or
@@ -1405,6 +1405,11 @@ void *thread_vchannel_process(void *arg)
 		case STATUS_CONNECTED:
 			log_message(l_config, LOG_LEVEL_INFO, "XHook[thread_vchannel_process]: "
 				    "Status connected");
+			
+			buffer = g_malloc(1024, 1);
+			sprintf(buffer, "HELLO,%i,0x%08x\n", 0, SEAMLESS_HELLO_RECONNECT);
+			send_message(buffer, strlen(buffer));
+			g_free(buffer);
 			break;
 		case STATUS_DISCONNECTED:
 			log_message(l_config, LOG_LEVEL_INFO, "XHook[thread_vchannel_process]: "

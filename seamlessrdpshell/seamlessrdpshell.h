@@ -1,8 +1,8 @@
 /**
- * Copyright (C) 2009-2011 Ulteo SAS
+ * Copyright (C) 2009-2012 Ulteo SAS
  * http://www.ulteo.com
  * Author David LECHEVALIER <david@ulteo.com> 2009
- * Author Thomas MOUTON <thomas@ulteo.com> 2010-2011
+ * Author Thomas MOUTON <thomas@ulteo.com> 2010-2012
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -43,6 +43,8 @@
 #define	ERRNO		errno
 
 /* seamlessrdpshell constant */
+#define SEAMLESS_HELLO_RECONNECT	0x0001
+
 #define SEAMLESSRDP_CREATE_MODAL    0x1
 #define SEAMLESSRDP_CREATE_TOPMOST  0x2
 #define SEAMLESS_CREATE_POPUP       0x4
