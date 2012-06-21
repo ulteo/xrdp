@@ -15,6 +15,8 @@
 
    xrdp: A Remote Desktop Protocol server.
    Copyright (C) Jay Sorg 2005-2009
+   Copyright (C) 2012 Ulteo SAS http://www.ulteo.com
+    Author David LECHEVALIER <david@ulteo.com> 2012
 */
 
 #include <sys/types.h>
@@ -135,7 +137,7 @@ log_message(struct log_config* l_cfg, const unsigned int lvl, const char* msg, .
   if (lvl <= l_cfg->log_level)
   {
     /* log to console */
-    g_printf((char*)buff);
+    fputs(buff, stdout);
 
     /* log to application logfile */
 #ifdef LOG_ENABLE_THREAD
