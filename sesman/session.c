@@ -1329,12 +1329,6 @@ session_monit()
 //	      lock_chain_release();
 	      return;
 	    }
-
-	    if (tmp->item->status == SESMAN_SESSION_STATUS_DISCONNECTED)
-	    {
-			session_unmount_drive(tmp->item);
-	    }
-
 	    if (tmp->item->status == SESMAN_SESSION_STATUS_TO_DESTROY ||
 	    		(tmp->item->status == SESMAN_SESSION_STATUS_DISCONNECTED && g_cfg->sess.kill_disconnected == 1))
 	    {
@@ -1544,6 +1538,11 @@ session_update_status_by_user(char* user, int status)
 
     if (g_strcmp(user, tmp->item->name) == 0)
     {
+    	if (status == SESMAN_SESSION_STATUS_DISCONNECTED)
+    	{
+    		session_unmount_drive(tmp->item);
+    	}
+
     	if (status == SESMAN_SESSION_STATUS_TO_DESTROY)
     	{
     		//TODO work on a copy
