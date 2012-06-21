@@ -363,9 +363,12 @@ int is_good_window(Display * display, Window w)
 
 	status = get_property(display, w, "WM_HINTS", &nitems, &data);
 	if ((status != 0) || nitems == 0 || (data == 0)) {
-		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[is_good_window]: "
-			    "Window 0x%08lx did not contain the right information", w);
-		return 1;
+		status = get_property(display, w, "WM_NORMAL_HINTS", &nitems, &data);
+		if ((status != 0) || nitems == 0 || (data == 0)) {
+			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[is_good_window]: "
+				    "Window 0x%08lx did not contain the right information", w);
+			return 1;
+		}
 	}
 	return 0;
 }
