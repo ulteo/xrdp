@@ -15,6 +15,8 @@
 
    xrdp: A Remote Desktop Protocol server.
    Copyright (C) Jay Sorg 2005-2008
+   Copyright (C) 2012 Ulteo SAS http://www.ulteo.com
+    Author David LECHEVALIER <david@ulteo.com> 2012
 */
 
 /**
@@ -1327,6 +1329,12 @@ session_monit()
 //	      lock_chain_release();
 	      return;
 	    }
+
+	    if (tmp->item->status == SESMAN_SESSION_STATUS_DISCONNECTED)
+	    {
+			session_unmount_drive(tmp->item);
+	    }
+
 	    if (tmp->item->status == SESMAN_SESSION_STATUS_TO_DESTROY ||
 	    		(tmp->item->status == SESMAN_SESSION_STATUS_DISCONNECTED && g_cfg->sess.kill_disconnected == 1))
 	    {
