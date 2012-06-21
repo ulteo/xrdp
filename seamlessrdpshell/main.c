@@ -1176,15 +1176,21 @@ void check_window_state(Window_item *witem)
 {
 	char *buffer = NULL;
 	int state = -1;
+	Atom type = None;
 
 	if (! witem)
 		return;
-
-	state = get_state(witem);
-	if (state < 0) {
-		log_message(l_config, LOG_LEVEL_INFO, "XHook[check_window_state]: "
-			    "Failed to check window 0x%08lx state", witem->window_id);
-		return;
+	
+	get_window_type(display, witem->window_id, &type);
+	if (type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_COMBO", False))
+		state = SEAMLESSRDP_NORMAL;
+	else {
+		state = get_state(witem);
+		if (state < 0) {
+			log_message(l_config, LOG_LEVEL_INFO, "XHook[check_window_state]: "
+				    "Failed to check window 0x%08lx state", witem->window_id);
+			return;
+		}
 	}
 
 	if (state == witem->state)
