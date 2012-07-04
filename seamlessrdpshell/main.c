@@ -56,6 +56,7 @@ Window internal_window;
 
 void check_window_name(Window_item *witem);
 void check_window_state(Window_item *witem);
+int get_icon(Window wnd);
 
 /*****************************************************************************/
 int error_handler(Display * display, XErrorEvent * error)
@@ -128,6 +129,22 @@ int send_focus(Window wnd)
 
 	sprintf(buffer, "FOCUS,%i,0x%08lx\n", message_id, wnd);
 	ret = send_message(buffer, strlen(buffer));
+	g_free(buffer);
+
+	return ret;
+}
+
+/*****************************************************************************/
+int send_title(Window wnd, const char* title)
+{
+	int ret;
+	char* buffer = g_malloc(1024, 1);
+
+	log_message(l_config, LOG_LEVEL_INFO, "XHook[sendTitle]: "
+		    "Sending title message for window 0x%08lx", wnd);
+	
+	g_sprintf(buffer, "TITLE,%i,0x%08lx,%s,0x%08x\n", message_id, wnd, title, 0);
+	ret = send_message(buffer, g_strlen(buffer));
 	g_free(buffer);
 
 	return ret;
@@ -354,6 +371,9 @@ void synchronize()
 
 		g_free(buffer);
 		g_free(window_id);
+		
+		send_title(witem->window_id, witem->name);
+		get_icon(witem->window_id);
 	}
 }
 
@@ -1218,7 +1238,6 @@ void check_window_state(Window_item *witem)
 /*****************************************************************************/
 void check_window_name(Window_item *witem)
 {
-	char *buffer = NULL;
 	unsigned char * name = NULL;
 
 	if (! witem)
@@ -1234,11 +1253,8 @@ void check_window_name(Window_item *witem)
 			    "Window 0x%08lx name has changed : %s", witem->window_id, name);
 
 		witem->name = g_strdup((char *) name);
-
-		buffer = g_malloc(1024, True);
-		g_sprintf(buffer, "TITLE,%i,0x%08lx,%s,0x%08x\n", message_id, witem->window_id, name, 0);
-		send_message(buffer, g_strlen(buffer));
-		g_free(buffer);
+		
+		send_title(witem->window_id, witem->name);
 	}
 }
 
