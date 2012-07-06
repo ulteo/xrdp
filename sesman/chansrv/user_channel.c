@@ -1,7 +1,7 @@
 /**
- * Copyright (C) 2010 Ulteo SAS
+ * Copyright (C) 2010-2012 Ulteo SAS
  * http://www.ulteo.com
- * Author David Lechevalier <david@ulteo.com>
+ * Author David Lechevalier <david@ulteo.com> 2010, 2012
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -462,8 +462,10 @@ user_channel_check_wait_objs(void)
 					log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
 							"Channel %s closed : [%s]",user_channels[i].channel_name, g_get_strerror());
 					g_tcp_close(sock);
-					user_channels[i].client_channel_count = 0;
-					user_channels[i].client_channel_socket[0] = 0;
+					user_channels[i].client_channel_count--;
+					user_channels[i].client_channel_socket[j] = user_channels[i].client_channel_socket[user_channels[i].client_channel_count];
+					user_channels[i].client_channel_socket[user_channels[i].client_channel_count] = 0;
+
 					free_stream(header);
 					continue;
 				}
