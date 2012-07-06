@@ -1,7 +1,7 @@
 /**
- * Copyright (C) 2009 Ulteo SAS
+ * Copyright (C) 2009-2012 Ulteo SAS
  * http://www.ulteo.com
- * Author David LECHEVALIER <david@ulteo.com>
+ * Author David LECHEVALIER <david@ulteo.com> 2009, 2012
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -325,7 +325,7 @@ int
 vchannel_close(int sock)
 {
 	Vchannel* channel;
-	close(sock);
+	shutdown(sock, SHUT_RDWR);
 	int index = vchannel_get_channel_from_socket(sock);
 	if(index == ERROR)
 	{
