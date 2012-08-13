@@ -131,13 +131,13 @@ void cliprdr_send_capability()
 	/* clip header */
 	out_uint16_le(s, CB_CLIP_CAPS);                        /* msg type */
 	out_uint16_le(s, 0x00);                                /* msg flag */
-	out_uint32_le(s, 0);                                   /* msg size */
+	out_uint32_le(s, 16);                                  /* msg size */
 	/* we only support one capability for now */
 	out_uint16_le(s, 1);                                   /* cCapabilitiesSets */
-	out_uint8s(s, 16);                                     /* pad */
+	out_uint8s(s, 2);                                      /* pad */
 	/* CLIPRDR_CAPS_SET */
 	out_uint16_le(s, CB_CAPSTYPE_GENERAL);                 /* capabilitySetType */
-	out_uint16_le(s, 92);                                  /* lengthCapability */
+	out_uint16_le(s, 12);                                  /* lengthCapability */
 	out_uint32_le(s, CB_CAPS_VERSION_1);                   /* version */
 	out_uint32_le(s, 0);                                   /* general flags */
 
