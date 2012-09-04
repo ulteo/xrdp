@@ -657,9 +657,10 @@ void APP_CC
 rdpfs_query_directory(int completion_id, int device_id, int information, const char* query )
 {
 	struct stream* s;
-	int win_path_length;
+	int win_path_length = 0;
 	int considerPath = 0;
 	char win_path[PATH_MAX];
+	win_path[0] = '\0';
 
 	make_stream(s);
 	init_stream(s, 2* PATH_MAX + 100);
@@ -669,12 +670,12 @@ rdpfs_query_directory(int completion_id, int device_id, int information, const c
 		considerPath = 1;
 		g_strcpy(actions[completion_id].path, query);
 		convert_to_win_path(query, win_path);
+		win_path_length = (g_strlen(win_path)+1)*2;
 	}
 
 	actions[completion_id].last_req = IRP_MN_QUERY_DIRECTORY;
 	actions[completion_id].request_param = information;
 
-	win_path_length = (g_strlen(win_path)+1)*2;
 	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpfs_query_directory]:"
   		"Process query[%s]",query);
 	out_uint16_le(s, RDPDR_CTYP_CORE);
