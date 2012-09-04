@@ -45,6 +45,7 @@
 
 #define DEFAULT_CODEPAGE     "UTF-8"
 #define WINDOWS_CODEPAGE     "UTF-16LE"
+#define CP1252_CODEPAGE      "CP1252"
 
 #define XRDP_SOCKET_PATH               "/var/spool/xrdp/"
 #define PRINTER_SOCKET_NAME            "/var/spool/xrdp/xrdp_printer"

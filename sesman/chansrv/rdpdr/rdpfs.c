@@ -844,9 +844,7 @@ rdpfs_list_announce(struct stream* s)
 	int device_list_count, device_id, device_type, device_data_length;
 	int pnp_name_len, driver_name_len, printer_name_len,cached_field_name;
 	int i;
-	int j;
 	char device_name[1024] ;
-	char unicode_device_name[2048] ;
 	int handle;
 	char* p;
 	int str_length;
@@ -879,16 +877,11 @@ rdpfs_list_announce(struct stream* s)
 		switch (device_type)
 		{
 		case RDPDR_DTYP_FILESYSTEM:
-			in_uint8a(s, device_name, device_data_length);
-			if(device_data_length > 2)
+			if(device_data_length > 1)
 			{
-				for (j = 0; j < device_data_length ; j++)
-				{
-					unicode_device_name[2*j] = device_name[j];
-					unicode_device_name[2*j+1] = 0;
-				}
-				s->p = unicode_device_name;
-				str_length = uni_rdp_in_str(s, device_name, sizeof(device_name), device_data_length*2);
+				// RDP specification explains that drive name must be sended in Unicode. (http://msdn.microsoft.com/en-us/library/cc241357)
+				// That is wrong, the protocol use CP1252
+				str_length = cp1252_rdp_in_str(s, device_name, sizeof(device_name), device_data_length);
 			}
 			break;
 

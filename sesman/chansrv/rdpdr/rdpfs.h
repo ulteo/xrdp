@@ -29,6 +29,7 @@
 #include "rdpfs_cache.h"
 #include "thread_calls.h"
 #include "uni_rdp.h"
+#include "cp1252_rdp.h"
 #include <sys/stat.h>
 
 #define MAX_SHARE 128

@@ -45,6 +45,7 @@ libxrdp_common_la_SOURCES = \
   thread_pool.c thread_pool.h \
   trans.c trans.h \
   uni_rdp.c uni_rdp.h \
+  cp1252_rdp.c cp1252_rdp.h \
   $(AUTH_C) 
 
 libxrdp_common_la_LIBADD = \
