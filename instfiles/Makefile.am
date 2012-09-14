@@ -49,5 +49,15 @@ kmini_DATA = \
   km-080c.ini \
   km-0816.ini
 
+
+switchresolutiondir=$(sbindir)
+switchresolution_DATA = \
+  xrdp-switch-resolution
+
+install-data-hook:
+	chmod 755 $(DESTDIR)$(sbindir)/xrdp-switch-resolution
+
 EXTRA_DIST = \
+  $(switchresolution_DATA) \
   $(kmini_DATA)
+

@@ -1721,3 +1721,12 @@ session_get_user_pref(char* username, char* key, char* value)
 	g_file_close(fd);
 	return 0;
 }
+
+void DEFAULT_CC
+session_switch_resolution(int width, int height, int display) {
+   char resolution_path[512];
+   log_message(&(g_cfg->log), LOG_LEVEL_INFO, "sesman[session_switch_resolution]: switch resolution to %dx%d on display :%d", width, height, display);
+
+   g_snprintf(resolution_path, 256, "%s/%s %d %d :%d.0", XRDP_SBIN_PATH, "xrdp-switch-resolution",  width, height, display);
+   system(resolution_path);
+}

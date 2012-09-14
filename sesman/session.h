@@ -180,5 +180,7 @@ struct session_item*
 session_list_session(int* count);
 void
 session_update_status_by_user(char* user, int status);
+void DEFAULT_CC
+session_switch_resolution(int width, int height, int display);
 #endif
 
