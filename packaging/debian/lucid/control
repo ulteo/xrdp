@@ -1,7 +1,7 @@
 Source: xrdp
 Section: x11
 Priority: extra
-Maintainer: Samuel Bovée <samuel@ulteo.com>
+Maintainer: David PHAM-VAN <d.pham-van@ulteo.com>
 Build-Depends: debhelper (>= 6), cdbs, quilt,
  python (>= 2.6), python-central, python-svn,
  libxml2-dev, libx11-dev, libxfixes-dev, libssl-dev, libpam0g-dev,
@@ -12,7 +12,7 @@ XS-Python-Version: >= 2.5
 
 Package: xrdp
 Architecture: any
-Depends: ${shlibs:Depends}, ${python:Depends}, tightvncserver
+Depends: ${shlibs:Depends}, ${python:Depends}, tightvncserver | tigervnc-server
 Recommends: xfonts-base, xfonts-encodings
 Description: RDP server for Linux
  Xrdp is a RDP server for Linux. It provides remote display of a desktop and
