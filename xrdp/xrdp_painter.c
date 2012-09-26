@@ -15,6 +15,9 @@
 
    xrdp: A Remote Desktop Protocol server.
    Copyright (C) Jay Sorg 2004-2009
+   Copyright (C) 2012 Ulteo SAS
+   http://www.ulteo.com
+   Author David LECHEVALIER <david@ulteo.com> 2012
 
    painter, gc
 
@@ -52,6 +55,11 @@ int APP_CC
 xrdp_painter_begin_update(struct xrdp_painter* self)
 {
   libxrdp_orders_init(self->session);
+  if (self->session->client_info->use_frame_marker)
+  {
+    libxrdp_send_ts_frame_start(self->session);
+  }
+
   return 0;
 }
 
@@ -59,6 +67,11 @@ xrdp_painter_begin_update(struct xrdp_painter* self)
 int APP_CC
 xrdp_painter_end_update(struct xrdp_painter* self)
 {
+  if (self->session->client_info->use_frame_marker)
+  {
+    libxrdp_send_ts_frame_end(self->session);
+  }
+
   libxrdp_orders_send(self->session);
   return 0;
 }

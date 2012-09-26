@@ -197,6 +197,14 @@ xrdp_rdp_read_config(struct xrdp_client_info* client_info)
 
       printf("Connectivity_check_interval: %i\n", client_info->connectivity_check_interval);
     }
+    else if (g_strcasecmp(item, "use_frame_marker") == 0)
+    {
+      if (g_strcasecmp(value, "1") == 0)
+      {
+        client_info->can_use_frame_marker = 1;
+        printf("Server can use frame marker\n");
+      }
+    }
   }
   list_delete(items);
   list_delete(values);
@@ -520,6 +528,7 @@ xrdp_rdp_send_demand_active(struct xrdp_rdp* self)
   char* caps_size_ptr;
   char* caps_ptr;
   int input_flags = INPUT_FLAG_SCANCODES;
+  int flags = NEGOTIATEORDERSUPPORT | COLORINDEXSUPPORT;
 
   make_stream(s);
   init_stream(s, 8192);
@@ -596,7 +605,12 @@ xrdp_rdp_send_demand_active(struct xrdp_rdp* self)
   out_uint16_le(s, 0); /* Pad */
   out_uint16_le(s, 1); /* Max order level */
   out_uint16_le(s, 0x2f); /* Number of fonts */
-  out_uint16_le(s, 0x22); /* Capability flags */
+
+  if (self->client_info.can_use_frame_marker)
+  {
+	  flags |= ORDERFLAGS_EXTRA_FLAGS;
+  }
+  out_uint16_le(s, flags); /* Capability flags */
   /* caps */
   out_uint8(s, 1); /* dest blt */
   out_uint8(s, 1); /* pat blt */
@@ -631,7 +645,15 @@ xrdp_rdp_send_demand_active(struct xrdp_rdp* self)
   out_uint8(s, 0); /* unused */
   out_uint8(s, 0); /* unused */
   out_uint16_le(s, 0x6a1);
-  out_uint8s(s, 2); /* ? */
+
+  if (flags & ORDERFLAGS_EXTRA_FLAGS)
+  {
+    out_uint16_le(s, ORDERFLAGS_EX_ALTSEC_FRAME_MARKER_SUPPORT);
+  }
+  else
+  {
+    out_uint8s(s, 2); /* ? */
+  }
   out_uint32_le(s, 0x0f4240); /* desk save */
   out_uint32_le(s, 0x0f4240); /* desk save */
   out_uint32_le(s, 1); /* ? */
@@ -709,6 +731,9 @@ xrdp_process_capset_order(struct xrdp_rdp* self, struct stream* s,
 {
   int i;
   char order_caps[32];
+  unsigned short order_flags = 0;
+  unsigned short order_flags_ext = 0;
+  int parse_order_support_ex_flags = 0;
 
   DEBUG(("order capabilities"));
   in_uint8s(s, 20); /* Terminal desc, pad */
@@ -717,7 +742,13 @@ xrdp_process_capset_order(struct xrdp_rdp* self, struct stream* s,
   in_uint8s(s, 2); /* Pad */
   in_uint8s(s, 2); /* Max order level */
   in_uint8s(s, 2); /* Number of fonts */
-  in_uint8s(s, 2); /* Capability flags */
+  in_uint16_le(s, order_flags); /* Capability flags */
+
+  if (order_flags & ORDERFLAGS_EXTRA_FLAGS)
+  {
+    parse_order_support_ex_flags = 1;
+  }
+
   in_uint8a(s, order_caps, 32); /* Orders supported */
   DEBUG(("dest blt-0 %d", order_caps[0]));
   DEBUG(("pat blt-1 %d", order_caps[1]));
@@ -739,7 +770,24 @@ xrdp_process_capset_order(struct xrdp_rdp* self, struct stream* s,
   g_hexdump(order_caps, 32);
 #endif
   in_uint8s(s, 2); /* Text capability flags */
-  in_uint8s(s, 6); /* Pad */
+
+  if (parse_order_support_ex_flags)
+  {
+    in_uint16_le(s, order_flags_ext);
+
+    self->client_info.use_frame_marker = 0;
+    if ((order_flags_ext & ORDERFLAGS_EX_ALTSEC_FRAME_MARKER_SUPPORT) && self->client_info.can_use_frame_marker)
+    {
+      self->client_info.use_frame_marker = 1;
+      printf("client want to use frame marker\n");
+    }
+  }
+  else
+  {
+    in_uint8s(s, 2); /* Pad */
+  }
+
+  in_uint8s(s, 4); /* Pad */
   in_uint32_le(s, i); /* desktop cache size, usually 0x38400 */
   self->client_info.desktop_cache = i;
   DEBUG(("desktop cache size %d", i));

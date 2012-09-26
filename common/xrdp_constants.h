@@ -1,7 +1,7 @@
 /**
- * Copyright (C) 2011 Ulteo SAS
+ * Copyright (C) 2011-2012 Ulteo SAS
  * http://www.ulteo.com
- * Author David LECHEVALIER <david@ulteo.com> 2011
+ * Author David LECHEVALIER <david@ulteo.com> 2011, 2012
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -90,6 +90,18 @@
 
 #define MCS_GLOBAL_CHANNEL             1003
 #define MCS_USERCHANNEL_BASE           1001
+
+/* Order Flags */
+#define ORDERFLAGS_EXTRA_FLAGS         0x0080
+#define NEGOTIATEORDERSUPPORT          0x0002
+#define ZEROBOUNDSDELTASSUPPORT        0x0008
+#define COLORINDEXSUPPORT              0x0020
+#define SOLIDPATTERNBRUSHONLY          0x0040
+
+/* Order Flags ex */
+#define ORDERFLAGS_EX_CACHE_BITMAP_REV3_SUPPORT    0x0002
+#define ORDERFLAGS_EX_ALTSEC_FRAME_MARKER_SUPPORT  0x0004
+
 
 /* RDP secure transport constants */
 #define SEC_RANDOM_SIZE                32
@@ -311,6 +323,24 @@
 #define PACKET_COMPR_TYPE_64K          0x200
 #define PACKET_COMPR_TYPE_RDP6         0x400
 #define PACKET_COMPR_TYPE_RDP61        0x400
+
+/* order flags */
+#define NEGOTIATEORDERSUPPORT          0x0002
+#define ZEROBOUNDSDELTASSUPPORT        0x0008
+#define COLORINDEXSUPPORT              0x0020
+#define SOLIDPATTERNBRUSHONLY          0x0040
+#define ORDERFLAGS_EXTRA_FLAGS         0x0080
+
+/* orderSupportEx Flags */
+#define ORDERFLAGS_EX_CACHE_BITMAP_REV3_SUPPORT   0x0002
+#define ORDERFLAGS_EX_ALTSEC_FRAME_MARKER_SUPPORT 0x0004
+
+/* alternate secondary order */
+#define TS_SECONDARY                   0x02
+#define TS_ALTSEC_FRAME_MARKER         0x0D
+
+#define TS_FRAME_START                 0x00000000
+#define TS_FRAME_END                   0x00000001
 
 /* Keymap flags */
 #define MapRightShiftMask              (1 << 0)

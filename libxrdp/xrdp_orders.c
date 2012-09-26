@@ -1,7 +1,7 @@
 /**
- * Copyright (C) 2011 Ulteo SAS
+ * Copyright (C) 2011-2012 Ulteo SAS
  * http://www.ulteo.com
- * Author David LECHEVALIER <david@ulteo.com> 2011
+ * Author David LECHEVALIER <david@ulteo.com> 2011, 2012
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -395,6 +395,33 @@ xrdp_order_pack_small_or_tiny(struct xrdp_orders* self,
   }
   order_flags_ptr[0] = orders_flags;
   return 0;
+}
+
+/*****************************************************************************/
+void APP_CC
+xrdp_rdp_send_ts_frame_marker(struct xrdp_orders* self, int flags)
+{
+  unsigned char header = TS_SECONDARY | TS_ALTSEC_FRAME_MARKER<<2;
+
+  xrdp_orders_check(self, 5);
+  self->order_count++;
+
+  out_uint8(self->out_s, header);
+  out_uint32_le(self->out_s, flags);
+}
+
+/*****************************************************************************/
+void APP_CC
+xrdp_rdp_send_ts_frame_start(struct xrdp_orders* self)
+{
+  xrdp_rdp_send_ts_frame_marker(self, TS_FRAME_START);
+}
+
+/*****************************************************************************/
+void APP_CC
+xrdp_rdp_send_ts_frame_end(struct xrdp_orders* self)
+{
+  xrdp_rdp_send_ts_frame_marker(self, TS_FRAME_END);
 }
 
 /*****************************************************************************/

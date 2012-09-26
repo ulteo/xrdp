@@ -766,3 +766,17 @@ libxrdp_send_keepalive(struct xrdp_session* session)
   xrdp_rdp_send_keepalive((struct xrdp_rdp*)session->rdp);
   return 0;
 }
+
+/******************************************************************************/
+void EXPORT_CC
+libxrdp_send_ts_frame_start(struct xrdp_session* session)
+{
+  xrdp_rdp_send_ts_frame_start((struct xrdp_orders*)session->orders);
+}
+
+/******************************************************************************/
+void EXPORT_CC
+libxrdp_send_ts_frame_end(struct xrdp_session* session)
+{
+  xrdp_rdp_send_ts_frame_end((struct xrdp_orders*)session->orders);
+}

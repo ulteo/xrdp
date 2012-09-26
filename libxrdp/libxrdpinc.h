@@ -90,6 +90,8 @@ struct xrdp_client_info
   int use_unicode;
   int connectivity_check;
   int connectivity_check_interval;
+  int can_use_frame_marker;
+  int use_frame_marker;
 };
 
 struct xrdp_brush
@@ -244,5 +246,11 @@ libxrdp_orders_send_brush(struct xrdp_session* session,
 
 int DEFAULT_CC
 libxrdp_send_keepalive(struct xrdp_session* session);
+
+void DEFAULT_CC
+libxrdp_ts_frame_start(struct xrdp_session* session);
+
+void DEFAULT_CC
+libxrdp_ts_frame_end(struct xrdp_session* session);
 
 #endif

@@ -316,6 +316,10 @@ int APP_CC
 xrdp_rdp_send_keepalive(struct xrdp_rdp* self);
 
 /* xrdp_orders.c */
+void APP_CC
+xrdp_rdp_send_ts_frame_start(struct xrdp_orders* self);
+void APP_CC
+xrdp_rdp_send_ts_frame_end(struct xrdp_orders* self);
 struct xrdp_orders* APP_CC
 xrdp_orders_create(struct xrdp_session* session,
                    struct xrdp_rdp* rdp_layer);
