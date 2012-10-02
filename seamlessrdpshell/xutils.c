@@ -1,8 +1,8 @@
 /**
- * Copyright (C) 2009-2011 Ulteo SAS
+ * Copyright (C) 2009-2012 Ulteo SAS
  * http://www.ulteo.com
  * Author David LECHEVALIER <david@ulteo.com> 2009-2011
- * Author Thomas MOUTON <thomas@ulteo.com> 2010-2011
+ * Author Thomas MOUTON <thomas@ulteo.com> 2010-2012
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -781,7 +781,7 @@ Bool is_windows_class_exception(Display * display, Window wnd)
 	
 	get_window_type(display, wnd, &type);
 	// Allow WM's windows (only menus) to display
-	if (type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_POPUP_MENU", False))
+	if (type == g_atom_net_wm_window_type_popup_menu)
 		return False;
 
 	class_hint = XAllocClassHint();
