@@ -1,7 +1,8 @@
-# Copyright (C) 2010 Ulteo SAS
+# Copyright (C) 2010, 2012 Ulteo SAS
 # http://www.ulteo.com
 # Author Samuel BOVEE <samuel@ulteo.com> 2010
 # Author David LECHEVALIER <david@ulteo.com> 2010
+# Author David PHAM-VAN <d.pham-van@ulteo.com> 2012
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -23,7 +24,7 @@ AM_CFLAGS = \
   `Wand-config --cflags`
 
 AM_LDFLAGS = \
-  `Wand-config --ldflags --libs`
+  $(filter-out -lglib-2.0, $(shell Wand-config --ldflags --libs))
 
 INCLUDES = \
   -I$(top_srcdir)/common \
