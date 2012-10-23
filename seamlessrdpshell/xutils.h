@@ -1,8 +1,8 @@
 /**
- * Copyright (C) 2009-2011 Ulteo SAS
+ * Copyright (C) 2009-2012 Ulteo SAS
  * http://www.ulteo.com
  * Author David LECHEVALIER <david@ulteo.com> 2009-2011
- * Author Thomas MOUTON <thomas@ulteo.com> 2010-2011
+ * Author Thomas MOUTON <thomas@ulteo.com> 2010-2012
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -76,6 +76,8 @@ get_property(Display * display, Window w, const char *property,
 void initializeXUtils(Display *dpy);
 void close_menu(Display* display);
 void close_window(Display* display, Window wnd);
+Bool get_window_class(Display * display, Window wnd, char ** classname);
+Bool is_WM_menu(Display * display, Window wnd);
 Bool is_windows_class_exception(Display * display, Window wnd);
 Bool getFrameExtents(Display * display, Window wnd, int * left, int * right, int * top, int * bottom);
 Atom getActiveWindowAtom();

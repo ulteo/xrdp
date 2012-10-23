@@ -54,6 +54,8 @@ static int seamrdp_channel;
 struct log_config *l_config;
 Window internal_window;
 
+static Window_item* lastFocusedSeamlessWindow = NULL;
+
 void check_window_name(Window_item *witem);
 void check_window_state(Window_item *witem);
 int get_icon(Window wnd);
@@ -1000,7 +1002,16 @@ void create_window(Window win_out)
 			log_message(l_config, LOG_LEVEL_INFO, "XHook[create_window]: "
 				    "Found a parent window (0x%08lx) for the window 0x%08lx, but the windows list does not contain it",
 				    parent_id, proper_win);
-			parent_id = 0;
+			
+			if (is_WM_menu(display, proper_win) && lastFocusedSeamlessWindow) {
+				parent_id = lastFocusedSeamlessWindow->window_id;
+			}
+			else {
+				parent_id = 0;
+			}
+			
+			log_message(l_config, LOG_LEVEL_INFO, "XHook[create_window]: "
+				    "Set window 0x%08lx as the parent window of window 0x%08lx", parent_id, proper_win);
 		}
 		witem = NULL;
 	}
@@ -1359,6 +1370,8 @@ void *thread_Xvent_process(void *arg)
 					if (witem) {
 						log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
 							    "Window 0x%08lx gained the focus", activeWindow);
+						
+						lastFocusedSeamlessWindow = witem;
 
 						send_focus(activeWindow);
 					}

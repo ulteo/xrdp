@@ -50,6 +50,10 @@ static char *window_class_exceptions[] = {
 	"Xfwm4"
 };
 
+static char *wm_classnames[] = {
+	"Xfwm4"
+};
+
 
 static Display *g_display;
 
@@ -768,6 +772,76 @@ Bool is_button_proxy_window(Display * display, Window wnd)
 			return False;
 		}
 	}
+
+	return True;
+}
+
+Bool get_window_class(Display * display, Window wnd, char ** classname)
+{
+	XClassHint *class_hint = XAllocClassHint();
+
+	if (class_hint == NULL) {
+		log_message(l_config, LOG_LEVEL_ERROR, "XHook[get_window_class]: "
+			    "Unable to allocate memory for 'XClassHint' structure");
+		return False;
+	}
+	
+	*classname = NULL;
+
+	if (XGetClassHint(display, wnd, class_hint)) {
+		*classname = malloc(sizeof(char) * g_strlen(class_hint->res_class));
+		g_strcpy(*classname, class_hint->res_class);
+	}
+	if (class_hint) {
+		if (class_hint->res_class)
+			XFree(class_hint->res_class);
+		if (class_hint->res_name)
+			XFree(class_hint->res_name);
+	}
+	
+	return (*classname != NULL);
+}
+
+Bool is_WM_menu(Display * display, Window wnd)
+{
+	Atom type = None;
+	char* wnd_classname = NULL;
+	int wm_classnames_idx;
+	int wm_classnames_length = sizeof(wm_classnames) / sizeof(char*);
+	Bool class_found = False;
+	
+	if (! get_window_class(display, wnd, &wnd_classname)) {
+		log_message(l_config, LOG_LEVEL_ERROR, "XHook[is_WM_menu]: "
+			    "Failed to get the window 0x%08lx classname", wnd);
+		return False;
+	}
+	
+	for (wm_classnames_idx = 0; wm_classnames_idx < wm_classnames_length; wm_classnames_idx++) {
+		log_message(l_config, LOG_LEVEL_ERROR, "XHook[is_WM_menu]: "
+			    "wnd_class: %s wm_class: %s", wnd_classname, wm_classnames[wm_classnames_idx]);
+		if (g_strlen(wnd_classname) == g_strlen(wm_classnames[wm_classnames_idx]) && g_strncasecmp(wnd_classname, wm_classnames[wm_classnames_idx], g_strlen(wnd_classname)) == 0) {
+			class_found = True;
+			break;
+		}
+	}
+	
+	g_free(wnd_classname);
+	
+	if (! class_found) {
+		log_message(l_config, LOG_LEVEL_ERROR, "XHook[is_WM_menu]: "
+			    "Window 0x%08lx is not a WM window", wnd);
+		return False;
+	}
+	
+	get_window_type(display, wnd, &type);
+	if (type != g_atom_net_wm_window_type_popup_menu) {
+		log_message(l_config, LOG_LEVEL_ERROR, "XHook[is_WM_menu]: "
+			    "Window 0x%08lx is not a WM menu", wnd);
+		return False;
+	}
+	
+	log_message(l_config, LOG_LEVEL_INFO, "XHook[is_WM_menu]: "
+		    "Window 0x%08lx is a WM menu", wnd);
 
 	return True;
 }
