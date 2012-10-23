@@ -802,24 +802,20 @@ Bool get_window_class(Display * display, Window wnd, char ** classname)
 	return (*classname != NULL);
 }
 
-Bool is_WM_menu(Display * display, Window wnd)
-{
-	Atom type = None;
+static Bool is_window_classname_in_array(Display * display, Window wnd, char * array[]) {
 	char* wnd_classname = NULL;
-	int wm_classnames_idx;
-	int wm_classnames_length = sizeof(wm_classnames) / sizeof(char*);
+	int array_idx;
+	int array_length = sizeof(array) / sizeof(char*);
 	Bool class_found = False;
 	
 	if (! get_window_class(display, wnd, &wnd_classname)) {
-		log_message(l_config, LOG_LEVEL_ERROR, "XHook[is_WM_menu]: "
+		log_message(l_config, LOG_LEVEL_ERROR, "XHook[is_window_classname_in_array]: "
 			    "Failed to get the window 0x%08lx classname", wnd);
 		return False;
 	}
 	
-	for (wm_classnames_idx = 0; wm_classnames_idx < wm_classnames_length; wm_classnames_idx++) {
-		log_message(l_config, LOG_LEVEL_ERROR, "XHook[is_WM_menu]: "
-			    "wnd_class: %s wm_class: %s", wnd_classname, wm_classnames[wm_classnames_idx]);
-		if (g_strlen(wnd_classname) == g_strlen(wm_classnames[wm_classnames_idx]) && g_strncasecmp(wnd_classname, wm_classnames[wm_classnames_idx], g_strlen(wnd_classname)) == 0) {
+	for (array_idx = 0; array_idx < array_length; array_idx++) {
+		if (g_strlen(wnd_classname) == g_strlen(array[array_idx]) && g_strncasecmp(wnd_classname, array[array_idx], g_strlen(wnd_classname)) == 0) {
 			class_found = True;
 			break;
 		}
@@ -827,7 +823,14 @@ Bool is_WM_menu(Display * display, Window wnd)
 	
 	g_free(wnd_classname);
 	
-	if (! class_found) {
+	return class_found;
+}
+
+Bool is_WM_menu(Display * display, Window wnd)
+{
+	Atom type = None;
+	
+	if (! is_window_classname_in_array(display, wnd, wm_classnames)) {
 		log_message(l_config, LOG_LEVEL_ERROR, "XHook[is_WM_menu]: "
 			    "Window 0x%08lx is not a WM window", wnd);
 		return False;
@@ -848,46 +851,14 @@ Bool is_WM_menu(Display * display, Window wnd)
 
 Bool is_windows_class_exception(Display * display, Window wnd)
 {
-	XClassHint *class_hint = NULL;
-	int i = 0;
-	int exception_length = sizeof(window_class_exceptions) / sizeof(char*);
 	Atom type = None;
 	
 	get_window_type(display, wnd, &type);
 	// Allow WM's windows (only menus) to display
 	if (type == g_atom_net_wm_window_type_popup_menu)
 		return False;
-
-	class_hint = XAllocClassHint();
-	if (class_hint == NULL) {
-		log_message(l_config, LOG_LEVEL_ERROR, "XHook[is_windows_class_exception]: "
-			    "Unable to allocate memory for 'XClassHint' structure");
-		return False;
-	}
-
-	if (XGetClassHint(display, wnd, class_hint)) {
-		for (i = 0; i < exception_length; i++) {
-			if (g_strncasecmp(class_hint->res_class, window_class_exceptions[i], g_strlen(window_class_exceptions[i])) == 0) {
-				log_message(l_config, LOG_LEVEL_DEBUG, "XHook[is_windows_class_exception]: "
-					    "Window 0x%08lx is member of the class %s, which is not displayable", wnd, window_class_exceptions[i]);
-
-				if (class_hint) {
-					if (class_hint->res_class)
-						XFree(class_hint->res_class);
-					if (class_hint->res_name)
-						XFree(class_hint->res_name);
-				}
-				return True;
-			}
-		}
-	}
-	if (class_hint) {
-		if (class_hint->res_class)
-			XFree(class_hint->res_class);
-		if (class_hint->res_name)
-			XFree(class_hint->res_name);
-	}
-	return False;
+	
+	return is_window_classname_in_array(display, wnd, window_class_exceptions);
 }
 
 Bool is_dropdown_menu(Display * display, Window wnd) {
