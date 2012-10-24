@@ -15,6 +15,9 @@
 
    xrdp: A Remote Desktop Protocol server.
    Copyright (C) Jay Sorg 2005-2008
+   Copyright (C) 2012 Ulteo SAS
+   http://www.ulteo.com
+   Author David Lechevalier <david@ulteo.com> 2012
 */
 
 /**
@@ -375,6 +378,41 @@ xml_send_key_value(int client, char* username, char* key, char* value)
 	return 0;
 }
 
+
+/************************************************************************/
+int DEFAULT_CC
+xml_set_key_value(int client, char* username, char* key, char* value)
+{
+	if (session_set_user_pref(username, key, value) == 0 )
+	{
+		xml_send_success(client, "SUCCESS");
+	}
+	else
+	{
+		xml_send_error(client, "Unable to set preference");
+	}
+	return 0;
+}
+
+/************************************************************************/
+int DEFAULT_CC
+xml_process_internal_command(int client, const char* request_action, char* username)
+{
+	if( g_strcmp(request_action, "disconnect") == 0)
+	{
+		session_update_status_by_user(username, SESMAN_SESSION_STATUS_DISCONNECTED);
+		return 0;
+	}
+
+	if( g_strcmp(request_action, "logoff") == 0)
+	{
+		session_update_status_by_user(username, SESMAN_SESSION_STATUS_TO_DESTROY);
+		return 0;
+	}
+
+	xml_send_error(client, "Unknown internal command");
+	return 1;
+}
 
 /************************************************************************/
 xmlDocPtr DEFAULT_CC
@@ -790,31 +828,15 @@ process_request(int client)
 	if( g_strcmp(request_type, "internal") == 0)
 	{
 		char username[256];
-		if( g_strcmp(request_action, "disconnect") == 0)
+		if (xml_get_xpath(doc, "/request/@username", username) == 1)
 		{
-			if (xml_get_xpath(doc, "/request/@username", username) == 1)
-			{
-				log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[process_request]: "
-						"Unable to get the username\n");
-				xml_send_error(client, "Unable to get the username");
-				return close_management_connection(doc, client);
-			}
-			session_update_status_by_user(username, SESMAN_SESSION_STATUS_DISCONNECTED);
+			log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[process_request]: "
+					"Unable to get the username\n");
+			xml_send_error(client, "Unable to get the username");
 			return close_management_connection(doc, client);
 		}
-		if( g_strcmp(request_action, "logoff") == 0)
-		{
-			if (xml_get_xpath(doc, "/request/@username", username) == 1)
-			{
-				log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[process_request]: "
-						"Unable to get the username\n");
-				xml_send_error(client, "Unable to get the username");
-				return close_management_connection(doc, client);
-			}
-			session_update_status_by_user(username, SESMAN_SESSION_STATUS_TO_DESTROY);
-			return close_management_connection(doc, client);
-		}
-		xml_send_error(client, "Unknown message for internal");
+
+		xml_process_internal_command(client, request_action, username);
 		return close_management_connection(doc, client);
 	}
 	if( g_strcmp(request_type, "user_conf") == 0)
@@ -845,14 +867,8 @@ process_request(int client)
 				xml_send_error(client, "Unable to get the value in the request");
 				return close_management_connection(doc, client);
 			}
-			if (session_set_user_pref(username, key, value) == 0 )
-			{
-				xml_send_success(client, "SUCCESS");
-			}
-			else
-			{
-				xml_send_error(client, "Unable to set preference");
-			}
+
+			xml_set_key_value(client, username, key, value);
 			return close_management_connection(doc, client);
 		}
 
