@@ -69,6 +69,9 @@ int get_window_pid(Display * display, Window w, int *pid);
 int get_parent_window(Display * display, Window w, Window * parent);
 int is_good_window(Display * display, Window w);
 Bool is_button_proxy_window(Display * display, Window wnd);
+void set_window_class_exceptions_list(struct list * wm_classnames);
+void set_wm_classnames_list(struct list * wm_classnames);
+void xutils_delete_all_lists();
 int
 get_property(Display * display, Window w, const char *property,
 	     unsigned long *nitems, unsigned char **data);

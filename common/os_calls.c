@@ -2,6 +2,7 @@
  * Copyright (C) 2012 Ulteo SAS
  * http://www.ulteo.com
  * Author David Lechevalier <david@ulteo.com> 2012
+ * Author Thomas MOUTON <thomas@ulteo.com> 2012
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -1910,6 +1911,45 @@ g_split(char* str, struct token* tokens, char c)
   //printf("Token count : %i\n",count);
   tokens[count].next = 0;
   return count;
+}
+
+struct list* APP_CC
+g_str_split_to_list(const char* str, const char c)
+{
+  int size = 0;
+  char* p = 0;
+  if (! str || strlen(str) == 0)
+  {
+    return NULL;
+  }
+
+  struct list* tokensList = list_create();
+  tokensList->auto_free = 1;
+
+  const char* str_cpy = str;
+  do
+  {
+    p = strchr(str_cpy, c);
+    size = p-str_cpy;
+    if (size < 0 && g_strlen(str_cpy) > 0)
+    {
+      size = g_strlen(str_cpy);
+    }
+
+    if (size > 0)
+    {
+      char* token_buffer = g_malloc(sizeof(char) * (size + 1), 0);
+
+      strncpy(token_buffer, str_cpy, size);
+      token_buffer[size] = '\0';
+
+      list_add_item(tokensList, (tbus) token_buffer);
+    }
+    str_cpy += size+1;
+  }
+  while(p != NULL);
+
+  return tokensList;
 }
 
 /*****************************************************************************/

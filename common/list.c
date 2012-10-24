@@ -1,3 +1,22 @@
+/**
+ * Copyright (C) 2012 Ulteo SAS
+ * http://www.ulteo.com
+ * Author Thomas MOUTON <thomas@ulteo.com> 2012
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; version 2
+ * of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ **/
 /*
    Copyright (c) 2004-2009 Jay Sorg
 
@@ -128,6 +147,33 @@ list_index_of(struct list* self, tbus item)
     }
   }
   return -1;
+}
+
+/*****************************************************************************/
+int APP_CC
+list_contains_string(struct list* self, const char * string)
+{
+  int found = 0;
+  int index;
+
+  if (! self || ! string)
+  {
+    return 0;
+  }
+
+  for (index = 0; index < self->count; index++)
+  {
+    const char * buffer = (const char *) self->items[index];
+    int buffer_size = g_strlen(buffer);
+
+    if (g_strlen(string) == buffer_size && g_strncasecmp(string, buffer, buffer_size) == 0)
+    {
+      found = 1;
+      break;
+    }
+  }
+
+  return found;
 }
 
 /*****************************************************************************/

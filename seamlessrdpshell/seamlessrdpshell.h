@@ -36,6 +36,9 @@
 #define XHOOK_CFG_LOG_LEVEL					"LogLevel"
 #define XHOOK_CFG_LOG_ENABLE_SYSLOG	"EnableSyslog"
 #define XHOOK_CFG_LOG_SYSLOG_LEVEL	"SyslogLevel"
+#define XHOOK_CFG_SEAMLESS					"Seamless"
+#define XHOOK_CFG_SEAMLESS_WM_CLASSNAMES			"WMClassnames"
+#define XHOOK_CFG_SEAMLESS_HIDDEN_CLASSNAMES			"HiddenClassnames"
 
 /* socket constant */
 #define ERROR	-1

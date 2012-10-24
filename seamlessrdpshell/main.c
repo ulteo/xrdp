@@ -1584,6 +1584,20 @@ int XHook_init()
 			  display_num, l_config->program_name);
 		l_config->log_file = (char *)g_strdup(log_filename);
 	}
+	
+	if (file_by_name_read_section(filename, XHOOK_CFG_SEAMLESS, names, values) == 0) {
+		for (index = 0; index < names->count; index++) {
+			name = (char *)list_get_item(names, index);
+			value = (char *)list_get_item(values, index);
+			if (0 == g_strcasecmp(name, XHOOK_CFG_SEAMLESS_WM_CLASSNAMES)) {
+				set_wm_classnames_list(g_str_split_to_list(value, ':'));
+			}
+			if (0 == g_strcasecmp(name, XHOOK_CFG_SEAMLESS_HIDDEN_CLASSNAMES)) {
+				set_window_class_exceptions_list(g_str_split_to_list(value, ':'));
+			}
+		}
+	}
+
 	list_delete(names);
 	list_delete(values);
 	res = log_start(l_config);
@@ -1663,6 +1677,7 @@ int main(int argc, char **argv, char **environ)
 	(void)pthread_join(Xevent_thread, &ret);
 	(void)pthread_join(Vchannel_thread, &ret);
 	pthread_mutex_destroy(&mutex);
+	xutils_delete_all_lists();
 	g_free(l_config);
 	return 0;
 }

@@ -46,13 +46,9 @@ static char *wmstate_strs[] = {
 	"IconicState"
 };
 
-static char *window_class_exceptions[] = {
-	"Xfwm4"
-};
+struct list *window_class_exceptions_list = NULL;
 
-static char *wm_classnames[] = {
-	"Xfwm4"
-};
+struct list *wm_classnames_list = NULL;
 
 
 static Display *g_display;
@@ -171,6 +167,19 @@ int hex2int(const char *hexa_string)
 			break;
 	}
 	return ret;
+}
+
+void set_window_class_exceptions_list(struct list * wm_classnames) {
+	window_class_exceptions_list = wm_classnames;
+}
+
+void set_wm_classnames_list(struct list * wm_classnames) {
+	wm_classnames_list = wm_classnames;
+}
+
+void xutils_delete_all_lists() {
+	list_delete(window_class_exceptions_list);
+	list_delete(wm_classnames_list);
 }
 
 /*****************************************************************************/
@@ -802,35 +811,18 @@ Bool get_window_class(Display * display, Window wnd, char ** classname)
 	return (*classname != NULL);
 }
 
-static Bool is_window_classname_in_array(Display * display, Window wnd, char * array[]) {
+Bool is_WM_menu(Display * display, Window wnd)
+{
+	Atom type = None;
 	char* wnd_classname = NULL;
-	int array_idx;
-	int array_length = sizeof(array) / sizeof(char*);
-	Bool class_found = False;
 	
 	if (! get_window_class(display, wnd, &wnd_classname)) {
-		log_message(l_config, LOG_LEVEL_ERROR, "XHook[is_window_classname_in_array]: "
+		log_message(l_config, LOG_LEVEL_ERROR, "XHook[is_WM_menu]: "
 			    "Failed to get the window 0x%08lx classname", wnd);
 		return False;
 	}
 	
-	for (array_idx = 0; array_idx < array_length; array_idx++) {
-		if (g_strlen(wnd_classname) == g_strlen(array[array_idx]) && g_strncasecmp(wnd_classname, array[array_idx], g_strlen(wnd_classname)) == 0) {
-			class_found = True;
-			break;
-		}
-	}
-	
-	g_free(wnd_classname);
-	
-	return class_found;
-}
-
-Bool is_WM_menu(Display * display, Window wnd)
-{
-	Atom type = None;
-	
-	if (! is_window_classname_in_array(display, wnd, wm_classnames)) {
+	if (! list_contains_string(wm_classnames_list, wnd_classname)) {
 		log_message(l_config, LOG_LEVEL_ERROR, "XHook[is_WM_menu]: "
 			    "Window 0x%08lx is not a WM window", wnd);
 		return False;
@@ -845,6 +837,8 @@ Bool is_WM_menu(Display * display, Window wnd)
 	
 	log_message(l_config, LOG_LEVEL_INFO, "XHook[is_WM_menu]: "
 		    "Window 0x%08lx is a WM menu", wnd);
+	
+	g_free(wnd_classname);
 
 	return True;
 }
@@ -852,13 +846,25 @@ Bool is_WM_menu(Display * display, Window wnd)
 Bool is_windows_class_exception(Display * display, Window wnd)
 {
 	Atom type = None;
+	char* wnd_classname = NULL;
+	Bool result;
+	
+	if (! get_window_class(display, wnd, &wnd_classname)) {
+		log_message(l_config, LOG_LEVEL_ERROR, "XHook[is_windows_class_exception]: "
+			    "Failed to get the window 0x%08lx classname", wnd);
+		return False;
+	}
 	
 	get_window_type(display, wnd, &type);
 	// Allow WM's windows (only menus) to display
 	if (type == g_atom_net_wm_window_type_popup_menu)
 		return False;
 	
-	return is_window_classname_in_array(display, wnd, window_class_exceptions);
+	result = list_contains_string(window_class_exceptions_list, wnd_classname);
+	
+	g_free(wnd_classname);
+	
+	return result;
 }
 
 Bool is_dropdown_menu(Display * display, Window wnd) {
