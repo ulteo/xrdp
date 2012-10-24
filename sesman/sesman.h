@@ -15,6 +15,10 @@
 
    xrdp: A Remote Desktop Protocol server.
    Copyright (C) Jay Sorg 2005-2008
+   Copyright (C) 2012 Ulteo SAS
+   http://www.ulteo.com
+   Author David LECHEVALIER <david@ulteo.com> 2012
+
 */
 
 /**
@@ -65,5 +69,7 @@ int DEFAULT_CC
 session_destroy(struct session_item* sess);
 void DEFAULT_CC
 session_update_status_by_user(char* user, int status);
+int
+process_request(int client);
 
 #endif
