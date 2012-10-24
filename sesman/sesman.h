@@ -62,6 +62,15 @@
 #define RDPDRIVE_NAME    ".rdp_drive"
 #define GVFSDRIVE_NAME   ".gvfs"
 
+#define XML_AUTHENTICATION_ERROR   "Unauthorized operation"
+
+
+typedef struct _management_connection
+{
+	int socket;
+	struct ucred* cred;
+} management_connection;
+
 
 void DEFAULT_CC
 sesman_stop(void);
@@ -70,6 +79,6 @@ session_destroy(struct session_item* sess);
 void DEFAULT_CC
 session_update_status_by_user(char* user, int status);
 int
-process_request(int client);
+process_request(management_connection* client);
 
 #endif

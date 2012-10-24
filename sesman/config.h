@@ -15,6 +15,9 @@
 
    xrdp: A Remote Desktop Protocol server.
    Copyright (C) Jay Sorg 2005-2008
+   Copyright (C) 2012 Ulteo SAS
+   http://www.ulteo.com
+   Author David LECHEVALIER <david@ulteo.com> 2012
 */
 
 /**
@@ -64,6 +67,9 @@
 #define SESMAN_CFG_SESS_MONIT_DELAY  "MonitoringDelay"
 #define SESMAN_CFG_SESS_X_TIMEOUT    "XserverTimeout"
 #define SESMAN_CFG_SESS_MANAGEMENT_THREAD_COUNT "ManagementThreadCount"
+
+#define SESMAN_CFG_API               "API"
+#define SESMAN_CFG_API_AUTH          "Authentication"
 
 /**
  *
@@ -148,6 +154,22 @@ struct config_sessions
 
 /**
  *
+ * @struct config_api
+ * @brief struct that contains sesman api configuration
+ *
+ */
+struct config_api
+{
+  /**
+   * @var authentication
+   * @brief specify if users identity are verified
+   */
+  int authentication;
+};
+
+
+/**
+ *
  * @struct config_sesman
  * @brief struct that contains sesman configuration
  *
@@ -213,6 +235,12 @@ struct config_sesman
    * @brief Session configuration options struct
    */
   struct config_sessions sess;
+  /**
+   * @var api
+   * @brief Api configuration options struct
+   */
+  struct config_api api;
+
 };
 
 /**

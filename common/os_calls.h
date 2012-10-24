@@ -54,6 +54,12 @@ struct token
   struct token* next;
 };
 
+struct ucred {
+  unsigned int pid;	/* PID */
+  unsigned int uid;	/* UID */
+  unsigned int gid;	/* GID */
+};
+
 void APP_CC
 g_init(void);
 int APP_CC
@@ -86,6 +92,8 @@ int APP_CC
 g_tcp_set_no_delay(int sck);
 int APP_CC
 g_tcp_socket(void);
+int APP_CC
+g_unix_get_socket_user_cred(int sock, struct ucred* cred);
 int APP_CC
 g_unix_connect(const char* socket_filename);
 int APP_CC
@@ -312,6 +320,8 @@ g_sigterm(int pid);
 int APP_CC
 g_getuser_info(const char* username, int* gid, int* uid, char* shell,
                char* dir, char* gecos);
+int APP_CC
+g_getuser_name(char* username, int uid);
 int APP_CC
 g_getgroup_info(const char* groupname, int* gid);
 int APP_CC

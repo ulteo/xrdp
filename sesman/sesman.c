@@ -198,7 +198,36 @@ xml_get_xpath(xmlDocPtr doc, char* xpath, char* value)
 
 /************************************************************************/
 int DEFAULT_CC
-xml_send_info(int client, xmlDocPtr doc)
+is_authorized(management_connection* client, char* user)
+{
+	int uid = -1;
+
+	if (g_cfg->api.authentication && client->cred == NULL)
+	{
+		return 0;
+	}
+
+	if (client->cred == NULL)
+	{
+		return 1;
+	}
+
+	if (user != NULL)
+	{
+		g_getuser_info(user, NULL, &uid, NULL, NULL, NULL);
+	}
+
+	if (client->cred->uid == g_getuid() || client->cred->uid == uid)
+	{
+		return 1;
+	}
+
+	return 0;
+}
+
+/************************************************************************/
+int DEFAULT_CC
+xml_send_info(management_connection* client, xmlDocPtr doc)
 {
 	xmlChar* xmlbuff;
 	int buff_size, size;
@@ -213,14 +242,14 @@ xml_send_info(int client, xmlDocPtr doc)
 	out_uint32_be(s,buff_size);
 	out_uint8p(s, xmlbuff, buff_size)
 	size = s->p - s->data;
-	if (g_tcp_can_send(client, 10))
+	if (g_tcp_can_send(client->socket, 10))
 	{
 		int sended = 0;
 		int send = 0;
 		while(sended < size)
 		{
 			send = (size-sended) > 2048 ? 2048 : size-sended;
-			sended += g_tcp_send(client, s->data+sended, send, 0);
+			sended += g_tcp_send(client->socket, s->data+sended, send, 0);
 			if (sended < size)
 			{
 				if (g_get_errno() != 0)
@@ -250,7 +279,7 @@ end:
 
 /************************************************************************/
 int DEFAULT_CC
-xml_send_error(int client, const char* message)
+xml_send_error(management_connection* client, const char* message)
 {
 	xmlChar* xmlbuff;
 	xmlDocPtr doc;
@@ -287,9 +316,9 @@ xml_send_error(int client, const char* message)
 	out_uint32_be(s,buff_size);
 	out_uint8p(s, xmlbuff, buff_size)
 	size = s->p - s->data;
-	if (g_tcp_can_send(client, 10))
+	if (g_tcp_can_send(client->socket, 10))
 	{
-		buff_size = g_tcp_send(client, s->data, size, 0);
+		buff_size = g_tcp_send(client->socket, s->data, size, 0);
 	}
 	else
 	{
@@ -307,7 +336,7 @@ xml_send_error(int client, const char* message)
 
 /************************************************************************/
 int DEFAULT_CC
-xml_send_success(int client, char* message)
+xml_send_success(management_connection* client, char* message)
 {
 	xmlChar* xmlbuff;
 	xmlDocPtr doc;
@@ -336,9 +365,9 @@ xml_send_success(int client, char* message)
 	out_uint32_be(s,buff_size);
 	out_uint8p(s, xmlbuff, buff_size)
 	size = s->p - s->data;
-	if (g_tcp_can_send(client, 10))
+	if (g_tcp_can_send(client->socket, 10))
 	{
-		buff_size = g_tcp_send(client, s->data, size, 0);
+		buff_size = g_tcp_send(client->socket, s->data, size, 0);
 	}
 	else
 	{
@@ -353,10 +382,16 @@ xml_send_success(int client, char* message)
 
 /************************************************************************/
 int DEFAULT_CC
-xml_send_key_value(int client, char* username, char* key, char* value)
+xml_send_key_value(management_connection* client, char* username, char* key, char* value)
 {
 	xmlNodePtr node, node2;
 	xmlDocPtr doc;
+
+	if (! is_authorized(client, username))
+	{
+		xml_send_error(client, XML_AUTHENTICATION_ERROR);
+		return;
+	}
 
 	doc = xmlNewDoc(xmlCharStrdup("1.0"));
 	if (doc ==NULL)
@@ -381,8 +416,14 @@ xml_send_key_value(int client, char* username, char* key, char* value)
 
 /************************************************************************/
 int DEFAULT_CC
-xml_set_key_value(int client, char* username, char* key, char* value)
+xml_set_key_value(management_connection* client, char* username, char* key, char* value)
 {
+	if (! is_authorized(client, NULL))
+	{
+		xml_send_error(client, XML_AUTHENTICATION_ERROR);
+		return;
+	}
+
 	if (session_set_user_pref(username, key, value) == 0 )
 	{
 		xml_send_success(client, "SUCCESS");
@@ -396,8 +437,14 @@ xml_set_key_value(int client, char* username, char* key, char* value)
 
 /************************************************************************/
 int DEFAULT_CC
-xml_process_internal_command(int client, const char* request_action, char* username)
+xml_process_internal_command(management_connection* client, const char* request_action, char* username)
 {
+	if (! is_authorized(client, NULL))
+	{
+		xml_send_error(client, XML_AUTHENTICATION_ERROR);
+		return 0;
+	}
+
 	if( g_strcmp(request_action, "disconnect") == 0)
 	{
 		session_update_status_by_user(username, SESMAN_SESSION_STATUS_DISCONNECTED);
@@ -414,9 +461,11 @@ xml_process_internal_command(int client, const char* request_action, char* usern
 	return 1;
 }
 
+
+
 /************************************************************************/
 xmlDocPtr DEFAULT_CC
-xml_receive_message(int client)
+xml_receive_message(management_connection* client)
 {
 	struct stream* s;
 	int data_length;
@@ -425,7 +474,7 @@ xml_receive_message(int client)
 	init_stream(s, 1024);
 	xmlDocPtr doc;
 
-	res= g_tcp_recv(client, s->data, sizeof(int), 0);
+	res= g_tcp_recv(client->socket, s->data, sizeof(int), 0);
 
 	if (res != sizeof(int))
 	{
@@ -440,7 +489,7 @@ xml_receive_message(int client)
 	make_stream(s);
 	init_stream(s, data_length + 1);
 
-	g_tcp_recv(client, s->data, data_length, 0);
+	g_tcp_recv(client->socket, s->data, data_length, 0);
 	s->data[data_length] = 0;
 	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[xml_received_message]: "
 			"data : %s",s->data);
@@ -452,7 +501,7 @@ xml_receive_message(int client)
 
 /************************************************************************/
 int DEFAULT_CC
-send_sessions(int client)
+send_sessions(management_connection* client)
 {
 	struct session_item* sess;
 	xmlNodePtr node, node2, node3;
@@ -465,6 +514,12 @@ send_sessions(int client)
 
 	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG_PLUS, "sesman[send_sessions]: "
 			"request for sessions list");
+
+	if (! is_authorized(client, NULL))
+	{
+		xml_send_error(client, XML_AUTHENTICATION_ERROR);
+		return;
+	}
 
 	lock_chain_acquire();
 	sess = (struct session_item*)session_list_session(&count);
@@ -526,7 +581,7 @@ send_sessions(int client)
 
 /************************************************************************/
 int DEFAULT_CC
-send_session(int client, int session_id, char* user)
+send_session(management_connection* client, int session_id, char* user)
 {
 	struct session_item* sess = NULL;
 	xmlNodePtr node, node2;
@@ -565,6 +620,14 @@ send_session(int client, int session_id, char* user)
 		sess->status = SESMAN_SESSION_STATUS_UNKNOWN;
 		g_snprintf(sess->name, sizeof(sess->name), "UNKNOW");
 	}
+
+	if (! is_authorized(client, sess->name))
+	{
+		xml_send_error(client, XML_AUTHENTICATION_ERROR);
+		g_free(sess);
+		return 1;
+	}
+
 	version = xmlCharStrdup("1.0");
 	doc = xmlNewDoc(version);
 	if (doc == NULL)
@@ -624,7 +687,7 @@ send_session(int client, int session_id, char* user)
 
 /************************************************************************/
 int DEFAULT_CC
-send_logoff(int client, int session_id)
+send_logoff(management_connection* client, int session_id)
 {
 	struct session_item* sess;
 	xmlNodePtr node, node2;
@@ -661,6 +724,13 @@ send_logoff(int client, int session_id)
 		log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[send_logoff]: "
 				"The session %i did not exist", session_id);
 		xml_send_error(client, "the session id of the request did not exist");
+		return 1;
+	}
+
+	if (! is_authorized(client, sess->name))
+	{
+		xml_send_error(client, XML_AUTHENTICATION_ERROR);
+		g_free(sess);
 		return 1;
 	}
 
@@ -711,18 +781,25 @@ send_logoff(int client, int session_id)
 }
 
 
-int close_management_connection(xmlDocPtr doc, int socket)
+int close_management_connection(xmlDocPtr doc, management_connection* client)
 {
 	if (doc != NULL)
 	{
 		xmlFreeDoc(doc);
 	}
-	g_tcp_close(socket);
+
+	if (client->cred != NULL)
+	{
+		g_free(client->cred);
+	}
+
+	g_tcp_close(client->socket);
 }
 
 void* thread_routine(void* val)
 {
 	int job = 0;
+	management_connection client;
 
 	while(1)
 	{
@@ -737,20 +814,42 @@ void* thread_routine(void* val)
 			continue;
 		}
 
-		process_request(job);
+		client.cred = NULL;
+		client.socket = job;
+		process_request(&client);
 	}
 }
 
 /************************************************************************/
-int
-process_request(int client)
+int DEFAULT_CC
+process_request(management_connection* client)
 {
 	int session_id = 0;
 	char request_type[128];
 	char request_action[128];
 	char session_id_string[12];
 	char username[256];
-	xmlDocPtr doc;
+	xmlDocPtr doc = NULL;
+
+	if (g_cfg->api.authentication)
+	{
+		char username[1024] = {0};
+		client->cred = g_malloc(sizeof(struct ucred), 1);
+
+		if ((g_unix_get_socket_user_cred(client->socket, client->cred) == 0) && (g_getuser_name(username, client->cred->uid) == 0))
+		{
+			log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[process_request]: "
+					"New request from account %s", username);
+		}
+		else
+		{
+			log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[process_request]: "
+					"Authentication error on connection %i", client->socket);
+
+			xml_send_error(client, "Authentication Error");
+			return close_management_connection(doc, client);
+		}
+	}
 
 	doc = xml_receive_message(client);
 	if ( doc == NULL)

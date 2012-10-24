@@ -15,6 +15,9 @@
 
    xrdp: A Remote Desktop Protocol server.
    Copyright (C) Jay Sorg 2005-2008
+   Copyright (C) 2012 Ulteo SAS
+   http://www.ulteo.com
+   Author David LECHEVALIER <david@ulteo.com> 2012
 */
 
 /**
@@ -102,6 +105,9 @@ config_read(struct config_sesman* cfg)
 
   /* read session config */
   config_read_sessions(fd, &(cfg->sess), param_n, param_v);
+
+  /* read api config */
+  config_read_api(fd, &(cfg->api), param_n, param_v);
 
   /* cleanup */
   list_delete(sec);
@@ -378,6 +384,41 @@ config_read_sessions(int file, struct config_sessions* se, struct list* param_n,
   g_printf("\tKillDisconnected:            %i\r\n", se->kill_disconnected);
   g_printf("\tIdleTimeLimit:               %i\r\n", se->max_idle_time);
   g_printf("\tDisconnectedTimeLimit:       %i\r\n", se->max_idle_time);
+
+  return 0;
+}
+
+/******************************************************************************/
+int DEFAULT_CC
+config_read_api(int file, struct config_api* api, struct list* param_n, struct list* param_v)
+{
+  int i;
+  char* buf;
+
+  if (!api || !param_n || !param_v)
+  {
+	  return 1;
+  }
+
+  list_clear(param_v);
+  list_clear(param_n);
+
+  /* defaults settings */
+  api->authentication = 1;
+
+  file_read_section(file, SESMAN_CFG_API, param_n, param_v);
+  for (i = 0; i < param_n->count; i++)
+  {
+    buf = (char*)list_get_item(param_n, i);
+    if (0 == g_strcasecmp(buf, SESMAN_CFG_API_AUTH))
+    {
+      api->authentication = text2bool((char*)list_get_item(param_v, i));
+    }
+  }
+
+  /* API config */
+  g_printf("API configuration:\n");
+  g_printf("\tAuthentication required: %s\n", api->authentication ? "true": "false");
 
   return 0;
 }

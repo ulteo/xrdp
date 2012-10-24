@@ -1,7 +1,7 @@
 /**
  * Copyright (C) 2012 Ulteo SAS
  * http://www.ulteo.com
- * Author David Lechevalier <david@ulteo.com> 2012
+ * Author David LECHEVALIER <david@ulteo.com> 2012
  * Author Thomas MOUTON <thomas@ulteo.com> 2012
  *
  * This program is free software; you can redistribute it and/or
@@ -710,6 +710,24 @@ g_create_unix_socket(const char *socket_filename)
     return 1;
   }
   return sock;
+}
+
+/*****************************************************************************/
+/* return the struct ucred which informs about the processus user identity */
+/* return 0 on success */
+int APP_CC
+g_unix_get_socket_user_cred(int sock, struct ucred* cred)
+{
+  socklen_t cred_len = 0;
+
+  if (cred == NULL)
+  {
+    return 1;
+  }
+
+  cred_len = sizeof(struct ucred);
+
+  return getsockopt(sock, SOL_SOCKET, SO_PEERCRED, (char*)cred, &cred_len);
 }
 
 /*****************************************************************************/
@@ -2661,6 +2679,29 @@ g_getuser_info(const char* username, int* gid, int* uid, char* shell,
   }
   return 1;
 #endif
+}
+
+/*****************************************************************************/
+/* returns 0 if ok */
+/* does not work in win32 */
+int APP_CC
+g_getuser_name(char* username, int uid)
+{
+  struct passwd* pass;
+
+  if (username == NULL)
+  {
+    return 1;
+  }
+
+  pass = getpwuid(uid);
+  if (pass && username)
+  {
+    g_strncpy(username, pass->pw_name, 1025);
+    return 0;
+  }
+
+  return 1;
 }
 
 /*****************************************************************************/
