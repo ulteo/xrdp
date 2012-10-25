@@ -47,17 +47,12 @@
 #include "arch.h"
 #include "verify_user_pam.h"
 #include "list.h"
+#include <sys/socket.h>
 
 struct token
 {
   char str[128];
   struct token* next;
-};
-
-struct ucred {
-  unsigned int pid;	/* PID */
-  unsigned int uid;	/* UID */
-  unsigned int gid;	/* GID */
 };
 
 void APP_CC

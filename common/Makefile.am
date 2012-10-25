@@ -5,6 +5,7 @@ AM_CFLAGS = \
   -DXRDP_SBIN_PATH=\"${sbindir}\" \
   -DXRDP_SHARE_PATH=\"${datadir}/xrdp\" \
   -DXRDP_PID_PATH=\"${localstatedir}/run\" \
+  -D_GNU_SOURCE \
   -DHAVE_ICONV \
   -DHAVE_ICONV_H 
   

@@ -21,6 +21,7 @@ AM_CFLAGS = \
   -DXRDP_CFG_PATH=\"${sysconfdir}/xrdp\" \
   -DXRDP_SBIN_PATH=\"${sbindir}\" \
   -DXRDP_SHARE_PATH=\"${datadir}/xrdp\" \
+  -D_GNU_SOURCE \
   -DXRDP_PID_PATH=\"${localstatedir}/run\" \
   `xml2-config --libs`
 
