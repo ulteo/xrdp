@@ -15,6 +15,8 @@
 
    xrdp: A Remote Desktop Protocol server.
    Copyright (C) Jay Sorg 2005-2008
+   Copyright (C) 2012 Ulteo SAS http://www.ulteo.com
+   Author David LECHEVALIER <david@ulteo.com> 2012
 */
 
 /**
@@ -69,6 +71,7 @@ env_set_user(char* username, char* passwd_file, int display)
   char pw_dir[256];
   char pw_gecos[256];
   char text[256];
+  char xrdp_spool_session_dir[256];
 
   error = g_getuser_info(username, &pw_gid, &pw_uid, pw_shell, pw_dir,
                          pw_gecos);
@@ -102,8 +105,13 @@ env_set_user(char* username, char* passwd_file, int display)
         {
           /* if no auth_file_path is set, then we go for
              $HOME/.vnc/sesman_username_passwd */
-          g_mkdir(".vnc");
-          g_sprintf(passwd_file, "%s/.vnc/sesman_%s_passwd", pw_dir, username);
+          g_snprintf(xrdp_spool_session_dir, sizeof(xrdp_spool_session_dir), "%s/%d", "/var/spool/xrdp", display);
+          if (! g_directory_exist(xrdp_spool_session_dir))
+          {
+            g_mkdirs(xrdp_spool_session_dir);
+          }
+
+          g_snprintf(passwd_file, 256, "%s/vnc_passwd", xrdp_spool_session_dir);
         }
 	else
 	{
