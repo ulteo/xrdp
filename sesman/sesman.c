@@ -784,6 +784,8 @@ int close_management_connection(xmlDocPtr doc, management_connection* client)
 	}
 
 	g_tcp_close(client->socket);
+
+	return 0;
 }
 
 void* thread_routine(void* val)
