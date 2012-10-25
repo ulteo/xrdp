@@ -68,7 +68,7 @@
 typedef struct _management_connection
 {
 	int socket;
-	struct ucred* cred;
+	uid_t cred;
 } management_connection;
 
 

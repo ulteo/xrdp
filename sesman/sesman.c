@@ -202,12 +202,7 @@ is_authorized(management_connection* client, char* user)
 {
 	int uid = -1;
 
-	if (g_cfg->api.authentication && client->cred == NULL)
-	{
-		return 0;
-	}
-
-	if (client->cred == NULL)
+	if (g_cfg->api.authentication == 0)
 	{
 		return 1;
 	}
@@ -217,7 +212,7 @@ is_authorized(management_connection* client, char* user)
 		g_getuser_info(user, NULL, &uid, NULL, NULL, NULL);
 	}
 
-	if (client->cred->uid == g_getuid() || client->cred->uid == uid)
+	if (client->cred == g_getuid() || client->cred == uid)
 	{
 		return 1;
 	}
@@ -788,11 +783,6 @@ int close_management_connection(xmlDocPtr doc, management_connection* client)
 		xmlFreeDoc(doc);
 	}
 
-	if (client->cred != NULL)
-	{
-		g_free(client->cred);
-	}
-
 	g_tcp_close(client->socket);
 }
 
@@ -814,7 +804,7 @@ void* thread_routine(void* val)
 			continue;
 		}
 
-		client.cred = NULL;
+		client.cred = -1;
 		client.socket = job;
 		process_request(&client);
 	}
@@ -834,9 +824,8 @@ process_request(management_connection* client)
 	if (g_cfg->api.authentication)
 	{
 		char username[1024] = {0};
-		client->cred = g_malloc(sizeof(struct ucred), 1);
 
-		if ((g_unix_get_socket_user_cred(client->socket, client->cred) == 0) && (g_getuser_name(username, client->cred->uid) == 0))
+		if ((g_unix_get_socket_user_cred(client->socket, &client->cred) == 0) && (g_getuser_name(username, client->cred) == 0))
 		{
 			log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[process_request]: "
 					"New request from account %s", username);

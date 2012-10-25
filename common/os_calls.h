@@ -88,7 +88,7 @@ g_tcp_set_no_delay(int sck);
 int APP_CC
 g_tcp_socket(void);
 int APP_CC
-g_unix_get_socket_user_cred(int sock, struct ucred* cred);
+g_unix_get_socket_user_cred(int sock, uid_t* cred);
 int APP_CC
 g_unix_connect(const char* socket_filename);
 int APP_CC

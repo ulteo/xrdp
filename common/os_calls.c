@@ -716,18 +716,25 @@ g_create_unix_socket(const char *socket_filename)
 /* return the struct ucred which informs about the processus user identity */
 /* return 0 on success */
 int APP_CC
-g_unix_get_socket_user_cred(int sock, struct ucred* cred)
+g_unix_get_socket_user_cred(int sock, uid_t* uid)
 {
   socklen_t cred_len = 0;
+  struct ucred cred;
 
-  if (cred == NULL)
+  if (uid == NULL)
   {
     return 1;
   }
 
   cred_len = sizeof(struct ucred);
 
-  return getsockopt(sock, SOL_SOCKET, SO_PEERCRED, (char*)cred, &cred_len);
+  if (getsockopt(sock, SOL_SOCKET, SO_PEERCRED, (char*)&cred, &cred_len) == 0)
+  {
+    *uid = cred.uid;
+    return 0;
+  }
+
+  return 1;
 }
 
 /*****************************************************************************/
