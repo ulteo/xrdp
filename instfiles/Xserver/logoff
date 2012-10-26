@@ -33,90 +33,91 @@ import signal
 
 
 def findPIDForRoot(tag, pid_exception, user=None):
-  files = glob.glob("/proc/[0-9]*")
-  for f in files:
-    if not os.path.isdir(f):
-      continue
-
-    if int(os.path.basename(f)) == pid_exception:
-      continue
-
-    try:
-      f_ = file(os.path.join(f, 'environ'), 'r')
-      buffer = f_.read()
-      f_.close()
-    except IOError, err:
-      continue
-
-    if not tag in buffer:
-      continue
-	    
-    return int(os.path.basename(f))
-
-  return None
+	files = glob.glob("/proc/[0-9]*")
+	for f in files:
+		if not os.path.isdir(f):
+			continue
+		
+		if int(os.path.basename(f)) == pid_exception:
+			continue
+		
+		try:
+			f_ = file(os.path.join(f, 'environ'), 'r')
+			buffer = f_.read()
+			f_.close()
+		except IOError, err:
+			continue
+		
+		if not tag in buffer:
+			continue
+							
+		return int(os.path.basename(f))
+	
+	return None
 
 
 def findPID(tag, pid_exception, user):
-  files = glob.glob("/proc/[0-9]*")
-  for f in files:
-    if not os.path.isdir(f):
-      continue
+	files = glob.glob("/proc/[0-9]*")
+	for f in files:
+		if not os.path.isdir(f):
+			continue
 
-    pw = pwd.getpwnam(user)
-    uid = pw.pw_uid
-    if uid == None :
-      print "The user %s did not exist"%(user)
-      return None
-    if not os.stat(f)[4] == uid:
-      continue
+		pw = pwd.getpwnam(user)
+		uid = pw.pw_uid
+		if uid == None :
+			print "The user %s did not exist"%(user)
+			return None
+		if not os.stat(f)[4] == uid:
+			continue
 
-    if int(os.path.basename(f)) == pid_exception:
-      continue
+		if int(os.path.basename(f)) == pid_exception:
+			continue
 
-    try:
-      f_ = file(os.path.join(f, 'environ'), 'r')
-      buffer = f_.read()
-      f_.close()
-    except IOError, err:
-      continue
+		try:
+			f_ = file(os.path.join(f, 'environ'), 'r')
+			buffer = f_.read()
+			f_.close()
+		except IOError, err:
+			continue
 
-    if not tag in buffer:
-      continue
-	    
-    return int(os.path.basename(f))
-  return None
+		if not tag in buffer:
+			continue
+			
+		return int(os.path.basename(f))
+	return None
 
 
 # main
 try:
-  current_user = os.environ["USER"]
+	current_user = os.environ["USER"]
 except KeyError:
-  #no USER environ var when booting
-  sys.exit(2)
+	#no USER environ var when booting
+	sys.exit(2)
 
 if len(sys.argv) != 2:
-  user = current_user
+	user = current_user
 else :
-  user = sys.argv[1]
+	user = sys.argv[1]
 
 if user == None:
-  sys.exit(2)
+	sys.exit(2)
 
 my_pid = os.getpid()
 func = findPID
 if user in "all" :
-    if not current_user in "root":
-      print "You must be root to close all the xrdp session"
-      sys.exit(2)
-    else:
-      func = findPIDForRoot
+		if not current_user in "root":
+			print "You must be root to close all the xrdp session"
+			sys.exit(2)
+		else:
+			func = findPIDForRoot
 
 pid = func("XRDP_PROCESS", my_pid, user)
 while pid != None :
-  os.kill(pid, signal.SIGKILL)
-  time.sleep(0.2)
-  if os.path.exists("/proc/%i"%(pid)) :
-    os.kill(pid, signal.SIGTERM)
-  pid = func("XRDP_PROCESS", my_pid, user)
+	os.kill(pid, signal.SIGKILL)
+	time.sleep(0.2)
+	if os.path.exists("/proc/%i"%(pid)):
+		os.kill(pid, signal.SIGTERM)
+	
+	pid = func("XRDP_PROCESS", my_pid, user)
 
 
