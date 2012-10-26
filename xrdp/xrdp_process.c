@@ -156,9 +156,9 @@ xrdp_process_main_loop(struct xrdp_process* self)
   {
     int connectivity_check_interval = self->session->client_info->connectivity_check_interval * 1000;
     term_obj = g_get_term_event();
-    cont = 1;
+    self->cont = 1;
 
-    while (cont)
+    while (self->cont)
     {
       /* build the wait obj list */
       timeout = 1000;

@@ -139,6 +139,14 @@ scp_session_set_bpp(struct SCP_SESSION* s, tui8 bpp)
 
 /*******************************************************************/
 int
+scp_session_set_client_pid(struct SCP_SESSION* s, tui16 pid)
+{
+  s->client_pid = pid;
+  return 0;
+}
+
+/*******************************************************************/
+int
 scp_session_set_rsr(struct SCP_SESSION* s, tui8 rsr)
 {
   if (s->rsr)

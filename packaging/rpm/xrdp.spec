@@ -79,6 +79,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/lib/*.so*
 /usr/bin/xrdp-logoff
 /usr/bin/startapp
+/usr/bin/xrdp-disconnect
 /usr/bin/xrdp-genkeymap
 /usr/bin/xrdp-keygen
 /usr/bin/xrdp-sesadmin

@@ -682,7 +682,7 @@ send_session(management_connection* client, int session_id, char* user)
 
 /************************************************************************/
 int DEFAULT_CC
-send_logoff(management_connection* client, int session_id)
+change_status(management_connection* client, int session_id, int new_status)
 {
 	struct session_item* sess;
 	xmlNodePtr node, node2;
@@ -702,13 +702,13 @@ send_logoff(management_connection* client, int session_id)
 	int display;
 
 	if (session_id == 0) {
-		log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[send_logoff]: "
+		log_message(&(g_cfg->log), LOG_LEVEL_WARNING, "sesman[change_status]: "
 				"%i is not a valid session id", session_id);
 		return 1;
 	}
 
-	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[send_logoff]: "
-			"request session %i logoff", session_id);
+	log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[change_status]: "
+			"request session status change to: %s", session_get_status_string(new_status));
 
 	lock_chain_acquire();
 	sess = session_get_by_display(session_id);
@@ -716,7 +716,7 @@ send_logoff(management_connection* client, int session_id)
 
 	if( sess == NULL)
 	{
-		log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[send_logoff]: "
+		log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[change_status]: "
 				"The session %i did not exist", session_id);
 		xml_send_error(client, "the session id of the request did not exist");
 		return 1;
@@ -729,12 +729,12 @@ send_logoff(management_connection* client, int session_id)
 		return 1;
 	}
 
-	session_update_status_by_user(sess->name, SESMAN_SESSION_STATUS_TO_DESTROY);
+	session_update_status_by_user(sess->name, new_status);
 	version = xmlCharStrdup("1.0");
 	doc = xmlNewDoc(version);
 	if (doc == NULL)
 	{
-		log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[send_logoff]: "
+		log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[change_status]: "
 				"Unable to create the document");
 		g_free(sess);
 		xmlFree(version);
@@ -753,7 +753,7 @@ send_logoff(management_connection* client, int session_id)
 	username = xmlCharStrdup("username");
 	username_value = xmlCharStrdup(sess->name);
 	status = xmlCharStrdup("status");
-	status_value = xmlCharStrdup("CLOSED");
+	status_value = xmlCharStrdup(session_get_status_string(new_status));
 	xmlSetProp(node2, id, id_value);
 	xmlSetProp(node2, username, username_value);
 	xmlSetProp(node2, status, status_value);
@@ -909,7 +909,12 @@ process_request(management_connection* client)
 		}
 		if( g_strcmp(request_action, "logoff") == 0)
 		{
-			send_logoff(client, session_id);
+			change_status(client, session_id, SESMAN_SESSION_STATUS_TO_DESTROY);
+			return close_management_connection(doc, client);
+		}
+		if( g_strcmp(request_action, "disconnect") == 0)
+		{
+			change_status(client, session_id, SESMAN_SESSION_STATUS_DISCONNECTED);
 			return close_management_connection(doc, client);
 		}
 		xml_send_error(client, "Unknown message for session");

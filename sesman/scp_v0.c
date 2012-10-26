@@ -79,6 +79,7 @@ scp_v0_process(struct SCP_CONNECTION* c, struct SCP_SESSION* s)
 			session_update_status_by_user(s_item->name, SESMAN_SESSION_STATUS_ACTIVE);
 			log_message(&(g_cfg->log), LOG_LEVEL_INFO, "switch from status DISCONNECTED to ACTIVE");
 			session_switch_resolution(s->width, s->height, display);
+			session_add_client_pid(s_item->name, s->client_pid);
 
 			scp_v0s_allow_connection(c, display);
 		}
@@ -105,14 +106,14 @@ scp_v0_process(struct SCP_CONNECTION* c, struct SCP_SESSION* s)
 		log_message(&(g_cfg->log), LOG_LEVEL_INFO, "starting Xvnc session for the user %s ...", s->username);
 		display = session_start(s->width, s->height, s->bpp, s->username,
 				s->password, data, SESMAN_SESSION_TYPE_XVNC,
-				s->domain, s->program, s->directory, s->keylayout);
+				s->domain, s->program, s->directory, s->keylayout, s->client_pid);
 	}
 	else
 	{
 		log_message(&(g_cfg->log), LOG_LEVEL_INFO, "starting X11rdp session for the user %s ...", s->username);
 		display = session_start(s->width, s->height, s->bpp, s->username,
 				s->password, data, SESMAN_SESSION_TYPE_XRDP,
-				s->domain, s->program, s->directory, s->keylayout);
+				s->domain, s->program, s->directory, s->keylayout, s->client_pid);
 	}
 
 	auth_end(data);

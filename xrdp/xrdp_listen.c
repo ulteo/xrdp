@@ -29,6 +29,13 @@ static struct xrdp_process* g_process = 0;
 static int use_multi_process = 0;
 
 /*****************************************************************************/
+void DEFAULT_CC
+xrdp_stop_process(int sig)
+{
+	g_process->cont = 0;
+}
+
+/*****************************************************************************/
 struct xrdp_listen* APP_CC
 xrdp_listen_create(void)
 {
@@ -122,6 +129,11 @@ int
 xrdp_fork_process(struct xrdp_process* process)
 {
   DEBUG(("process started"));
+  g_process = process;
+  g_signal_user_interrupt(xrdp_stop_process); /* SIGINT */
+  g_signal_kill(xrdp_stop_process); /* SIGKILL */
+  g_signal_terminate(xrdp_stop_process); /* SIGTERM */
+
   xrdp_process_main_loop(process);
   DEBUG(("process done"));
   return 0;

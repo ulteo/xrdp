@@ -310,6 +310,7 @@ struct xrdp_process
   //int app_sck;
   tbus done_event;
   int session_id;
+  int cont;
 };
 
 /* rdp listener */

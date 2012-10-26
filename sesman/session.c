@@ -60,6 +60,7 @@ static char* g_sync_directory;
 static tbus g_sync_data;
 static tui8 g_sync_type;
 static int g_sync_result;
+static int g_sync_client_pid;
 
 
 /******************************************************************************/
@@ -405,7 +406,7 @@ get_user_shell(char* username, char* shell)
 static int APP_CC
 session_start_fork(int width, int height, int bpp, char* username,
                    char* password, tbus data, tui8 type, char* domain,
-                   char* program, char* directory, int keylayout)
+                   char* program, char* directory, int keylayout, int client_pid)
 {
   int display;
   int pid;
@@ -699,6 +700,11 @@ session_start_fork(int width, int height, int bpp, char* username,
     temp->item->type=type;
     temp->item->status=SESMAN_SESSION_STATUS_ACTIVE;
 
+    temp->item->client_id_list = list_create();
+    list_add_item(temp->item->client_id_list, client_pid);
+    log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "xrdp-sesman[session_start_fork]: "
+                                "new client pid %i", client_pid);
+
     lock_chain_acquire();
     temp->next=g_sessions;
     g_sessions=temp;
@@ -715,7 +721,7 @@ session_start_fork(int width, int height, int bpp, char* username,
 int DEFAULT_CC
 session_start(int width, int height, int bpp, char* username, char* password,
               long data, tui8 type, char* domain, char* program,
-              char* directory, int keylayout)
+              char* directory, int keylayout, int client_pid)
 {
   int display;
 
@@ -733,6 +739,7 @@ session_start(int width, int height, int bpp, char* username, char* password,
   g_sync_data = data;
   g_sync_type = type;
   g_sync_keylayout = keylayout;
+  g_sync_client_pid = client_pid;
   /* set event for main thread to see */
   g_set_wait_obj(g_sync_event);
   /* wait for main thread to get done */
@@ -753,7 +760,7 @@ session_sync_start(void)
   g_sync_result = session_start_fork(g_sync_width, g_sync_height, g_sync_bpp,
                                      g_sync_username, g_sync_password,
                                      g_sync_data, g_sync_type, g_sync_domain,
-                                     g_sync_program, g_sync_directory, g_sync_keylayout);
+                                     g_sync_program, g_sync_directory, g_sync_keylayout, g_sync_client_pid);
   lock_chain_release();
   lock_sync_sem_release();
   return g_sync_result;
@@ -1088,6 +1095,7 @@ session_kill(int pid)
       session_destroy(tmp->item);
       log_message(&(g_cfg->log), LOG_LEVEL_INFO, "session %d - user %s - "
                   "terminated", tmp->item->display, tmp->item->name);
+      list_delete(tmp->item->client_id_list);
       g_free(tmp->item);
       if (prev == 0)
       {
@@ -1157,6 +1165,7 @@ session_kill_by_display(int display)
       log_message(&(g_cfg->log), LOG_LEVEL_INFO, "session %d - user %s - "
                   "terminated", tmp->item->display, tmp->item->name);
       session_destroy(tmp->item);
+      list_delete(tmp->item->client_id_list);
       g_free(tmp->item);
       if (prev == 0)
       {
@@ -1340,6 +1349,7 @@ session_monit()
 	      {
 	      	session_destroy(tmp->item);
 	      }
+	      list_delete(tmp->item->client_id_list);
 	      g_free(tmp->item);
 	      if (prev == 0)
 	      {
@@ -1540,7 +1550,20 @@ session_update_status_by_user(char* user, int status)
     {
     	if (status == SESMAN_SESSION_STATUS_DISCONNECTED)
     	{
-    		session_unmount_drive(tmp->item);
+          struct list* l = tmp->item->client_id_list;
+          int index;
+          if (l->count == 0)
+          {
+            log_message(&(g_cfg->log), LOG_LEVEL_DEBUG, "sesman[session_update_status_by_user]: "
+                        "No session to disconnect");
+          }
+
+          for (index = 0; index < l->count; index++)
+          {
+            g_sigterm(list_get_item(l, index));
+          }
+          list_clear(l);
+          session_unmount_drive(tmp->item);
     	}
 
     	if (status == SESMAN_SESSION_STATUS_TO_DESTROY)
@@ -1570,6 +1593,36 @@ session_update_status_by_user(char* user, int status)
   return;
 }
 
+
+/******************************************************************************/
+void DEFAULT_CC
+session_add_client_pid(char* user, int client_pid)
+{
+  struct session_chain* tmp;
+  lock_chain_acquire();
+  tmp = g_sessions;
+  while (tmp != 0)
+  {
+    if (tmp->item == 0)
+    {
+      lock_chain_release();
+      return ;
+    }
+
+    if (g_strcmp(user, tmp->item->name) == 0)
+    {
+      list_add_item(tmp->item->client_id_list, client_pid);
+
+      lock_chain_release();
+      return ;
+    }
+
+    tmp=tmp->next;
+  }
+
+  lock_chain_release();
+  return;
+}
 
 
 /* list sessions  */

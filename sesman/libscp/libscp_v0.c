@@ -232,6 +232,9 @@ scp_v0s_accept(struct SCP_CONNECTION* c, struct SCP_SESSION** s, int skipVchk)
     /* bpp */
     in_uint16_be(c->in_s, sz);
     scp_session_set_bpp(session, (tui8)sz);
+    in_uint16_be(c->in_s, sz);
+    scp_session_set_client_pid(session, sz);
+
     if (s_check_rem(c->in_s, 2))
     {
       /* reading domain */

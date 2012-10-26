@@ -85,6 +85,7 @@ struct session_item
   struct session_date connect_time;
   struct session_date disconnect_time;
   struct session_date idle_time;
+  struct list* client_id_list;
 };
 
 struct session_chain
@@ -114,7 +115,7 @@ session_get_bydata(char* name);
 int DEFAULT_CC
 session_start(int width, int height, int bpp, char* username, char* password,
               long data, tui8 type, char* domain, char* program,
-              char* directory, int keylayout);
+              char* directory, int keylayout, int client_pid);
 
 /**
  *
@@ -178,6 +179,8 @@ session_get_user_pref(char* username, char* key, char* value);
 
 struct session_item*
 session_list_session(int* count);
+void DEFAULT_CC
+session_add_client_pid(char* user, int client_pid);
 void
 session_update_status_by_user(char* user, int status);
 void DEFAULT_CC

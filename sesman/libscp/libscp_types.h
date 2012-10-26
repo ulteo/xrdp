@@ -87,6 +87,7 @@ struct SCP_SESSION
   char* program;
   char* directory;
   tui16 keylayout;
+  tui16 client_pid;
 };
 
 struct SCP_DISCONNECTED_SESSION

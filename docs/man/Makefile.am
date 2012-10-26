@@ -1,6 +1,7 @@
 xrdpman1dir=$(mandir)/man1
 xrdpman1_DATA = \
   xrdp-logoff.1 \
+  xrdp-disconnect.1 \
   startapp.1 \
   xrdp-chansrv.1 \
   xrdp-genkeymap.1 \

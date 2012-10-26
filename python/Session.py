@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2009 Ulteo SAS
+# Copyright (C) 2009-2012 Ulteo SAS
 # http://www.ulteo.com
 # Author Julien LANGLOIS <julien@ulteo.com> 2009
+# Author David LECHEVALIER <david@ulteo.com> 2012
 #
 # This program is free software; you can redistribute it and/or 
 # modify it under the terms of the GNU General Public License
@@ -109,6 +110,23 @@ def SessionLogoff(session_id):
 	sessionNode = sessions[0]
 	status = sessionNode.getAttribute("status")
 	if status != SESSION_STATUS_CLOSED:
+		return False
+	
+	return True
+	
+	
+def SessionDisconnect(session_id):
+	doc = _ManagementProcessRequest(_SessionFormatRequest("session", "disconnect", session_id))
+	if doc is None:
+		return False
+	
+	sessions = doc.getElementsByTagName("session")
+	if len(sessions) == 0:
+		return False
+	
+	sessionNode = sessions[0]
+	status = sessionNode.getAttribute("status")
+	if status != SESSION_STATUS_DISCONNECTED:
 		return False
 	
 	return True

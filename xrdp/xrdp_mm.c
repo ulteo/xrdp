@@ -168,6 +168,7 @@ xrdp_mm_send_login(struct xrdp_mm* self)
   out_uint16_be(s, self->wm->screen->width);
   out_uint16_be(s, self->wm->screen->height);
   out_uint16_be(s, self->wm->screen->bpp);
+  out_uint16_be(s, getpid());
   /* send domain */
   index = g_strlen(self->wm->client_info->domain);
   out_uint16_be(s, index);
