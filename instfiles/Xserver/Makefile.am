@@ -7,14 +7,14 @@ xserver_DATA = \
 xserverbindir=$(bindir)/
 
 xserverbin_DATA = \
-  logoff \
+  xrdp-logoff \
   seamlessrdpshell \
   startapp
 
 
 install-data-hook:
 	chmod 755 $(DESTDIR)$(bindir)/seamlessrdpshell
-	chmod 755 $(DESTDIR)$(bindir)/logoff
+	chmod 755 $(DESTDIR)$(bindir)/xrdp-logoff
 	chmod 755 $(DESTDIR)$(bindir)/startapp
 
 EXTRA_DIST = \

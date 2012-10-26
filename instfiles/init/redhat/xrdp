@@ -49,7 +49,7 @@ is_daemon_running()
 
 xrdp_start()
 {
-  logoff all
+  xrdp-logoff all
   FAILED=0
   for exe in $BINARIES; do
     if is_daemon_running $exe; then
@@ -75,7 +75,7 @@ xrdp_start()
 
 xrdp_stop()
 {
-  logoff all
+  xrdp-logoff all
   for exe in $(echo $BINARIES | tac -s ' '); do
       log_begin_msg "Stopping $exe"
       if ! is_daemon_running $exe; then

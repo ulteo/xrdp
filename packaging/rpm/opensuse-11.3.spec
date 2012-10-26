@@ -85,9 +85,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/lib*/*.so.*
 /usr/sbin/xrdp*
 /usr/share/xrdp/*
-/usr/bin/logoff
 /usr/bin/xrdp-*
-%doc /usr/share/man/man1/logoff.1.gz
 %doc /usr/share/man/man1/xrdp-*.1.gz
 %doc /usr/share/man/man5/*
 %doc /usr/share/man/man8/*

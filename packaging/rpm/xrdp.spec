@@ -77,7 +77,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/lib/xrdp/libxrdp.so*
 /usr/lib/xrdp/libxup.so*
 /usr/lib/*.so*
-/usr/bin/logoff
+/usr/bin/xrdp-logoff
 /usr/bin/startapp
 /usr/bin/xrdp-genkeymap
 /usr/bin/xrdp-keygen
@@ -90,7 +90,6 @@ rm -rf $RPM_BUILD_ROOT
 %config /etc/xrdp/Xserver/*
 %config /etc/pam.d/*
 %config /etc/init.d/*
-%doc /usr/share/man/man1/logoff.1.gz
 %doc /usr/share/man/man1/rdpdr_printer.1.gz
 %doc /usr/share/man/man1/startapp.1.gz
 %doc /usr/share/man/man1/vchannel_rdpdr.1.gz
