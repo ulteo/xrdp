@@ -2,6 +2,7 @@
  * Copyright (C) 2012 Ulteo SAS
  * http://www.ulteo.com
  * Author Thomas MOUTON <thomas@ulteo.com> 2012
+ * Author Alexandre CONFIANT-LATOUR <a.confiant@ulteo.com> 2012
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -170,6 +171,10 @@ int APP_CC
 g_file_read(int fd, char* ptr, int len);
 int APP_CC
 g_file_write(int fd, char* ptr, int len);
+int APP_CC
+g_file_copy(const char* src, const char *dst);
+int APP_CC
+g_file_copy_mmap(const char* src, const char *dst);
 int APP_CC
 g_file_size(char* filename);
 int APP_CC

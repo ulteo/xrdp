@@ -3,6 +3,7 @@
  * http://www.ulteo.com
  * Author David LECHEVALIER <david@ulteo.com> 2012
  * Author Thomas MOUTON <thomas@ulteo.com> 2012
+ * Author Alexandre CONFIANT-LATOUR <a.confiant@ulteo.com> 2012
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -75,6 +76,7 @@
 #include <time.h>
 #include <grp.h>
 #include <dirent.h>
+#include <sys/mman.h>
 #endif
 
 #include <stdlib.h>
@@ -1295,6 +1297,116 @@ g_file_write(int fd, char* ptr, int len)
 #else
   return write(fd, ptr, len);
 #endif
+}
+
+/*****************************************************************************/
+/* copy file, returns the number of bytes written or -1 on error */
+int APP_CC
+g_file_copy(const char* src, const char *dst)
+{
+  int fd_to, fd_from;
+  char buf[4096];
+  ssize_t nread;
+  int saved_errno;
+  struct stat stat_in;
+
+  fd_from = open(src, O_RDONLY);
+  if (fd_from < 0)
+    return -1;
+
+  if (fstat(fd_from, &stat_in) < 0)
+    return -1;
+
+  fd_to = open(dst, O_WRONLY | O_CREAT | O_EXCL, stat_in.st_mode & 0777);
+  if (fd_to < 0)
+    goto out_error;
+
+  while ((nread = read(fd_from, buf, sizeof buf)) > 0)
+  {
+    char *out_ptr = buf;
+    ssize_t nwritten;
+
+    do {
+      nwritten = write(fd_to, out_ptr, nread);
+
+      if (nwritten >= 0)
+      {
+        nread -= nwritten;
+        out_ptr += nwritten;
+      }
+      else if (errno != EINTR)
+      {
+        goto out_error;
+      }
+    } while (nread > 0);
+  }
+
+  if (nread == 0)
+  {
+    if (close(fd_to) < 0)
+    {
+      fd_to = -1;
+      goto out_error;
+    }
+    close(fd_from);
+
+    /* Success! */
+    return 0;
+  }
+
+  out_error:
+  saved_errno = errno;
+
+  close(fd_from);
+  if (fd_to >= 0)
+    close(fd_to);
+
+  errno = saved_errno;
+  return -1;
+}
+
+/*****************************************************************************/
+/* copy file with mmap, returns the number of bytes written or -1 on error */
+int APP_CC
+g_file_copy_mmap(const char* src, const char *dst)
+{
+  int fd_in, fd_out;
+  char *p_in, *p_out;
+  struct stat stat_in;
+  int ret = -1;
+
+  if ((src == NULL) || (dst == NULL))
+    goto end0;
+
+  if ((fd_in = open(src, O_RDONLY)) == -1)
+    goto end0;
+
+  if (fstat(fd_in, &stat_in) < 0)
+    goto end1;
+
+  if ((fd_out = open(dst, O_RDWR | O_CREAT | O_EXCL, stat_in.st_mode & 0777)) == -1)
+    goto end1;
+
+  if (lseek(fd_out, stat_in.st_size-1, SEEK_SET) == -1)
+    goto end2;
+
+  if (write(fd_out, "", 1) != 1)
+    goto end2;
+
+  if ((p_in = mmap(0, stat_in.st_size, PROT_READ, MAP_SHARED, fd_in, 0)) == MAP_FAILED)
+    goto end2;
+
+  if ((p_out = mmap(0, stat_in.st_size, PROT_WRITE, MAP_SHARED, fd_out, 0)) == MAP_FAILED)
+    goto end3;
+
+  memcpy(p_out, p_in, stat_in.st_size);
+  ret = 0;
+
+  end4: munmap(p_out, stat_in.st_size);
+  end3: munmap(p_in, stat_in.st_size);
+  end2: close(fd_out);
+  end1: close(fd_in);
+  end0: return ret;
 }
 
 /*****************************************************************************/
