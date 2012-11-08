@@ -183,6 +183,8 @@ xrdp_mm_send_login(struct xrdp_mm* self)
   out_uint8a(s, self->wm->client_info->directory, index);
   /* send keylaout */
   out_uint16_be(s, self->wm->client_info->keylayout);
+  /* send use_scim option */
+  out_uint16_be(s, self->wm->client_info->use_scim);
   s_mark_end(s);
   s_pop_layer(s, channel_hdr);
   out_uint32_be(s, 0); /* version */

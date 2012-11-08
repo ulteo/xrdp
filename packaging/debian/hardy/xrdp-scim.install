@@ -1,0 +1,3 @@
+debian/tmp/etc/xrdp/scim
+debian/tmp/usr/lib/scim-1.0/*/IMEngine/xrdp.so
+debian/tmp/usr/share/scim

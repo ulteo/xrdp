@@ -89,6 +89,9 @@ scp_session_set_display(struct SCP_SESSION* s, SCP_DISPLAY display);
 int
 scp_session_set_errstr(struct SCP_SESSION* s, char* str);
 
+int
+scp_session_set_use_scim(struct SCP_SESSION* s, tui16 scim);
+
 /**
  *
  * @brief destroys a session object

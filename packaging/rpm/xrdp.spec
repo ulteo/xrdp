@@ -33,7 +33,7 @@ Packager: Samuel Bovée <samuel@ulteo.com>
 Group: Applications/System
 ExclusiveArch: i386 x86_64
 Buildroot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: libtool, gcc, cups-devel, libxml2-devel, libX11-devel, libXfixes-devel, openssl-devel, pam-devel, pulseaudio-lib-devel, libtool-ltdl-devel
+BuildRequires: libtool, gcc, cups-devel, libxml2-devel, libX11-devel, libXfixes-devel, openssl-devel, pam-devel, pulseaudio-lib-devel, libtool-ltdl-devel, scim-devel
 Requires: python, tightvnc, glibc, xorg-x11-libX11, xorg-x11-fonts, libcups2, cups-libs, libgnutls26, krb5, pam, libopenssl0_9_8, libxml2, zlib
 
 %description
@@ -189,3 +189,20 @@ XRDP-Python is a Python wrapper for XRDP
 
 %files -f INSTALLED_FILES python
 %defattr(-,root,root)
+
+###########################################
+%package scim
+###########################################
+
+Summary: XRDP Unicode input method
+Group: Applications/System
+Requires: scim
+
+%description scim
+XRDP-Scim provides unicode input support for XRDP using Scim
+
+%files scim
+%defattr(-,root,root)
+/usr/share/scim/*
+/usr/lib/scim-1.0/*
+%config /etc/xrdp/scim/*

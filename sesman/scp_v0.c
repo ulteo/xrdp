@@ -106,14 +106,14 @@ scp_v0_process(struct SCP_CONNECTION* c, struct SCP_SESSION* s)
 		log_message(&(g_cfg->log), LOG_LEVEL_INFO, "starting Xvnc session for the user %s ...", s->username);
 		display = session_start(s->width, s->height, s->bpp, s->username,
 				s->password, data, SESMAN_SESSION_TYPE_XVNC,
-				s->domain, s->program, s->directory, s->keylayout, s->client_pid);
+				s->domain, s->program, s->directory, s->keylayout, s->client_pid, s->use_scim);
 	}
 	else
 	{
 		log_message(&(g_cfg->log), LOG_LEVEL_INFO, "starting X11rdp session for the user %s ...", s->username);
 		display = session_start(s->width, s->height, s->bpp, s->username,
 				s->password, data, SESMAN_SESSION_TYPE_XRDP,
-				s->domain, s->program, s->directory, s->keylayout, s->client_pid);
+				s->domain, s->program, s->directory, s->keylayout, s->client_pid, s->use_scim);
 	}
 
 	auth_end(data);

@@ -30,7 +30,7 @@ Distribution: OpenSUSE 11.3
 
 Source: %{name}-%{version}.tar.gz
 ExclusiveArch: i586 x86_64
-BuildRequires: libtool, gcc, libxml2-devel, xorg-x11-libX11-devel, xorg-x11-libXfixes-devel, openssl-devel, pam-devel, pulseaudio-devel, cups-devel, fuse-devel
+BuildRequires: libtool, gcc, libxml2-devel, xorg-x11-libX11-devel, xorg-x11-libXfixes-devel, openssl-devel, pam-devel, pulseaudio-devel, cups-devel, fuse-devel, scim-devel
 Requires: python, tightvnc, cups-libs, libcom_err2, libgcrypt11, libgnutls26, krb5, pam, libopenssl1_0_0, xorg-x11-libX11, libxml2, zlib
 
 %description
@@ -242,3 +242,20 @@ Developpement files for XRDP
 /usr/lib*/xrdp/*.a
 /usr/lib*/xrdp/*.la
 /usr/lib*/xrdp/*.so
+
+###########################################
+%package scim
+###########################################
+
+Summary: XRDP Unicode input method
+Group: Applications/System
+Requires: scim
+
+%description scim
+XRDP-Scim provides unicode input support for XRDP using Scim
+
+%files scim
+%defattr(-,root,root)
+/usr/share/scim/*
+/usr/lib/scim-1.0/*
+%config /etc/xrdp/scim/*

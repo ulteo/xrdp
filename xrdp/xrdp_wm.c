@@ -1220,16 +1220,25 @@ xrdp_wm_unicode_key(struct xrdp_wm* self, int unicode_key)
   {
     if (self->mm->mod->mod_event != 0)
     {
-    	key_sym = get_keysym_from_unicode(unicode_key, &(self->keymap));
+      if (self->session->client_info->use_scim == 1)
+      {
+        uint32 code = unicode_key | 0x00E00000; 
+        self->mm->mod->mod_event(self->mm->mod, WM_KEYDOWN, code, code, code, code);
+        self->mm->mod->mod_event(self->mm->mod, WM_KEYUP, code, code, code, code);
+      }
+      else
+      {
+        key_sym = get_keysym_from_unicode(unicode_key, &(self->keymap));
 
-    	while (i<4) {
-    		if (key_sym[i] == 0)
-    			break;
-    		self->mm->mod->mod_event(self->mm->mod, WM_KEYDOWN, 0, key_sym[i], 0, 0);
-    		self->mm->mod->mod_event(self->mm->mod, WM_KEYUP, 0, key_sym[i], 0, 0);
-    		i++;
-    	}
-    	g_free(key_sym);
+        while (i<4) {
+          if (key_sym[i] == 0)
+            break;
+          self->mm->mod->mod_event(self->mm->mod, WM_KEYDOWN, 0, key_sym[i], 0, 0);
+          self->mm->mod->mod_event(self->mm->mod, WM_KEYUP, 0, key_sym[i], 0, 0);
+          i++;
+        }
+        g_free(key_sym);
+      }
     }
   }
   else if (self->focused_window != 0)

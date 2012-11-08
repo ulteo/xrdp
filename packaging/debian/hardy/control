@@ -6,7 +6,7 @@ Build-Depends: debhelper (>= 6), cdbs, quilt,
  python (>= 2.5), python-central, python-svn,
  libxml2-dev, libx11-dev, libxfixes-dev, libssl-dev, libpam0g-dev,
  libpulse-dev, libcupsys2-dev, libltdl3-dev, libfuse-dev, libjpeg62-dev,
- libmagick9-dev
+ libmagick9-dev, libscim-dev
 Standards-Version: 3.8.3
 XS-Python-Version: >= 2.5
 
@@ -14,6 +14,7 @@ Package: xrdp
 Architecture: any
 Depends: ${shlibs:Depends}, ${python:Depends}, tightvncserver | tigervnc-server
 Recommends: xfonts-base, xfonts-encodings
+Suggests: xrdp-scim
 Description: RDP server for Linux
  Xrdp is a RDP server for Linux. It provides remote display of a desktop and
  many other features such as:
@@ -60,6 +61,12 @@ Depends: ${python:Depends}, xrdp
 Description: Python API for XRDP
  XRDP-Python is a Python wrapper for XRDP
 
+Package: xrdp-scim
+Architecture: any
+Depends: ${shlibs:Depends}, scim
+Description: XRDP Unicode input method
+ XRDP-Scim provides unicode input support for XRDP using Scim
+
 ################
 # DEBUG packages
 
@@ -98,3 +105,9 @@ Section: debug
 Architecture: any
 Depends: xrdp-sound (= ${binary:Version})
 Description: XRDP sound (debug symbols)
+
+Package: xrdp-scim-dbg
+Section: debug
+Architecture: any
+Depends: xrdp-scim (= ${binary:Version})
+Description: XRDP Unicode input method (debug symbols)

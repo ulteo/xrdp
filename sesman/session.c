@@ -41,6 +41,8 @@
 
 //#include <time.h>
 
+#define SCIM_PATH    "/usr/bin/"
+#define SCIM_BIN     "scim"
 #define X_LOG_PREFIX "/tmp/X_"
 extern tbus g_sync_event;
 extern unsigned char g_fixedkey[8];
@@ -51,6 +53,7 @@ int g_session_count;
 static int g_sync_width;
 static int g_sync_height;
 static int g_sync_keylayout;
+static int g_sync_use_scim;
 static int g_sync_bpp;
 static char* g_sync_username;
 static char* g_sync_password;
@@ -406,7 +409,8 @@ get_user_shell(char* username, char* shell)
 static int APP_CC
 session_start_fork(int width, int height, int bpp, char* username,
                    char* password, tbus data, tui8 type, char* domain,
-                   char* program, char* directory, int keylayout, int client_pid)
+                   char* program, char* directory, int keylayout, int client_pid,
+                   int use_scim)
 {
   int display;
   int pid;
@@ -524,6 +528,73 @@ session_start_fork(int width, int height, int bpp, char* username,
 //    	    g_execlp3(kb_util, kb_util, get_kbcode(keylayout));
 //    	    g_exit(0);
 //    	  }
+
+        if (use_scim)
+        {
+          int error = 0;
+          char user_scim_files[256];
+
+          /* Push config */
+          g_snprintf(user_scim_files, sizeof(user_scim_files), "%s/.scim/", user_dir);
+          if (! g_directory_exist(user_scim_files))
+          {
+            g_mkdirs(user_scim_files);
+          }
+
+          g_snprintf(user_scim_files, sizeof(user_scim_files), "%s/.scim/config", user_dir);
+          g_file_delete(user_scim_files);
+          if (g_file_copy("/etc/xrdp/scim/config", user_scim_files) == -1)
+          {
+            error = 1;
+          }
+
+          g_snprintf(user_scim_files, sizeof(user_scim_files), "%s/.scim/global", user_dir);
+          g_file_delete(user_scim_files);
+          if (g_file_copy("/etc/xrdp/scim/global", user_scim_files) == -1)
+          {
+            error = 1;
+          }
+
+          if (!error)
+          {
+            int scimpid = g_fork();
+
+            if (scimpid == -1)
+            {
+              log_message(&(g_cfg->log), LOG_LEVEL_ERROR,"error : unable to fork for scim");
+              /* no scim started, no env pushed */
+            }
+            else /* fork successfull */
+            {
+              if (scimpid == 0) /* child */
+              {
+                char *args[] =
+                { SCIM_BIN,
+                  "-e",
+                  "xrdp",
+                  NULL
+                };
+
+                log_message(&(g_cfg->log), LOG_LEVEL_INFO,"sesman[session_start_fork]: Starting scim");
+                g_execvp( SCIM_PATH SCIM_BIN, args);
+                log_message(&(g_cfg->log), LOG_LEVEL_ERROR,"error : scim returned");
+                g_exit(0);
+              }
+              else /* parent */
+              {
+                /* Push scim env */
+                g_setenv("XMODIFIERS", "@im=SCIM", 1);
+                g_setenv("GTK_IM_MODULE", SCIM_BIN, 1);
+                g_setenv("QT_IM_MODULE", SCIM_BIN, 1);
+                log_message(&(g_cfg->log), LOG_LEVEL_INFO,"sesman[session_start_fork]: Scim env initialized");
+              }
+            }
+          }
+          else
+          {
+            log_message(&(g_cfg->log), LOG_LEVEL_ERROR,"error : unable to initialize scim.");
+          }
+        }
 
         auth_set_env(data);
 
@@ -721,7 +792,7 @@ session_start_fork(int width, int height, int bpp, char* username,
 int DEFAULT_CC
 session_start(int width, int height, int bpp, char* username, char* password,
               long data, tui8 type, char* domain, char* program,
-              char* directory, int keylayout, int client_pid)
+              char* directory, int keylayout, int client_pid, int use_scim)
 {
   int display;
 
@@ -740,6 +811,7 @@ session_start(int width, int height, int bpp, char* username, char* password,
   g_sync_type = type;
   g_sync_keylayout = keylayout;
   g_sync_client_pid = client_pid;
+  g_sync_use_scim = use_scim;
   /* set event for main thread to see */
   g_set_wait_obj(g_sync_event);
   /* wait for main thread to get done */
@@ -760,7 +832,8 @@ session_sync_start(void)
   g_sync_result = session_start_fork(g_sync_width, g_sync_height, g_sync_bpp,
                                      g_sync_username, g_sync_password,
                                      g_sync_data, g_sync_type, g_sync_domain,
-                                     g_sync_program, g_sync_directory, g_sync_keylayout, g_sync_client_pid);
+                                     g_sync_program, g_sync_directory, g_sync_keylayout,
+                                     g_sync_client_pid, g_sync_use_scim);
   lock_chain_release();
   lock_sync_sem_release();
   return g_sync_result;

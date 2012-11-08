@@ -88,6 +88,7 @@ struct xrdp_client_info
   int can_use_jpeg;
   int jpeg_quality;
   int use_unicode;
+  int use_scim;
   int connectivity_check;
   int connectivity_check_interval;
   int can_use_frame_marker;

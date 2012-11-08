@@ -178,6 +178,10 @@ xrdp_rdp_read_config(struct xrdp_client_info* client_info)
         client_info->use_unicode = 1;
       }
     }
+    else if (g_strcasecmp(item, "use_scim") == 0)
+    {
+      client_info->use_scim = log_text2bool(value);
+    }
     else if (g_strcasecmp(item, "connectivity_check") == 0)
     {
       if (g_strcasecmp(value, "1") == 0)

@@ -115,7 +115,7 @@ session_get_bydata(char* name);
 int DEFAULT_CC
 session_start(int width, int height, int bpp, char* username, char* password,
               long data, tui8 type, char* domain, char* program,
-              char* directory, int keylayout, int client_pid);
+              char* directory, int keylayout, int client_pid, int use_scim);
 
 /**
  *
