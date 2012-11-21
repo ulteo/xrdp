@@ -422,6 +422,7 @@ session_start_fork(int width, int height, int bpp, char* username,
   char screen[32] = {0};
   char text[256] = {0};
   char x_log_file_path[256] = {0};
+  char session_spool_dir[256];
   char passwd_file[256] = {0};
   char** pp1;
   struct session_chain* temp;
@@ -498,6 +499,18 @@ session_start_fork(int width, int height, int bpp, char* username,
 				"Unable to delete last X log file %s", x_log_file_path);
 		return 0;
 	}
+
+  g_snprintf(session_spool_dir, sizeof(session_spool_dir), "%s/%i", "/var/spool/xrdp", display);
+  g_remove_dirs(session_spool_dir);
+  g_mkdir(session_spool_dir);
+  if (! g_directory_exist(session_spool_dir))
+  {
+    log_message(&(g_cfg->log), LOG_LEVEL_ERROR,"sesman[session_start_fork]: "
+        "Unable to delete xrdp session spool directory %s: %s", session_spool_dir, g_get_strerror());
+    return 0;
+  }
+
+  g_chown(session_spool_dir, username);
 
   wmpid = 0;
   pid = g_fork();

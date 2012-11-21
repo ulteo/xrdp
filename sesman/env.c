@@ -105,13 +105,7 @@ env_set_user(char* username, char* passwd_file, int display)
         {
           /* if no auth_file_path is set, then we go for
              $HOME/.vnc/sesman_username_passwd */
-          g_snprintf(xrdp_spool_session_dir, sizeof(xrdp_spool_session_dir), "%s/%d", "/var/spool/xrdp", display);
-          if (! g_directory_exist(xrdp_spool_session_dir))
-          {
-            g_mkdirs(xrdp_spool_session_dir);
-          }
-
-          g_snprintf(passwd_file, 256, "%s/vnc_passwd", xrdp_spool_session_dir);
+          g_snprintf(passwd_file, 256, "%s/%i/vnc_passwd", "/var/spool/xrdp", display);
         }
 	else
 	{
