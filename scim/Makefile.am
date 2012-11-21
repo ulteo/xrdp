@@ -18,7 +18,7 @@
 
 AM_CPPFLAGS = \
 	-DSCIM_XRDP_LOCALEDIR=\"$(datadir)/locale\" \
-	-DSCIM_ICONDIR=\"@SCIM_ICONDIR@\" \
+	-DSCIM_ICONDIR=\"$(datarootdir)/scim/icons\" \
 	@SCIM_CFLAGS@
 
 xrdp_la_CFLAGS = @SCIM_CFLAGS@
@@ -34,7 +34,7 @@ xrdp_la_SOURCES = \
 	scim_xrdp_imengine.h \
 	scim_xrdp_imengine.cpp
 
-moduledir = @SCIM_MODULEDIR@/IMEngine
+moduledir = $(libdir)/scim-1.0/1.4.0/IMEngine
 module_LTLIBRARIES = \
   xrdp.la
 
@@ -43,7 +43,7 @@ moduleconf_DATA = \
   config \
   global
 
-moduledatadir=@SCIM_ICONDIR@
+moduledatadir=$(datarootdir)/scim/icons
 moduledata_DATA = \
   scim-xrdp.png
 

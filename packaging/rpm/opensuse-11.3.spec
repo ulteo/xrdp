@@ -257,5 +257,5 @@ XRDP-Scim provides unicode input support for XRDP using Scim
 %files scim
 %defattr(-,root,root)
 /usr/share/scim/*
-/usr/lib/scim-1.0/*
+/usr/lib*/scim-1.0/*
 %config /etc/xrdp/scim/*

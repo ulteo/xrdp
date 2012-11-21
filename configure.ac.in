@@ -217,21 +217,8 @@ fi
 SCIM_VERSION=0.99.8
 PKG_CHECK_MODULES(SCIM,[scim >= $SCIM_VERSION])
 
-SCIM_ICONDIR=`$PKG_CONFIG --variable=icondir scim | sed s-/usr/share-\$\{datadir\}-g`
-SCIM_MODULEDIR=`$PKG_CONFIG --variable=moduledir scim | sed s-/usr/lib-\$\{libdir\}-g`
 SCIM_CFLAGS=`$PKG_CONFIG --cflags scim`
 SCIM_LIBS=`$PKG_CONFIG --libs scim`
-
-if test "x$SCIM_ICONDIR" = "x"; then 
-  SCIM_ICONDIR=${datadir}/scim/icons
-fi
-
-if test "x$SCIM_MODULEDIR" = "x"; then
-  SCIM_MODULEDIR=${libdir}/scim-1.0
-fi
-
-AC_SUBST(SCIM_ICONDIR)
-AC_SUBST(SCIM_MODULEDIR)
 AC_SUBST(SCIM_CFLAGS)
 AC_SUBST(SCIM_LDFLAGS)
 
