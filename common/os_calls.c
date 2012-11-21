@@ -2067,10 +2067,13 @@ g_str_split_to_list(const char* str, const char c)
   do
   {
     p = strchr(str_cpy, c);
-    size = p-str_cpy;
-    if (size < 0 && g_strlen(str_cpy) > 0)
+    if (p == NULL)
     {
       size = g_strlen(str_cpy);
+    }
+    else
+    {
+      size = p-str_cpy;
     }
 
     if (size > 0)
