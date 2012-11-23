@@ -312,18 +312,6 @@
 #define RDP5_NO_CURSOR_SHADOW          0x20
 #define RDP5_NO_CURSORSETTINGS         0x40 /* disables cursor blinking */
 
-/* compression types */
-#define RDP_MPPC_COMPRESSED            0x20
-#define RDP_MPPC_RESET                 0x40
-#define RDP_MPPC_FLUSH                 0x80
-#define RDP_MPPC_DICT_SIZE             8192
-
-/* compression type */
-#define PACKET_COMPR_TYPE_8K           0x0
-#define PACKET_COMPR_TYPE_64K          0x200
-#define PACKET_COMPR_TYPE_RDP6         0x400
-#define PACKET_COMPR_TYPE_RDP61        0x400
-
 /* order flags */
 #define NEGOTIATEORDERSUPPORT          0x0002
 #define ZEROBOUNDSDELTASSUPPORT        0x0008
@@ -469,6 +457,8 @@
 #define exDiscReasonLicenseErrClientEncryption        0x0108
 #define exDiscReasonLicenseCantUpgradeLicense         0x0109
 #define exDiscReasonLicenseNoRemoteConnections        0x010a
+
+#define DEFAULT_XRDP_CONNECTIVITY_CHECK_INTERVAL  60
 
 #define RDP_ORDER_STANDARD   0x01
 #define RDP_ORDER_SECONDARY  0x02
