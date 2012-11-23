@@ -72,9 +72,9 @@ struct rdp_mppc_enc
 	tui16* hash_table;
 };
 
-bool compress_rdp(struct rdp_mppc_enc* enc, ti8* srcData, int len);
-bool compress_rdp_4(struct rdp_mppc_enc* enc, ti8* srcData, int len);
-bool compress_rdp_5(struct rdp_mppc_enc* enc, ti8* srcData, int len);
+bool compress_rdp(struct rdp_mppc_enc* enc, tui8* srcData, int len);
+bool compress_rdp_4(struct rdp_mppc_enc* enc, tui8* srcData, int len);
+bool compress_rdp_5(struct rdp_mppc_enc* enc, tui8* srcData, int len);
 struct rdp_mppc_enc* mppc_enc_new(int protocol_type);
 void mppc_enc_free(struct rdp_mppc_enc* enc);
 

@@ -512,7 +512,7 @@ void mppc_enc_free(struct rdp_mppc_enc* enc)
  * @return  true on success, false on failure
  */
 
-bool compress_rdp(struct rdp_mppc_enc* enc, ti8* srcData, int len)
+bool compress_rdp(struct rdp_mppc_enc* enc, tui8* srcData, int len)
 {
 	if ((enc == NULL) || (srcData == NULL) || (len <= 0) || (len > enc->buf_len))
 		return false;
@@ -539,7 +539,7 @@ bool compress_rdp(struct rdp_mppc_enc* enc, ti8* srcData, int len)
  * @return  true on success, false on failure
  */
 
-bool compress_rdp_4(struct rdp_mppc_enc* enc, ti8* srcData, int len)
+bool compress_rdp_4(struct rdp_mppc_enc* enc, tui8* srcData, int len)
 {
 	/* RDP 4.0 encoding not yet implemented */
 	return false;
@@ -555,7 +555,7 @@ bool compress_rdp_4(struct rdp_mppc_enc* enc, ti8* srcData, int len)
  * @return  true on success, false on failure
  */
 
-bool compress_rdp_5(struct rdp_mppc_enc* enc, ti8* srcData, int len)
+bool compress_rdp_5(struct rdp_mppc_enc* enc, tui8* srcData, int len)
 {
 	char* outputBuffer;     /* points to enc->outputBuffer */
 	char* hptr_end;         /* points to end of history data */
@@ -574,14 +574,14 @@ bool compress_rdp_5(struct rdp_mppc_enc* enc, ti8* srcData, int len)
 	tui32 j;
 	tui32 k;
 	tui32 x;
-	ti8  data;
+	tui8  data;
 	tui16 data16;
 	tui32 historyOffset;
 	tui16 crc;
 	tui32 ctr;
 	tui32 saved_ctr;
 	tui32 data_end;
-	ti8 byte_val;
+	tui8 byte_val;
 
 	crc = 0;
 	opb_index = 0;
