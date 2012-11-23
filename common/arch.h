@@ -71,6 +71,8 @@
 #define EXPORT_CC
 #endif
 
+typedef enum {false = 0, true = 1} bool;
+
 typedef char ti8;
 typedef unsigned char tui8;
 typedef signed char tsi8;
