@@ -45,6 +45,10 @@ struct xrdp_mod
 {
   int size; /* size of this struct */
   int version; /* internal version */
+  int frameRate;
+  int currentFrameRate;
+  int lastTime;
+
   /* client functions */
   int (*mod_start)(struct xrdp_mod* v, int w, int h, int bpp);
   int (*mod_connect)(struct xrdp_mod* v);

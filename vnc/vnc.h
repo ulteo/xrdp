@@ -34,6 +34,10 @@ struct vnc
 {
   int size; /* size of this struct */
   int version; /* internal version */
+  int frameRate;
+  int currentFrameRate;
+  int lastTime;
+
   /* client functions */
   int (*mod_start)(struct vnc* v, int w, int h, int bpp);
   int (*mod_connect)(struct vnc* v);

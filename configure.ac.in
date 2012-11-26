@@ -267,6 +267,5 @@ AC_CONFIG_FILES([Makefile
                  vnc/Makefile
                  xup/Makefile
                  xrdp/Makefile
-                 scim/Makefile
 ])
 AC_OUTPUT

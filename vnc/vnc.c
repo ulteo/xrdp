@@ -255,6 +255,16 @@ lib_mod_event(struct vnc* v, int msg, long param1, long param2,
     key = param2;
     if (key > 0)
     {
+
+    	if (key == 65362 && msg == 15) {
+    		if (v->frameRate < 25)
+    			v->frameRate++;
+    	}
+    	if (key == 65364 && msg == 15) {
+    		if (v->frameRate > 1)
+    			v->frameRate--;
+    	}
+
       if (key == 65027) /* altgr */
       {
         if (v->shift_state)
@@ -493,6 +503,25 @@ make_color(int r, int g, int b, int bpp)
   return 0;
 }
 
+
+int DEFAULT_CC
+lib_framebuffer_request_update(struct vnc* v, int incremental)
+{
+	struct stream* s;
+	make_stream(s);
+
+	/* FrambufferUpdateRequest */
+	init_stream(s, 8192);
+	out_uint8(s, 3);
+	out_uint8(s, incremental);
+	out_uint16_be(s, 0);
+	out_uint16_be(s, 0);
+	out_uint16_be(s, v->mod_width);
+	out_uint16_be(s, v->mod_height);
+
+	return lib_send(v, s->data, 10);
+}
+
 /******************************************************************************/
 int DEFAULT_CC
 lib_framebuffer_update(struct vnc* v)
@@ -524,6 +553,11 @@ lib_framebuffer_update(struct vnc* v)
   int error;
   struct stream* s;
 
+  static int frameCount = 0;
+  int increment = 1;
+  static int lastTime = 0;
+  int currentTime = g_time2();
+
   data_size = 0;
   data = 0;
   num_recs = 0;
@@ -541,6 +575,18 @@ lib_framebuffer_update(struct vnc* v)
     in_uint16_be(s, num_recs);
     error = v->server_begin_update(v);
   }
+
+  if (lastTime == 0)
+	  lastTime = g_time2();
+
+  if (currentTime - lastTime > 1000)
+  {
+	  v->currentFrameRate = frameCount;
+	  frameCount = 0;
+	  lastTime = currentTime;
+  }
+
+
   for (i = 0; i < num_recs; i++)
   {
     if (error != 0)
@@ -559,6 +605,11 @@ lib_framebuffer_update(struct vnc* v)
       if (encoding == 0) /* raw */
       {
         need_size = cx * cy * Bpp;
+        if (increment) {
+        	  frameCount+=increment;
+        	  increment = 0;
+        }
+
         if (need_size > data_size)
         {
           g_free(data);
@@ -568,7 +619,12 @@ lib_framebuffer_update(struct vnc* v)
         error = lib_recv(v, data, need_size);
         if (error == 0)
         {
+
+        	g_snprintf(text, sizeof(text), "FrameRate: %i\n", v->frameRate);
           error = v->server_paint_rect(v, x, y, cx, cy, data, cx, cy, 0, 0);
+
+          printf("FrameRate %i - fps %i\r", v->frameRate, v->currentFrameRate);
+          fflush(stdout);
         }
       }
       else if (encoding == 1) /* copy rect */
@@ -642,15 +698,7 @@ lib_framebuffer_update(struct vnc* v)
   g_free(data);
   if (error == 0)
   {
-    /* FrambufferUpdateRequest */
-    init_stream(s, 8192);
-    out_uint8(s, 3);
-    out_uint8(s, 1);
-    out_uint16_be(s, 0);
-    out_uint16_be(s, 0);
-    out_uint16_be(s, v->mod_width);
-    out_uint16_be(s, v->mod_height);
-    error = lib_send(v, s->data, 10);
+    error = lib_framebuffer_request_update(v, 1);
   }
   free_stream(s);
   return error;
@@ -1103,21 +1151,6 @@ lib_mod_connect(struct vnc* v)
   }
   if (error == 0)
   {
-    /* FrambufferUpdateRequest */
-    init_stream(s, 8192);
-    out_uint8(s, 3);
-    out_uint8(s, 0);
-    out_uint16_be(s, 0);
-    out_uint16_be(s, 0);
-    out_uint16_be(s, v->mod_width);
-    out_uint16_be(s, v->mod_height);
-#ifdef OLD_LOG_VERSION
-    v->server_msg(v, "sending framebuffer update request", 0);
-#endif
-    error = lib_send(v, s->data, 10);
-  }
-  if (error == 0)
-  {
     if (v->server_bpp != v->mod_bpp)
     {
       v->server_msg(v, "error - server and client bpp don't match", 0);
@@ -1220,6 +1253,20 @@ lib_mod_check_wait_objs(struct vnc* v)
 {
   int rv;
 
+  if (v->lastTime == 0)
+  {
+	  v->lastTime = g_time2();
+	  lib_framebuffer_request_update(v, 0);
+  }
+  else
+  {
+	  int currentTime = g_time2();
+	  if (currentTime - v->lastTime > (1000/v->frameRate)) {
+		  lib_framebuffer_request_update(v, 1);
+		  v->lastTime = currentTime;
+	  }
+  }
+
   rv = 0;
   if (v != 0)
   {
@@ -1244,6 +1291,9 @@ mod_init(void)
   /* set client functions */
   v->size = sizeof(struct vnc);
   v->version = CURRENT_MOD_VER;
+  v->frameRate = 25;
+  v->currentFrameRate = 0;
+  v->lastTime = 0;
   v->handle = (long)v;
   v->mod_connect = lib_mod_connect;
   v->mod_start = lib_mod_start;
