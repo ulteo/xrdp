@@ -1,6 +1,7 @@
-# Copyright (C) 2010-2011 Ulteo SAS
+# Copyright (C) 2010-2012 Ulteo SAS
 # http://www.ulteo.com
 # Author Samuel BOVEE <samuel@ulteo.com> 2010-2011
+# Author David PHAM-VAN <d.pham-van@ulteo.com> 2012
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -25,7 +26,7 @@ License: GPL2
 Group: Applications/System
 Vendor: Ulteo SAS
 URL: http://www.ulteo.com
-Packager: Samuel Bovée <samuel@ulteo.com>
+Packager: David PHAM-VAN <d.pham-van@ulteo.com>
 Distribution: OpenSUSE 11.3
 
 Source: %{name}-%{version}.tar.gz
@@ -106,7 +107,9 @@ chkconfig --del xrdp > /dev/null
 
 %postun
 rm -rf /var/log/xrdp /var/spool/xrdp
-getent group tsusers >/dev/null && groupdel tsusers
+if [ "$1" = "0" ]; then
+    getent group tsusers >/dev/null && groupdel tsusers
+fi
 
 ldconfig
 
