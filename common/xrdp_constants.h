@@ -61,6 +61,7 @@
 #define REQUEST_TYPE_PRINTERS           "printers"
 
 
+
 /* TCP port for Remote Desktop Protocol */
 #define TCP_PORT_RDP                   3389
 
@@ -529,4 +530,8 @@
 
 /* System limit */
 #define DEFAULT_FD_LIMIT   1024
+
+/* JPEG Buffer size */
+#define JPEG_BUFFER_SIZE 16384
+
 #endif

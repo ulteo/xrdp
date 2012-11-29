@@ -663,8 +663,6 @@
   bicolor_spin = 0; \
 }
 
-#define JPEG_BUFFER_SIZE    16384
-
 struct jpeg_compress_struct cinfo;
 struct jpeg_error_mgr jerr;
 struct jpeg_destination_mgr my_mgr;
