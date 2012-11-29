@@ -449,10 +449,14 @@ struct rdp_mppc_enc* mppc_enc_new(int protocol_type)
 		return NULL;
 	switch (protocol_type)
 	{
+		// PACKET_COMPR_TYPE_8K is not implemented
+		/*
 		case PACKET_COMPR_TYPE_8K:
 			enc->protocol_type = PACKET_COMPR_TYPE_8K;
 			enc->buf_len = RDP_40_HIST_BUF_LEN;
 			break;
+		*/
+
 		case PACKET_COMPR_TYPE_64K:
 			enc->protocol_type = PACKET_COMPR_TYPE_64K;
 			enc->buf_len = RDP_50_HIST_BUF_LEN;
