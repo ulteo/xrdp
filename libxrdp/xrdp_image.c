@@ -59,3 +59,62 @@ xrdp_image_compress_rle(int width, int height, int bpp, unsigned char* data, cha
    free_stream(s);
    return bufsize;
 }
+
+void APP_CC
+xrdp_image_compute_buffer_size(struct xrdp_client_info* self, int width,
+                               int height, int bpp,
+                               char* data, char* dest, int* dest_size, int* type)
+{
+    int jpeg_size;
+    int rle_size;
+    int raw_size;
+    char* jpeg_buf = 0;
+    char* rle_buf = 0;
+    jpeg_size = JPEG_BUFFER_SIZE;
+    rle_size = IMAGE_TILE_MAX_BUFFER_SIZE;
+    raw_size = width*height*((bpp+7)/8);
+
+    if (self->use_jpeg == 1)
+    {
+        jpeg_buf = (char*) g_malloc(jpeg_size, 0);
+        jpeg_size = xrdp_image_compress_jpeg(width, height, bpp, data, self->jpeg_quality, jpeg_buf);
+    }
+    if (self->use_bitmap_comp)
+    {
+        rle_buf = (char*) g_malloc(rle_size,0);
+        rle_size = xrdp_image_compress_rle(width, height, bpp, data, rle_buf);
+    }
+
+    if (jpeg_size < rle_size)
+    {
+       if (jpeg_size < raw_size)
+       {
+           *type = JPEG_TILE;
+           g_memcpy(dest, jpeg_buf, jpeg_size);
+           *dest_size = jpeg_size;
+       }
+       else
+       {
+           *type = RAW_TILE;
+           g_memcpy(dest, data, raw_size);
+           *dest_size = raw_size;
+       }
+    }
+    else
+    {
+        if (rle_size < raw_size)
+        {
+           *type = RLE_TILE;
+           g_memcpy(dest, rle_buf, rle_size);
+           *dest_size = rle_size;
+        }
+        else
+        {
+           *type = RAW_TILE;
+           g_memcpy(dest, data, raw_size);
+           *dest_size = raw_size;
+        }
+    }
+    g_free(jpeg_buf);
+    g_free(rle_buf);
+}

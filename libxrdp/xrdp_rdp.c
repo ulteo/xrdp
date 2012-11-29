@@ -211,6 +211,21 @@ xrdp_rdp_read_config(struct xrdp_client_info* client_info)
         printf("Server can use frame marker\n");
       }
     }
+    else if (g_strcasecmp(item, "image_policy") == 0)
+    {
+      if (g_strcasecmp(value, "full") == 0)
+      {
+        client_info->image_policy = IMAGE_COMP_POLICY_FULL;
+        client_info->image_policy_ptr = libxrdp_orders_send_image_full;
+        printf("Server send all image with the same compression method\n");
+      }
+      else if (g_strcasecmp(value, "adaptative") == 0)
+      {
+        client_info->image_policy = IMAGE_COMP_POLICY_ADAPTATIVE;
+        client_info->image_policy_ptr = libxrdp_orders_send_image_adaptative;
+        printf("Server adapt image compression to minimize buffer\n");
+      }
+    }
   }
   list_delete(items);
   list_delete(values);
@@ -228,6 +243,8 @@ xrdp_rdp_create(struct xrdp_session* session, struct trans* trans)
   self->session = session;
   self->share_id = 66538;
   /* read ini settings */
+  self->client_info.image_policy = IMAGE_COMP_POLICY_FULL;
+  self->client_info.image_policy_ptr = libxrdp_orders_send_image_full;
   xrdp_rdp_read_config(&self->client_info);
   /* create sec layer */
   self->sec_layer = xrdp_sec_create(self, trans, self->client_info.crypt_level,

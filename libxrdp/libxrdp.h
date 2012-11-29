@@ -426,5 +426,10 @@ int APP_CC
 xrdp_image_compress_jpeg(int width, int height, int bpp, unsigned char* data, int quality, char* dest);
 int APP_CC
 xrdp_image_compress_rle(int width, int height, int bpp, unsigned char* data, char* dest);
+void APP_CC
+xrdp_image_compute_buffer_size(struct xrdp_client_info* self, int width,
+                               int height, int bpp,
+                               char* data, char* dest,
+                               int* dest_size, int* type);
 
 #endif

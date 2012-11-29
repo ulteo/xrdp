@@ -278,9 +278,11 @@ xrdp_cache_add_bitmap(struct xrdp_cache* self, struct xrdp_bitmap* bitmap)
   xrdp_bitmap_delete(self->bitmap_items[cache_id][cache_idx].bitmap);
   self->bitmap_items[cache_id][cache_idx].bitmap = bitmap;
   self->bitmap_items[cache_id][cache_idx].stamp = self->bitmap_stamp;
-  libxrdp_orders_send_image(self->session, bitmap->width,
-                             bitmap->height, bitmap->bpp,
-                             bitmap->data, cache_id, cache_idx);
+
+  if (self->session->client_info->image_policy_ptr)
+      self->session->client_info->image_policy_ptr(self->session, bitmap->width,
+                                                   bitmap->height, bitmap->bpp,
+                                                   bitmap->data, cache_id, cache_idx);
   return MAKELONG(cache_idx, cache_id);
 }
 

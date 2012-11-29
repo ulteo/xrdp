@@ -567,9 +567,9 @@ libxrdp_orders_send_jpeg(struct xrdp_session* session,
 }
 /*****************************************************************************/
 int EXPORT_CC
-libxrdp_orders_send_image(struct xrdp_session* session,
-                           int width, int height, int bpp, char* data,
-                           int cache_id, int cache_idx)
+libxrdp_orders_send_image_full(struct xrdp_session* session,
+                               int width, int height, int bpp, char* data,
+                               int cache_id, int cache_idx)
 {
   int bufsize;
   char * dest = 0;
@@ -622,6 +622,57 @@ libxrdp_orders_send_image(struct xrdp_session* session,
           }
       }
   }
+}
+
+/******************************************************************************/
+int EXPORT_CC
+libxrdp_orders_send_image_adaptative(struct xrdp_session* session, int width, int height, int bpp, char* data, int cache_id, int cache_idx)
+{
+   char* dest;
+   int dest_size;
+   int type;
+   struct xrdp_client_info* self = session->client_info;
+   dest = (char*) g_malloc(IMAGE_TILE_MAX_BUFFER_SIZE, 0);
+   xrdp_image_compute_buffer_size(self, width,
+                                 height, bpp,
+                                 data, dest, &dest_size, &type);
+   switch(type)
+   {
+   case RAW_TILE :
+      if (self->bitmap_cache_version == 0)
+      {
+         libxrdp_orders_send_raw_bitmap(session, width,
+                                        height, bpp,
+                                        data, cache_id, cache_idx);
+      }
+      else
+      {
+         libxrdp_orders_send_raw_bitmap2(session, width,
+                                         height, bpp,
+                                         data, cache_id, cache_idx);
+      }
+      break;
+   case RLE_TILE:
+      if (self->bitmap_cache_version == 0)
+      {
+         libxrdp_orders_send_bitmap(session, width,
+                                     height, bpp,
+                                     dest, cache_id, cache_idx, dest_size);
+      }
+      else
+      {
+         libxrdp_orders_send_bitmap2(session, width,
+                                      height, bpp,
+                                      dest, cache_id, cache_idx, dest_size);
+      }
+      break;
+   case JPEG_TILE:
+       libxrdp_orders_send_jpeg(session, width,
+                                height, bpp,
+                                dest, cache_id, cache_idx, dest_size);
+       break;
+   }
+   g_free(dest);
 }
 
 /*****************************************************************************/

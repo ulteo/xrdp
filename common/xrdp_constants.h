@@ -536,4 +536,14 @@
 
 #define IMAGE_TILE_MAX_BUFFER_SIZE 16384 // 64*64*4
 
+/* Image policy type */
+#define IMAGE_COMP_POLICY_FULL 0
+#define IMAGE_COMP_POLICY_ADAPTATIVE 1
+
+/* tile compression type */
+#define RAW_TILE 0
+#define RLE_TILE 1
+#define JPEG_TILE 2
+
+
 #endif

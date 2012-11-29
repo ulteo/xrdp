@@ -43,6 +43,8 @@
 #if !defined(LIBXRDPINC_H)
 #define LIBXRDPINC_H
 
+typedef void (*image_policy_comp_ptr) (struct xrdp_session*, int, int, int, char*,int, int);
+
 struct xrdp_client_info
 {
   int bpp;
@@ -93,6 +95,8 @@ struct xrdp_client_info
   int connectivity_check_interval;
   int can_use_frame_marker;
   int use_frame_marker;
+  int image_policy; // IMAGE_COMP_POLICY_FULL, IMAGE_COMP_POLICY_ADAPTATIVE
+  image_policy_comp_ptr image_policy_ptr;
 };
 
 struct xrdp_brush
@@ -233,9 +237,13 @@ libxrdp_orders_send_bitmap2(struct xrdp_session* session,
                             int cache_id, int cache_idx, int bufsize);
 
 int DEFAULT_CC
-libxrdp_orders_send_image(struct xrdp_session* session,
+libxrdp_orders_send_image_full(struct xrdp_session* session,
                             int width, int height, int bpp, char* data,
                             int cache_id, int cache_idx);
+int DEFAULT_CC
+libxrdp_orders_send_image_adaptative(struct xrdp_session* session,
+                                     int width, int height, int bpp, char* data,
+                                     int cache_id, int cache_idx);
 int DEFAULT_CC
 libxrdp_query_channel(struct xrdp_session* session, int index,
                       char* channel_name, int* channel_flags);
