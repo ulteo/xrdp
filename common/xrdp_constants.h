@@ -534,4 +534,6 @@
 /* JPEG Buffer size */
 #define JPEG_BUFFER_SIZE 16384
 
+#define IMAGE_TILE_MAX_BUFFER_SIZE 16384 // 64*64*4
+
 #endif

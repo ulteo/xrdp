@@ -548,22 +548,22 @@ libxrdp_orders_send_raw_bitmap(struct xrdp_session* session,
 int EXPORT_CC
 libxrdp_orders_send_bitmap(struct xrdp_session* session,
                            int width, int height, int bpp, char* data,
-                           int cache_id, int cache_idx)
+                           int cache_id, int cache_idx, int bufsize)
 {
   return xrdp_orders_send_bitmap((struct xrdp_orders*)session->orders,
                                  width, height, bpp, data,
-                                 cache_id, cache_idx);
+                                 cache_id, cache_idx, bufsize);
 }
 
 /*****************************************************************************/
 int EXPORT_CC
 libxrdp_orders_send_jpeg(struct xrdp_session* session,
                          int width, int height, int bpp, char* data,
-                         int cache_id, int cache_idx, int quality)
+                         int cache_id, int cache_idx, int bufsize)
 {
   return xrdp_orders_send_jpeg((struct xrdp_orders*)session->orders,
                                  width, height, bpp, data,
-                                 cache_id, cache_idx, quality);
+                                 cache_id, cache_idx, bufsize);
 }
 /*****************************************************************************/
 int EXPORT_CC
@@ -571,12 +571,17 @@ libxrdp_orders_send_image(struct xrdp_session* session,
                            int width, int height, int bpp, char* data,
                            int cache_id, int cache_idx)
 {
+  int bufsize;
+  char * dest = 0;
   struct xrdp_client_info* self = session->client_info;
   if (self->use_jpeg == 1)
   {
+      dest  = (char*) g_malloc(JPEG_BUFFER_SIZE, 0);
+      bufsize = xrdp_image_compress_jpeg(width, height, bpp, data, self->jpeg_quality, dest);
       libxrdp_orders_send_jpeg(session, width,
                                height, bpp,
-                               data, cache_id, cache_idx, self->jpeg_quality);
+                               dest, cache_id, cache_idx, bufsize);
+      g_free(dest);
   }
   else
   {
@@ -584,9 +589,12 @@ libxrdp_orders_send_image(struct xrdp_session* session,
       {
           if (self->use_bitmap_comp)
           {
+              dest  = (char*) g_malloc(IMAGE_TILE_MAX_BUFFER_SIZE, 0);
+              bufsize = xrdp_image_compress_rle(width, height, bpp, data, dest);
               libxrdp_orders_send_bitmap(session, width,
                                          height, bpp,
-                                         data, cache_id, cache_idx);
+                                         dest, cache_id, cache_idx, bufsize);
+              g_free(dest);
           }
           else
           {
@@ -599,9 +607,12 @@ libxrdp_orders_send_image(struct xrdp_session* session,
       {
           if (self->use_bitmap_comp)
           {
+              dest  = (char*) g_malloc(IMAGE_TILE_MAX_BUFFER_SIZE, 0);
+              bufsize = xrdp_image_compress_rle(width, height, bpp, data, dest);
               libxrdp_orders_send_bitmap2(session, width,
                                           height, bpp,
-                                          data, cache_id, cache_idx);
+                                          dest, cache_id, cache_idx, bufsize);
+              g_free(dest);
           }
           else
           {
@@ -686,11 +697,11 @@ libxrdp_orders_send_raw_bitmap2(struct xrdp_session* session,
 int EXPORT_CC
 libxrdp_orders_send_bitmap2(struct xrdp_session* session,
                             int width, int height, int bpp, char* data,
-                            int cache_id, int cache_idx)
+                            int cache_id, int cache_idx, int bufsize)
 {
   return xrdp_orders_send_bitmap2((struct xrdp_orders*)session->orders,
                                   width, height, bpp, data,
-                                  cache_id, cache_idx);
+                                  cache_id, cache_idx, bufsize);
 }
 
 /*****************************************************************************/

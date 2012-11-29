@@ -215,7 +215,7 @@ libxrdp_orders_send_raw_bitmap(struct xrdp_session* session,
 int DEFAULT_CC
 libxrdp_orders_send_bitmap(struct xrdp_session* session,
                            int width, int height, int bpp, char* data,
-                           int cache_id, int cache_idx);
+                           int cache_id, int cache_idx, int bufsize);
 int DEFAULT_CC
 libxrdp_orders_send_font(struct xrdp_session* session,
                          struct xrdp_font_char* font_char,
@@ -230,7 +230,7 @@ libxrdp_orders_send_raw_bitmap2(struct xrdp_session* session,
 int DEFAULT_CC
 libxrdp_orders_send_bitmap2(struct xrdp_session* session,
                             int width, int height, int bpp, char* data,
-                            int cache_id, int cache_idx);
+                            int cache_id, int cache_idx, int bufsize);
 
 int DEFAULT_CC
 libxrdp_orders_send_image(struct xrdp_session* session,

@@ -1671,18 +1671,13 @@ xrdp_orders_send_raw_bitmap(struct xrdp_orders* self,
 int APP_CC
 xrdp_orders_send_bitmap(struct xrdp_orders* self,
                         int width, int height, int bpp, char* data,
-                        int cache_id, int cache_idx)
+                        int cache_id, int cache_idx, int bufsize)
 {
   int order_flags;
   int len;
-  int bufsize;
   int Bpp;
   int i;
-  int lines_sending;
   int e;
-  struct stream* s;
-  struct stream* temp_s;
-  char* p;
 
   if (width > 64)
   {
@@ -1699,23 +1694,6 @@ xrdp_orders_send_bitmap(struct xrdp_orders* self,
   {
     e = 4 - e;
   }
-  make_stream(s);
-  init_stream(s, 16384);
-  make_stream(temp_s);
-  init_stream(temp_s, 16384);
-  p = s->p;
-  i = height;
-  lines_sending = xrdp_bitmap_compress(data, width, height, s, bpp, 16384,
-                                       i - 1, temp_s, e);
-  if (lines_sending != height)
-  {
-    free_stream(s);
-    free_stream(temp_s);
-    g_writeln("error in xrdp_orders_send_bitmap, lines_sending(%d) != \
-height(%d)", lines_sending, height);
-    return 1;
-  }
-  bufsize = (int)(s->p - p);
   Bpp = (bpp + 7) / 8;
   xrdp_orders_check(self, bufsize + 16);
   self->order_count++;
@@ -1749,9 +1727,7 @@ height(%d)", lines_sending, height);
     out_uint16_le(self->out_s, (width + e) *
                                 Bpp * height); /* final size */
   }
-  out_uint8a(self->out_s, s->data, bufsize);
-  free_stream(s);
-  free_stream(temp_s);
+  out_uint8a(self->out_s, data, bufsize);
   return 0;
 }
 
@@ -1875,18 +1851,13 @@ xrdp_orders_send_raw_bitmap2(struct xrdp_orders* self,
 int APP_CC
 xrdp_orders_send_bitmap2(struct xrdp_orders* self,
                          int width, int height, int bpp, char* data,
-                         int cache_id, int cache_idx)
+                         int cache_id, int cache_idx, int bufsize)
 {
   int order_flags;
   int len;
-  int bufsize;
   int Bpp;
   int i;
-  int lines_sending;
   int e;
-  struct stream* s;
-  struct stream* temp_s;
-  char* p;
 
   if (width > 64)
   {
@@ -1903,23 +1874,6 @@ xrdp_orders_send_bitmap2(struct xrdp_orders* self,
   {
     e = 4 - e;
   }
-  make_stream(s);
-  init_stream(s, 16384);
-  make_stream(temp_s);
-  init_stream(temp_s, 16384);
-  p = s->p;
-  i = height;
-  lines_sending = xrdp_bitmap_compress(data, width, height, s, bpp, 16384,
-                                       i - 1, temp_s, e);
-  if (lines_sending != height)
-  {
-    free_stream(s);
-    free_stream(temp_s);
-    g_writeln("error in xrdp_orders_send_bitmap2, lines_sending(%d) != \
-height(%d)", lines_sending, height);
-    return 1;
-  }
-  bufsize = (int)(s->p - p);
   Bpp = (bpp + 7) / 8;
   xrdp_orders_check(self, bufsize + 14);
   self->order_count++;
@@ -1938,9 +1892,7 @@ height(%d)", lines_sending, height);
   out_uint8(self->out_s, i);
   i = cache_idx & 0xff;
   out_uint8(self->out_s, i);
-  out_uint8a(self->out_s, s->data, bufsize);
-  free_stream(s);
-  free_stream(temp_s);
+  out_uint8a(self->out_s, data, bufsize);
   return 0;
 }
 
@@ -1950,16 +1902,13 @@ height(%d)", lines_sending, height);
 int APP_CC
 xrdp_orders_send_jpeg(struct xrdp_orders* self,
                          int width, int height, int bpp, char* data,
-                         int cache_id, int cache_idx, int quality)
+                         int cache_id, int cache_idx, int bufsize)
 {
   int order_flags;
   int len;
-  int bufsize;
   int Bpp;
   int i;
   int lines_sending;
-  struct stream* s;
-  struct stream* temp_s;
   char* p;
 
   if (width > 64)
@@ -1973,22 +1922,6 @@ xrdp_orders_send_jpeg(struct xrdp_orders* self,
     return 1;
   }
 
-  make_stream(s);
-  init_stream(s, 16384);
-  make_stream(temp_s);
-  init_stream(temp_s, 16384);
-  p = s->p;
-  i = height;
-  lines_sending = xrdp_bitmap_jpeg_compress(data, width, height, s, bpp, quality);
-  if (lines_sending != height)
-  {
-    free_stream(s);
-    free_stream(temp_s);
-    g_writeln("error in xrdp_orders_send_bitmap2, lines_sending(%d) != \
-height(%d)", lines_sending, height);
-    return 1;
-  }
-  bufsize = (int)(s->p - p);
   Bpp = (bpp + 7) / 8;
   xrdp_orders_check(self, bufsize + 14);
   self->order_count++;
@@ -2007,9 +1940,7 @@ height(%d)", lines_sending, height);
   out_uint8(self->out_s, i);
   i = cache_idx & 0xff;
   out_uint8(self->out_s, i);
-  out_uint8a(self->out_s, s->data, bufsize);
-  free_stream(s);
-  free_stream(temp_s);
+  out_uint8a(self->out_s, data, bufsize);
   return 0;
 }
 

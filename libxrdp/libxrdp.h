@@ -383,7 +383,7 @@ xrdp_orders_send_raw_bitmap(struct xrdp_orders* self,
 int APP_CC
 xrdp_orders_send_bitmap(struct xrdp_orders* self,
                         int width, int height, int bpp, char* data,
-                        int cache_id, int cache_idx);
+                        int cache_id, int cache_idx, int bufsize);
 int APP_CC
 xrdp_orders_send_font(struct xrdp_orders* self,
                       struct xrdp_font_char* font_char,
@@ -395,7 +395,7 @@ xrdp_orders_send_raw_bitmap2(struct xrdp_orders* self,
 int APP_CC
 xrdp_orders_send_bitmap2(struct xrdp_orders* self,
                          int width, int height, int bpp, char* data,
-                         int cache_id, int cache_idx);
+                         int cache_id, int cache_idx, int bufsize);
 int APP_CC
 xrdp_orders_send_brush(struct xrdp_orders* self, int width, int height,
                        int bpp, int type, int size, char* data, int cache_id);
@@ -420,5 +420,11 @@ xrdp_channel_send(struct xrdp_channel* self, struct stream* s, int channel_id,
 int APP_CC
 xrdp_channel_process(struct xrdp_channel* self, struct stream* s,
                      int chanid);
+
+/* xrdp_image.c */
+int APP_CC
+xrdp_image_compress_jpeg(int width, int height, int bpp, unsigned char* data, int quality, char* dest);
+int APP_CC
+xrdp_image_compress_rle(int width, int height, int bpp, unsigned char* data, char* dest);
 
 #endif
