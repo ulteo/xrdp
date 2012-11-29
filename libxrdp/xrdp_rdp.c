@@ -239,7 +239,7 @@ xrdp_rdp_create(struct xrdp_session* session, struct trans* trans)
   self->client_info.cache2_size = 1024;
   self->client_info.cache3_entries = 262;
   self->client_info.cache3_size = 4096;
-  self->compressor = mppc_enc_new(PACKET_COMPR_TYPE_64K);
+  self->compressor = 0;
 
   DEBUG(("out xrdp_rdp_create"));
   return self;
@@ -268,6 +268,29 @@ xrdp_rdp_init(struct xrdp_rdp* self, struct stream* s)
   }
   s_push_layer(s, rdp_hdr, 6);
   return 0;
+}
+
+/*****************************************************************************/
+bool APP_CC
+xrdp_rdp_init_compressor(struct xrdp_rdp* self, int mppc_version)
+{
+  if (self == 0)
+  {
+    return false;
+  }
+  
+  if (mppc_version < 0)
+  {
+    return false;
+  }
+  
+  if (mppc_version > PACKET_COMPR_TYPE_64K)
+  {
+    mppc_version = PACKET_COMPR_TYPE_64K;
+  }
+  
+  self->compressor = mppc_enc_new(mppc_version);
+  return true;
 }
 
 /*****************************************************************************/

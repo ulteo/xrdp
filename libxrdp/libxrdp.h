@@ -18,6 +18,7 @@
    Copyright (C) 2011-2012 Ulteo SAS
    http://www.ulteo.com
    Author David LECHEVALIER <david@ulteo.com> 2011, 2012
+   Author Thomas MOUTON <thomas@ulteo.com> 2012
 
    libxrdp header
 
@@ -291,6 +292,8 @@ int APP_CC
 xrdp_rdp_init(struct xrdp_rdp* self, struct stream* s);
 int APP_CC
 xrdp_rdp_init_data(struct xrdp_rdp* self, struct stream* s);
+bool APP_CC
+xrdp_rdp_init_compressor(struct xrdp_rdp* self, int mppc_version);
 int APP_CC
 xrdp_rdp_recv(struct xrdp_rdp* self, struct stream* s, int* code);
 int APP_CC

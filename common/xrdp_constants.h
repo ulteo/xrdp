@@ -2,6 +2,7 @@
  * Copyright (C) 2011-2012 Ulteo SAS
  * http://www.ulteo.com
  * Author David LECHEVALIER <david@ulteo.com> 2011, 2012
+ * Author Thomas MOUTON <thomas@ulteo.com> 2012
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -301,6 +302,7 @@
 #define RDP_LOGON_AUTO                 0x0008
 #define RDP_LOGON_NORMAL               0x0033
 #define RDP_COMPRESSION                0x0080
+#define RDP_COMPRESSION_TYPE_MASK      0x00001E00
 #define RDP_LOGON_BLOB                 0x0100
 #define RDP_LOGON_LEAVE_AUDIO          0x2000
 

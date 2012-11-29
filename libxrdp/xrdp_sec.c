@@ -1,3 +1,23 @@
+/**
+ * Copyright (C) 2012 Ulteo SAS
+ * http://www.ulteo.com
+ * Author Thomas MOUTON <thomas@ulteo.com> 2012
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; version 2
+ * of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ **/
+
 /*
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -336,8 +356,12 @@ xrdp_sec_process_logon_info(struct xrdp_sec* self, struct stream* s)
   }
   if (flags & RDP_COMPRESSION)
   {
+    int mppc_version = (flags & RDP_COMPRESSION_TYPE_MASK) >> 9;
+    
     self->rdp_layer->client_info.rdp_compression = 1;
     DEBUG(("flag RDP_COMPRESSION found"));
+    
+    xrdp_rdp_init_compressor(self->rdp_layer, mppc_version);
   }
   in_uint16_le(s, len_domain);
   in_uint16_le(s, len_user);
