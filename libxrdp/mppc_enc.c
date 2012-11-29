@@ -2,6 +2,7 @@
  * Copyright (C) 2011-2012 Ulteo SAS
  * http://www.ulteo.com
  * Author Vincent Roullier <vincent.roullier@ulteo.com> 2012
+ * Author Thomas MOUTON <thomas@ulteo.com> 2012
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -448,12 +449,12 @@ struct rdp_mppc_enc* mppc_enc_new(int protocol_type)
 		return NULL;
 	switch (protocol_type)
 	{
-		case PROTO_RDP_40:
-			enc->protocol_type = PROTO_RDP_40;
+		case PACKET_COMPR_TYPE_8K:
+			enc->protocol_type = PACKET_COMPR_TYPE_8K;
 			enc->buf_len = RDP_40_HIST_BUF_LEN;
 			break;
-		case PROTO_RDP_50:
-			enc->protocol_type = PROTO_RDP_50;
+		case PACKET_COMPR_TYPE_64K:
+			enc->protocol_type = PACKET_COMPR_TYPE_64K;
 			enc->buf_len = RDP_50_HIST_BUF_LEN;
 			break;
 		default:
@@ -519,10 +520,10 @@ bool compress_rdp(struct rdp_mppc_enc* enc, tui8* srcData, int len)
 
 	switch (enc->protocol_type)
 	{
-		case PROTO_RDP_40:
+		case PACKET_COMPR_TYPE_8K:
 			return compress_rdp_4(enc, srcData, len);
 			break;
-		case PROTO_RDP_50:
+		case PACKET_COMPR_TYPE_64K:
 			return compress_rdp_5(enc, srcData, len);
 			break;
 	}

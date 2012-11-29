@@ -3,6 +3,7 @@
  * http://www.ulteo.com
  * Author David LECHEVALIER <david@ulteo.com> 2011, 2012
  * Author Vincent Roullier <vincent.roullier@ulteo.com> 2012
+ * Author Thomas MOUTON <thomas@ulteo.com> 2012
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -238,7 +239,7 @@ xrdp_rdp_create(struct xrdp_session* session, struct trans* trans)
   self->client_info.cache2_size = 1024;
   self->client_info.cache3_entries = 262;
   self->client_info.cache3_size = 4096;
-  self->compressor = mppc_enc_new(PROTO_RDP_50);
+  self->compressor = mppc_enc_new(PACKET_COMPR_TYPE_64K);
 
   DEBUG(("out xrdp_rdp_create"));
   return self;

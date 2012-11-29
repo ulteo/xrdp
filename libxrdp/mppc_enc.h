@@ -2,6 +2,7 @@
  * Copyright (C) 2011-2012 Ulteo SAS
  * http://www.ulteo.com
  * Author Vincent Roullier <vincent.roullier@ulteo.com> 2012
+ * Author Thomas MOUTON <thomas@ulteo.com> 2012
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -54,8 +55,6 @@
 
 #define RDP6_HISTORY_BUF_SIZE		65536
 #define RDP6_OFFSET_CACHE_SIZE		8
-#define PROTO_RDP_40 1
-#define PROTO_RDP_50 2
 
 struct rdp_mppc_enc
 {
