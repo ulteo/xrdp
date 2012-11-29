@@ -278,45 +278,9 @@ xrdp_cache_add_bitmap(struct xrdp_cache* self, struct xrdp_bitmap* bitmap)
   xrdp_bitmap_delete(self->bitmap_items[cache_id][cache_idx].bitmap);
   self->bitmap_items[cache_id][cache_idx].bitmap = bitmap;
   self->bitmap_items[cache_id][cache_idx].stamp = self->bitmap_stamp;
-  if (self->use_jpeg_comp == 1)
-  {
-    libxrdp_orders_send_jpeg(self->session, bitmap->width,
+  libxrdp_orders_send_image(self->session, bitmap->width,
                              bitmap->height, bitmap->bpp,
-                             bitmap->data, cache_id, cache_idx, self->jpeg_quality);
-  }
-  else
-  {
-    if (self->bitmap_cache_version == 0) /* orginal version */
-    {
-      if (self->use_bitmap_comp)
-      {
-        libxrdp_orders_send_bitmap(self->session, bitmap->width,
-                                   bitmap->height, bitmap->bpp,
-                                   bitmap->data, cache_id, cache_idx);
-      }
-      else
-      {
-        libxrdp_orders_send_raw_bitmap(self->session, bitmap->width,
-                                       bitmap->height, bitmap->bpp,
-                                       bitmap->data, cache_id, cache_idx);
-      }
-    }
-    else
-    {
-      if (self->use_bitmap_comp)
-      {
-        libxrdp_orders_send_bitmap2(self->session, bitmap->width,
-                                    bitmap->height, bitmap->bpp,
-                                    bitmap->data, cache_id, cache_idx);
-      }
-      else
-      {
-        libxrdp_orders_send_raw_bitmap2(self->session, bitmap->width,
-                                        bitmap->height, bitmap->bpp,
-                                        bitmap->data, cache_id, cache_idx);
-      }
-    }
-  }
+                             bitmap->data, cache_id, cache_idx);
   return MAKELONG(cache_idx, cache_id);
 }
 

@@ -565,6 +565,53 @@ libxrdp_orders_send_jpeg(struct xrdp_session* session,
                                  width, height, bpp, data,
                                  cache_id, cache_idx, quality);
 }
+/*****************************************************************************/
+int EXPORT_CC
+libxrdp_orders_send_image(struct xrdp_session* session,
+                           int width, int height, int bpp, char* data,
+                           int cache_id, int cache_idx)
+{
+  struct xrdp_client_info* self = session->client_info;
+  if (self->use_jpeg == 1)
+  {
+      libxrdp_orders_send_jpeg(session, width,
+                               height, bpp,
+                               data, cache_id, cache_idx, self->jpeg_quality);
+  }
+  else
+  {
+      if (self->bitmap_cache_version == 0) /* orginal version */
+      {
+          if (self->use_bitmap_comp)
+          {
+              libxrdp_orders_send_bitmap(session, width,
+                                         height, bpp,
+                                         data, cache_id, cache_idx);
+          }
+          else
+          {
+              libxrdp_orders_send_raw_bitmap(session, width,
+                                             height, bpp,
+                                             data, cache_id, cache_idx);
+          }
+      }
+      else
+      {
+          if (self->use_bitmap_comp)
+          {
+              libxrdp_orders_send_bitmap2(session, width,
+                                          height, bpp,
+                                          data, cache_id, cache_idx);
+          }
+          else
+          {
+              libxrdp_orders_send_raw_bitmap2(session, width,
+                                              height, bpp,
+                                              data, cache_id, cache_idx);
+          }
+      }
+  }
+}
 
 /*****************************************************************************/
 int EXPORT_CC
