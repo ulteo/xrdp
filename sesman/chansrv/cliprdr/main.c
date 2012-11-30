@@ -102,7 +102,7 @@ cliprdr_send(struct stream* s){
   if (rv != 0)
   {
     log_message(l_config, LOG_LEVEL_ERROR, "vchannel_cliprdr[cliprdr_send]: "
-    		"Enable to send message");
+    		"Unable to send message");
   }
   return rv;
 }
@@ -863,13 +863,13 @@ int main(int argc, char** argv, char** environ)
 	l_config = g_malloc(sizeof(struct log_config), 1);
 	if (cliprdr_init() != LOG_STARTUP_OK)
 	{
-		g_printf("cliprdr[main]: Enable to init log system\n");
+		g_printf("cliprdr[main]: Unable to init log system\n");
 		g_free(l_config);
 		return 1;
 	}
 	if (vchannel_init() == ERROR)
 	{
-		g_printf("cliprdr[main]: Enable to init channel system\n");
+		g_printf("cliprdr[main]: Unable to init channel system\n");
 		g_free(l_config);
 		return 1;
 	}

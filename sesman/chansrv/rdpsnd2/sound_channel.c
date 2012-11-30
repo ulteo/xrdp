@@ -52,7 +52,7 @@ int vchannel_sound_send(struct stream* s, int update_size){
   if (rv != 0)
   {
 		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpsnd[vchannel_sound_send]: "
-    		"Enable to send message");
+    		"Unable to send message");
   }
 	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpsnd[vchannel_sound_send]: "
     		"Send message of size : %i",size);

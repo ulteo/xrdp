@@ -47,7 +47,7 @@ int vchannel_sound_send(struct stream* s, int update_size){
   if (rv != 0)
   {
   	pa_log_warn("module-rdp[vchannel_sound_send]: "
-    		"Enable to send message");
+    		"Unable to send message");
   }
   pa_log_debug("module-rdp[vchannel_sound_send]: "
     		"Send message of size : %i",size);
@@ -439,7 +439,7 @@ int init_channel()
 	if (vchannel_init() == ERROR)
 	{
 		pa_log_error("module-rdp[init_channel]: "
-				"Enable to init channel system");
+				"Unable to init channel system");
 		return 1;
 	}
 

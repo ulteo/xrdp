@@ -132,7 +132,7 @@ rdpfs_send(struct stream* s){
 	if (rv != 0)
 	{
 		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr[rdpfs_send]: "
-				"Enable to send message");
+				"Unable to send message");
 	}
 	log_message(l_config, LOG_LEVEL_DEBUG_PLUS, "vchannel_rdpdr[rdpfs_send]: "
 				"send message: ");

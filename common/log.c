@@ -145,7 +145,7 @@ log_message(struct log_config* l_cfg, const unsigned int lvl, const char* msg, .
 #endif
     if(sock == 0)
     {
-    	g_printf("Enable to log in %s\n", l_cfg->log_file);
+    	g_printf("Unable to log in %s\n", l_cfg->log_file);
     }
     else
     {

@@ -707,13 +707,13 @@ printer_dev_init_printer_socket( char* printer_name)
 	if( g_directory_exist(user_spool_dir) < 0)
 	{
 		log_message(&log_conf, LOG_LEVEL_ERROR, "chansrv[printer_dev_init_printer_socket]:"
-	  		" Enable to create user spool directory : %s",user_spool_dir);
+	  		" Unable to create user spool directory : %s",user_spool_dir);
 		return 1;
 	}
 	if( g_chown(user_spool_dir, "lp"))
 	{
 		log_message(&log_conf, LOG_LEVEL_ERROR, "chansrv[printer_dev_init_printer_socket]:"
-	  		" Enable to change spool directory owner : %s",user_spool_dir);
+	  		" Unable to change spool directory owner : %s",user_spool_dir);
 		return 1;
 	}
 	g_sprintf(printer_spool_dir, "%s/%s",user_spool_dir, printer_name );
@@ -721,13 +721,13 @@ printer_dev_init_printer_socket( char* printer_name)
 	if( g_directory_exist(printer_spool_dir) < 0)
 	{
 		log_message(&log_conf, LOG_LEVEL_ERROR, "chansrv[printer_dev_init_printer_socket]:"
-	  		" Enable to create printer spool directory : %s",user_spool_dir);
+	  		" Unable to create printer spool directory : %s",user_spool_dir);
 		return 1;
 	}
 	if( g_chown(printer_spool_dir, "lp"))
 	{
 		log_message(&log_conf, LOG_LEVEL_ERROR, "chansrv[printer_dev_init_printer_socket]:"
-	  		" Enable to change printer directory owner : %s",user_spool_dir);
+	  		" Unable to change printer directory owner : %s",user_spool_dir);
 		return 1;
 	}
 	if(printer_sock == 0)
@@ -736,7 +736,7 @@ printer_dev_init_printer_socket( char* printer_name)
 		if (printer_sock <= 0)
 		{
 			log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[dev_redir_init_printer_socket]:"
-					"Enable to setup inotify (%s)",strerror(errno));
+					"Unable to setup inotify (%s)",strerror(errno));
 			return 0;
 		}
 	}

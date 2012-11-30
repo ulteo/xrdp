@@ -422,14 +422,14 @@ int main(int argc, char*argv[]) {
   	l_config = g_malloc(sizeof(struct log_config), 1);
   	if (sndchannel_init() != LOG_STARTUP_OK)
   	{
-  		g_printf("vchannel_rdpsnd[main]: Enable to init log system\n");
+  		g_printf("vchannel_rdpsnd[main]: Unable to init log system\n");
   		g_free(l_config);
   		return 1;
   	}
   	if (vchannel_init() == ERROR)
   	{
   		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpsnd[main]: "
-  				"Enable to init channel system\n");
+  				"Unable to init channel system\n");
   		g_free(l_config);
   		return 1;
   	}

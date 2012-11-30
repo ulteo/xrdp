@@ -196,7 +196,7 @@ xrdp_mm_send_login(struct xrdp_mm* self)
 #ifdef OLD_LOG_VERSION
     xrdp_wm_log_msg(self->wm, "xrdp_mm_send_login: xrdp_mm_send failed");
 #else
-  	xrdp_wm_log_error(self->wm, "Enable to send");
+  	xrdp_wm_log_error(self->wm, "Unable to send");
   	xrdp_wm_log_error(self->wm, "logon informations");
 #endif
   }

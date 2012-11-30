@@ -144,7 +144,7 @@ int main(int argc, char** argv, char** environ)
 
 	if (disk_init() != LOG_STARTUP_OK)
 	{
-		g_printf("vchannel_rdpdr[main]: Enable to init log system\n");
+		g_printf("vchannel_rdpdr[main]: Unable to init log system\n");
 		g_free(l_config);
 		return 1;
 	}
@@ -171,7 +171,7 @@ int main(int argc, char** argv, char** environ)
 
 	if (vchannel_init() == ERROR)
 	{
-		g_printf("vchannel_rdpdr[main]: Enable to init channel system\n");
+		g_printf("vchannel_rdpdr[main]: Unable to init channel system\n");
 		g_free(l_config);
 		return 1;
 	}
