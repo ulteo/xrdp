@@ -2,6 +2,7 @@
  * Copyright (C) 2011-2012 Ulteo SAS
  * http://www.ulteo.com
  * Author David LECHEVALIER <david@ulteo.com> 2011, 2012
+ * Author David PHAM-VAN <d.pham-van@ulteo.com> 2012
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -506,23 +507,6 @@ xrdp_login_wnd_create(struct xrdp_wm* self)
   set_string(&self->login_window->caption1, "Login");
   if (regular)
   {
-    /* image */
-    but = xrdp_bitmap_create(4, 4, self->screen->bpp, WND_TYPE_IMAGE, self);
-    if (self->screen->bpp > 8)
-    {
-      g_snprintf(file_path, 255, "%s/xrdp24b.bmp", XRDP_SHARE_PATH);
-    }
-    else
-    {
-      g_snprintf(file_path, 255, "%s/xrdp256.bmp", XRDP_SHARE_PATH);
-    }
-    xrdp_bitmap_load(but, file_path, self->palette);
-    but->parent = self->screen;
-    but->owner = self->screen;
-    but->left = self->screen->width - but->width;
-    but->top = self->screen->height - but->height;
-    list_add_item(self->screen->child_list, (long)but);
-
     /* image */
     but = xrdp_bitmap_create(4, 4, self->screen->bpp, WND_TYPE_IMAGE, self);
     if (self->screen->bpp > 8)
