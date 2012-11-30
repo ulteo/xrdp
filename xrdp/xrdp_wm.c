@@ -1,7 +1,7 @@
 /**
- * Copyright (C) 2011 Ulteo SAS
+ * Copyright (C) 2011-2012 Ulteo SAS
  * http://www.ulteo.com
- * Author David LECHEVALIER <david@ulteo.com> 2011
+ * Author David LECHEVALIER <david@ulteo.com> 2011, 2012
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -1262,6 +1262,10 @@ xrdp_wm_pu(struct xrdp_wm* self, struct xrdp_bitmap* control)
   if (control == 0)
   {
     return 0;
+  }
+  if (control->string_list != NULL && control->string_list->count <= 1)
+  {
+    return 0;  // No need to display combo list if there is one item
   }
   self->popup_wnd = xrdp_bitmap_create(control->width, 100,
                                        self->screen->bpp,

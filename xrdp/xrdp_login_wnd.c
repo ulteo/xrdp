@@ -1,3 +1,22 @@
+/**
+ * Copyright (C) 2011-2012 Ulteo SAS
+ * http://www.ulteo.com
+ * Author David LECHEVALIER <david@ulteo.com> 2011, 2012
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; version 2
+ * of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ **/
 /*
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -522,15 +541,6 @@ xrdp_login_wnd_create(struct xrdp_wm* self)
     list_add_item(self->login_window->child_list, (long)but);
   }
 
-  /* label */
-  but = xrdp_bitmap_create(60, 20, self->screen->bpp, WND_TYPE_LABEL, self);
-  list_add_item(self->login_window->child_list, (long)but);
-  but->parent = self->login_window;
-  but->owner = self->login_window;
-  but->left = regular ? 155 : 5;
-  but->top = 35;
-  set_string(&but->caption1, "Module");
-
   /* combo */
   combo = xrdp_bitmap_create(140, 20, self->screen->bpp, WND_TYPE_COMBO, self);
   list_add_item(self->login_window->child_list, (long)combo);
@@ -541,6 +551,17 @@ xrdp_login_wnd_create(struct xrdp_wm* self)
   combo->id = 6;
   combo->tab_stop = 1;
   xrdp_wm_login_fill_in_combo(self, combo);
+
+  /* label */
+  if (combo->string_list != NULL && combo->string_list->count > 1) {
+	  but = xrdp_bitmap_create(60, 20, self->screen->bpp, WND_TYPE_LABEL, self);
+	  list_add_item(self->login_window->child_list, (long)but);
+	  but->parent = self->login_window;
+	  but->owner = self->login_window;
+	  but->left = regular ? 155 : 5;
+	  but->top = 35;
+	  set_string(&but->caption1, "Module");
+  }
 
   /* button */
   but = xrdp_bitmap_create(60, 25, self->screen->bpp, WND_TYPE_BUTTON, self);

@@ -1,7 +1,7 @@
 /**
- * Copyright (C) 2011 Ulteo SAS
+ * Copyright (C) 2011-2012 Ulteo SAS
  * http://www.ulteo.com
- * Author David LECHEVALIER <david@ulteo.com> 2011
+ * Author David LECHEVALIER <david@ulteo.com> 2011, 2012
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -1255,7 +1255,7 @@ xrdp_bitmap_invalidate(struct xrdp_bitmap* self, struct xrdp_rect* rect)
     painter->fg_color = self->wm->black;
     xrdp_painter_draw_text(painter, self, 0, 0, self->caption1);
   }
-  else if (self->type == WND_TYPE_COMBO) /* 7 combo box */
+  else if (self->type == WND_TYPE_COMBO && self->string_list != NULL && self->string_list->count > 1) /* 7 combo box */
   {
     /* draw gray box */
     painter->fg_color = self->wm->grey;
