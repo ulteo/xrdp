@@ -503,7 +503,7 @@ xrdp_login_wnd_create(struct xrdp_wm* self)
   self->login_window->top = self->screen->height / 2 -
                             self->login_window->height / 2;
   self->login_window->notify = xrdp_wm_login_notify;
-  set_string(&self->login_window->caption1, "Login to xrdp");
+  set_string(&self->login_window->caption1, "Login");
   if (regular)
   {
     /* image */
