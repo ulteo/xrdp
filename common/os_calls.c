@@ -1402,7 +1402,8 @@ g_file_copy_mmap(const char* src, const char *dst)
   memcpy(p_out, p_in, stat_in.st_size);
   ret = 0;
 
-  end4: munmap(p_out, stat_in.st_size);
+  munmap(p_out, stat_in.st_size);
+
   end3: munmap(p_in, stat_in.st_size);
   end2: close(fd_out);
   end1: close(fd_in);
