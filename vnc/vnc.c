@@ -696,10 +696,6 @@ lib_framebuffer_update(struct vnc* v)
     error = v->server_end_update(v);
   }
   g_free(data);
-  if (error == 0)
-  {
-    error = lib_framebuffer_request_update(v, 1);
-  }
   free_stream(s);
   return error;
 }
