@@ -43,7 +43,7 @@
 #include <string.h>
 
 #include "mppc_enc.h"
-#include <common/os_calls.h>
+#include "os_calls.h"
 
 #define MPPC_ENC_DEBUG 0
 
