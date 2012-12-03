@@ -585,6 +585,7 @@ lib_framebuffer_update(struct vnc* v)
 	  frameCount = 0;
 	  lastTime = currentTime;
   }
+frameCount++;
 
 
   for (i = 0; i < num_recs; i++)
@@ -605,10 +606,6 @@ lib_framebuffer_update(struct vnc* v)
       if (encoding == 0) /* raw */
       {
         need_size = cx * cy * Bpp;
-        if (increment) {
-        	  frameCount+=increment;
-        	  increment = 0;
-        }
 
         if (need_size > data_size)
         {
@@ -619,11 +616,8 @@ lib_framebuffer_update(struct vnc* v)
         error = lib_recv(v, data, need_size);
         if (error == 0)
         {
-
-        	g_snprintf(text, sizeof(text), "FrameRate: %i\n", v->frameRate);
           error = v->server_paint_rect(v, x, y, cx, cy, data, cx, cy, 0, 0);
-
-          printf("FrameRate %i - fps %i\r", v->frameRate, v->currentFrameRate);
+          printf("FrameRate %i - fps %i     \r", v->frameRate, v->currentFrameRate);
           fflush(stdout);
         }
       }
