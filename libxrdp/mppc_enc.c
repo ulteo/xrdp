@@ -43,6 +43,7 @@
 #include <string.h>
 
 #include "mppc_enc.h"
+#include <common/os_calls.h>
 
 #define MPPC_ENC_DEBUG 0
 
@@ -444,7 +445,7 @@ struct rdp_mppc_enc* mppc_enc_new(int protocol_type)
 {
 	struct rdp_mppc_enc* enc;
 
-	enc = g_malloc(sizeof(struct rdp_mppc_enc), 1);
+	enc = (struct rdp_mppc_enc*)g_malloc(sizeof(struct rdp_mppc_enc), 1);
 	if (enc == NULL)
 		return NULL;
 	switch (protocol_type)
