@@ -43,6 +43,7 @@
 #if !defined(LIBXRDPINC_H)
 #define LIBXRDPINC_H
 
+struct xrdp_session;
 typedef void (*image_policy_comp_ptr) (struct xrdp_session*, int, int, int, char*,int, int);
 
 struct xrdp_client_info
