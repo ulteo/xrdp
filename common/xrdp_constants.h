@@ -546,4 +546,28 @@
 #define JPEG_TILE 2
 
 
+#define CONNECTION_TYPE_UNKNOWN =           0x00; // Unknown connection type
+#define CONNECTION_TYPE_MODEM =             0x01; // Modem (56 Kbps)
+#define CONNECTION_TYPE_BROADBAND_LOW =     0x02; // Low-speed broadband (256 Kbps - 2 Mbps)
+#define CONNECTION_TYPE_SATELLITE =         0x03; // Satellite (2 Mbps - 16 Mbps with high latency)
+#define CONNECTION_TYPE_BROADBAND_HIGH =    0x04; // High-speed broadband (2 Mbps - 10 Mbps)
+#define CONNECTION_TYPE_WAN =               0x05; // WAN (10 Mbps or higher with high latency)
+#define CONNECTION_TYPE_LAN =               0x06; // LAN (10 Mbps or higher)
+/*    The server SHOULD attempt to detect the connection
+    type. If the connection type can be successfully
+    determined then the performance flags, sent by the
+    client in the performanceFlags field of the Extended
+    Info Packet ([MS-RDPBCGR] section 2.2.1.11.1.1.1), SHOULD be
+    ignored and the server SHOULD determine the
+    appropriate set of performance flags to apply to the
+    remote session (based on the detected connection
+    type).
+
+      If the RNS_UD_CS_SUPPORT_NETCHAR_AUTODETECT (0x0080)
+    flag is not set in the earlyCapabilityFlags field,
+    then this value SHOULD be ignored.
+*/
+#define CONNECTION_TYPE_AUTODETECT =        0x07;
+
+
 #endif
