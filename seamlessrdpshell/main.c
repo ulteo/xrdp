@@ -1141,11 +1141,6 @@ void destroy_window(Window w)
 	char *buffer;
 	Window_item *witem;
 	Window_get(window_list, w, witem);
-	if (witem->state == SEAMLESSRDP_MINIMIZED) {
-		log_message(l_config, LOG_LEVEL_INFO, "XHook[destroy]: "
-			    "Unable to destroy a minimize window ");
-		return;
-	}
 	window_id = g_malloc(11, 1);
 	buffer = g_malloc(1024, 1);
 	log_message(l_config, LOG_LEVEL_INFO, "XHook[destroy]: "
