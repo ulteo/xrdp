@@ -566,7 +566,7 @@ libxrdp_orders_send_jpeg(struct xrdp_session* session,
                                  cache_id, cache_idx, bufsize);
 }
 /*****************************************************************************/
-int EXPORT_CC
+void EXPORT_CC
 libxrdp_orders_send_image_full(struct xrdp_session* session,
                                int width, int height, int bpp, char* data,
                                int cache_id, int cache_idx)
@@ -625,7 +625,7 @@ libxrdp_orders_send_image_full(struct xrdp_session* session,
 }
 
 /******************************************************************************/
-int EXPORT_CC
+void EXPORT_CC
 libxrdp_orders_send_image_adaptative(struct xrdp_session* session, int width, int height, int bpp, char* data, int cache_id, int cache_idx)
 {
    char* dest;
