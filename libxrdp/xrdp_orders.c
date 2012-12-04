@@ -100,6 +100,22 @@ xrdp_orders_init(struct xrdp_orders* self)
   if (self->order_level == 1)
   {
     self->order_count = 0;
+
+    if (self->rdp_layer->client_info.support_fastpath)
+    {
+      self->out_s->p = self->out_s->data;
+      out_uint8s(self->out_s, FASTPATH_HEADER_LENGTH);
+      out_uint8s(self->out_s, 1); // updateHeader
+      if (self->rdp_layer->compressor != 0)
+      {
+        out_uint8s(self->out_s, 1); // compressionFlags
+      }
+      out_uint8s(self->out_s, 2); // size
+      self->order_count_ptr = self->out_s->p;
+      out_uint8s(self->out_s, 2); // numberOrders
+      return 0;
+    }
+
     /* is this big enough */
     if (xrdp_rdp_init_data(self->rdp_layer, self->out_s) != 0)
     {
@@ -132,10 +148,14 @@ xrdp_orders_send(struct xrdp_orders* self)
       self->order_count_ptr[0] = self->order_count;
       self->order_count_ptr[1] = self->order_count >> 8;
       self->order_count = 0;
-      if (xrdp_rdp_send_data(self->rdp_layer, self->out_s,
-                             RDP_DATA_PDU_UPDATE) != 0)
+
+      if (self->rdp_layer->client_info.support_fastpath)
       {
-        rv = 1;
+        return xrdp_rdp_send_fast_path_update(self->rdp_layer, self->out_s, FASTPATH_UPDATETYPE_ORDERS);
+      }
+      else
+      {
+        return xrdp_rdp_send_data(self->rdp_layer, self->out_s, RDP_DATA_PDU_UPDATE);
       }
     }
   }
@@ -147,18 +167,29 @@ xrdp_orders_send(struct xrdp_orders* self)
 int APP_CC
 xrdp_orders_force_send(struct xrdp_orders* self)
 {
+  int rv;
   if ((self->order_level > 0) && (self->order_count > 0))
   {
     s_mark_end(self->out_s);
     DEBUG(("xrdp_orders_force_send sending %d orders", self->order_count));
     self->order_count_ptr[0] = self->order_count;
     self->order_count_ptr[1] = self->order_count >> 8;
-    if (xrdp_rdp_send_data(self->rdp_layer, self->out_s,
-                           RDP_DATA_PDU_UPDATE) != 0)
+
+    if (self->rdp_layer->client_info.support_fastpath)
     {
-      return 1;
+      rv = xrdp_rdp_send_fast_path_update(self->rdp_layer, self->out_s, FASTPATH_UPDATETYPE_ORDERS);
+    }
+    else
+    {
+      rv =  xrdp_rdp_send_data(self->rdp_layer, self->out_s, RDP_DATA_PDU_UPDATE);
     }
   }
+
+  if (rv == 1)
+  {
+    return rv;
+  }
+
   self->order_count = 0;
   self->order_level = 0;
   return 0;

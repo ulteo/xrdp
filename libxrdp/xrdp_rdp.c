@@ -226,6 +226,11 @@ xrdp_rdp_read_config(struct xrdp_client_info* client_info)
         printf("Server adapt image compression to minimize buffer\n");
       }
     }
+    else if (g_strcasecmp(item, "use_fastpath") == 0)
+    {
+      client_info->support_fastpath = log_text2bool(value);
+      printf("Server support fastPath\n");
+    }
   }
   list_delete(items);
   list_delete(values);
@@ -245,6 +250,7 @@ xrdp_rdp_create(struct xrdp_session* session, struct trans* trans)
   /* read ini settings */
   self->client_info.image_policy = IMAGE_COMP_POLICY_FULL;
   self->client_info.image_policy_ptr = libxrdp_orders_send_image_full;
+  self->client_info.support_fastpath = false;
   xrdp_rdp_read_config(&self->client_info);
   /* create sec layer */
   self->sec_layer = xrdp_sec_create(self, trans, self->client_info.crypt_level,
@@ -481,6 +487,70 @@ xrdp_rdp_send_data(struct xrdp_rdp* self, struct stream* s,
 
 /*****************************************************************************/
 int APP_CC
+xrdp_rdp_send_fast_path_update(struct xrdp_rdp* self, struct stream* s, int update_code)
+{
+  int uncompressed_length = s->end - (s->data + FASTPATH_HEADER_LENGTH + FASTPATH_UPDATE_HEADER_LENGTH);
+  int compression_type = 0;
+  int compressed_length = 0;
+  int update_header = update_code | FASTPATH_FRAGMENT_SINGLE << 4;
+
+  DEBUG(("out xrdp_rdp_send_fast_path_update"));
+  s->p = s->data + FASTPATH_HEADER_LENGTH;
+
+  if (self->client_info.use_compression == 1 && self->client_info.rdp_compression == 1 && self->compressor != 0)
+  {
+    uncompressed_length = s->end - (s->data + FASTPATH_HEADER_LENGTH + FASTPATH_UPDATE_COMPRESSED_HEADER_LENGTH);
+    if (compress_rdp(self->compressor, s->p + FASTPATH_UPDATE_COMPRESSED_HEADER_LENGTH, uncompressed_length))
+    {
+      if (self->compressor->flags & PACKET_COMPRESSED)
+      {
+        compression_type = self->compressor->flags;
+        compressed_length = self->compressor->bytes_in_opb;
+        g_memcpy(s->p + FASTPATH_UPDATE_COMPRESSED_HEADER_LENGTH, self->compressor->outputBuffer, compressed_length);
+        s->end = s->p + FASTPATH_UPDATE_COMPRESSED_HEADER_LENGTH + compressed_length;
+        s->size = s->end - s->data;
+      }
+      else
+      {
+        DEBUG("Packet is not compressed \n");
+        compression_type = 0;
+        compressed_length = 0;
+        memmove(s->p + FASTPATH_UPDATE_HEADER_LENGTH, s->p + FASTPATH_UPDATE_COMPRESSED_HEADER_LENGTH, uncompressed_length);
+        s->end --;
+        s->size --;
+      }
+    }
+    else
+    {
+      compression_type = 0;
+      compressed_length = 0;
+      printf("Failed to compress packet\n");
+    }
+  }
+
+  if (compressed_length > 0)
+  {
+    update_header |= FASTPATH_OUTPUT_COMPRESSION_USED << 6;
+    out_uint8(s, update_header);
+    out_uint8(s, compression_type);
+  }
+  else
+  {
+    out_uint8(s, update_header);
+  }
+
+  out_uint16_le(s, compressed_length > 0 ? compressed_length : uncompressed_length);
+  if (xrdp_fast_path_send(self->sec_layer, s) != 0)
+  {
+    DEBUG(("out xrdp_rdp_send_fast_path_update error"));
+    return 1;
+  }
+  DEBUG(("out xrdp_rdp_send_fast_path_update"));
+  return 0;
+}
+
+/*****************************************************************************/
+int APP_CC
 xrdp_rdp_send_data_update_sync(struct xrdp_rdp* self)
 {
   struct stream* s;
@@ -604,7 +674,11 @@ xrdp_rdp_send_demand_active(struct xrdp_rdp* self)
   char* caps_size_ptr;
   char* caps_ptr;
   int input_flags = INPUT_FLAG_SCANCODES;
+  int extra_flags = 0;
   int flags = NEGOTIATEORDERSUPPORT | COLORINDEXSUPPORT;
+
+  if (self->client_info.support_fastpath)
+    extra_flags = FASTPATH_OUTPUT_SUPPORTED;
 
   make_stream(s);
   init_stream(s, 8192);
@@ -642,7 +716,7 @@ xrdp_rdp_send_demand_active(struct xrdp_rdp* self)
   out_uint16_le(s, 0x200); /* Protocol version */
   out_uint16_le(s, 0); /* pad */
   out_uint16_le(s, 0); /* Compression types */
-  out_uint16_le(s, 0); /* pad use 0x40d for rdp packets, 0 for not */
+  out_uint16_le(s, extra_flags); /* extra flags */
   out_uint16_le(s, 0); /* Update capability */
   out_uint16_le(s, 0); /* Remote unshare capability */
   out_uint16_le(s, 0); /* Compression level */
@@ -788,15 +862,35 @@ static int APP_CC
 xrdp_process_capset_general(struct xrdp_rdp* self, struct stream* s,
                             int len)
 {
-  int i;
+  int extraflags;
 
-  in_uint8s(s, 10);
-  in_uint16_le(s, i);
+  in_uint8s(s, 2);                      // osMajorType
+  in_uint8s(s, 2);                      // osMinorType
+  in_uint8s(s, 2);                      // protocolVersion
+  in_uint8s(s, 2);                      // pad2octetsA
+  in_uint8s(s, 2);                      // generalCompressionTypes
+  in_uint16_le(s, extraflags);          // extraFlags
+  in_uint8s(s, 2);                      // updateCapabilityFlag
+  in_uint8s(s, 2);                      // remoteUnshareFlag
+  in_uint8s(s, 2);                      // generalCompressionLevel
+  in_uint8s(s, 1);                      // refreshRectSupport
+  in_uint8s(s, 1);                      // refreshRectSupport
+
   /* use_compact_packets is pretty much 'use rdp5' */
-  self->client_info.use_compact_packets = (i != 0);
+  self->client_info.use_compact_packets = (extraflags != 0);
   /* op2 is a boolean to use compact bitmap headers in bitmap cache */
   /* set it to same as 'use rdp5' boolean */
   self->client_info.op2 = self->client_info.use_compact_packets;
+
+  if (!(extraflags && FASTPATH_OUTPUT_SUPPORTED))
+  {
+    self->client_info.support_fastpath = false;
+  }
+  if (self->client_info.support_fastpath)
+  {
+    printf("Fastpath activated\n");
+  }
+
   return 0;
 }
 

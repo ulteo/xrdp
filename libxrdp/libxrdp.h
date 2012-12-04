@@ -282,6 +282,8 @@ int APP_CC
 xrdp_sec_incoming(struct xrdp_sec* self);
 int APP_CC
 xrdp_sec_disconnect(struct xrdp_sec* self);
+int APP_CC
+xrdp_fast_path_send(struct xrdp_sec* self, struct stream* s);
 
 /* xrdp_rdp.c */
 struct xrdp_rdp* APP_CC
@@ -298,6 +300,8 @@ int APP_CC
 xrdp_rdp_recv(struct xrdp_rdp* self, struct stream* s, int* code);
 int APP_CC
 xrdp_rdp_send(struct xrdp_rdp* self, struct stream* s, int pdu_type);
+int APP_CC
+xrdp_rdp_send_fast_path_update(struct xrdp_rdp* self, struct stream* s, int update_code);
 int APP_CC
 xrdp_rdp_send_data(struct xrdp_rdp* self, struct stream* s,
                    int data_pdu_type);

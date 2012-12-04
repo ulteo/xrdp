@@ -99,6 +99,7 @@ struct xrdp_client_info
   int image_policy; // IMAGE_COMP_POLICY_FULL, IMAGE_COMP_POLICY_ADAPTATIVE
   image_policy_comp_ptr image_policy_ptr;
   unsigned char connection_type;
+  bool support_fastpath;
 };
 
 struct xrdp_brush

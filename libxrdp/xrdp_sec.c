@@ -699,6 +699,42 @@ xrdp_sec_sign(struct xrdp_sec* self, char* out, int out_len,
 /*****************************************************************************/
 /* returns error */
 int APP_CC
+xrdp_fast_path_send(struct xrdp_sec* self, struct stream* s)
+{
+  int packet_len = s->end - s->data;
+  int data_len = packet_len - FASTPATH_HEADER_LENGTH;
+
+  DEBUG((" in xrdp_fast_path_send"));
+  s->p = s->data;
+
+  out_uint8(s, FASTPATH_OUTPUT_ENCRYPTED << 6 | FASTPATH_OUTPUT_ACTION_FASTPATH);
+  if ((packet_len - 1) > 128)
+  {
+    out_uint8(s, 0x80 | (packet_len >> 8));     /* length1 */
+    out_uint8(s, packet_len & 0xFF);            /* length2 */
+  }
+  else
+  {
+    memmove(s->p, s->p + 1, (packet_len -1));
+    out_uint8(s, (packet_len - 1));
+    s->end--;
+  }
+
+  xrdp_sec_sign(self, s->p, 8, s->p + 8, data_len);
+  xrdp_sec_encrypt(self, s->p + 8, data_len);
+
+  if (xrdp_tcp_send(self->mcs_layer->iso_layer->tcp_layer, s) != 0)
+  {
+    DEBUG((" out xrdp_fast_path_send error"));
+    return 1;
+  }
+  DEBUG((" out xrdp_fast_path_send"));
+  return 0;
+}
+
+/*****************************************************************************/
+/* returns error */
+int APP_CC
 xrdp_sec_send(struct xrdp_sec* self, struct stream* s, int chan)
 {
   int datalen;
