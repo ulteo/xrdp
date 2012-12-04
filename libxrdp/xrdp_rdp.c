@@ -513,24 +513,47 @@ static int APP_CC
 xrdp_rdp_parse_client_mcs_data(struct xrdp_rdp* self)
 {
   struct stream* p;
-  int i;
+  int postBeta2ColorDepth;
+  int highColorDepth;
 
   p = &(self->sec_layer->client_mcs_data);
   p->p = p->data;
-  in_uint8s(p, 31);
-  in_uint16_le(p, self->client_info.width);
-  in_uint16_le(p, self->client_info.height);
-  in_uint8s(p, 120);
+  in_uint8s(p, 27);
+
+  // Client Core Data parsing
+  in_uint8s(p, 4);                                  // version
+  in_uint16_le(p, self->client_info.width);         // desktopWidth
+  in_uint16_le(p, self->client_info.height);        // desktopHeight
+  in_uint8s(p, 2);                                  // colorDepth
+  in_uint8s(p, 2);                                  // SASSequence
+  in_uint8s(p, 4);                                  // keyboardLayout
+  in_uint8s(p, 4);                                  // clientBuild
+  in_uint8s(p, 32);                                 // clientName
+  in_uint8s(p, 4);                                  // keyboardType
+  in_uint8s(p, 4);                                  // keyboardSubType
+  in_uint8s(p, 4);                                  // keyboardFunctionKey
+  in_uint8s(p, 64);                                 // imeFileName
+  in_uint16_le(p, postBeta2ColorDepth);             // postBeta2ColorDepth
+  in_uint8s(p, 2);                                  // clientProductId
+  in_uint8s(p, 4);                                  // serialNumber
+  in_uint16_le(p, highColorDepth);                  // highColorDepth
+  in_uint8s(p, 2);                                  // supportedColorDepths
+  in_uint8s(p, 2);                                  // earlyCapabilityFlags
+  in_uint8s(p, 64);                                 // clientDigProductId
+  in_uint8(p, self->client_info.connection_type);   // connectionType
+  in_uint8s(p, 1);                                  // pad1octet
+  in_uint8s(p, 4);                                  // serverSelectedProtocol
+  in_uint8s(p, 4);                                  // desktopPhysicalWidth
+  in_uint8s(p, 4);                                  // desktopPhysicalHeight
+  in_uint8s(p, 2);                                  // reserved
+
   self->client_info.bpp = 8;
-  in_uint16_le(p, i);
-  switch (i)
+  switch (postBeta2ColorDepth)
   {
     case 0xca01:
-      in_uint8s(p, 6);
-      in_uint8(p, i);
-      if (i > 8)
+      if (highColorDepth > 8)
       {
-        self->client_info.bpp = i;
+        self->client_info.bpp = highColorDepth;
       }
       break;
     case 0xca02:
