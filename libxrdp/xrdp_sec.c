@@ -354,7 +354,7 @@ xrdp_sec_process_logon_info(struct xrdp_sec* self, struct stream* s)
     self->rdp_layer->client_info.rdp_autologin = 1;
     DEBUG(("flag RDP_LOGON_AUTO found"));
   }
-  if (flags & RDP_COMPRESSION)
+  if ((flags & RDP_COMPRESSION) && self->rdp_layer->client_info.use_compression)
   {
     int mppc_version = (flags & RDP_COMPRESSION_TYPE_MASK) >> 9;
     
