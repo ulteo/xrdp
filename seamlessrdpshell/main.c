@@ -1017,19 +1017,26 @@ void create_window(Window win_out)
 	}
 
 	flags = SEAMLESSRDP_NORMAL;
-	log_message(l_config, LOG_LEVEL_INFO, "XHook[create_window]: "
-		    "Windows type : %s", XGetAtomName(display, type));
-	if (type ==
-	    XInternAtom(display, "_NET_WM_WINDOW_TYPE_DROPDOWN_MENU", False)
-	    || type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_UTILITY",
-				   False)
-	    || type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_DIALOG", False)
-	    || type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_POPUP_MENU",
-				   False)) {
-		flags = SEAMLESS_CREATE_POPUP;
+
+	if (type != None) {
+		log_message(l_config, LOG_LEVEL_INFO, "XHook[create_window]: "
+			    "Window type : %s", XGetAtomName(display, type));
+		if (type ==
+		XInternAtom(display, "_NET_WM_WINDOW_TYPE_DROPDOWN_MENU", False)
+		|| type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_UTILITY",
+					False)
+		|| type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_DIALOG", False)
+		|| type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_POPUP_MENU",
+					False)) {
+			flags = SEAMLESS_CREATE_POPUP;
+		}
+		if (type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_TOOLTIP", False))
+			flags = SEAMLESS_CREATE_POPUP | SEAMLESS_CREATE_TOOLTIP;
 	}
-	if (type == XInternAtom(display, "_NET_WM_WINDOW_TYPE_TOOLTIP", False))
-		flags = SEAMLESS_CREATE_POPUP | SEAMLESS_CREATE_TOOLTIP;
+	else {
+		log_message(l_config, LOG_LEVEL_INFO, "XHook[create_window]: "
+			    "No window type");
+	}
 
 	if (is_splash_window(display, proper_win)) {
 		flags = SEAMLESS_CREATE_POPUP;
