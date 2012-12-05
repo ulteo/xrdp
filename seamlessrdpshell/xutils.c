@@ -798,8 +798,7 @@ Bool get_window_class(Display * display, Window wnd, char ** classname)
 	*classname = NULL;
 
 	if (XGetClassHint(display, wnd, class_hint)) {
-		*classname = malloc(sizeof(char) * g_strlen(class_hint->res_class));
-		g_strcpy(*classname, class_hint->res_class);
+		*classname = g_strdup(class_hint->res_class);
 	}
 	if (class_hint) {
 		if (class_hint->res_class)
