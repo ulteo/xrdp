@@ -1,4 +1,24 @@
-/*
+/**
+ * Copyright (C) 2012 Ulteo SAS
+ * http://www.ulteo.com
+ * Author David PHAM-VAN <d.pham-van@ulteo.com> 2012
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; version 2
+ * of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ **/
+ 
+ /*
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 2 of the License, or
@@ -74,12 +94,12 @@ xrdp_tcp_recv(struct xrdp_tcp* self, struct stream* s, int len)
 int APP_CC
 xrdp_tcp_send(struct xrdp_tcp* self, struct stream* s)
 {
-  DEBUG(("    in xrdp_tcp_send, gota send %d bytes", len));
+  DEBUG(("    in xrdp_tcp_send, gota send %d bytes", (s->end - s->data)));
   if (trans_force_write_s(self->trans, s) != 0)
   {
     DEBUG(("    error in trans_force_write_s"));
     return 1;
   }
-  DEBUG(("    out xrdp_tcp_send, sent %d bytes ok", len));
+  DEBUG(("    out xrdp_tcp_send, sent %d bytes ok", (s->end - s->data)));
   return 0;
 }

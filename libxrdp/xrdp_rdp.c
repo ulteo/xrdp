@@ -4,6 +4,7 @@
  * Author David LECHEVALIER <david@ulteo.com> 2011, 2012
  * Author Vincent Roullier <vincent.roullier@ulteo.com> 2012
  * Author Thomas MOUTON <thomas@ulteo.com> 2012
+ * Author David PHAM-VAN <d.pham-van@ulteo.com> 2012
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -439,7 +440,7 @@ xrdp_rdp_send_data(struct xrdp_rdp* self, struct stream* s,
 	{
 		if (self->compressor->flags & PACKET_COMPRESSED)
 		{
-			DEBUG("compressed\n");
+			DEBUG(("compressed"));
 			compression_type = self->compressor->flags;
 			compressed_length = self->compressor->bytes_in_opb;
 			g_memcpy(s->p, self->compressor->outputBuffer, compressed_length);
@@ -448,14 +449,14 @@ xrdp_rdp_send_data(struct xrdp_rdp* self, struct stream* s,
 		{
 			compression_type = 0;
 			compressed_length = 0;
-			DEBUG("Packet is not compressed \n");
+			DEBUG(("Packet is not compressed"));
 		}
 	}
 	else
 	{
 		compression_type = 0;
 		compressed_length = 0;
-		DEBUG("Failed to compress packet\n");
+		DEBUG(("Failed to compress packet"));
 	}
 	
   	s->size = old_size;
@@ -512,7 +513,7 @@ xrdp_rdp_send_fast_path_update(struct xrdp_rdp* self, struct stream* s, int upda
       }
       else
       {
-        DEBUG("Packet is not compressed \n");
+        DEBUG(("Packet is not compressed"));
         compression_type = 0;
         compressed_length = 0;
         memmove(s->p + FASTPATH_UPDATE_HEADER_LENGTH, s->p + FASTPATH_UPDATE_COMPRESSED_HEADER_LENGTH, uncompressed_length);
