@@ -30,6 +30,9 @@ class XrdpInstance : public IMEngineInstanceBase {
 
 	private:
 		XrdpFactory *m_factory;
+		char buffer[7];
+		int index;
+		WideString recompose_unicode();
 
 	public:
 		XrdpInstance(XrdpFactory *factory, const String &encoding, int id = -1);
