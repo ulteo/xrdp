@@ -86,7 +86,13 @@ rm -rf $RPM_BUILD_ROOT
 /usr/lib*/*.so.*
 /usr/sbin/xrdp*
 /usr/share/xrdp/*
-/usr/bin/xrdp-*
+/usr/bin/xrdp-disconnect
+/usr/bin/xrdp-genkeymap
+/usr/bin/xrdp-keygen
+/usr/bin/xrdp-logoff
+/usr/bin/xrdp-sesadmin
+/usr/bin/xrdp-sesrun
+/usr/bin/xrdp-sestest
 %doc /usr/share/man/man1/xrdp-*.1.gz
 %doc /usr/share/man/man5/*
 %doc /usr/share/man/man8/*

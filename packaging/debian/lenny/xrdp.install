@@ -19,5 +19,11 @@ debian/tmp/usr/sbin/xrdp-logd
 debian/tmp/usr/sbin/xrdp-sesman
 debian/tmp/usr/sbin/xrdp-switch-resolution
 debian/tmp/usr/sbin/xrdp-sessvc
-debian/tmp/usr/bin/xrdp-*
+debian/tmp/usr/bin/xrdp-disconnect
+debian/tmp/usr/bin/xrdp-genkeymap
+debian/tmp/usr/bin/xrdp-keygen
+debian/tmp/usr/bin/xrdp-logoff
+debian/tmp/usr/bin/xrdp-sesadmin
+debian/tmp/usr/bin/xrdp-sesrun
+debian/tmp/usr/bin/xrdp-sestest
 debian/lintian-overrides/xrdp /usr/share/lintian/overrides/
