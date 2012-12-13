@@ -214,13 +214,21 @@ if test "x${prefix}" = "xNONE" ; then
 fi
 
 # check libscim
-SCIM_VERSION=0.99.8
+SCIM_VERSION=1.4.0
 PKG_CHECK_MODULES(SCIM,[scim >= $SCIM_VERSION])
 
 SCIM_CFLAGS=`$PKG_CONFIG --cflags scim`
 SCIM_LIBS=`$PKG_CONFIG --libs scim`
 AC_SUBST(SCIM_CFLAGS)
 AC_SUBST(SCIM_LDFLAGS)
+
+# check scim-gtkutils
+PKG_CHECK_MODULES(SCIMGTKUTILS,[scim-gtkutils >= $SCIM_VERSION])
+
+SCIMGTKUTILS_CFLAGS=`$PKG_CONFIG --cflags scim-gtkutils`
+SCIMGTKUTILS_LIBS=`$PKG_CONFIG --libs scim-gtkutils`
+AC_SUBST(SCIMGTKUTILS_CFLAGS)
+AC_SUBST(SCIMGTKUTILS_LDFLAGS)
 
 AC_CONFIG_FILES([Makefile
                  common/Makefile

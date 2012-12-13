@@ -34,6 +34,16 @@ xrdp_la_SOURCES = \
 	scim_xrdp_imengine.h \
 	scim_xrdp_imengine.cpp
 
+xrdp_scim_panel_CFLAGS = @SCIMGTKUTILS_CFLAGS@
+xrdp_scim_panel_CXXFLAGS = @SCIMGTKUTILS_CFLAGS@
+xrdp_scim_panel_LDFLAGS = @SCIMGTKUTILS_LIBS@
+
+xrdp_scim_panel_SOURCES = \
+  scim_panel.cpp
+
+xrdp_scim_panel_LDADD = \
+  $(top_builddir)/common/libxrdp_common.la
+
 moduledir = $(libdir)/scim-1.0/1.4.0/IMEngine
 module_LTLIBRARIES = \
   xrdp.la
@@ -46,6 +56,9 @@ moduleconf_DATA = \
 moduledatadir=$(datarootdir)/scim/icons
 moduledata_DATA = \
   scim-xrdp.png
+
+bin_PROGRAMS = \
+  xrdp-scim-panel
 
 EXTRA_DIST = \
   $(module_LTLIBRARIES) \

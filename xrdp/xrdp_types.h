@@ -212,6 +212,9 @@ struct xrdp_mm
   struct trans* chan_trans; /* connection to chansrv */
   int chan_trans_up; /* true once connected to chansrv */
   int delete_chan_trans; /* boolean set when done with channel connection */
+  struct trans* scim_trans; /* connection to scim-panel */
+  int scim_trans_up; /* true once connected to scim-panel */
+  int delete_scim_trans; /* boolean set when done with scim-panel connection */
 };
 
 struct xrdp_key_info
@@ -285,6 +288,7 @@ struct xrdp_wm
   int caps_lock;
   int scroll_lock;
   int num_lock;
+  int compose;
   /* client info */
   struct xrdp_client_info* client_info;
   /* session log */

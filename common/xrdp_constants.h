@@ -163,6 +163,7 @@
 #define RDP_DATA_PDU_LOGON             38
 #define RDP_DATA_PDU_FONT2             39
 #define RDP_DATA_PDU_TYPE2_FONTMAP     40
+#define RDP_DATA_PDU_SET_IME_STATUS    45
 #define RDP_DATA_PDU_DISCONNECT        47
 
 #define RDP_CTL_REQUEST_CONTROL        1
@@ -605,5 +606,19 @@
 */
 #define CONNECTION_TYPE_AUTODETECT          0x07
 
+/* IME Status */
+#define IME_STATE_CLOSED       0x000
+#define IME_STATE_OPEN         0x001
+#define IME_CMODE_NATIVE       0x001 // ! NATIVE = Alphanum
+#define IME_CMODE_KATAKANA     0x002 // ! KATAKANA = Hiragana
+#define IME_CMODE_FULLSHAPE    0x008 // ! FULLSHAPE = half-width
+#define IME_CMODE_ROMAN        0x010 // Roman input
+#define IME_CMODE_CHARCODE     0x020 // Character-code input
+#define IME_CMODE_HANJACONVERT 0x040 // Hanja conversion enabled
+#define IME_CMODE_SOFTKBD      0x080 // On-screen keyboard enabled
+#define IME_CMODE_NOCONVERSION 0x100 // IME conversion is inactive
+#define IME_CMODE_EUDC         0x200 // End-User Defined Character mode
+#define IME_CMODE_SYMBOL       0x400 // Symbol conversion mode
+#define IME_CMODE_FIXED        0x800 // Fixed conversion mode
 
 #endif

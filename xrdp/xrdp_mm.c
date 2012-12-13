@@ -80,6 +80,10 @@ xrdp_mm_module_cleanup(struct xrdp_mm* self)
   trans_delete(self->chan_trans);
   self->chan_trans = 0;
   self->chan_trans_up = 0;
+  trans_delete(self->scim_trans);
+  self->scim_trans = 0;
+  self->scim_trans_up = 0;
+
   self->mod_init = 0;
   self->mod_exit = 0;
   self->mod = 0;
@@ -661,6 +665,32 @@ xrdp_mm_chan_data_in(struct trans* trans)
 }
 
 /*****************************************************************************/
+/* this is callback from trans obj
+   returns error */
+static int APP_CC
+xrdp_mm_scim_data_in(struct trans* trans)
+{
+  struct xrdp_mm* self;
+  struct stream* s;
+  int state;
+
+  if (trans == 0)
+  {
+    return 1;
+  }
+  self = (struct xrdp_mm*)(trans->callback_data);
+  s = trans_get_in_s(trans);
+  if (s == 0)
+  {
+    return 1;
+  }
+  state = (s->p)[0];
+  self->wm->compose = state;
+  libxrdp_send_ime_status(self->wm->session, state);
+  return 0;
+}
+
+/*****************************************************************************/
 static int APP_CC
 xrdp_mm_chan_send_init(struct xrdp_mm* self)
 {
@@ -748,6 +778,38 @@ xrdp_mm_process_login_response(struct xrdp_mm* self, struct stream* s)
           {
             g_writeln("xrdp_mm_process_login_response: error in "
                       "xrdp_mm_chan_send_init");
+          }
+        }
+
+        if(self->wm->session->client_info->use_scim)
+        {
+          /* connect scim panel (unix socket) */
+          self->scim_trans = trans_create(TRANS_MODE_UNIX, 8192, 8192);
+          self->scim_trans->trans_data_in = xrdp_mm_scim_data_in;
+          self->scim_trans->header_size = 1;
+          self->scim_trans->callback_data = self;
+
+          g_snprintf(port, 255, "/var/spool/xrdp/xrdp_scim_socket_%d", 7200 + display);
+
+          /* try to connect up to 4 times */
+          for (index = 0; index < 4; index++)
+          {
+            if (trans_connect(self->scim_trans, ip, port, 3000) == 0)
+            {
+              self->scim_trans_up = 1;
+              break;
+            }
+            g_sleep(1000);
+            g_writeln("xrdp_mm_process_login_response: connect failed. Trying again...");
+          }
+          if (self->scim_trans_up)
+          {
+            self->wm->compose=true;
+            libxrdp_send_ime_status(self->wm->session, self->wm->compose);
+          }
+          else
+          {
+            g_writeln("xrdp_mm_process_login_response: error in scim_connect");
           }
         }
       }
@@ -1077,6 +1139,10 @@ xrdp_mm_get_wait_objs(struct xrdp_mm* self,
   {
     trans_get_wait_objs(self->chan_trans, read_objs, rcount, timeout);
   }
+  if ((self->scim_trans != 0) && self->scim_trans_up)
+  {
+    trans_get_wait_objs(self->scim_trans, read_objs, rcount, timeout);
+  }
   if (self->mod != 0)
   {
     if (self->mod->mod_get_wait_objs != 0)
@@ -1113,6 +1179,13 @@ xrdp_mm_check_wait_objs(struct xrdp_mm* self)
       self->delete_chan_trans = 1;
     }
   }
+  if ((self->scim_trans != 0) && self->scim_trans_up)
+  {
+    if (trans_check_wait_objs(self->scim_trans) != 0)
+    {
+      self->delete_scim_trans = 1;
+    }
+  }
   if (self->mod != 0)
   {
     if (self->mod->mod_check_wait_objs != 0)
@@ -1133,6 +1206,13 @@ xrdp_mm_check_wait_objs(struct xrdp_mm* self)
     self->chan_trans = 0;
     self->chan_trans_up = 0;
     self->delete_chan_trans = 0;
+  }
+  if (self->delete_scim_trans)
+  {
+    trans_delete(self->scim_trans);
+    self->scim_trans = 0;
+    self->scim_trans_up = 0;
+    self->delete_scim_trans = 0;
   }
   return rv;
 }
