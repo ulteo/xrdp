@@ -112,7 +112,7 @@ xrdp_iso_recv(struct xrdp_iso* self, struct stream* s)
 static int APP_CC
 xrdp_iso_send_connection_confirm(struct xrdp_iso* self, struct stream* s)
 {
-  bool send_request_response = self->mcs_layer->sec_layer->rdp_layer->client_info.support_network_detection;
+  bool send_request_response = self->need_negotiation_response;
   int x224_len = 6;
   int tpkt_len = 11;
 
