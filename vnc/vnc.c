@@ -255,16 +255,6 @@ lib_mod_event(struct vnc* v, int msg, long param1, long param2,
     key = param2;
     if (key > 0)
     {
-
-    	if (key == 65362 && msg == 15) {
-    		if (v->frameRate < 25)
-    			v->frameRate++;
-    	}
-    	if (key == 65364 && msg == 15) {
-    		if (v->frameRate > 1)
-    			v->frameRate--;
-    	}
-
       if (key == 65027) /* altgr */
       {
         if (v->shift_state)
