@@ -1176,6 +1176,15 @@ xrdp_mm_get_wait_objs(struct xrdp_mm* self,
   return rv;
 }
 
+
+/*****************************************************************************/
+int APP_CC
+xrdp_mm_request_update(struct xrdp_mm* self, int incremental)
+{
+  self->mod->mod_request_update(self->mod, incremental);
+}
+
+
 /*****************************************************************************/
 int APP_CC
 xrdp_mm_check_wait_objs(struct xrdp_mm* self)

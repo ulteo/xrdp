@@ -931,3 +931,37 @@ libxrdp_emt_send_init(struct xrdp_session* session, int time_processing)
 {
   return xrdp_emt_send_init((struct xrdp_rdp*)session->rdp);
 }
+
+void EXPORT_CC
+libxrdp_update_frame_rate(struct xrdp_session* self, unsigned long data_sended)
+{
+  struct xrdp_rdp* rdp;
+  if (self->client_info == NULL || self->rdp == NULL)
+  {
+    return;
+  }
+
+  if (self->client_info->use_static_frame_rate)
+  {
+    return;
+  }
+
+  rdp = self->rdp;
+
+  if (rdp->bandwidth != 0)
+  {
+    self->client_info->frame_rate = data_sended/rdp->bandwidth;
+  }
+
+  if (self->client_info->frame_rate < FRAME_RATE_MIN)
+  {
+    self->client_info->frame_rate = FRAME_RATE_MIN;
+  }
+
+  if (self->client_info->frame_rate > FRAME_RATE_MAX)
+  {
+    self->client_info->frame_rate = FRAME_RATE_MAX;
+  }
+
+  //printf("new framerate = %i/%i = %i\n", data_sended, rdp->bandwidth, self->client_info->frame_rate);
+}

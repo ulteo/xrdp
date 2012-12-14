@@ -84,9 +84,9 @@ xrdp_emt_send_result(struct xrdp_rdp* self, struct xrdp_emt* emt)
   out_uint16_le(s, emt->seq_number++);                   // sequenceNumber
   out_uint16_le(s, field_all);                           // responseType
 
-  out_uint32_le(s, emt->base_RTT);
-  out_uint32_le(s, emt->bandwidth);
-  out_uint32_le(s, emt->average_RTT);
+  out_uint32_le(s, self->base_RTT);
+  out_uint32_le(s, self->bandwidth);
+  out_uint32_le(s, self->average_RTT);
 
   s_mark_end(s);
 
@@ -120,40 +120,40 @@ xrdp_emt_process_results(struct xrdp_rdp* self, struct xrdp_emt* emt, struct str
   {
     if (emt->total_delta == 0)
     {
-      emt->bandwidth = byte_count / 0.9;
+      self->bandwidth = byte_count / 0.9;
     }
     else
     {
-      emt->bandwidth = emt->total_byte_count/emt->total_delta; // Ko/s
+      self->bandwidth = emt->total_byte_count/emt->total_delta; // Ko/s
     }
   }
 
   if (emt->time_processing < 2)
   {
-    if (emt->base_RTT > current_rtt)
+    if (self->base_RTT > current_rtt)
     {
-      emt->base_RTT = current_rtt;
+      self->base_RTT = current_rtt;
     }
 
-    if (emt->average_RTT == 0)
+    if (self->average_RTT == 0)
     {
-      emt->average_RTT = current_rtt;
+      self->average_RTT = current_rtt;
     }
     else
     {
-      emt->average_RTT = (emt->average_RTT + current_rtt) / 2;
+      self->average_RTT = (self->average_RTT + current_rtt) / 2;
     }
   }
 
-  if (emt->need_result)
-  {
+//  if (emt->need_result)
+//  {
     xrdp_emt_send_result(self, emt);
     emt->need_result = false;
-  }
+//  }
 
-  printf("bandwidth: %i Ko/s\n", emt->bandwidth);
-  printf("base RTT: %i ms\n", emt->base_RTT);
-  printf("average RTT: %i ms\n", emt->average_RTT);
+  printf("bandwidth: %i Ko/s\n", self->bandwidth);
+  printf("base RTT: %i ms\n", self->base_RTT);
+  printf("average RTT: %i ms\n", self->average_RTT);
 }
 
 bool APP_CC

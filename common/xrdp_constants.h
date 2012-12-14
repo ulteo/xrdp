@@ -661,4 +661,7 @@
 #define IME_CMODE_SYMBOL       0x400 // Symbol conversion mode
 #define IME_CMODE_FIXED        0x800 // Fixed conversion mode
 
+#define FRAME_RATE_MIN      40
+#define FRAME_RATE_MAX      1000
+
 #endif

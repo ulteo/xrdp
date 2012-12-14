@@ -50,6 +50,7 @@ struct vnc
   int (*mod_get_wait_objs)(struct vnc* v, tbus* read_objs, int* rcount,
                            tbus* write_objs, int* wcount, int* timeout);
   int (*mod_check_wait_objs)(struct vnc* v);
+  int (*mod_request_update)(struct vnc* v, int incremental);
   long mod_dumby[100 - 9]; /* align, 100 minus the number of mod
                               functions above */
   /* server functions */

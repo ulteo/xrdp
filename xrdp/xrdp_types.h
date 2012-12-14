@@ -61,6 +61,7 @@ struct xrdp_mod
   int (*mod_get_wait_objs)(struct xrdp_mod* v, tbus* read_objs, int* rcount,
                            tbus* write_objs, int* wcount, int* timeout);
   int (*mod_check_wait_objs)(struct xrdp_mod* v);
+  int (*mod_request_update)(struct xrdp_mod* v, int incremental);
   long mod_dumby[100 - 9]; /* align, 100 minus the number of mod 
                               functions above */
   /* server functions */

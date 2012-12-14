@@ -243,9 +243,20 @@ xrdp_rdp_read_config(struct xrdp_client_info* client_info)
       client_info->network_detection_interval = g_atoi(value);
       printf("Network detection interval: %u\n", client_info->network_detection_interval);
     }
+    else if (g_strcasecmp(item, "use_static_frame_rate") == 0)
+    {
+      client_info->use_static_frame_rate = log_text2bool(value);
+      printf("Use static frame rate: %i\n", client_info->use_static_frame_rate);
+    }
+    else if (g_strcasecmp(item, "frame_rate") == 0)
+    {
+      client_info->frame_rate = g_atoi(value);
+      printf("frame rate: %i\n", client_info->frame_rate);
+    }
   }
   list_delete(items);
   list_delete(values);
+
   return 0;
 }
 
@@ -266,6 +277,8 @@ xrdp_rdp_create(struct xrdp_session* session, struct trans* trans)
   self->client_info.support_network_detection = false;
   self->client_info.connection_type = CONNECTION_TYPE_UNKNOWN;
   self->client_info.network_detection_interval = 10000;
+  self->client_info.frame_rate = 40;
+  self->client_info.use_static_frame_rate = true;
   xrdp_rdp_read_config(&self->client_info);
   /* create sec layer */
   self->sec_layer = xrdp_sec_create(self, trans, self->client_info.crypt_level,
@@ -683,6 +696,45 @@ xrdp_rdp_incoming(struct xrdp_rdp* self)
   self->mcs_channel = self->sec_layer->mcs_layer->userid +
                       MCS_USERCHANNEL_BASE;
   xrdp_rdp_parse_client_mcs_data(self);
+
+  switch (self->client_info.connection_type)
+  {
+  case CONNECTION_TYPE_MODEM:
+	  self->bandwidth = 56000/8/1024;      // 56Kb/s
+	  self->average_RTT = 100;
+	  break;
+  case CONNECTION_TYPE_BROADBAND_LOW:
+	  self->bandwidth = 1000000/8/1024;    // 1Mb/s
+	  self->average_RTT = 100;
+	  break;
+
+  case CONNECTION_TYPE_SATELLITE:
+	  self->bandwidth = 8000000/8/1024;    // 8Mb/s
+	  self->average_RTT = 800;
+	  break;
+
+  case CONNECTION_TYPE_BROADBAND_HIGH:
+	  self->bandwidth = 5000000/8/1024;    // 5Mb/s
+	  self->average_RTT = 200;
+	  break;
+
+  case CONNECTION_TYPE_WAN:
+	  self->bandwidth = 5000000/8/1024;    // 5Mb/s
+	  self->average_RTT = 200;
+	  break;
+
+  case CONNECTION_TYPE_UNKNOWN:
+  case CONNECTION_TYPE_LAN:
+	  self->bandwidth = 100000000/8/1024;  // 100Mb/s
+	  self->average_RTT = 1;
+	  break;
+
+  case CONNECTION_TYPE_AUTODETECT:
+  default:
+	  break;
+  }
+
+
   DEBUG(("out xrdp_rdp_incoming mcs channel %d", self->mcs_channel));
   return 0;
 }

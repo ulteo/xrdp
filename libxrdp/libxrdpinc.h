@@ -102,6 +102,8 @@ struct xrdp_client_info
   bool support_fastpath;
   bool support_network_detection;
   unsigned int network_detection_interval;
+  bool use_static_frame_rate;
+  unsigned int frame_rate;
 };
 
 struct xrdp_brush

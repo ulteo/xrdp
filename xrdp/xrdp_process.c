@@ -151,10 +151,12 @@ xrdp_process_main_loop(struct xrdp_process* self)
   int wobjs_count;
   int cont;
   int timeout;
+  int frame_rate;
   tbus robjs[32];
   tbus wobjs[32];
   tbus term_obj;
   int current_time = 0;
+  int last_update_time = 0;
 
   DEBUG(("xrdp_process_main_loop"));
   self->status = 1;
@@ -175,6 +177,7 @@ xrdp_process_main_loop(struct xrdp_process* self)
     while (self->cont)
     {
       /* build the wait obj list */
+      frame_rate = self->session->client_info->frame_rate;
       timeout = 1000;
       robjs_count = 0;
       wobjs_count = 0;
@@ -182,6 +185,29 @@ xrdp_process_main_loop(struct xrdp_process* self)
       robjs[robjs_count++] = self->self_term_event;
       xrdp_wm_get_wait_objs(self->wm, robjs, &robjs_count,
                             wobjs, &wobjs_count, &timeout);
+
+      if (self->wm != NULL && self->wm->mm->mod != NULL && frame_rate != 0)
+      {
+        if (last_update_time == 0)
+        {
+          last_update_time = g_time3();
+          xrdp_wm_request_update(self->wm, 0);
+          libxrdp_update_frame_rate(self->session, self->server_trans->total_send);
+          self->server_trans->total_send = 0;
+        }
+        else
+        {
+          int currentTime = g_time3();
+          if (currentTime - last_update_time > frame_rate)
+          {
+            xrdp_wm_request_update(self->wm, 1);
+            //printf("request partial update %u\n", (currentTime - last_update_time));
+            last_update_time = currentTime;
+            libxrdp_update_frame_rate(self->session, self->server_trans->total_send);
+            self->server_trans->total_send = 0;
+          }
+        }
+      }
 
       if (self->session->client_info->connectivity_check)
       {
@@ -198,12 +224,22 @@ xrdp_process_main_loop(struct xrdp_process* self)
         }
       }
 
+      timeout = frame_rate;
+      if (timeout == 0)
+      {
+        timeout = 1000;
+      }
+
       trans_get_wait_objs(self->server_trans, robjs, &robjs_count, &timeout);
       /* wait */
-      if (g_obj_wait(robjs, robjs_count, wobjs, wobjs_count, timeout) != 0)
+      if (g_obj_wait(robjs, robjs_count, wobjs, wobjs_count, frame_rate) != 0)
       {
         /* error, should not get here */
         g_sleep(100);
+      }
+      if (self->wm != NULL && self->wm->mm->mod != NULL && frame_rate == 0)
+      {
+        xrdp_wm_request_update(self->wm, 1);
       }
       if (g_is_wait_obj_set(term_obj)) /* term */
       {

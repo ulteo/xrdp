@@ -617,7 +617,7 @@ frameCount++;
         if (error == 0)
         {
           error = v->server_paint_rect(v, x, y, cx, cy, data, cx, cy, 0, 0);
-          printf("FrameRate %i - fps %i     \r", v->frameRate, v->currentFrameRate);
+          //printf("FrameRate %i - fps %i     \r", v->frameRate, v->currentFrameRate);
           fflush(stdout);
         }
       }
@@ -1243,20 +1243,6 @@ lib_mod_check_wait_objs(struct vnc* v)
 {
   int rv;
 
-  if (v->lastTime == 0)
-  {
-	  v->lastTime = g_time2();
-	  lib_framebuffer_request_update(v, 0);
-  }
-  else
-  {
-	  int currentTime = g_time2();
-	  if (currentTime - v->lastTime > (1000/v->frameRate)) {
-		  lib_framebuffer_request_update(v, 1);
-		  v->lastTime = currentTime;
-	  }
-  }
-
   rv = 0;
   if (v != 0)
   {
@@ -1290,6 +1276,7 @@ mod_init(void)
   v->mod_set_param = lib_mod_set_param;
   v->mod_get_wait_objs = lib_mod_get_wait_objs;
   v->mod_check_wait_objs = lib_mod_check_wait_objs;
+  v->mod_request_update = lib_framebuffer_request_update;
   return v;
 }
 

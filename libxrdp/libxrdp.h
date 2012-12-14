@@ -143,9 +143,6 @@ struct xrdp_emt
   unsigned int stop_time;
   unsigned int time_processing;
 
-  unsigned int average_RTT;
-  unsigned int base_RTT;
-  unsigned int bandwidth;
   unsigned long total_byte_count;
   unsigned long total_delta;
 };
@@ -167,6 +164,9 @@ struct xrdp_rdp
   int mcs_channel;
   struct xrdp_client_info client_info;
   struct rdp_mppc_enc* compressor;
+  unsigned int average_RTT;
+  unsigned int base_RTT;
+  unsigned int bandwidth;
 };
 
 /* state */
@@ -489,4 +489,6 @@ bool EXPORT_CC
 libxrdp_emt_start_check(struct xrdp_session* session);
 bool APP_CC
 libxrdp_emt_stop_check(struct xrdp_session* session, int time_processing);
+void APP_CC
+libxrdp_update_frame_rate(struct xrdp_session* self, unsigned long data_sended);
 #endif

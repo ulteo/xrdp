@@ -300,6 +300,7 @@ trans_force_write_s(struct trans* self, struct stream* out_s)
       total = total + sent;
     }
   }
+  self->total_send += total;
   return rv;
 }
 

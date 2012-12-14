@@ -1674,6 +1674,22 @@ xrdp_wm_get_wait_objs(struct xrdp_wm* self, tbus* robjs, int* rc,
 
 /******************************************************************************/
 int APP_CC
+xrdp_wm_request_update(struct xrdp_wm* self, int incremental)
+{
+  int rv;
+
+  if (self == 0)
+  {
+    return 0;
+  }
+
+  xrdp_mm_request_update(self->mm, incremental);
+  return rv;
+}
+
+
+/******************************************************************************/
+int APP_CC
 xrdp_wm_check_wait_objs(struct xrdp_wm* self)
 {
   int rv;
