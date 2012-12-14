@@ -81,6 +81,23 @@
 #define MCS_SDRQ                       25 /* Send Data Request */
 #define MCS_SDIN                       26 /* Send Data Indication */
 
+// Negotiation Flags
+#define TYPE_RDP_NEG_REQ               0x01
+#define TYPE_RDP_NEG_RSP               0x02
+#define RDP_NEG_REQ_LEN                0x0008
+#define RDP_NEG_RSP_LEN                0x0008
+
+// Negotiation Response flags
+#define EXTENDED_CLIENT_DATA_SUPPORTED 0x01
+#define DYNVC_GFX_PROTOCOL_SUPPORTED   0x02
+#define RDP_NEGRSP_RESERVED            0x04
+
+// Negociation Response protocol
+#define PROTOCOL_RDP                   0x00000000
+#define PROTOCOL_SSL                   0x00000001
+#define PROTOCOL_HYBRID                0x00000002
+#define PROTOCOL_HYBRID_EX             0x00000008
+
 #define MCS_CONNECT_INITIAL            0x7f65
 #define MCS_CONNECT_RESPONSE           0x7f66
 
@@ -104,6 +121,27 @@
 #define ORDERFLAGS_EX_CACHE_BITMAP_REV3_SUPPORT    0x0002
 #define ORDERFLAGS_EX_ALTSEC_FRAME_MARKER_SUPPORT  0x0004
 
+// emt packet sec flags
+#define SEC_AUTODETECT_REQ             0x1000
+#define SEC_AUTODETECT_RSP             0x2000
+
+#define TYPE_ID_AUTODETECT_REQUEST     0x00
+#define TYPE_ID_AUTODETECT_RESPONSE    0x01
+
+#define SEC_AUTODETECT_REQ_LENGTH      0x6
+
+#define RDP_RTT_REQUEST_TYPE           0x1001
+#define RDP_RTT_RESPONSE_TYPE          0x0000
+#define RDP_BW_CONNECT_START           0x1014
+#define RDP_BW_SESSION_START           0x0014
+#define RDP_BW_PAYLOAD                 0x0002
+#define RDP_BW_CONNECT_STOP            0x002B
+#define RDP_BW_SESSION_STOP            0x0429
+#define RDP_BW_RESULTS                 0x0003
+
+#define field_baseRTT_averageRTT       0x0840
+#define field_bandwidth_averageRTT     0x0880
+#define field_all                      0x08C0
 
 /* RDP secure transport constants */
 #define SEC_RANDOM_SIZE                32
@@ -119,11 +157,13 @@
 #define SEC_TAG_SRV_INFO               0x0c01
 #define SEC_TAG_SRV_CRYPT              0x0c02
 #define SEC_TAG_SRV_CHANNELS           0x0c03
+#define SC_MCS_MSGCHANNEL              0x0c04
 
 #define SEC_TAG_CLI_INFO               0xc001
 #define SEC_TAG_CLI_CRYPT              0xc002
 #define SEC_TAG_CLI_CHANNELS           0xc003
 #define SEC_TAG_CLI_4                  0xc004
+#define CS_MCS_MSGCHANNEL              0xc006
 
 #define SEC_TAG_PUBKEY                 0x0006
 #define SEC_TAG_KEYSIG                 0x0008

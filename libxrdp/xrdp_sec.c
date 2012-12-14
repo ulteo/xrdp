@@ -423,6 +423,12 @@ xrdp_sec_process_logon_info(struct xrdp_sec* self, struct stream* s)
     in_uint8s(s, 26);                                   /* skip stuff */
     in_uint32_le(s, self->rdp_layer->client_info.rdp5_performanceflags);
   }
+
+  if (self->chan_layer->emt_channel != NULL)
+  {
+    self->chan_layer->emt_channel->activated = true;
+    libxrdp_emt_send_init(self->rdp_layer->session);
+  }
   DEBUG(("out xrdp_sec_process_logon_info"));
   return 0;
 }
@@ -745,7 +751,7 @@ xrdp_fast_path_send(struct xrdp_sec* self, struct stream* s)
 /*****************************************************************************/
 /* returns error */
 int APP_CC
-xrdp_sec_send(struct xrdp_sec* self, struct stream* s, int chan)
+xrdp_sec_send_cflags(struct xrdp_sec* self, struct stream* s, int chan, int sec_flags)
 {
   int datalen;
 
@@ -753,7 +759,7 @@ xrdp_sec_send(struct xrdp_sec* self, struct stream* s, int chan)
   s_pop_layer(s, sec_hdr);
   if (self->crypt_level > 1)
   {
-    out_uint32_le(s, SEC_ENCRYPT);
+    out_uint32_le(s, sec_flags);
     datalen = (int)((s->end - s->p) - 8);
     xrdp_sec_sign(self, s->p, 8, s->p + 8, datalen);
     xrdp_sec_encrypt(self, s->p + 8, datalen);
@@ -768,6 +774,14 @@ xrdp_sec_send(struct xrdp_sec* self, struct stream* s, int chan)
   }
   DEBUG((" out xrdp_sec_send"));
   return 0;
+}
+
+/*****************************************************************************/
+/* returns error */
+int APP_CC
+xrdp_sec_send(struct xrdp_sec* self, struct stream* s, int chan)
+{
+  return xrdp_sec_send_cflags(self, s, chan, SEC_ENCRYPT);
 }
 
 /*****************************************************************************/
@@ -798,6 +812,32 @@ xrdp_sec_process_mcs_data_channels(struct xrdp_sec* self, struct stream* s)
     DEBUG(("got channel flags %8.8x name %s", channel_item->flags,
            channel_item->name));
   }
+  return 0;
+}
+
+/*****************************************************************************/
+/* process client mcs data, we need some things in here to create the server
+   mcs data */
+int
+xrdp_sec_process_mcs_emt_channel_data(struct xrdp_sec* self, struct stream* s)
+{
+  struct mcs_channel_item* channel_item;
+  int chanid;
+
+  in_uint8s(s, 4);  // flags (must be set to 0)
+
+  chanid = MCS_GLOBAL_CHANNEL + self->mcs_layer->channel_list->count + 1;
+  self->chan_layer->emt_channel = (struct xrdp_emt*)g_malloc(sizeof(struct xrdp_emt), 1);
+  self->chan_layer->emt_channel->chanid = chanid;
+  self->chan_layer->emt_channel->total_byte_count = 0;
+  self->chan_layer->emt_channel->total_delta = 0;
+  self->chan_layer->emt_channel->need_result = true;
+
+  channel_item = (struct mcs_channel_item*) g_malloc(sizeof(struct mcs_channel_item), 1);
+  channel_item->chanid = chanid;
+
+  list_add_item(self->mcs_layer->channel_list, (long)channel_item);
+
   return 0;
 }
 
@@ -838,6 +878,9 @@ xrdp_sec_process_mcs_data(struct xrdp_sec* self)
         xrdp_sec_process_mcs_data_channels(self, s);
         break;
       case SEC_TAG_CLI_4:
+        break;
+      case CS_MCS_MSGCHANNEL:
+        xrdp_sec_process_mcs_emt_channel_data(self, s);
         break;
       default:
         g_writeln("error unknown xrdp_sec_process_mcs_data tag %d size %d",
@@ -933,6 +976,15 @@ xrdp_sec_out_mcs_data(struct xrdp_sec* self)
   out_uint16_le(s, 72); /* len */
   out_uint8a(s, self->pub_sig, 64); /* pub sig */
   out_uint8s(s, 8); /* pad */
+
+  // Send Server Message Channel Data
+  if (self->chan_layer->emt_channel != NULL)
+  {
+    out_uint16_le(s, SC_MCS_MSGCHANNEL);                           // type
+    out_uint16_le(s, 6);                                           // length
+    out_uint16_le(s, self->chan_layer->emt_channel->chanid);       // MCSChannelID
+  }
+
   /* end certificate */
   s_mark_end(s);
   return 0;

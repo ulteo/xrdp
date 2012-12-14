@@ -50,6 +50,8 @@ xrdp_channel_create(struct xrdp_sec* owner, struct xrdp_mcs* mcs_layer)
   self = (struct xrdp_channel*)g_malloc(sizeof(struct xrdp_channel), 1);
   self->sec_layer = owner;
   self->mcs_layer = mcs_layer;
+  self->emt_channel = NULL;
+
   return self;
 }
 

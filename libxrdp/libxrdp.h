@@ -63,6 +63,8 @@
 #include "file_loc.h"
 #include "mppc_enc.h"
 
+typedef enum {init, ready, check_bw, wait_next_mesure} emt_state;
+
 /* tcp */
 struct xrdp_tcp
 {
@@ -75,6 +77,7 @@ struct xrdp_iso
 {
   struct xrdp_mcs* mcs_layer; /* owner */
   struct xrdp_tcp* tcp_layer;
+  bool need_negotiation_response;
 };
 
 /* used in mcs */
@@ -127,11 +130,32 @@ struct xrdp_sec
   int channel_code;
 };
 
+/* emt_channel */
+struct xrdp_emt
+{
+  bool activated;
+  bool need_result;
+  emt_state state;
+  unsigned int next_check;
+  unsigned int chanid;
+  unsigned int seq_number;
+
+  unsigned int stop_time;
+  unsigned int time_processing;
+
+  unsigned int average_RTT;
+  unsigned int base_RTT;
+  unsigned int bandwidth;
+  unsigned long total_byte_count;
+  unsigned long total_delta;
+};
+
 /* channel */
 struct xrdp_channel
 {
   struct xrdp_sec* sec_layer;
   struct xrdp_mcs* mcs_layer;
+  struct xrdp_emt* emt_channel;
 };
 
 /* rdp */
@@ -458,4 +482,11 @@ xrdp_image_compute_buffer_size(struct xrdp_client_info* self, int width,
                                char* data, char* dest,
                                int* dest_size, int* type);
 
+/* xrdp_emt.c */
+bool APP_CC
+xrdp_emt_process(struct xrdp_rdp* self, struct stream* s);
+bool EXPORT_CC
+libxrdp_emt_start_check(struct xrdp_session* session);
+bool APP_CC
+libxrdp_emt_stop_check(struct xrdp_session* session, int time_processing);
 #endif

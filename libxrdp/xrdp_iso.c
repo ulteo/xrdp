@@ -32,6 +32,7 @@ xrdp_iso_create(struct xrdp_mcs* owner, struct trans* trans)
   self = (struct xrdp_iso*)g_malloc(sizeof(struct xrdp_iso), 1);
   self->mcs_layer = owner;
   self->tcp_layer = xrdp_tcp_create(self, trans);
+  self->need_negotiation_response = false;
   DEBUG(("   out xrdp_iso_create"));
   return self;
 }
@@ -109,20 +110,47 @@ xrdp_iso_recv(struct xrdp_iso* self, struct stream* s)
 
 /*****************************************************************************/
 static int APP_CC
-xrdp_iso_send_msg(struct xrdp_iso* self, struct stream* s, int code)
+xrdp_iso_send_connection_confirm(struct xrdp_iso* self, struct stream* s)
 {
+  bool send_request_response = self->mcs_layer->sec_layer->rdp_layer->client_info.support_network_detection;
+  int x224_len = 6;
+  int tpkt_len = 11;
+
   if (xrdp_tcp_init(self->tcp_layer, s) != 0)
   {
     return 1;
   }
-  out_uint8(s, 3);
-  out_uint8(s, 0);
-  out_uint16_be(s, 11); /* length */
-  out_uint8(s, 6);
-  out_uint8(s, code);
-  out_uint16_le(s, 0);
-  out_uint16_le(s, 0);
-  out_uint8(s, 0);
+
+  if (send_request_response)
+  {
+    x224_len += 8;
+    tpkt_len += 8;
+  }
+
+  out_uint8(s, 3);             // TPKT version
+  out_uint8(s, 0);             // TPKT reserved
+  out_uint16_be(s, tpkt_len);  // TPKT length
+  out_uint8(s, x224_len);      // X.224 length
+  out_uint8(s, ISO_PDU_CC);    // X.224 type
+  out_uint16_le(s, 0);         // X.224 dst
+  out_uint16_le(s, 0);         // X.224 src
+  out_uint8(s, 0);             // X.224 class
+
+  // send Negotiation Response
+  if (self->need_negotiation_response)
+  {
+    unsigned char flags = 0;
+    if (self->mcs_layer->sec_layer->rdp_layer->client_info.support_network_detection)
+    {
+      flags = EXTENDED_CLIENT_DATA_SUPPORTED;
+    }
+
+    out_uint8(s, TYPE_RDP_NEG_RSP);                // type
+    out_uint8(s, flags);                           // flags
+    out_uint16_le(s, RDP_NEG_RSP_LEN);             // length
+    out_uint32_le(s, PROTOCOL_RDP);                // protocol
+  }
+
   s_mark_end(s);
   if (xrdp_tcp_send(self->tcp_layer, s) != 0)
   {
@@ -130,6 +158,52 @@ xrdp_iso_send_msg(struct xrdp_iso* self, struct stream* s, int code)
   }
   return 0;
 }
+
+/*****************************************************************************/
+bool APP_CC
+xrdp_iso_parse_connection_request(struct xrdp_iso* self, struct stream* s, int code)
+{
+  unsigned char type;
+  unsigned char flags;
+  unsigned short length;
+  unsigned int protocol;
+
+  // Get cookie
+  char* p = g_strstr(s->p, "\r\n");
+  if (p != NULL) // There is a cookie or a routingToken
+  {
+    int cookie_len = p - s->p;
+    if (cookie_len > 0)
+    {
+      char* cookie = g_malloc(cookie_len + 1, 1);
+      g_strncpy(cookie, s->p, cookie_len);
+      printf("cookie: %s\n", cookie);
+      s->p += (cookie_len + 2); // CR+LF
+    }
+  }
+
+  if (s->p == s->end)
+  {
+    return true;
+  }
+
+  // parse rdpNegData
+  in_uint8(s, type);           // type
+  in_uint8(s, flags);          // flags
+  in_uint16_le(s, length);     // length
+  in_uint32_le(s, protocol);   // selectedProtocol
+
+  if (type == TYPE_RDP_NEG_REQ && length == RDP_NEG_REQ_LEN)
+  {
+    self->need_negotiation_response = true;
+    return true;
+  }
+
+  self->mcs_layer->sec_layer->rdp_layer->client_info.support_network_detection = false;
+  return true;
+}
+
+
 
 /*****************************************************************************/
 /* returns error */
@@ -147,12 +221,19 @@ xrdp_iso_incoming(struct xrdp_iso* self)
     free_stream(s);
     return 1;
   }
+
+  if (! xrdp_iso_parse_connection_request(self, s, code))
+  {
+    free_stream(s);
+    return 1;
+  }
+
   if (code != ISO_PDU_CR)
   {
     free_stream(s);
     return 1;
   }
-  if (xrdp_iso_send_msg(self, s, ISO_PDU_CC) != 0)
+  if (xrdp_iso_send_connection_confirm(self, s) != 0)
   {
     free_stream(s);
     return 1;

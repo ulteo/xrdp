@@ -233,6 +233,8 @@ xrdp_listen_conn_in(struct trans* self, struct trans* new_self)
   struct xrdp_process* process;
   struct xrdp_listen* lis;
 
+  g_tcp_set_no_delay(new_self->sck);
+
   if (use_multi_process == 1) {
     int pid = 0;
 

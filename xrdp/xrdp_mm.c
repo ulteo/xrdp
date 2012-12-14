@@ -1233,7 +1233,17 @@ xrdp_mm_check_wait_objs(struct xrdp_mm* self)
   {
     if (self->mod->mod_check_wait_objs != 0)
     {
-      rv = self->mod->mod_check_wait_objs(self->mod);
+      if (self->mod->sck != 0 && g_is_wait_obj_set(self->mod->sck))
+      {
+        int spent_time;
+        libxrdp_emt_start_check(self->wm->session);
+
+        spent_time = g_time3();
+        rv = self->mod->mod_check_wait_objs(self->mod);
+
+        spent_time = g_time3() - spent_time;
+        libxrdp_emt_stop_check(self->wm->session, spent_time);
+      }
     }
   }
   if (self->delete_sesman_trans)

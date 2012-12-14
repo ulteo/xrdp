@@ -100,6 +100,8 @@ struct xrdp_client_info
   image_policy_comp_ptr image_policy_ptr;
   unsigned char connection_type;
   bool support_fastpath;
+  bool support_network_detection;
+  unsigned int network_detection_interval;
 };
 
 struct xrdp_brush
@@ -269,5 +271,8 @@ libxrdp_ts_frame_start(struct xrdp_session* session);
 
 void DEFAULT_CC
 libxrdp_ts_frame_end(struct xrdp_session* session);
+
+int DEFAULT_CC
+libxrdp_emt_loop(struct xrdp_session* session);
 
 #endif

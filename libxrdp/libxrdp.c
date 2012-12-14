@@ -910,3 +910,24 @@ libxrdp_send_ime_status(struct xrdp_session* session, int status)
   free_stream(s);
   return 0;
 }
+
+/******************************************************************************/
+bool EXPORT_CC
+libxrdp_emt_start_check(struct xrdp_session* session)
+{
+  return xrdp_emt_bw_check_start((struct xrdp_rdp*)session->rdp);
+}
+
+/******************************************************************************/
+bool EXPORT_CC
+libxrdp_emt_stop_check(struct xrdp_session* session, int time_processing)
+{
+  return xrdp_emt_bw_check_stop((struct xrdp_rdp*)session->rdp, time_processing);
+}
+
+/******************************************************************************/
+bool EXPORT_CC
+libxrdp_emt_send_init(struct xrdp_session* session, int time_processing)
+{
+  return xrdp_emt_send_init((struct xrdp_rdp*)session->rdp);
+}

@@ -1262,10 +1262,7 @@ lib_mod_check_wait_objs(struct vnc* v)
   {
     if (v->sck_obj != 0)
     {
-      if (g_is_wait_obj_set(v->sck_obj))
-      {
-        rv = lib_mod_signal(v);
-      }
+      rv = lib_mod_signal(v);
     }
   }
   return rv;

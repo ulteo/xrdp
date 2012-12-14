@@ -233,6 +233,16 @@ xrdp_rdp_read_config(struct xrdp_client_info* client_info)
       client_info->support_fastpath = log_text2bool(value);
       printf("Server support fastPath\n");
     }
+    else if (g_strcasecmp(item, "use_network_detection") == 0)
+    {
+      client_info->support_network_detection = log_text2bool(value);
+      printf("Server support network detection\n");
+    }
+    else if (g_strcasecmp(item, "network_detection_interval") == 0)
+    {
+      client_info->network_detection_interval = g_atoi(value);
+      printf("Network detection interval: %u\n", client_info->network_detection_interval);
+    }
   }
   list_delete(items);
   list_delete(values);
@@ -253,6 +263,9 @@ xrdp_rdp_create(struct xrdp_session* session, struct trans* trans)
   self->client_info.image_policy = IMAGE_COMP_POLICY_FULL;
   self->client_info.image_policy_ptr = libxrdp_orders_send_image_full;
   self->client_info.support_fastpath = false;
+  self->client_info.support_network_detection = false;
+  self->client_info.connection_type = CONNECTION_TYPE_UNKNOWN;
+  self->client_info.network_detection_interval = 10000;
   xrdp_rdp_read_config(&self->client_info);
   /* create sec layer */
   self->sec_layer = xrdp_sec_create(self, trans, self->client_info.crypt_level,
@@ -339,6 +352,7 @@ xrdp_rdp_recv(struct xrdp_rdp* self, struct stream* s, int* code)
   int len;
   int pdu_code;
   int chan;
+  struct xrdp_emt* emt = self->sec_layer->chan_layer->emt_channel;
 
   DEBUG(("in xrdp_rdp_recv"));
   if (s->next_packet == 0 || s->next_packet >= s->end)
@@ -361,7 +375,15 @@ xrdp_rdp_recv(struct xrdp_rdp* self, struct stream* s, int* code)
     {
       if (chan > MCS_GLOBAL_CHANNEL)
       {
-        xrdp_channel_process(self->sec_layer->chan_layer, s, chan);
+
+        if ((emt != NULL) && (emt->chanid == chan))
+        {
+          xrdp_emt_process(self, s);
+        }
+        else
+        {
+          xrdp_channel_process(self->sec_layer->chan_layer, s, chan);
+        }
       }
       s->next_packet = 0;
       *code = 0;
