@@ -265,6 +265,7 @@ AC_CONFIG_FILES([Makefile
                  seamlessrdpshell/Makefile
                  vchannel/Makefile
                  vnc/Makefile
+                 ulteo/Makefile
                  xup/Makefile
                  xrdp/Makefile
 ])
