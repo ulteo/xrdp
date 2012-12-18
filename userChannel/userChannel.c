@@ -239,10 +239,9 @@ void *lib_ulteo_thread_run(void *arg)
   int rcount;
   int timeout = 1000;
 
+  u->mod->mod_get_wait_objs(u->mod, &read_objs, &rcount, &write_objs, &wcount, &timeout);
   while (! u->terminate)
   {
-    u->mod->mod_get_wait_objs(u->mod, &read_objs, &rcount, &write_objs, &wcount, &timeout);
-
     if (g_obj_wait(&read_objs, rcount, &write_objs, wcount, timeout) != 0)
     {
       /* error, should not get here */
