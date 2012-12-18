@@ -20,6 +20,9 @@
 
 #include "userChannel.h"
 #include "proxy.h"
+#include <stdlib.h>
+#include <sys/eventfd.h>
+#include <time.h>
 
 struct userChannel* u;
 
@@ -117,7 +120,17 @@ lib_userChannel_mod_get_wait_objs(struct userChannel* u, tbus* read_objs, int* r
 {
   LIB_DEBUG(u, "lib_userChannel_mod_get_wait_objs");
 
-  return u->mod->mod_get_wait_objs(u->mod, read_objs, rcount, write_objs, wcount, timeout);
+  int i = *rcount;
+  if (u != 0)
+  {
+    if (u->efd != 0)
+    {
+      read_objs[i++] = u->efd;
+    }
+  }
+  *rcount = i;
+
+  return 0;
 }
 
 /******************************************************************************/
@@ -216,6 +229,30 @@ lib_userChannel_load_library(struct userChannel* self)
   return 0;
 }
 
+void *lib_ulteo_thread_run(void *arg)
+{
+  struct timespec tim, tim2;
+  char buf[8] = { 1, 0, 0, 0, 0, 0, 0, 0 };
+  tbus read_objs;
+  tbus write_objs;
+  int wcount;
+  int rcount;
+  int timeout = 1000;
+
+  while (! u->terminate)
+  {
+    u->mod->mod_get_wait_objs(u->mod, &read_objs, &rcount, &write_objs, &wcount, &timeout);
+
+    if (g_obj_wait(&read_objs, rcount, &write_objs, wcount, timeout) != 0)
+    {
+      /* error, should not get here */
+      g_sleep(100);
+    }
+
+    write(u->efd, buf, sizeof(buf));
+  }
+}
+
 /******************************************************************************/
 struct userChannel* EXPORT_CC
 mod_init(void)
@@ -235,6 +272,11 @@ mod_init(void)
 
   lib_userChannel_load_library(u);
 
+  u->efd = eventfd(1, 0);
+  u->terminate = 0;
+
+  pthread_create(&u->thread, NULL, lib_ulteo_thread_run, 0);
+
   return u;
 }
 
@@ -253,6 +295,10 @@ mod_exit(struct userChannel* u)
   {
     u->mod_lib_exit(u->mod);
   }
+
+  u->terminate = 1;
+  pthread_join(u->thread, NULL);
+  close(u->efd);
 
   g_free(u);
   return 0;

@@ -122,8 +122,10 @@ struct userChannel
   long mod_handle; /* returned from g_load_library */
   struct xrdp_mod* (*mod_lib_init)(void);
   int (*mod_lib_exit)(struct xrdp_mod*);
-
   struct xrdp_mod* mod;
+  int efd;
+  pthread_t thread;
+  int terminate;
 };
 
 
