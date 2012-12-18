@@ -21,7 +21,7 @@ SUBDIRS = \
   common \
   vchannel \
   vnc \
-  ulteo \
+  userChannel \
   rdp \
   xup \
   mc \

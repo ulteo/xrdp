@@ -9,13 +9,13 @@ INCLUDES = \
   -I$(top_srcdir)/common
 
 pkglib_LTLIBRARIES = \
-  libulteo.la
+  libuserChannel.la
 
-libulteo_la_SOURCES = \
+libuserChannel_la_SOURCES = \
   proxy.c \
   proxy.h \
-  ulteo.c \
-  ulteo.h
+  userChannel.c \
+  userChannel.h
 
-libvnc_la_LIBADD = \
+libuserChannel_la_LIBADD = \
   $(top_builddir)/common/libxrdp_common.la
