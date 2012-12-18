@@ -3,12 +3,7 @@ AM_CFLAGS = \
   -DXRDP_CFG_PATH=\"${sysconfdir}/xrdp\" \
   -DXRDP_SBIN_PATH=\"${sbindir}\" \
   -DXRDP_SHARE_PATH=\"${datadir}/xrdp\" \
-  -DXRDP_PID_PATH=\"${localstatedir}/run\" \
-  -Wall -O2 -D_REENTRANT -DIMAGE_MAGICK_SUPPORT \
-  `Wand-config --cflags`
-
-AM_LDFLAGS = \
-  $(filter-out -lglib-2.0, $(shell Wand-config --ldflags --libs))
+  -DXRDP_PID_PATH=\"${localstatedir}/run\"
 
 INCLUDES = \
   -I$(top_srcdir)/common
@@ -17,6 +12,8 @@ pkglib_LTLIBRARIES = \
   libulteo.la
 
 libulteo_la_SOURCES = \
+  proxy.c \
+  proxy.h \
   ulteo.c \
   ulteo.h
 

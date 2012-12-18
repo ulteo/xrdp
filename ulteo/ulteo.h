@@ -1,15 +1,35 @@
+/*
+ * Copyright (C) 2012 Ulteo SAS
+ * http://www.ulteo.com
+ * Author David LECHEVALIER <david@ulteo.com> 2012
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; version 2
+ * of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
 
-#include <pthread.h>
-#include <wand/MagickWand.h>
+#ifndef ULTEO_MODULE_H
+#define ULTEO_MODULE_H
 
-/* include other h files */
 #include "arch.h"
 #include "parse.h"
 #include "os_calls.h"
-#include "d3des.h"
 #include "defines.h"
+#include "proxy.h"
+
 
 #define CURRENT_MOD_VER 1
+#define LIBRARY_NAME "libvnc.so"
 
 struct ulteo
 {
@@ -98,9 +118,13 @@ struct ulteo
   char* clip_data;
   int clip_data_size;
   tbus sck_obj;
-  int efd;
-  pthread_t thread;
-  int terminate;
-  MagickWand *image_wand;
-  unsigned char* image;
+  /* mod ulteo */
+  long mod_handle; /* returned from g_load_library */
+  struct xrdp_mod* (*mod_lib_init)(void);
+  int (*mod_lib_exit)(struct xrdp_mod*);
+
+  struct xrdp_mod* mod;
 };
+
+
+#endif
