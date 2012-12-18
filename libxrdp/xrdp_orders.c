@@ -77,7 +77,7 @@ xrdp_orders_delete(struct xrdp_orders* self)
 int APP_CC
 xrdp_orders_reset(struct xrdp_orders* self)
 {
-  if (xrdp_orders_force_send(self) != 0)
+  if (xrdp_orders_send(self) != 0)
   {
     return 1;
   }
@@ -136,42 +136,10 @@ int APP_CC
 xrdp_orders_send(struct xrdp_orders* self)
 {
   int rv;
-
-  rv = 0;
-  if (self->order_level > 0)
-  {
-    self->order_level--;
-    if ((self->order_level == 0) && (self->order_count > 0))
-    {
-      s_mark_end(self->out_s);
-      DEBUG(("xrdp_orders_send sending %d orders", self->order_count));
-      self->order_count_ptr[0] = self->order_count;
-      self->order_count_ptr[1] = self->order_count >> 8;
-      self->order_count = 0;
-
-      if (self->rdp_layer->client_info.support_fastpath)
-      {
-        return xrdp_rdp_send_fast_path_update(self->rdp_layer, self->out_s, FASTPATH_UPDATETYPE_ORDERS);
-      }
-      else
-      {
-        return xrdp_rdp_send_data(self->rdp_layer, self->out_s, RDP_DATA_PDU_UPDATE);
-      }
-    }
-  }
-  return rv;
-}
-
-/*****************************************************************************/
-/* returns error */
-int APP_CC
-xrdp_orders_force_send(struct xrdp_orders* self)
-{
-  int rv;
   if ((self->order_level > 0) && (self->order_count > 0))
   {
     s_mark_end(self->out_s);
-    DEBUG(("xrdp_orders_force_send sending %d orders", self->order_count));
+    DEBUG(("xrdp_orders_send sending %d orders", self->order_count));
     self->order_count_ptr[0] = self->order_count;
     self->order_count_ptr[1] = self->order_count >> 8;
 
@@ -231,7 +199,7 @@ xrdp_orders_check(struct xrdp_orders* self, int max_size)
   }
   if ((size + max_size + 100) > max_packet_size)
   {
-    xrdp_orders_force_send(self);
+    xrdp_orders_send(self);
     xrdp_orders_init(self);
   }
   return 0;

@@ -178,8 +178,6 @@ libxrdp_orders_init(struct xrdp_session* session);
 int DEFAULT_CC
 libxrdp_orders_send(struct xrdp_session* session);
 int DEFAULT_CC
-libxrdp_orders_force_send(struct xrdp_session* session);
-int DEFAULT_CC
 libxrdp_orders_rect(struct xrdp_session* session, int x, int y,
                     int cx, int cy, int color, struct xrdp_rect* rect);
 int DEFAULT_CC
