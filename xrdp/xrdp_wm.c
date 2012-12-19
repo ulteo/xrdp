@@ -639,7 +639,7 @@ xrdp_wm_bitblt(struct xrdp_wm* self,
 //    }
     libxrdp_orders_init(self->session);
     libxrdp_orders_screen_blt(self->session, dx, dy, sw, sh, sx, sy, rop, 0);
-    libxrdp_orders_send(self->session);
+    libxrdp_orders_end(self->session);
   }
   return 0;
 }

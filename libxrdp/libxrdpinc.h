@@ -176,6 +176,8 @@ libxrdp_set_pointer(struct xrdp_session* session, int cache_idx);
 int DEFAULT_CC
 libxrdp_orders_init(struct xrdp_session* session);
 int DEFAULT_CC
+libxrdp_orders_end(struct xrdp_session* session);
+int DEFAULT_CC
 libxrdp_orders_send(struct xrdp_session* session);
 int DEFAULT_CC
 libxrdp_orders_rect(struct xrdp_session* session, int x, int y,

@@ -72,7 +72,7 @@ xrdp_painter_end_update(struct xrdp_painter* self)
     libxrdp_send_ts_frame_end(self->session);
   }
 
-  libxrdp_orders_send(self->session);
+  libxrdp_orders_end(self->session);
   return 0;
 }
 
