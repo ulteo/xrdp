@@ -235,8 +235,8 @@ void *lib_ulteo_thread_run(void *arg)
   char buf[8] = { 1, 0, 0, 0, 0, 0, 0, 0 };
   tbus read_objs;
   tbus write_objs;
-  int wcount;
-  int rcount;
+  int wcount = 0;
+  int rcount = 0;
   int timeout = 1000;
 
   u->mod->mod_get_wait_objs(u->mod, &read_objs, &rcount, &write_objs, &wcount, &timeout);
