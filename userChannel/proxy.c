@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2012 Ulteo SAS
- * http://www.userChannel.com
- * Author David LECHEVALIER <david@userChannel.com> 2012
+ * http://www.ulteo.com
+ * Author David LECHEVALIER <david@ulteo.com> 2012
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
