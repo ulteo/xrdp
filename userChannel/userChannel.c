@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <sys/eventfd.h>
 #include <time.h>
+#include <list.h>
 
 struct userChannel* u;
 
@@ -45,10 +46,10 @@ lib_userChannel_mod_event(struct userChannel* u, int msg, long param1, long para
 int DEFAULT_CC
 lib_userChannel_mod_signal(struct userChannel* u)
 {
-  LIB_DEBUG(u, "lib_userChannel_mod_signal");
+  LIB_DEBUG(u, "lib_userChannel_mod_signal\n");
   if (u->mod)
   {
-	  u->mod->mod_signal(u->mod);
+    u->mod->mod_signal(u->mod);
   }
 
   return 0;
@@ -59,14 +60,11 @@ int DEFAULT_CC
 lib_userChannel_mod_start(struct userChannel* u, int w, int h, int bpp)
 {
   LIB_DEBUG(u, "lib_userChannel_mod_start");
+  u->do_start = true;
+
   u->server_width = w;
   u->server_height = h;
   u->server_bpp = bpp;
-
-  if (u->mod)
-  {
-    u->mod->mod_start(u->mod, w, h, bpp);
-  }
 
   return 0;
 }
@@ -77,10 +75,7 @@ int DEFAULT_CC
 lib_userChannel_mod_connect(struct userChannel* u)
 {
   LIB_DEBUG(u, "lib_userChannel_mod_connect");
-  if (u->mod)
-  {
-    u->mod->mod_connect(u->mod);
-  }
+  u->do_connection = true;
 
   return 0;
 }
@@ -139,8 +134,99 @@ int DEFAULT_CC
 lib_userChannel_mod_check_wait_objs(struct userChannel* u)
 {
   LIB_DEBUG(u, "lib_userChannel_mod_check_wait_objs");
+  char buf[8] = {0};
 
-  return u->mod->mod_check_wait_objs(u->mod);
+  if (u->terminate)
+  {
+    return 1;
+  }
+
+  tc_mutex_lock(u->update_list_mutex);
+  if (u->last_update_list->count > 0) {
+    int i;
+
+    for(i = 0 ; i < u->last_update_list->count ; i++)
+    {
+      update* up = (update*)list_get_item(u->last_update_list, i);
+      switch (up->order_type)
+      {
+      case begin_update:
+        u->server_begin_update(u);
+        break;
+
+      case end_update:
+        u->server_end_update(u);
+        break;
+
+      case reset:
+        u->server_reset(u, up->width, up->height, up->bpp);
+        break;
+
+      case reset_clip:
+        u->server_reset_clip(u);
+        break;
+
+      case set_clip:
+        u->server_set_clip(u, up->x, up->y, up->cx, up->cy);
+        break;
+
+      case fill_rect:
+        u->server_fill_rect(u, up->x, up->y, up->width, up->height);
+        break;
+
+      case paint_rect:
+        u->server_paint_rect(u, up->x, up->y, up->cx, up->cy, up->data, up->width, up->height, up->srcx, up->srcy);
+        g_free(up->data);
+        break;
+
+      case draw_line:
+        u->server_draw_line(u, up->srcx, up->srcy, up->x, up->y);
+        g_free(up->data);
+        break;
+
+      case screen_blt:
+        u->server_screen_blt(u, up->x, up->y, up->cx, up->cy, up->srcx, up->srcy);
+        break;
+
+      case set_cursor:
+        u->server_set_cursor(u, up->x, up->y, up->data, up->mask);
+        g_free(up->data);
+        g_free(up->mask);
+        break;
+
+      case set_fgcolor:
+        u->server_set_fgcolor(u, up->color);
+        break;
+
+      case set_bgcolor:
+        u->server_set_bgcolor(u, up->color);
+        break;
+
+      case set_opcode:
+        u->server_set_opcode(u, up->opcode);
+        break;
+
+      case set_mixmode:
+        u->server_set_mixmode(u, up->mixmode);
+        break;
+
+      case send_to_channel:
+        u->server_send_to_channel(u, up->channel_id, up->data, up->data_len, up->total_data_len, up->flags);
+        g_free(up->data);
+        break;
+
+      default:
+        printf("order is not known %lu\n", up->order_type);
+        break;
+      }
+    }
+    list_clear(u->last_update_list);
+  }
+  tc_mutex_unlock(u->update_list_mutex);
+
+  u->need_request = true;
+
+  return 0;
 }
 
 /*****************************************************************************/
@@ -163,7 +249,7 @@ lib_userChannel_load_library(struct userChannel* self)
       func = g_get_proc_address(self->mod_handle, "mod_init");
       if (func == 0)
       {
-    	  func = g_get_proc_address(self->mod_handle, "_mod_init");
+        func = g_get_proc_address(self->mod_handle, "_mod_init");
       }
       if (func == 0)
       {
@@ -239,16 +325,57 @@ void *lib_ulteo_thread_run(void *arg)
   int rcount = 0;
   int timeout = 1000;
 
-  u->mod->mod_get_wait_objs(u->mod, &read_objs, &rcount, &write_objs, &wcount, &timeout);
   while (! u->terminate)
   {
+    if (u->do_start && u->mod != NULL)
+    {
+      u->do_start = false;
+      u->mod->mod_start(u->mod, u->server_width, u->server_height, u->server_bpp);
+    }
+
+    if (u->do_connection && u->mod != NULL) {
+      u->do_connection = false;
+      u->mod->mod_connect(u->mod);
+      u->connected = true;
+    }
+
+    if (u->server_is_term(u)) {
+      break;
+    }
+
+    if (!u->need_request || !u->connected) {
+      usleep(10000);
+      continue;
+    }
+
+    rcount = 0;
+    wcount = 0;
+    u->mod->mod_get_wait_objs(u->mod, &read_objs, &rcount, &write_objs, &wcount, &timeout);
     if (g_obj_wait(&read_objs, rcount, &write_objs, wcount, timeout) != 0)
     {
       /* error, should not get here */
       g_sleep(100);
     }
 
-    write(u->efd, buf, sizeof(buf));
+    if (g_tcp_can_recv(read_objs, 0)) {
+      struct list* temp;
+      tc_mutex_lock(u->update_list_mutex);
+      if (u->mod->mod_check_wait_objs(u->mod) == 1)
+      {
+        tc_mutex_unlock(u->update_list_mutex);
+        u->terminate = 1;
+        break;
+      }
+      u->need_request = false;
+      write(u->efd, buf, sizeof(buf));
+
+      // swaping update list
+      temp = u->current_update_list;
+      u->current_update_list = u->last_update_list;
+      u->last_update_list = temp;
+
+      tc_mutex_unlock(u->update_list_mutex);
+    }
   }
 }
 
@@ -273,6 +400,18 @@ mod_init(void)
 
   u->efd = eventfd(1, 0);
   u->terminate = 0;
+  u->need_request = true;
+
+  u->current_update_list = list_create();
+  u->current_update_list->auto_free = true;
+
+  u->last_update_list = list_create();
+  u->last_update_list->auto_free = true;
+
+  u->connected = false;
+  u->do_connection = false;
+  u->do_start = false;
+  u->update_list_mutex = tc_mutex_create();
 
   pthread_create(&u->thread, NULL, lib_ulteo_thread_run, 0);
 
@@ -283,8 +422,6 @@ mod_init(void)
 int EXPORT_CC
 mod_exit(struct userChannel* u)
 {
-  LIB_DEBUG(v, "mod_exit");
-
   if (u == 0)
   {
     return 0;

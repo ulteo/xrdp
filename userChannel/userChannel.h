@@ -31,6 +31,52 @@
 #define CURRENT_MOD_VER 1
 #define LIBRARY_NAME "libvnc.so"
 
+
+typedef enum {
+  begin_update,
+  end_update,
+  reset,
+  reset_clip,
+  fill_rect,
+  paint_rect,
+  screen_blt,
+  set_cursor,
+  set_clip,
+  set_fgcolor,
+  set_bgcolor,
+  set_opcode,
+  set_mixmode,
+  set_brush,
+  set_pen,
+  draw_line,
+  add_char,
+  send_to_channel
+} order_type;
+
+typedef struct _update {
+  order_type order_type;
+  unsigned char* data;
+  unsigned char* mask;
+  unsigned int data_len;
+  unsigned int mask_len;
+  unsigned int color;
+  unsigned int opcode;
+  unsigned int mixmode;
+  unsigned int x;
+  unsigned int y;
+  unsigned int cx;
+  unsigned int cy;
+  unsigned int srcx;
+  unsigned int srcy;
+  unsigned int width;
+  unsigned int height;
+  unsigned int bpp;
+  unsigned int channel_id;
+  unsigned int total_data_len;
+  unsigned int flags;
+} update;
+
+
 struct userChannel
 {
   int size; /* size of this struct */
@@ -126,6 +172,14 @@ struct userChannel
   int efd;
   pthread_t thread;
   int terminate;
+  struct list* last_update_list;
+  struct list* current_update_list;
+  tbus update_list_mutex;
+  bool do_connection;
+  bool do_start;
+  bool connected;
+  bool frame_ready;
+  bool need_request;
 };
 
 
