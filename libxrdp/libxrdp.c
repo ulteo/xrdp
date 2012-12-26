@@ -163,7 +163,7 @@ libxrdp_send_palette(struct xrdp_session* session, int* palette)
   }
   DEBUG(("libxrdp_send_palette sending palette"));
   /* clear orders */
-  libxrdp_orders_end(session);
+  libxrdp_orders_force_send(session);
   make_stream(s);
   init_stream(s, 8192);
   xrdp_rdp_init_data((struct xrdp_rdp*)session->rdp, s);
@@ -184,7 +184,7 @@ libxrdp_send_palette(struct xrdp_session* session, int* palette)
   /* send the orders palette too */
   libxrdp_orders_init(session);
   libxrdp_orders_send_palette(session, palette, 0);
-  libxrdp_orders_end(session);
+  libxrdp_orders_send(session);
   return 0;
 }
 
@@ -427,16 +427,16 @@ libxrdp_orders_init(struct xrdp_session* session)
 
 /******************************************************************************/
 int EXPORT_CC
-libxrdp_orders_end(struct xrdp_session* session)
+libxrdp_orders_send(struct xrdp_session* session)
 {
-  return xrdp_orders_end((struct xrdp_orders*)session->orders);
+  return xrdp_orders_send((struct xrdp_orders*)session->orders);
 }
 
 /******************************************************************************/
 int EXPORT_CC
-libxrdp_orders_send(struct xrdp_session* session)
+libxrdp_orders_force_send(struct xrdp_session* session)
 {
-  return xrdp_orders_send((struct xrdp_orders*)session->orders);
+  return xrdp_orders_force_send((struct xrdp_orders*)session->orders);
 }
 
 /******************************************************************************/
