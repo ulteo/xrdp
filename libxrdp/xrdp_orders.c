@@ -55,8 +55,6 @@ xrdp_orders_create(struct xrdp_session* session, struct xrdp_rdp* rdp_layer)
   init_stream(self->out_s, 16384);
   self->orders_state.clip_right = 1; /* silly rdp right clip */
   self->orders_state.clip_bottom = 1; /* silly rdp bottom clip */
-  self->spooled_packet = list_create();
-  self->spooled_packet->auto_free = 1;
   return self;
 }
 
