@@ -16,6 +16,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+if SCIM_ENABLED
+
 AM_CPPFLAGS = \
 	-DSCIM_XRDP_LOCALEDIR=\"$(datadir)/locale\" \
 	-DSCIM_ICONDIR=\"$(datarootdir)/scim/icons\" \
@@ -65,3 +67,4 @@ EXTRA_DIST = \
   $(moduleconf_DATA) \
   $(moduledata_DATA)
 
+endif # SCIM_ENABLED

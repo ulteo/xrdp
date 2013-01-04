@@ -38,6 +38,7 @@ AC_ARG_ENABLE(pamuserpass, AS_HELP_STRING([--enable-pamuserpass],
               [Build pam userpass support (default: no)]),
               [pamuserpass=true], [pamuserpass=false])
 AM_CONDITIONAL(SESMAN_PAMUSERPASS, [test x$pamuserpass = xtrue])
+AC_ARG_ENABLE(scim, AS_HELP_STRING([--enable-scim], [Build scim module for unicode input support (default: yes)]))
 
 # checking for openssl
 AC_CHECK_HEADER([openssl/rc4.h], [],
@@ -213,22 +214,28 @@ if test "x${prefix}" = "xNONE" ; then
    localstatedir="/var";
 fi
 
-# check libscim
-SCIM_VERSION=1.4.0
-PKG_CHECK_MODULES(SCIM,[scim >= $SCIM_VERSION])
-
-SCIM_CFLAGS=`$PKG_CONFIG --cflags scim`
-SCIM_LDFLAGS=`$PKG_CONFIG --libs scim`
-AC_SUBST(SCIM_CFLAGS)
-AC_SUBST(SCIM_LDFLAGS)
-
-# check scim-gtkutils
-PKG_CHECK_MODULES(SCIMGTKUTILS,[scim-gtkutils >= $SCIM_VERSION])
-
-SCIMGTKUTILS_CFLAGS=`$PKG_CONFIG --cflags scim-gtkutils`
-SCIMGTKUTILS_LDFLAGS=`$PKG_CONFIG --libs scim-gtkutils`
-AC_SUBST(SCIMGTKUTILS_CFLAGS)
-AC_SUBST(SCIMGTKUTILS_LDFLAGS)
+if test "x$enable_scim" = "x" ; then
+   enable_scim="yes"
+fi
+if test "x$enable_scim" = "xyes" ; then
+   # check libscim
+   SCIM_VERSION=1.4.0
+   PKG_CHECK_MODULES(SCIM,[scim >= $SCIM_VERSION])
+   
+   SCIM_CFLAGS=`$PKG_CONFIG --cflags scim`
+   SCIM_LDFLAGS=`$PKG_CONFIG --libs scim`
+   AC_SUBST(SCIM_CFLAGS)
+   AC_SUBST(SCIM_LDFLAGS)
+   
+   # check scim-gtkutils
+   PKG_CHECK_MODULES(SCIMGTKUTILS,[scim-gtkutils >= $SCIM_VERSION])
+   
+   SCIMGTKUTILS_CFLAGS=`$PKG_CONFIG --cflags scim-gtkutils`
+   SCIMGTKUTILS_LDFLAGS=`$PKG_CONFIG --libs scim-gtkutils`
+   AC_SUBST(SCIMGTKUTILS_CFLAGS)
+   AC_SUBST(SCIMGTKUTILS_LDFLAGS)
+fi
+AM_CONDITIONAL(SCIM_ENABLED, [test x$enable_scim = xyes])
 
 AC_CONFIG_FILES([Makefile
                  common/Makefile
