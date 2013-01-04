@@ -23,7 +23,7 @@ AM_CPPFLAGS = \
 
 xrdp_la_CFLAGS = @SCIM_CFLAGS@
 xrdp_la_CXXFLAGS = @SCIM_CFLAGS@
-xrdp_la_LDFLAGS = @SCIM_LIBS@ \
+xrdp_la_LDFLAGS = @SCIM_LDFLAGS@ \
 	-avoid-version \
 	-rpath $(moduledir) \
 	-module
@@ -36,7 +36,7 @@ xrdp_la_SOURCES = \
 
 xrdp_scim_panel_CFLAGS = @SCIMGTKUTILS_CFLAGS@
 xrdp_scim_panel_CXXFLAGS = @SCIMGTKUTILS_CFLAGS@
-xrdp_scim_panel_LDFLAGS = @SCIMGTKUTILS_LIBS@
+xrdp_scim_panel_LDFLAGS = @SCIMGTKUTILS_LDFLAGS@
 
 xrdp_scim_panel_SOURCES = \
   scim_panel.cpp
