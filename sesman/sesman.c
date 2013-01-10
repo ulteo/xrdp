@@ -29,8 +29,8 @@
  */
 
 #include "sesman.h"
-#include <common/thread_calls.h>
-#include <common/thread_pool.h>
+#include "thread_calls.h"
+#include "thread_pool.h"
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
 #include <libxml/tree.h>
