@@ -55,8 +55,8 @@ typedef enum {
 
 typedef struct _update {
   order_type order_type;
-  unsigned char* data;
-  unsigned char* mask;
+  char* data;
+  char* mask;
   unsigned int data_len;
   unsigned int mask_len;
   unsigned int color;

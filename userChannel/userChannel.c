@@ -144,7 +144,6 @@ lib_userChannel_mod_check_wait_objs(struct userChannel* u)
 {
   LIB_DEBUG(u, "lib_userChannel_mod_check_wait_objs");
   uint64_t event;
-  int res;
 
   if (u->terminate)
   {
@@ -152,7 +151,7 @@ lib_userChannel_mod_check_wait_objs(struct userChannel* u)
   }
 
   tc_mutex_lock(u->mod_mutex);
-  read(u->efd, &event, sizeof(uint64_t));
+  g_file_read(u->efd, (char*)&event, sizeof(uint64_t));
 
   if (u->current_update_list->count > 0) {
     int i;
@@ -403,7 +402,7 @@ mod_exit(struct userChannel* u)
 
   u->terminate = 1;
   pthread_join(u->thread, NULL);
-  close(u->efd);
+  g_file_close(u->efd);
 
   g_free(u);
   return 0;
