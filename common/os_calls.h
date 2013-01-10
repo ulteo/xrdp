@@ -111,6 +111,8 @@ g_tcp_force_recv(int sck, char* data, int len);
 int APP_CC
 g_tcp_set_non_blocking(int sck);
 int APP_CC
+g_tcp_set_blocking(int sck);
+int APP_CC
 g_tcp_bind(int sck, char* port);
 int APP_CC
 g_tcp_local_bind(int sck, char* port);

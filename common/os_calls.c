@@ -445,6 +445,17 @@ g_tcp_local_connect(int sck, const char* port)
 
 /*****************************************************************************/
 int APP_CC
+g_tcp_set_blocking(int sck)
+{
+  unsigned long i;
+  i = fcntl(sck, F_GETFL);
+  i = i | ~O_NONBLOCK;
+  fcntl(sck, F_SETFL, i);
+  return 0;
+}
+
+/*****************************************************************************/
+int APP_CC
 g_tcp_set_non_blocking(int sck)
 {
   unsigned long i;
