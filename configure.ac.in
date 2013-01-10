@@ -230,8 +230,8 @@ if test "x$enable_scim" = "xyes" ; then
    # check scim-gtkutils
    PKG_CHECK_MODULES(SCIMGTKUTILS,[scim-gtkutils >= $SCIM_VERSION])
    
-   SCIMGTKUTILS_CFLAGS=`$PKG_CONFIG --cflags scim-gtkutils`
-   SCIMGTKUTILS_LDFLAGS=`$PKG_CONFIG --libs scim-gtkutils`
+   SCIMGTKUTILS_CFLAGS=`$PKG_CONFIG --cflags scim-gtkutils gthread-2.0`
+   SCIMGTKUTILS_LDFLAGS=`$PKG_CONFIG --libs scim-gtkutils gthread-2.0`
    AC_SUBST(SCIMGTKUTILS_CFLAGS)
    AC_SUBST(SCIMGTKUTILS_LDFLAGS)
 fi
