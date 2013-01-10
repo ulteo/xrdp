@@ -24,6 +24,7 @@
 #include <sys/eventfd.h>
 #include <time.h>
 #include <list.h>
+#include <thread_calls.h>
 
 struct userChannel* u;
 
@@ -36,7 +37,9 @@ lib_userChannel_mod_event(struct userChannel* u, int msg, long param1, long para
   LIB_DEBUG(u, "lib_userChannel_mod_event");
   if (u->mod)
   {
+    tc_mutex_lock(u->mod_mutex);
     u->mod->mod_event(u->mod, msg, param1, param2, param3, param4);
+    tc_mutex_unlock(u->mod_mutex);
   }
 
   return 0;
@@ -49,7 +52,9 @@ lib_userChannel_mod_signal(struct userChannel* u)
   LIB_DEBUG(u, "lib_userChannel_mod_signal\n");
   if (u->mod)
   {
+    tc_mutex_lock(u->mod_mutex);
     u->mod->mod_signal(u->mod);
+    tc_mutex_unlock(u->mod_mutex);
   }
 
   return 0;
@@ -60,13 +65,15 @@ int DEFAULT_CC
 lib_userChannel_mod_start(struct userChannel* u, int w, int h, int bpp)
 {
   LIB_DEBUG(u, "lib_userChannel_mod_start");
-  u->do_start = true;
 
   u->server_width = w;
   u->server_height = h;
   u->server_bpp = bpp;
+  int res = false;
 
-  return 0;
+  res = u->mod->mod_start(u->mod, w, h, bpp);
+
+  return res;
 }
 
 /******************************************************************************/
@@ -75,9 +82,11 @@ int DEFAULT_CC
 lib_userChannel_mod_connect(struct userChannel* u)
 {
   LIB_DEBUG(u, "lib_userChannel_mod_connect");
-  u->do_connection = true;
+  int res = u->mod->mod_connect(u->mod);
 
-  return 0;
+  u->thread = tc_thread_create(lib_ulteo_thread_run, u);
+
+  return res;
 }
 
 /******************************************************************************/
@@ -134,20 +143,22 @@ int DEFAULT_CC
 lib_userChannel_mod_check_wait_objs(struct userChannel* u)
 {
   LIB_DEBUG(u, "lib_userChannel_mod_check_wait_objs");
-  char buf[8] = {0};
+  uint64_t event;
+  int res;
 
   if (u->terminate)
   {
     return 1;
   }
 
-  tc_mutex_lock(u->update_list_mutex);
-  if (u->last_update_list->count > 0) {
-    int i;
+  tc_mutex_lock(u->mod_mutex);
+  read(u->efd, &event, sizeof(uint64_t));
 
-    for(i = 0 ; i < u->last_update_list->count ; i++)
+  if (u->current_update_list->count > 0) {
+    int i;
+    for(i = 0 ; i < u->current_update_list->count ; i++)
     {
-      update* up = (update*)list_get_item(u->last_update_list, i);
+      update* up = (update*)list_get_item(u->current_update_list, i);
       switch (up->order_type)
       {
       case begin_update:
@@ -216,13 +227,13 @@ lib_userChannel_mod_check_wait_objs(struct userChannel* u)
         break;
 
       default:
-        printf("order is not known %lu\n", up->order_type);
+        printf("order is not known %u\n", up->order_type);
         break;
       }
     }
-    list_clear(u->last_update_list);
+    list_clear(u->current_update_list);
   }
-  tc_mutex_unlock(u->update_list_mutex);
+  tc_mutex_unlock(u->mod_mutex);
 
   u->need_request = true;
 
@@ -234,7 +245,6 @@ int APP_CC
 lib_userChannel_load_library(struct userChannel* self)
 {
   void* func;
-  char text[256];
 
   if (self == 0)
   {
@@ -317,66 +327,34 @@ lib_userChannel_load_library(struct userChannel* self)
 
 void *lib_ulteo_thread_run(void *arg)
 {
-  struct timespec tim, tim2;
-  char buf[8] = { 1, 0, 0, 0, 0, 0, 0, 0 };
-  tbus read_objs;
-  tbus write_objs;
-  int wcount = 0;
-  int rcount = 0;
+  uint64_t event = 1;
+  int res = 0;
   int timeout = 1000;
+
+  g_tcp_set_blocking(u->mod->sck);
 
   while (! u->terminate)
   {
-    if (u->do_start && u->mod != NULL)
+    if (!u->need_request)
     {
-      u->do_start = false;
-      u->mod->mod_start(u->mod, u->server_width, u->server_height, u->server_bpp);
-    }
-
-    if (u->do_connection && u->mod != NULL) {
-      u->do_connection = false;
-      u->mod->mod_connect(u->mod);
-      u->connected = true;
-    }
-
-    if (u->server_is_term(u)) {
-      break;
-    }
-
-    if (!u->need_request || !u->connected) {
-      usleep(10000);
+      g_sleep(100);
       continue;
     }
 
-    rcount = 0;
-    wcount = 0;
-    u->mod->mod_get_wait_objs(u->mod, &read_objs, &rcount, &write_objs, &wcount, &timeout);
-    if (g_obj_wait(&read_objs, rcount, &write_objs, wcount, timeout) != 0)
+    g_tcp_can_recv(u->mod->sck, timeout);
+
+    tc_mutex_lock(u->mod_mutex);
+    res = u->mod->mod_check_wait_objs(u->mod);
+    if (res == 1)
     {
-      /* error, should not get here */
-      g_sleep(100);
+      u->terminate = 1;
     }
 
-    if (g_tcp_can_recv(read_objs, 0)) {
-      struct list* temp;
-      tc_mutex_lock(u->update_list_mutex);
-      if (u->mod->mod_check_wait_objs(u->mod) == 1)
-      {
-        tc_mutex_unlock(u->update_list_mutex);
-        u->terminate = 1;
-        break;
-      }
-      u->need_request = false;
-      write(u->efd, buf, sizeof(buf));
-
-      // swaping update list
-      temp = u->current_update_list;
-      u->current_update_list = u->last_update_list;
-      u->last_update_list = temp;
-
-      tc_mutex_unlock(u->update_list_mutex);
-    }
+    u->need_request = false;
+    g_file_write(u->efd, (char*)&event, sizeof(event));
+    tc_mutex_unlock(u->mod_mutex);
   }
+  return 0;
 }
 
 /******************************************************************************/
@@ -398,22 +376,13 @@ mod_init(void)
 
   lib_userChannel_load_library(u);
 
-  u->efd = eventfd(1, 0);
+  u->efd = eventfd(0, EFD_NONBLOCK);
   u->terminate = 0;
   u->need_request = true;
+  u->mod_mutex = tc_mutex_create();
 
   u->current_update_list = list_create();
   u->current_update_list->auto_free = true;
-
-  u->last_update_list = list_create();
-  u->last_update_list->auto_free = true;
-
-  u->connected = false;
-  u->do_connection = false;
-  u->do_start = false;
-  u->update_list_mutex = tc_mutex_create();
-
-  pthread_create(&u->thread, NULL, lib_ulteo_thread_run, 0);
 
   return u;
 }

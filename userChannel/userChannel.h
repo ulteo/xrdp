@@ -172,15 +172,11 @@ struct userChannel
   int efd;
   pthread_t thread;
   int terminate;
-  struct list* last_update_list;
   struct list* current_update_list;
-  tbus update_list_mutex;
-  bool do_connection;
-  bool do_start;
-  bool connected;
-  bool frame_ready;
+  tbus mod_mutex;
   bool need_request;
 };
 
+void* lib_ulteo_thread_run(void *arg);
 
 #endif
