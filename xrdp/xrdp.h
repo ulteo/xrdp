@@ -366,6 +366,8 @@ xrdp_bitmap_compress(char* in_data, int width, int height,
 /* xrdp_mm.c */
 struct xrdp_mm* APP_CC
 xrdp_mm_create(struct xrdp_wm* owner);
+int APP_CC
+xrdp_mm_load_userchannel(struct xrdp_mm* self, const char* lib);
 void APP_CC
 xrdp_mm_delete(struct xrdp_mm* self);
 int APP_CC

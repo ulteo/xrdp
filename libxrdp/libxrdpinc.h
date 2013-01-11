@@ -104,6 +104,7 @@ struct xrdp_client_info
   unsigned int network_detection_interval;
   bool use_static_frame_rate;
   unsigned int frame_rate;
+  char user_channel_plugin[255];
 };
 
 struct xrdp_brush

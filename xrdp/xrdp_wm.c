@@ -70,6 +70,9 @@ xrdp_wm_create(struct xrdp_process* owner,
   self->log = list_create();
   self->log->auto_free = 1;
   self->mm = xrdp_mm_create(self);
+
+  xrdp_mm_load_userchannel(self->mm, self->client_info->user_channel_plugin);
+
   self->default_font = xrdp_font_create(self);
   /* this will use built in keymap or load from file */
   get_keymaps(self->session->client_info->keylayout, &(self->keymap));
@@ -840,7 +843,7 @@ xrdp_wm_mouse_move(struct xrdp_wm* self, int x, int y)
       xrdp_wm_set_pointer(self, self->screen->pointer);
       self->current_pointer = self->screen->pointer;
     }
-    if (self->mm->mod != 0) /* if screen is mod controled */
+    if (self->mm->connected) /* if screen is mod controled */
     {
       if (self->mm->mod->mod_event != 0)
       {
@@ -963,7 +966,7 @@ xrdp_wm_mouse_click(struct xrdp_wm* self, int x, int y, int but, int down)
   control = xrdp_wm_at_pos(self->screen, x, y, &wnd);
   if (control == 0)
   {
-    if (self->mm->mod != 0) /* if screen is mod controled */
+    if (self->mm->connected) /* if screen is mod controled */
     {
       if (self->mm->mod->mod_event != 0)
       {
@@ -1151,7 +1154,7 @@ xrdp_wm_key(struct xrdp_wm* self, int device_flags, int scan_code)
         break; /* scroll lock */
     }
   }
-  if (self->mm->mod != 0)
+  if (self->mm->connected)
   {
     if (self->mm->mod->mod_event != 0)
     {
@@ -1198,7 +1201,7 @@ xrdp_wm_key_sync(struct xrdp_wm* self, int device_flags, int key_flags)
   {
     self->caps_lock = 1;
   }
-  if (self->mm->mod != 0)
+  if (self->mm->connected)
   {
     if (self->mm->mod->mod_event != 0)
     {
@@ -1217,7 +1220,7 @@ xrdp_wm_unicode_key(struct xrdp_wm* self, int unicode_key)
   int* key_sym = NULL;
   int i = 0;
 
-  if (self->mm->mod != 0)
+  if (self->mm->connected)
   {
     if (self->mm->mod->mod_event != 0)
     {
@@ -1363,7 +1366,7 @@ xrdp_wm_process_channel_data(struct xrdp_wm* self,
   int rv;
 
   rv = 1;
-  if (self->mm->mod != 0)
+  if (self->mm->connected)
   {
     if (self->mm->sesman_controlled)
     {

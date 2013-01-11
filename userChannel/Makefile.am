@@ -10,13 +10,13 @@ INCLUDES = \
   -I$(top_srcdir)/common
 
 pkglib_LTLIBRARIES = \
-  libuserChannel.la
+  lib_uc_proxy.la
 
-libuserChannel_la_SOURCES = \
+lib_uc_proxy_la_SOURCES = \
   proxy.c \
   proxy.h \
   userChannel.c \
   userChannel.h
 
-libuserChannel_la_LIBADD = \
+lib_uc_proxy_la_LIBADD = \
   $(top_builddir)/common/libxrdp_common.la

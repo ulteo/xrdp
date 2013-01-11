@@ -1105,7 +1105,7 @@ xrdp_bitmap_invalidate(struct xrdp_bitmap* self, struct xrdp_rect* rect)
   }
   else if (self->type == WND_TYPE_SCREEN) /* 2 */
   {
-    if (self->wm->mm->mod != 0)
+    if (self->wm->mm->connected)
     {
       if (self->wm->mm->mod->mod_event != 0)
       {

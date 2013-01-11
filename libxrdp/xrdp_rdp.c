@@ -252,6 +252,10 @@ xrdp_rdp_read_config(struct xrdp_client_info* client_info)
     {
       client_info->frame_rate = g_atoi(value);
       printf("frame rate: %i\n", client_info->frame_rate);
+    else if (g_strcasecmp(item, "user_channel_plugin") == 0)
+    {
+      g_strncpy(client_info->user_channel_plugin, value, sizeof(client_info->user_channel_plugin));
+      printf("user_channel_plugin: %s\n", client_info->user_channel_plugin);
     }
   }
   list_delete(items);
@@ -279,6 +283,7 @@ xrdp_rdp_create(struct xrdp_session* session, struct trans* trans)
   self->client_info.network_detection_interval = 10000;
   self->client_info.frame_rate = 40;
   self->client_info.use_static_frame_rate = true;
+  self->client_info.user_channel_plugin[0] = '\0';
   xrdp_rdp_read_config(&self->client_info);
   /* create sec layer */
   self->sec_layer = xrdp_sec_create(self, trans, self->client_info.crypt_level,
