@@ -41,7 +41,13 @@
 
 */
 
-#include "xrdp.h"
+#include "xrdp_mm.h"
+#include "xrdp_wm.h"
+#include "os_calls.h"
+#include "xrdp_painter.h"
+#include "xrdp_cache.h"
+
+
 static int APP_CC
 xrdp_mm_sesman_data_in(struct trans* trans);
 
@@ -97,7 +103,7 @@ xrdp_mm_module_cleanup(struct xrdp_mm* self)
   if (self->mod_handle != 0)
   {
     /* main thread unload */
-    g_xrdp_sync(xrdp_mm_sync_unload, self->mod_handle, 0);
+    xrdp_mm_sync_unload(self->mod_handle, 0);
   }
   trans_delete(self->chan_trans);
   self->chan_trans = 0;
@@ -201,7 +207,7 @@ xrdp_mm_send_login(struct xrdp_mm* self)
   out_uint16_be(s, self->wm->screen->width);
   out_uint16_be(s, self->wm->screen->height);
   out_uint16_be(s, self->wm->screen->bpp);
-  out_uint16_be(s, getpid());
+  out_uint16_be(s, g_getpid());
   /* send domain */
   index = g_strlen(self->wm->client_info->domain);
   out_uint16_be(s, index);
@@ -283,7 +289,7 @@ xrdp_mm_load_userchannel(struct xrdp_mm* self, const char* lib)
   }
   if (self->mod_handle == 0)
   {
-    self->mod_handle = g_xrdp_sync(xrdp_mm_sync_load, (long)lib, 0);
+    self->mod_handle = xrdp_mm_sync_load((long)lib, 0);
     if (self->mod_handle != 0)
     {
       func = g_get_proc_address(self->mod_handle, "mod_init");
@@ -733,7 +739,6 @@ xrdp_mm_process_login_response(struct xrdp_mm* self, struct stream* s)
   int display;
   int rv;
   int index;
-  char text[256];
   char ip[256];
   char port[256];
 
@@ -754,7 +759,7 @@ xrdp_mm_process_login_response(struct xrdp_mm* self, struct stream* s)
       xrdp_wm_set_login_mode(self->wm, 10);
       self->wm->dragging = 0;
       /* connect channel redir */
-      if (strcmp(ip, "127.0.0.1") == 0)
+      if (g_strcmp(ip, "127.0.0.1") == 0)
       {
         /* unix socket */
         self->chan_trans = trans_create(TRANS_MODE_UNIX, 8192, 8192);
@@ -999,14 +1004,12 @@ xrdp_mm_connect(struct xrdp_mm* self)
   int index;
   int count;
   int use_sesman;
-  int error;
   int ok;
   int rv;
   char* name;
   char* value;
   char ip[256];
   char errstr[256];
-  char text[256];
   char port[8];
 
   rv = 0;
@@ -1118,7 +1121,7 @@ xrdp_mm_send_disconnect(struct xrdp_mm* self)
 	out_uint8p(s, data, size)
 	size = s->p - s->data;
 	size = g_tcp_send(admin_socket, s->data, size, 0);
-	if (res =! size)
+	if (res != size)
 	{
 		g_writeln("Error while sending data");
 	}

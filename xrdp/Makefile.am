@@ -34,8 +34,7 @@ sbin_PROGRAMS = \
 xrdp_SOURCES = \
   xrdp.c xrdp.h xrdp_types.h \
   xrdp_listen.c \
-  xrdp_process.c \
-  xrdp_mm.c 
+  xrdp_process.c
 
 xrdp_LDADD = \
   $(top_builddir)/common/libxrdp_common.la \

@@ -41,6 +41,7 @@
 */
 
 #include "xrdp_wm.h"
+#include "xrdp_mm.h"
 #include "xrdp_bitmap.h"
 #include "xrdp_painter.h"
 #include "xrdp_cache.h"
@@ -1624,7 +1625,7 @@ xrdp_wm_log_error(struct xrdp_wm* self, char* msg)
 
     *return_pos = '\n';
     msg_copy += (return_pos + 1 - msg_copy);
-    return_pos = strchr(msg_copy, '\n');
+    return_pos = g_strchr(msg_copy, '\n');
   }
   list_add_item(self->log, (long)g_strdup(msg_copy));
 

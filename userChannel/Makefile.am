@@ -22,6 +22,7 @@ lib_uc_proxy_la_SOURCES = \
   xrdp_region.c xrdp_region.h \
   xrdp_painter.c xrdp_painter.h \
   xrdp_wm.c xrdp_wm.h \
+  xrdp_mm.c xrdp_mm.h \
   xrdp_cache.c xrdp_cache.h \
   xrdp_font.c xrdp_font.h \
   xrdp_login_wnd.c xrdp_login_wnd.h \

@@ -46,6 +46,7 @@
 #include "xrdp_bitmap.h"
 #include "xrdp_painter.h"
 #include "funcs.h"
+#include "lang.h"
 
 
 static int g_crc_seed = 0xffffffff;

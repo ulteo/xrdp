@@ -32,8 +32,6 @@ twchar APP_CC
 get_char_from_scan_code(int device_flags, int scan_code, int* keys, int caps_lock, int num_lock, int scroll_lock, struct xrdp_keymap* keymap);
 int* APP_CC
 get_keysym_from_unicode(int unicode, struct xrdp_keymap* keymap);
-static int APP_CC
-km_read_section(int fd, const char* section_name, struct xrdp_key_info* keymap);
 void APP_CC
 km_get_unicode_exception(int fd, struct xrdp_keymap* keymap);
 struct xrdp_key_info2* APP_CC
