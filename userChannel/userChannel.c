@@ -20,6 +20,7 @@
 
 #include "userChannel.h"
 #include "proxy.h"
+#include "graphics.h"
 #include <stdlib.h>
 #include <sys/eventfd.h>
 #include <time.h>
@@ -161,11 +162,11 @@ lib_userChannel_mod_check_wait_objs(struct userChannel* u)
       switch (up->order_type)
       {
       case begin_update:
-        u->server_begin_update(u);
+        graphics_begin_update(u);
         break;
 
       case end_update:
-        u->server_end_update(u);
+        graphics_end_update(u);
         break;
 
       case reset:

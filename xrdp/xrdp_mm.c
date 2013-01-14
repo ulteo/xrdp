@@ -350,8 +350,6 @@ xrdp_mm_load_userchannel(struct xrdp_mm* self, const char* lib)
     if (self->mod != 0)
     {
       self->mod->wm = (long)(self->wm);
-      self->mod->server_begin_update = server_begin_update;
-      self->mod->server_end_update = server_end_update;
       self->mod->server_fill_rect = server_fill_rect;
       self->mod->server_screen_blt = server_screen_blt;
       self->mod->server_paint_rect = server_paint_rect;
@@ -1259,32 +1257,6 @@ xrdp_mm_check_wait_objs(struct xrdp_mm* self)
   return rv;
 }
 
-/*****************************************************************************/
-int DEFAULT_CC
-server_begin_update(struct xrdp_mod* mod)
-{
-  struct xrdp_wm* wm;
-  struct xrdp_painter* p;
-
-  wm = (struct xrdp_wm*)(mod->wm);
-  p = xrdp_painter_create(wm, wm->session);
-  xrdp_painter_begin_update(p);
-  mod->painter = (long)p;
-  return 0;
-}
-
-/*****************************************************************************/
-int DEFAULT_CC
-server_end_update(struct xrdp_mod* mod)
-{
-  struct xrdp_painter* p;
-
-  p = (struct xrdp_painter*)(mod->painter);
-  xrdp_painter_end_update(p);
-  xrdp_painter_delete(p);
-  mod->painter = 0;
-  return 0;
-}
 
 /*****************************************************************************/
 int DEFAULT_CC

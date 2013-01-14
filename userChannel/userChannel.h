@@ -21,11 +21,13 @@
 #ifndef userChannel_MODULE_H
 #define userChannel_MODULE_H
 
-#include "arch.h"
-#include "parse.h"
-#include "os_calls.h"
-#include "defines.h"
-#include "proxy.h"
+#include <common/os_calls.h>
+#include <libxrdp/libxrdp.h>
+#include <libxrdp/libxrdpinc.h>
+#include <xrdp/xrdp_types.h>
+#include <common/xrdp_constants.h>
+#include "funcs.h"
+
 
 
 #define CURRENT_MOD_VER 1

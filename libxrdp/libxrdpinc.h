@@ -270,10 +270,10 @@ int DEFAULT_CC
 libxrdp_send_keepalive(struct xrdp_session* session);
 
 void DEFAULT_CC
-libxrdp_ts_frame_start(struct xrdp_session* session);
+libxrdp_send_ts_frame_start(struct xrdp_session* session);
 
 void DEFAULT_CC
-libxrdp_ts_frame_end(struct xrdp_session* session);
+libxrdp_send_ts_frame_end(struct xrdp_session* session);
 
 int DEFAULT_CC
 libxrdp_emt_loop(struct xrdp_session* session);
