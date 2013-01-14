@@ -2266,6 +2266,12 @@ g_get_proc_address(long lib, const char* name)
 }
 
 /*****************************************************************************/
+char*
+g_get_dlerror()
+{
+  return dlerror();
+}
+/*****************************************************************************/
 /* does not work in win32 */
 int APP_CC
 g_system(char* aexec)

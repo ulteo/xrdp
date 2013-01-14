@@ -261,6 +261,8 @@ int APP_CC
 g_free_library(long lib);
 void* APP_CC
 g_get_proc_address(long lib, const char* name);
+char* APP_CC
+g_get_dlerror();
 int APP_CC
 g_system(char* aexec);
 int APP_CC
