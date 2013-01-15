@@ -19,7 +19,7 @@
  */
 
 #include "userChannel.h"
-#include "proxy.h"
+#include "abstract.h"
 #include "graphics.h"
 #include <stdlib.h>
 #include <sys/eventfd.h>

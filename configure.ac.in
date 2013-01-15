@@ -266,6 +266,9 @@ AC_CONFIG_FILES([Makefile
                  vchannel/Makefile
                  vnc/Makefile
                  userChannel/Makefile
+                 userChannel/abstract/Makefile
+                 userChannel/proxy/Makefile
+                 userChannel/advance/Makefile
                  xup/Makefile
                  xrdp/Makefile
 ])
