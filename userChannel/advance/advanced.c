@@ -33,7 +33,7 @@ void update_add(update* up)
 
 /*****************************************************************************/
 int DEFAULT_CC
-lib_userChannel_proxy_server_begin_update (struct xrdp_mod* mod)
+lib_userChannel_server_begin_update (struct xrdp_mod* mod)
 {
   if (u)
   {
@@ -46,7 +46,7 @@ lib_userChannel_proxy_server_begin_update (struct xrdp_mod* mod)
 
 /*****************************************************************************/
 int DEFAULT_CC
-lib_userChannel_proxy_server_end_update(struct xrdp_mod* mod)
+lib_userChannel_server_end_update(struct xrdp_mod* mod)
 {
   if (u)
   {
@@ -59,7 +59,7 @@ lib_userChannel_proxy_server_end_update(struct xrdp_mod* mod)
 
 /*****************************************************************************/
 int DEFAULT_CC
-lib_userChannel_proxy_server_reset(struct xrdp_mod* mod, int width, int height, int bpp)
+lib_userChannel_server_reset(struct xrdp_mod* mod, int width, int height, int bpp)
 {
   if (u)
   {
@@ -75,7 +75,7 @@ lib_userChannel_proxy_server_reset(struct xrdp_mod* mod, int width, int height, 
 
 /*****************************************************************************/
 int DEFAULT_CC
-lib_userChannel_proxy_server_fill_rect(struct xrdp_mod* mod, int x, int y, int cx, int cy)
+lib_userChannel_server_fill_rect(struct xrdp_mod* mod, int x, int y, int cx, int cy)
 {
   if (u)
   {
@@ -92,7 +92,7 @@ lib_userChannel_proxy_server_fill_rect(struct xrdp_mod* mod, int x, int y, int c
 
 /*****************************************************************************/
 int DEFAULT_CC
-lib_userChannel_proxy_server_set_fgcolor(struct xrdp_mod* mod, int fgcolor)
+lib_userChannel_server_set_fgcolor(struct xrdp_mod* mod, int fgcolor)
 {
   if (u)
   {
@@ -106,7 +106,7 @@ lib_userChannel_proxy_server_set_fgcolor(struct xrdp_mod* mod, int fgcolor)
 
 /*****************************************************************************/
 int DEFAULT_CC
-lib_userChannel_proxy_server_paint_rect(struct xrdp_mod* mod, int x, int y, int cx, int cy,
+lib_userChannel_server_paint_rect(struct xrdp_mod* mod, int x, int y, int cx, int cy,
                   char* data, int width, int height, int srcx, int srcy)
 {
   if (u)
@@ -137,7 +137,7 @@ lib_userChannel_proxy_server_paint_rect(struct xrdp_mod* mod, int x, int y, int 
 
 /*****************************************************************************/
 int DEFAULT_CC
-lib_userChannel_proxy_server_screen_blt(struct xrdp_mod* mod, int x, int y, int cx, int cy,
+lib_userChannel_server_screen_blt(struct xrdp_mod* mod, int x, int y, int cx, int cy,
                   int srcx, int srcy)
 {
   if (u)
@@ -157,7 +157,7 @@ lib_userChannel_proxy_server_screen_blt(struct xrdp_mod* mod, int x, int y, int 
 
 /*****************************************************************************/
 int DEFAULT_CC
-lib_userChannel_proxy_server_set_pointer(struct xrdp_mod* mod, int x, int y, char* data, char* mask)
+lib_userChannel_server_set_pointer(struct xrdp_mod* mod, int x, int y, char* data, char* mask)
 {
   if (u)
   {
@@ -179,7 +179,7 @@ lib_userChannel_proxy_server_set_pointer(struct xrdp_mod* mod, int x, int y, cha
 
 /*****************************************************************************/
 int DEFAULT_CC
-lib_userChannel_proxy_server_msg(struct xrdp_mod* mod, char* msg, int code)
+lib_userChannel_server_msg(struct xrdp_mod* mod, char* msg, int code)
 {
   if (u)
   {
@@ -190,7 +190,7 @@ lib_userChannel_proxy_server_msg(struct xrdp_mod* mod, char* msg, int code)
 
 /*****************************************************************************/
 int DEFAULT_CC
-lib_userChannel_proxy_server_is_term(struct xrdp_mod* mod)
+lib_userChannel_server_is_term(struct xrdp_mod* mod)
 {
   if (u)
   {
@@ -201,7 +201,7 @@ lib_userChannel_proxy_server_is_term(struct xrdp_mod* mod)
 
 /*****************************************************************************/
 int DEFAULT_CC
-lib_userChannel_proxy_server_palette(struct xrdp_mod* mod, int* palette)
+lib_userChannel_server_palette(struct xrdp_mod* mod, int* palette)
 {
   printf("server_palette is not implemented\n");
 
@@ -210,7 +210,7 @@ lib_userChannel_proxy_server_palette(struct xrdp_mod* mod, int* palette)
 
 /*****************************************************************************/
 int DEFAULT_CC
-lib_userChannel_proxy_server_set_clip(struct xrdp_mod* mod, int x, int y, int cx, int cy)
+lib_userChannel_server_set_clip(struct xrdp_mod* mod, int x, int y, int cx, int cy)
 {
   if (u)
   {
@@ -227,7 +227,7 @@ lib_userChannel_proxy_server_set_clip(struct xrdp_mod* mod, int x, int y, int cx
 
 /*****************************************************************************/
 int DEFAULT_CC
-lib_userChannel_proxy_server_reset_clip(struct xrdp_mod* mod)
+lib_userChannel_server_reset_clip(struct xrdp_mod* mod)
 {
   if (u)
   {
@@ -240,7 +240,7 @@ lib_userChannel_proxy_server_reset_clip(struct xrdp_mod* mod)
 
 /*****************************************************************************/
 int DEFAULT_CC
-lib_userChannel_proxy_server_set_bgcolor(struct xrdp_mod* mod, int bgcolor)
+lib_userChannel_server_set_bgcolor(struct xrdp_mod* mod, int bgcolor)
 {
   if (u)
   {
@@ -255,7 +255,7 @@ lib_userChannel_proxy_server_set_bgcolor(struct xrdp_mod* mod, int bgcolor)
 
 /*****************************************************************************/
 int DEFAULT_CC
-lib_userChannel_proxy_server_set_opcode(struct xrdp_mod* mod, int opcode)
+lib_userChannel_server_set_opcode(struct xrdp_mod* mod, int opcode)
 {
   if (u)
   {
@@ -270,7 +270,7 @@ lib_userChannel_proxy_server_set_opcode(struct xrdp_mod* mod, int opcode)
 
 /*****************************************************************************/
 int DEFAULT_CC
-lib_userChannel_proxy_server_set_mixmode(struct xrdp_mod* mod, int mixmode)
+lib_userChannel_server_set_mixmode(struct xrdp_mod* mod, int mixmode)
 {
   if (u)
   {
@@ -285,7 +285,7 @@ lib_userChannel_proxy_server_set_mixmode(struct xrdp_mod* mod, int mixmode)
 
 /*****************************************************************************/
 int DEFAULT_CC
-lib_userChannel_proxy_server_set_brush(struct xrdp_mod* mod, int x_orgin, int y_orgin,
+lib_userChannel_server_set_brush(struct xrdp_mod* mod, int x_orgin, int y_orgin,
                  int style, char* pattern)
 {
   printf("server_set_brush is not implemented\n");
@@ -295,7 +295,7 @@ lib_userChannel_proxy_server_set_brush(struct xrdp_mod* mod, int x_orgin, int y_
 
 /*****************************************************************************/
 int DEFAULT_CC
-lib_userChannel_proxy_server_set_pen(struct xrdp_mod* mod, int style, int width)
+lib_userChannel_server_set_pen(struct xrdp_mod* mod, int style, int width)
 {
   printf("server_set_pen is not implemented\n");
 
@@ -304,7 +304,7 @@ lib_userChannel_proxy_server_set_pen(struct xrdp_mod* mod, int style, int width)
 
 /*****************************************************************************/
 int DEFAULT_CC
-lib_userChannel_proxy_server_draw_line(struct xrdp_mod* mod, int x1, int y1, int x2, int y2)
+lib_userChannel_server_draw_line(struct xrdp_mod* mod, int x1, int y1, int x2, int y2)
 {
   if (u)
   {
@@ -323,7 +323,7 @@ lib_userChannel_proxy_server_draw_line(struct xrdp_mod* mod, int x1, int y1, int
 
 /*****************************************************************************/
 int DEFAULT_CC
-lib_userChannel_proxy_server_add_char(struct xrdp_mod* mod, int font, int charactor,
+lib_userChannel_server_add_char(struct xrdp_mod* mod, int font, int charactor,
                 int offset, int baseline,
                 int width, int height, char* data)
 {
@@ -333,7 +333,7 @@ lib_userChannel_proxy_server_add_char(struct xrdp_mod* mod, int font, int charac
 
 /*****************************************************************************/
 int DEFAULT_CC
-lib_userChannel_proxy_server_draw_text(struct xrdp_mod* mod, int font,
+lib_userChannel_server_draw_text(struct xrdp_mod* mod, int font,
                  int flags, int mixmode, int clip_left, int clip_top,
                  int clip_right, int clip_bottom,
                  int box_left, int box_top,
@@ -347,7 +347,7 @@ lib_userChannel_proxy_server_draw_text(struct xrdp_mod* mod, int font,
 
 /*****************************************************************************/
 int DEFAULT_CC
-lib_userChannel_proxy_server_query_channel(struct xrdp_mod* mod, int index, char* channel_name,
+lib_userChannel_server_query_channel(struct xrdp_mod* mod, int index, char* channel_name,
                      int* channel_flags)
 {
   if (u)
@@ -361,7 +361,7 @@ lib_userChannel_proxy_server_query_channel(struct xrdp_mod* mod, int index, char
 /*****************************************************************************/
 /* returns -1 on error */
 int DEFAULT_CC
-lib_userChannel_proxy_server_get_channel_id(struct xrdp_mod* mod, char* name)
+lib_userChannel_server_get_channel_id(struct xrdp_mod* mod, char* name)
 {
   if (u)
   {
@@ -373,7 +373,7 @@ lib_userChannel_proxy_server_get_channel_id(struct xrdp_mod* mod, char* name)
 
 /*****************************************************************************/
 int DEFAULT_CC
-lib_userChannel_proxy_server_send_to_channel(struct xrdp_mod* mod, int channel_id,
+lib_userChannel_server_send_to_channel(struct xrdp_mod* mod, int channel_id,
                        char* data, int data_len,
                        int total_data_len, int flags)
 {

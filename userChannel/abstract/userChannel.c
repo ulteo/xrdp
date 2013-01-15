@@ -290,30 +290,30 @@ lib_userChannel_load_library(struct userChannel* self)
     if (self->mod != 0)
     {
       self->mod->wm = (long)(self->wm);
-      self->mod->server_begin_update = lib_userChannel_proxy_server_begin_update;
-      self->mod->server_end_update = lib_userChannel_proxy_server_end_update;
-      self->mod->server_fill_rect = lib_userChannel_proxy_server_fill_rect;
-      self->mod->server_screen_blt = lib_userChannel_proxy_server_screen_blt;
-      self->mod->server_paint_rect = lib_userChannel_proxy_server_paint_rect;
-      self->mod->server_set_fgcolor = lib_userChannel_proxy_server_set_fgcolor;
-      self->mod->server_set_pointer = lib_userChannel_proxy_server_set_pointer;
-      self->mod->server_msg = lib_userChannel_proxy_server_msg;
-      self->mod->server_is_term = lib_userChannel_proxy_server_is_term;
-      self->mod->server_reset = lib_userChannel_proxy_server_reset;
-      self->mod->server_palette = lib_userChannel_proxy_server_palette;
-      self->mod->server_set_clip = lib_userChannel_proxy_server_set_clip;
-      self->mod->server_reset_clip = lib_userChannel_proxy_server_reset_clip;
-      self->mod->server_set_bgcolor = lib_userChannel_proxy_server_set_bgcolor;
-      self->mod->server_set_opcode = lib_userChannel_proxy_server_set_opcode;
-      self->mod->server_set_mixmode = lib_userChannel_proxy_server_set_mixmode;
-      self->mod->server_set_brush = lib_userChannel_proxy_server_set_brush;
-      self->mod->server_set_pen = lib_userChannel_proxy_server_set_pen;
-      self->mod->server_draw_line = lib_userChannel_proxy_server_draw_line;
-      self->mod->server_add_char = lib_userChannel_proxy_server_add_char;
-      self->mod->server_draw_text = lib_userChannel_proxy_server_draw_text;
-      self->mod->server_query_channel = lib_userChannel_proxy_server_query_channel;
-      self->mod->server_get_channel_id = lib_userChannel_proxy_server_get_channel_id;
-      self->mod->server_send_to_channel = lib_userChannel_proxy_server_send_to_channel;
+      self->mod->server_begin_update = lib_userChannel_server_begin_update;
+      self->mod->server_end_update = lib_userChannel_server_end_update;
+      self->mod->server_fill_rect = lib_userChannel_server_fill_rect;
+      self->mod->server_screen_blt = lib_userChannel_server_screen_blt;
+      self->mod->server_paint_rect = lib_userChannel_server_paint_rect;
+      self->mod->server_set_fgcolor = lib_userChannel_server_set_fgcolor;
+      self->mod->server_set_pointer = lib_userChannel_server_set_pointer;
+      self->mod->server_msg = lib_userChannel_server_msg;
+      self->mod->server_is_term = lib_userChannel_server_is_term;
+      self->mod->server_reset = lib_userChannel_server_reset;
+      self->mod->server_palette = lib_userChannel_server_palette;
+      self->mod->server_set_clip = lib_userChannel_server_set_clip;
+      self->mod->server_reset_clip = lib_userChannel_server_reset_clip;
+      self->mod->server_set_bgcolor = lib_userChannel_server_set_bgcolor;
+      self->mod->server_set_opcode = lib_userChannel_server_set_opcode;
+      self->mod->server_set_mixmode = lib_userChannel_server_set_mixmode;
+      self->mod->server_set_brush = lib_userChannel_server_set_brush;
+      self->mod->server_set_pen = lib_userChannel_server_set_pen;
+      self->mod->server_draw_line = lib_userChannel_server_draw_line;
+      self->mod->server_add_char = lib_userChannel_server_add_char;
+      self->mod->server_draw_text = lib_userChannel_server_draw_text;
+      self->mod->server_query_channel = lib_userChannel_server_query_channel;
+      self->mod->server_get_channel_id = lib_userChannel_server_get_channel_id;
+      self->mod->server_send_to_channel = lib_userChannel_server_send_to_channel;
     }
   }
 
