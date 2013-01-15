@@ -1020,7 +1020,7 @@ xrdp_mm_send_disconnect(struct xrdp_mm* self)
 	out_uint32_be(s,size);
 	out_uint8p(s, data, size)
 	size = s->p - s->data;
-	size = g_tcp_send(admin_socket, s->data, size, 0);
+	res = g_tcp_send(admin_socket, s->data, size, 0);
 	if (res != size)
 	{
 		g_writeln("Error while sending data");
