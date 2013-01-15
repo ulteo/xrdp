@@ -18,7 +18,73 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  **/
 
+#ifndef XRDP_WM_H
+#define XRDP_WM_H
+
 #include "userChannel.h"
+#include "lang.h"
+#include "xrdp_region.h"
+
+
+/* the window manager */
+struct xrdp_wm
+{
+  struct xrdp_process* pro_layer; /* owner */
+  struct xrdp_bitmap* screen;
+  struct xrdp_session* session;
+  struct xrdp_painter* painter;
+  struct xrdp_cache* cache;
+  int palette[256];
+  struct xrdp_bitmap* login_window;
+  /* generic colors */
+  int black;
+  int grey;
+  int dark_grey;
+  int blue;
+  int dark_blue;
+  int white;
+  int red;
+  int green;
+  /* dragging info */
+  int dragging;
+  int draggingx;
+  int draggingy;
+  int draggingcx;
+  int draggingcy;
+  int draggingdx;
+  int draggingdy;
+  int draggingorgx;
+  int draggingorgy;
+  int draggingxorstate;
+  struct xrdp_bitmap* dragging_window;
+  /* the down(clicked) button */
+  struct xrdp_bitmap* button_down;
+  /* popup for combo box */
+  struct xrdp_bitmap* popup_wnd;
+  /* focused window */
+  struct xrdp_bitmap* focused_window;
+  /* pointer */
+  int current_pointer;
+  int mouse_x;
+  int mouse_y;
+  /* keyboard info */
+  int keys[256]; /* key states 0 up 1 down*/
+  int caps_lock;
+  int scroll_lock;
+  int num_lock;
+  int compose;
+  /* client info */
+  struct xrdp_client_info* client_info;
+  /* session log */
+  struct list* log;
+  struct xrdp_bitmap* log_wnd;
+  int login_mode;
+  tbus login_mode_event;
+  struct xrdp_mm* mm;
+  struct xrdp_font* default_font;
+  struct xrdp_keymap keymap;
+  struct xrdp_user_channel* user_channel;
+};
 
 
 struct xrdp_wm* APP_CC
@@ -78,4 +144,4 @@ xrdp_wm_connect(struct xrdp_process* process);
 bool APP_CC
 xrdp_module_init(struct xrdp_process* process, struct xrdp_client_info* client);
 
-
+#endif // XRDP_WM_H

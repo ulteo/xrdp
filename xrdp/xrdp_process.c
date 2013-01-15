@@ -112,18 +112,9 @@ xrdp_is_term(void)
 static int APP_CC
 xrdp_process_mod_end(struct xrdp_process* self)
 {
-  if (self->wm != 0)
+  if (self->mod != 0)
   {
-    if (self->wm->mm != 0)
-    {
-      if (self->wm->mm->mod != 0)
-      {
-        if (self->wm->mm->mod->mod_end != 0)
-        {
-          return self->wm->mm->mod->mod_end(self->wm->mm->mod);
-        }
-      }
-    }
+    self->mod->end(self->wm);
   }
   return 0;
 }

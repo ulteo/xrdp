@@ -47,6 +47,8 @@
 #include "xrdp_painter.h"
 #include "funcs.h"
 #include "lang.h"
+#include "xrdp_wm.h"
+#include "xrdp_mm.h"
 
 
 static int g_crc_seed = 0xffffffff;

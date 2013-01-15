@@ -47,6 +47,7 @@
 #include "xrdp_painter.h"
 #include "xrdp_cache.h"
 #include "userChannel.h"
+#include <xrdp/xrdp_types.h>
 
 
 static int APP_CC
@@ -325,7 +326,7 @@ xrdp_mm_setup_mod2(struct xrdp_mm* self)
       }
       else
       {
-        g_set_wait_obj(self->wm->pro_layer->self_term_event); /* kill session */
+    	  g_set_wait_obj(self->wm->pro_layer->self_term_event); /* kill session */
       }
     }
   }
@@ -1029,7 +1030,11 @@ xrdp_mm_send_disconnect(struct xrdp_mm* self)
   return 0;
 }
 
-
+int APP_CC
+xrdp_mm_end(struct xrdp_mm* self)
+{
+  lib_userChannel_mod_end(self->mod);
+}
 
 /*****************************************************************************/
 int APP_CC

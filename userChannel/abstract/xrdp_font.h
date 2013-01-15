@@ -18,7 +18,24 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  **/
 
+#ifndef XRDP_FONT_H
+#define XRDP_FONT_H
+
 #include "userChannel.h"
+
+#define NUM_FONTS 0x4e00
+#define DEFAULT_FONT_NAME "sans-10.fv1"
+
+/* font */
+struct xrdp_font
+{
+  struct xrdp_wm* wm;
+  struct xrdp_font_char font_items[NUM_FONTS];
+  char name[32];
+  int size;
+  int style;
+};
+
 
 struct xrdp_font* APP_CC
 xrdp_font_create(struct xrdp_wm* wm);
@@ -27,3 +44,4 @@ xrdp_font_delete(struct xrdp_font* self);
 int APP_CC
 xrdp_font_item_compare(struct xrdp_font_char* font1, struct xrdp_font_char* font2);
 
+#endif //XRDP_FONT_H

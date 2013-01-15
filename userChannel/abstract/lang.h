@@ -23,6 +23,31 @@
 
 #include "userChannel.h"
 
+struct xrdp_key_info
+{
+  int sym;
+  int chr;
+};
+
+struct xrdp_key_info2
+{
+  char* sym;
+  int chr ;
+};
+
+struct xrdp_keymap
+{
+  struct xrdp_key_info keys_noshift[128];
+  struct xrdp_key_info keys_shift[128];
+  struct xrdp_key_info keys_altgr[128];
+  struct xrdp_key_info keys_capslock[128];
+  struct xrdp_key_info keys_shiftcapslock[128];
+  struct xrdp_key_info *keys_unicode_exceptions;
+  struct xrdp_key_info2 *keys_unicode_combinaisons;
+  int keys_unicode_exceptions_count;
+  int keys_unicode_combinaisons_count;
+};
+
 
 struct xrdp_key_info* APP_CC
 get_key_info_from_scan_code(int device_flags, int scan_code, int* keys, int caps_lock, int num_lock, int scroll_lock, struct xrdp_keymap* keymap);

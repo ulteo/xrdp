@@ -18,7 +18,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  **/
 
+#ifndef XRDP_REGION_H
+#define XRDP_REGION_H
+
 #include "userChannel.h"
+
+
+/* region */
+struct xrdp_region
+{
+  struct xrdp_wm* wm; /* owner */
+  struct list* rects;
+};
+
 
 struct xrdp_region* APP_CC
 xrdp_region_create(struct xrdp_wm* wm);
@@ -33,3 +45,4 @@ xrdp_region_subtract_rect(struct xrdp_region* self, struct xrdp_rect* rect);
 int APP_CC
 xrdp_region_get_rect(struct xrdp_region* self, int index, struct xrdp_rect* rect);
 
+#endif // XRDP_REGION_H

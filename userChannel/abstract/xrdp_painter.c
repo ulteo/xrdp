@@ -26,6 +26,8 @@
 #include "xrdp_region.h"
 #include "xrdp_cache.h"
 #include "xrdp_wm.h"
+#include "xrdp_font.h"
+#include "funcs.h"
 
 
 /*****************************************************************************/

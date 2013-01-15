@@ -40,7 +40,7 @@
 
 */
 
-#include "userChannel.h"
+#include "xrdp_cache.h"
 #include "xrdp_bitmap.h"
 #include "xrdp_font.h"
 #include "xrdp_wm.h"

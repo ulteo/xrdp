@@ -49,6 +49,8 @@
 #include "xrdp_region.h"
 #include "xrdp_login_wnd.h"
 #include "lang.h"
+#include "funcs.h"
+#include <xrdp/xrdp_types.h>
 
 
 /*****************************************************************************/
@@ -1749,6 +1751,12 @@ xrdp_wm_send_disconnect(struct xrdp_wm* self)
   return xrdp_mm_send_disconnect(self->mm);
 }
 
+int APP_CC
+xrdp_wm_end(struct xrdp_wm* self)
+{
+  return xrdp_mm_end(self->mm);
+}
+
 /*****************************************************************************/
 bool DEFAULT_CC
 xrdp_module_init(struct xrdp_process* process, struct xrdp_client_info* client)
@@ -1758,5 +1766,6 @@ xrdp_module_init(struct xrdp_process* process, struct xrdp_client_info* client)
   process->mod->connect = xrdp_wm_connect;
   process->mod->get_data_descriptor = xrdp_wm_get_wait_objs;
   process->mod->get_data = xrdp_wm_check_wait_objs;
+  process->mod->end = xrdp_wm_end;
   return true;
 }

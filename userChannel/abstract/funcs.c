@@ -19,8 +19,7 @@
    simple functions
 
 */
-
-#include "userChannel.h"
+#include "funcs.h"
 
 /*****************************************************************************/
 /* returns boolean */

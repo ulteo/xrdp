@@ -24,6 +24,79 @@
 #include "userChannel.h"
 
 
+struct xrdp_painter;
+
+
+/* header for bmp file */
+struct xrdp_bmp_header
+{
+  int size;
+  int image_width;
+  int image_height;
+  short planes;
+  short bit_count;
+  int compression;
+  int image_size;
+  int x_pels_per_meter;
+  int y_pels_per_meter;
+  int clr_used;
+  int clr_important;
+};
+
+/* window or bitmap */
+struct xrdp_bitmap
+{
+  /* 0 = bitmap 1 = window 2 = screen 3 = button 4 = image 5 = edit
+     6 = label 7 = combo 8 = special */
+  int type;
+  int width;
+  int height;
+  struct xrdp_wm* wm;
+  /* msg 1 = click 2 = mouse move 3 = paint 100 = modal result */
+  /* see messages in constants.h */
+  int (*notify)(struct xrdp_bitmap* wnd, struct xrdp_bitmap* sender,
+                int msg, long param1, long param2);
+  /* for bitmap */
+  int bpp;
+  int line_size; /* in bytes */
+  int do_not_free_data;
+  char* data;
+  /* for all but bitmap */
+  int left;
+  int top;
+  int pointer;
+  int bg_color;
+  int tab_stop;
+  int id;
+  char* caption1;
+  /* for window or screen */
+  struct xrdp_bitmap* modal_dialog;
+  struct xrdp_bitmap* focused_control;
+  struct xrdp_bitmap* owner; /* window that created us */
+  struct xrdp_bitmap* parent; /* window contained in */
+  /* for modal dialog */
+  struct xrdp_bitmap* default_button; /* button when enter is pressed */
+  struct xrdp_bitmap* esc_button; /* button when esc is pressed */
+  /* list of child windows */
+  struct list* child_list;
+  /* for edit */
+  int edit_pos;
+  twchar password_char;
+  /* for button or combo */
+  int state; /* for button 0 = normal 1 = down */
+  /* for combo */
+  struct list* string_list;
+  struct list* data_list;
+  /* for combo or popup */
+  int item_index;
+  /* for popup */
+  struct xrdp_bitmap* popped_from;
+  int item_height;
+  /* crc */
+  int crc;
+};
+
+
 struct xrdp_bitmap* APP_CC
 xrdp_bitmap_create(int width, int height, int bpp, int type, struct xrdp_wm* wm);
 struct xrdp_bitmap* APP_CC

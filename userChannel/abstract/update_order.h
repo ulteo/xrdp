@@ -22,6 +22,50 @@
 #define UPDATE_ORDER_H_
 
 
+typedef enum {
+  begin_update,
+  end_update,
+  reset,
+  reset_clip,
+  fill_rect,
+  paint_rect,
+  screen_blt,
+  set_cursor,
+  set_clip,
+  set_fgcolor,
+  set_bgcolor,
+  set_opcode,
+  set_mixmode,
+  set_brush,
+  set_pen,
+  draw_line,
+  add_char,
+  send_to_channel
+} order_type;
+
+typedef struct _update {
+  order_type order_type;
+  char* data;
+  char* mask;
+  unsigned int data_len;
+  unsigned int mask_len;
+  unsigned int color;
+  unsigned int opcode;
+  unsigned int mixmode;
+  unsigned int x;
+  unsigned int y;
+  unsigned int cx;
+  unsigned int cy;
+  unsigned int srcx;
+  unsigned int srcy;
+  unsigned int width;
+  unsigned int height;
+  unsigned int bpp;
+  unsigned int channel_id;
+  unsigned int total_data_len;
+  unsigned int flags;
+} update;
+
 
 
 #endif /* UPDATE_ORDER_H_ */

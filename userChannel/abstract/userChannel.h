@@ -24,59 +24,11 @@
 #include <common/os_calls.h>
 #include <libxrdp/libxrdp.h>
 #include <libxrdp/libxrdpinc.h>
-#include <xrdp/xrdp_types.h>
-#include <common/xrdp_constants.h>
-#include "funcs.h"
-
+#include "update_order.h"
 
 
 #define CURRENT_MOD_VER 1
 #define LIBRARY_NAME "libvnc.so"
-
-
-typedef enum {
-  begin_update,
-  end_update,
-  reset,
-  reset_clip,
-  fill_rect,
-  paint_rect,
-  screen_blt,
-  set_cursor,
-  set_clip,
-  set_fgcolor,
-  set_bgcolor,
-  set_opcode,
-  set_mixmode,
-  set_brush,
-  set_pen,
-  draw_line,
-  add_char,
-  send_to_channel
-} order_type;
-
-typedef struct _update {
-  order_type order_type;
-  char* data;
-  char* mask;
-  unsigned int data_len;
-  unsigned int mask_len;
-  unsigned int color;
-  unsigned int opcode;
-  unsigned int mixmode;
-  unsigned int x;
-  unsigned int y;
-  unsigned int cx;
-  unsigned int cy;
-  unsigned int srcx;
-  unsigned int srcy;
-  unsigned int width;
-  unsigned int height;
-  unsigned int bpp;
-  unsigned int channel_id;
-  unsigned int total_data_len;
-  unsigned int flags;
-} update;
 
 
 struct userChannel
@@ -179,6 +131,7 @@ struct userChannel
   bool need_request;
 };
 
+
 void* lib_ulteo_thread_run(void *arg);
 
 struct userChannel* APP_CC
@@ -187,6 +140,8 @@ int DEFAULT_CC
 lib_userChannel_mod_signal(struct userChannel* u);
 int DEFAULT_CC
 lib_userChannel_mod_start(struct userChannel* u, int w, int h, int bpp);
+int DEFAULT_CC
+lib_userChannel_mod_end(struct userChannel* u);
 int DEFAULT_CC
 lib_userChannel_mod_connect(struct userChannel* u);
 

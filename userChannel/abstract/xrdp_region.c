@@ -20,9 +20,7 @@
    region
 
 */
-
-#include "userChannel.h"
-
+#include "xrdp_region.h"
 
 /*****************************************************************************/
 struct xrdp_region* APP_CC

@@ -42,7 +42,11 @@
 
 #include "xrdp_login_wnd.h"
 #include "xrdp_painter.h"
+#include "xrdp_bitmap.h"
+#include "xrdp_mm.h"
 #include "xrdp_wm.h"
+#include "funcs.h"
+#include <xrdp/xrdp_types.h>
 
 
 /*****************************************************************************/

@@ -20,6 +20,7 @@
 
 #include "userChannel.h"
 #include "xrdp_painter.h"
+#include "xrdp_wm.h"
 
 
 /*****************************************************************************/

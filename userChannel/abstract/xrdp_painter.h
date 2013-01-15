@@ -25,6 +25,60 @@
 #include "xrdp_bitmap.h"
 
 
+/* painter */
+struct xrdp_painter
+{
+  int rop;
+  struct xrdp_rect* use_clip; /* nil if not using clip */
+  struct xrdp_rect clip;
+  int clip_children;
+  int bg_color;
+  int fg_color;
+  int mix_mode;
+  struct xrdp_brush brush;
+  struct xrdp_pen pen;
+  struct xrdp_session* session;
+  struct xrdp_wm* wm; /* owner */
+  struct xrdp_font* font;
+};
+
+struct xrdp_palette_item
+{
+  int stamp;
+  int palette[256];
+};
+
+struct xrdp_bitmap_item
+{
+  int stamp;
+  struct xrdp_bitmap* bitmap;
+};
+
+struct xrdp_char_item
+{
+  int stamp;
+  struct xrdp_font_char font_item;
+};
+
+struct xrdp_pointer_item
+{
+  int stamp;
+  int x; /* hotspot */
+  int y;
+  char data[32 * 32 * 3];
+  char mask[32 * 32 / 8];
+};
+
+struct xrdp_brush_item
+{
+  int stamp;
+  /* expand this to a structure to handle more complicated brushes
+     for now its 8x8 1bpp brushes only */
+  char pattern[8];
+};
+
+
+
 struct xrdp_painter* APP_CC
 xrdp_painter_create(struct xrdp_wm* wm, struct xrdp_session* session);
 void APP_CC
