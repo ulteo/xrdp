@@ -20,6 +20,7 @@
 
 #include "proxy.h"
 #include "userChannel.h"
+#include "xrdp_mm.h"
 
 
 extern struct userChannel* u;
@@ -183,7 +184,7 @@ lib_userChannel_proxy_server_msg(struct xrdp_mod* mod, char* msg, int code)
 {
   if (u)
   {
-    u->server_msg(u, msg, code);
+    server_msg(u, msg, code);
   }
   return 0;
 }
@@ -194,7 +195,7 @@ lib_userChannel_proxy_server_is_term(struct xrdp_mod* mod)
 {
   if (u)
   {
-    u->server_is_term(u);
+    server_is_term(u);
   }
   return 0;
 }
@@ -352,7 +353,7 @@ lib_userChannel_proxy_server_query_channel(struct xrdp_mod* mod, int index, char
 {
   if (u)
   {
-    u->server_query_channel(u, index, channel_name, channel_flags);
+    server_query_channel(u, index, channel_name, channel_flags);
   }
 
   return 0;
@@ -365,7 +366,7 @@ lib_userChannel_proxy_server_get_channel_id(struct xrdp_mod* mod, char* name)
 {
   if (u)
   {
-    u->server_get_channel_id(u, name);
+    server_get_channel_id(u, name);
   }
 
   return 0;

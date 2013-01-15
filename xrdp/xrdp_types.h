@@ -41,6 +41,36 @@
 */
 
 /* lib */
+
+
+struct xrdp_process;
+struct xrdp_wm;
+typedef bool (*init_func_pointer)(struct xrdp_process*);
+typedef int (*exit_func_pointer)(struct xrdp_process* process);
+typedef int (*get_data_descriptor_func_pointer)(struct xrdp_wm* self, tbus* robjs, int* rc, tbus* wobjs, int* wc, int* timeout);
+typedef int (*get_data_func_pointer)(struct xrdp_wm* self);
+typedef int (*disconnect_func_pointer)(struct xrdp_wm* self);
+typedef struct xrdp_wm* (*connect_func_pointer)(struct xrdp_process*);
+typedef int (*callback_funct_pointer)(long id, int msg, long param1, long param2, long param3, long param4);
+typedef bool (*is_term_func_pointer)();
+
+struct xrdp_user_channel
+{
+  tbus handle;
+  init_func_pointer init;
+  exit_func_pointer exit;
+
+  // module functions
+  get_data_descriptor_func_pointer get_data_descriptor;
+  get_data_func_pointer get_data;
+  connect_func_pointer connect;
+  disconnect_func_pointer disconnect;
+  callback_funct_pointer callback;
+
+  // xrdp function
+  is_term_func_pointer is_term;
+};
+
 struct xrdp_mod
 {
   int size; /* size of this struct */
@@ -305,6 +335,7 @@ struct xrdp_wm
   struct xrdp_mm* mm;
   struct xrdp_font* default_font;
   struct xrdp_keymap keymap;
+  struct xrdp_user_channel* user_channel;
 };
 
 /* rdp process */
@@ -317,6 +348,7 @@ struct xrdp_process
   struct xrdp_session* session;
   /* create these when up and running */
   struct xrdp_wm* wm;
+  struct xrdp_user_channel* mod;
   //int app_sck;
   tbus done_event;
   int session_id;

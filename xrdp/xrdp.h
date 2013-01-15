@@ -445,3 +445,10 @@ int DEFAULT_CC
 server_send_to_channel(struct xrdp_mod* mod, int channel_id,
                        char* data, int data_len,
                        int total_data_len, int flags);
+
+
+bool
+xrdp_module_load(struct xrdp_process* self, const char* module_name);
+
+int
+xrdp_module_unload(struct xrdp_process* self);

@@ -60,7 +60,7 @@ xrdp_process_delete(struct xrdp_process* self)
   }
   g_delete_wait_obj(self->self_term_event);
   libxrdp_exit(self->session);
-  xrdp_wm_delete(self->wm);
+  xrdp_module_unload(self);
   trans_delete(self->server_trans);
   g_free(self);
 }
@@ -79,7 +79,7 @@ xrdp_process_loop(struct xrdp_process* self)
   if ((self->wm == 0) && (self->session->up_and_running) && (rv == 0))
   {
     DEBUG(("calling xrdp_wm_init and creating wm"));
-    self->wm = xrdp_wm_create(self, self->session->client_info);
+    self->wm = self->mod->connect(self);
     /* at this point the wm(window manager) is create and wm::login_mode is
        zero and login_mode_event is set so xrdp_wm_init should be called by
        xrdp_wm_check_wait_objs */
@@ -163,11 +163,14 @@ xrdp_process_main_loop(struct xrdp_process* self)
   self->server_trans->trans_data_in = xrdp_process_data_in;
   self->server_trans->callback_data = self;
   self->session = libxrdp_init((tbus)self, self->server_trans);
-
-
+  if (!xrdp_module_load(self, self->session->client_info->user_channel_plugin))
+  {
+    printf("Failed to load module %s\n", self->session->client_info->user_channel_plugin);
+    return 0;
+  }
+  self->session->callback = self->mod->callback;
 
   /* this callback function is in xrdp_wm.c */
-  self->session->callback = callback;
   /* this function is just above */
   self->session->is_term = xrdp_is_term;
   self->server_trans->last_time = g_time2();
@@ -186,32 +189,7 @@ xrdp_process_main_loop(struct xrdp_process* self)
       wobjs_count = 0;
       robjs[robjs_count++] = term_obj;
       robjs[robjs_count++] = self->self_term_event;
-      xrdp_wm_get_wait_objs(self->wm, robjs, &robjs_count,
-                            wobjs, &wobjs_count, &timeout);
-
-      if (self->wm != NULL && self->wm->mm->mod != NULL && frame_rate != 0)
-      {
-        if (last_update_time == 0)
-        {
-          last_update_time = g_time3();
-          xrdp_wm_request_update(self->wm, 0);
-          libxrdp_update_frame_rate(self->session, self->server_trans->total_send);
-          self->server_trans->total_send = 0;
-        }
-        else
-        {
-          int currentTime = g_time3();
-          if (currentTime - last_update_time > frame_rate)
-          {
-            xrdp_wm_request_update(self->wm, 1);
-            //printf("request partial update %u\n", (currentTime - last_update_time));
-            last_update_time = currentTime;
-            libxrdp_update_frame_rate(self->session, self->server_trans->total_send);
-            self->server_trans->total_send = 0;
-          }
-        }
-      }
-
+      self->mod->get_data_descriptor(self->wm, robjs, &robjs_count, wobjs, &wobjs_count, &timeout);
       if (self->session->client_info->connectivity_check)
       {
         current_time =  g_time2();
@@ -252,7 +230,7 @@ xrdp_process_main_loop(struct xrdp_process* self)
       {
         break;
       }
-      if (xrdp_wm_check_wait_objs(self->wm) != 0)
+      if (self->mod->get_data(self->wm) != 0)
       {
         break;
       }
@@ -261,10 +239,10 @@ xrdp_process_main_loop(struct xrdp_process* self)
         break;
       }
     }
-  	if( self->wm != 0)
-  	{
-  		xrdp_mm_send_disconnect(self->wm->mm);
-  	}
+    if( self->wm != 0)
+    {
+      self->mod->disconnect(self->wm);
+    }
 
     libxrdp_disconnect(self->session);
   }

@@ -1699,7 +1699,6 @@ int APP_CC
 xrdp_wm_check_wait_objs(struct xrdp_wm* self)
 {
   int rv;
-
   if (self == 0)
   {
     return 0;
@@ -1724,4 +1723,40 @@ xrdp_wm_set_login_mode(struct xrdp_wm* self, int login_mode)
   self->login_mode = login_mode;
   g_set_wait_obj(self->login_mode_event);
   return 0;
+}
+
+
+int DEFAULT_CC
+xrdp_module_exit(struct xrdp_process* process)
+{
+  xrdp_wm_delete(process->wm);
+  return 1;
+}
+
+/*****************************************************************************/
+struct xrdp_wm* APP_CC
+xrdp_wm_connect(struct xrdp_process* process)
+{
+  struct xrdp_wm* res = xrdp_wm_create(process, process->session->client_info);
+  res->user_channel = process->mod;
+  return res;
+}
+
+/*****************************************************************************/
+int APP_CC
+xrdp_wm_send_disconnect(struct xrdp_wm* self)
+{
+  return xrdp_mm_send_disconnect(self->mm);
+}
+
+/*****************************************************************************/
+bool DEFAULT_CC
+xrdp_module_init(struct xrdp_process* process, struct xrdp_client_info* client)
+{
+  process->mod->callback = callback;
+  process->mod->disconnect = xrdp_wm_send_disconnect;
+  process->mod->connect = xrdp_wm_connect;
+  process->mod->get_data_descriptor = xrdp_wm_get_wait_objs;
+  process->mod->get_data = xrdp_wm_check_wait_objs;
+  return true;
 }

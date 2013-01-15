@@ -40,49 +40,49 @@ xrdp_mm_get_wait_objs(struct xrdp_mm* self, tbus* read_objs, int* rcount, tbus* 
 int APP_CC
 xrdp_mm_check_wait_objs(struct xrdp_mm* self);
 int DEFAULT_CC
-server_fill_rect(struct xrdp_mod* mod, int x, int y, int cx, int cy);
+server_fill_rect(struct userChannel* mod, int x, int y, int cx, int cy);
 int DEFAULT_CC
-server_screen_blt(struct xrdp_mod* mod, int x, int y, int cx, int cy, int srcx, int srcy);
+server_screen_blt(struct userChannel* mod, int x, int y, int cx, int cy, int srcx, int srcy);
 int DEFAULT_CC
-server_paint_rect(struct xrdp_mod* mod, int x, int y, int cx, int cy, char* data, int width, int height, int srcx, int srcy);
+server_paint_rect(struct userChannel* mod, int x, int y, int cx, int cy, char* data, int width, int height, int srcx, int srcy);
 int DEFAULT_CC
-server_set_pointer(struct xrdp_mod* mod, int x, int y, char* data, char* mask);
+server_set_pointer(struct userChannel* mod, int x, int y, char* data, char* mask);
 int DEFAULT_CC
-server_palette(struct xrdp_mod* mod, int* palette);
+server_palette(struct userChannel* mod, int* palette);
 int DEFAULT_CC
-server_msg(struct xrdp_mod* mod, char* msg, int code);
+server_msg(struct userChannel* mod, char* msg, int code);
 int DEFAULT_CC
-server_is_term(struct xrdp_mod* mod);
+server_is_term(struct userChannel* mod);
 int DEFAULT_CC
-server_set_clip(struct xrdp_mod* mod, int x, int y, int cx, int cy);
+server_set_clip(struct userChannel* mod, int x, int y, int cx, int cy);
 int DEFAULT_CC
-server_reset_clip(struct xrdp_mod* mod);
+server_reset_clip(struct userChannel* mod);
 int DEFAULT_CC
-server_set_fgcolor(struct xrdp_mod* mod, int fgcolor);
+server_set_fgcolor(struct userChannel* mod, int fgcolor);
 int DEFAULT_CC
-server_set_bgcolor(struct xrdp_mod* mod, int bgcolor);
+server_set_bgcolor(struct userChannel* mod, int bgcolor);
 int DEFAULT_CC
-server_set_opcode(struct xrdp_mod* mod, int opcode);
+server_set_opcode(struct userChannel* mod, int opcode);
 int DEFAULT_CC
-server_set_mixmode(struct xrdp_mod* mod, int mixmode);
+server_set_mixmode(struct userChannel* mod, int mixmode);
 int DEFAULT_CC
-server_set_brush(struct xrdp_mod* mod, int x_orgin, int y_orgin, int style, char* pattern);
+server_set_brush(struct userChannel* mod, int x_orgin, int y_orgin, int style, char* pattern);
 int DEFAULT_CC
-server_set_pen(struct xrdp_mod* mod, int style, int width);
+server_set_pen(struct userChannel* mod, int style, int width);
 int DEFAULT_CC
-server_draw_line(struct xrdp_mod* mod, int x1, int y1, int x2, int y2);
+server_draw_line(struct userChannel* mod, int x1, int y1, int x2, int y2);
 int DEFAULT_CC
-server_add_char(struct xrdp_mod* mod, int font, int charactor, int offset, int baseline, int width, int height, char* data);
+server_add_char(struct userChannel* mod, int font, int charactor, int offset, int baseline, int width, int height, char* data);
 int DEFAULT_CC
-server_draw_text(struct xrdp_mod* mod, int font, int flags, int mixmode, int clip_left, int clip_top, int clip_right, int clip_bottom, int box_left, int box_top, int box_right, int box_bottom, int x, int y, char* data, int data_len);
+server_draw_text(struct userChannel* mod, int font, int flags, int mixmode, int clip_left, int clip_top, int clip_right, int clip_bottom, int box_left, int box_top, int box_right, int box_bottom, int x, int y, char* data, int data_len);
 int DEFAULT_CC
-server_reset(struct xrdp_mod* mod, int width, int height, int bpp);
+server_reset(struct userChannel* mod, int width, int height, int bpp);
 int DEFAULT_CC
-server_query_channel(struct xrdp_mod* mod, int index, char* channel_name, int* channel_flags);
+server_query_channel(struct userChannel* mod, int index, char* channel_name, int* channel_flags);
 int DEFAULT_CC
-server_get_channel_id(struct xrdp_mod* mod, char* name);
+server_get_channel_id(struct userChannel* mod, char* name);
 int DEFAULT_CC
-server_send_to_channel(struct xrdp_mod* mod, int channel_id, char* data, int data_len, int total_data_len, int flags);
+server_send_to_channel(struct userChannel* mod, int channel_id, char* data, int data_len, int total_data_len, int flags);
 
 #endif // XRDP_MM_H
 

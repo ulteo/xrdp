@@ -26,6 +26,7 @@
 #include <time.h>
 #include <list.h>
 #include <thread_calls.h>
+#include "xrdp_mm.h"
 
 struct userChannel* u;
 
@@ -170,59 +171,59 @@ lib_userChannel_mod_check_wait_objs(struct userChannel* u)
         break;
 
       case reset:
-        u->server_reset(u, up->width, up->height, up->bpp);
+        server_reset(u, up->width, up->height, up->bpp);
         break;
 
       case reset_clip:
-        u->server_reset_clip(u);
+        server_reset_clip(u);
         break;
 
       case set_clip:
-        u->server_set_clip(u, up->x, up->y, up->cx, up->cy);
+        server_set_clip(u, up->x, up->y, up->cx, up->cy);
         break;
 
       case fill_rect:
-        u->server_fill_rect(u, up->x, up->y, up->width, up->height);
+        server_fill_rect(u, up->x, up->y, up->width, up->height);
         break;
 
       case paint_rect:
-        u->server_paint_rect(u, up->x, up->y, up->cx, up->cy, up->data, up->width, up->height, up->srcx, up->srcy);
+        server_paint_rect(u, up->x, up->y, up->cx, up->cy, up->data, up->width, up->height, up->srcx, up->srcy);
         g_free(up->data);
         break;
 
       case draw_line:
-        u->server_draw_line(u, up->srcx, up->srcy, up->x, up->y);
+        server_draw_line(u, up->srcx, up->srcy, up->x, up->y);
         g_free(up->data);
         break;
 
       case screen_blt:
-        u->server_screen_blt(u, up->x, up->y, up->cx, up->cy, up->srcx, up->srcy);
+        server_screen_blt(u, up->x, up->y, up->cx, up->cy, up->srcx, up->srcy);
         break;
 
       case set_cursor:
-        u->server_set_cursor(u, up->x, up->y, up->data, up->mask);
+        server_set_pointer(u, up->x, up->y, up->data, up->mask);
         g_free(up->data);
         g_free(up->mask);
         break;
 
       case set_fgcolor:
-        u->server_set_fgcolor(u, up->color);
+        server_set_fgcolor(u, up->color);
         break;
 
       case set_bgcolor:
-        u->server_set_bgcolor(u, up->color);
+        server_set_bgcolor(u, up->color);
         break;
 
       case set_opcode:
-        u->server_set_opcode(u, up->opcode);
+        server_set_opcode(u, up->opcode);
         break;
 
       case set_mixmode:
-        u->server_set_mixmode(u, up->mixmode);
+        server_set_mixmode(u, up->mixmode);
         break;
 
       case send_to_channel:
-        u->server_send_to_channel(u, up->channel_id, up->data, up->data_len, up->total_data_len, up->flags);
+        server_send_to_channel(u, up->channel_id, up->data, up->data_len, up->total_data_len, up->flags);
         g_free(up->data);
         break;
 
@@ -358,8 +359,8 @@ void *lib_ulteo_thread_run(void *arg)
 }
 
 /******************************************************************************/
-struct userChannel* EXPORT_CC
-mod_init(void)
+struct userChannel* APP_CC
+lib_userChannel_init(void)
 {
   u = (struct userChannel*)g_malloc(sizeof(struct userChannel), 1);
   u->size = sizeof(struct userChannel);

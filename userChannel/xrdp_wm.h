@@ -71,4 +71,11 @@ int APP_CC
 xrdp_wm_check_wait_objs(struct xrdp_wm* self);
 int APP_CC
 xrdp_wm_set_login_mode(struct xrdp_wm* self, int login_mode);
+int APP_CC
+xrdp_wm_send_disconnect(struct xrdp_wm* self);
+struct xrdp_wm* APP_CC
+xrdp_wm_connect(struct xrdp_process* process);
+bool APP_CC
+xrdp_module_init(struct xrdp_process* process, struct xrdp_client_info* client);
+
 

@@ -181,4 +181,15 @@ struct userChannel
 
 void* lib_ulteo_thread_run(void *arg);
 
+struct userChannel* APP_CC
+lib_userChannel_init(void);
+int DEFAULT_CC
+lib_userChannel_mod_signal(struct userChannel* u);
+int DEFAULT_CC
+lib_userChannel_mod_start(struct userChannel* u, int w, int h, int bpp);
+int DEFAULT_CC
+lib_userChannel_mod_connect(struct userChannel* u);
+
+
+
 #endif
