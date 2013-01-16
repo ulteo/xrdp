@@ -1,5 +1,6 @@
 SUBDIRS = \
   abstract \
   proxy \
-  advance
+  advance \
+  plugins
 
