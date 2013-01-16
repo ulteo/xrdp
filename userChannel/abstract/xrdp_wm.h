@@ -29,7 +29,6 @@
 /* the window manager */
 struct xrdp_wm
 {
-  struct xrdp_process* pro_layer; /* owner */
   struct xrdp_bitmap* screen;
   struct xrdp_session* session;
   struct xrdp_painter* painter;
@@ -88,7 +87,7 @@ struct xrdp_wm
 
 
 struct xrdp_wm* APP_CC
-xrdp_wm_create(struct xrdp_process* owner, struct xrdp_client_info* client_info);
+xrdp_wm_create(int session_id, struct xrdp_session* session);
 void APP_CC
 xrdp_wm_delete(struct xrdp_wm* self);
 int APP_CC
@@ -132,16 +131,18 @@ xrdp_wm_log_msg(struct xrdp_wm* self, char* msg);
 int APP_CC
 xrdp_wm_log_error(struct xrdp_wm* self, char* msg);
 int APP_CC
-xrdp_wm_get_wait_objs(struct xrdp_wm* self, tbus* robjs, int* rc, tbus* wobjs, int* wc, int* timeout);
+xrdp_wm_get_wait_objs(struct xrdp_user_channel* user_channel, tbus* robjs, int* rc, tbus* wobjs, int* wc, int* timeout);
 int APP_CC
-xrdp_wm_check_wait_objs(struct xrdp_wm* self);
+xrdp_wm_check_wait_objs(struct xrdp_user_channel* user_channel);
 int APP_CC
 xrdp_wm_set_login_mode(struct xrdp_wm* self, int login_mode);
 int APP_CC
-xrdp_wm_send_disconnect(struct xrdp_wm* self);
-struct xrdp_wm* APP_CC
-xrdp_wm_connect(struct xrdp_process* process);
+xrdp_wm_send_disconnect(struct xrdp_user_channel* user_channel);
+int APP_CC
+xrdp_wm_end(struct xrdp_user_channel* user_channel);
+bool
+xrdp_wm_connect(struct xrdp_user_channel* user_channel, int session_id, struct xrdp_session* session);
 bool APP_CC
-xrdp_module_init(struct xrdp_process* process, struct xrdp_client_info* client);
+xrdp_module_init(struct xrdp_user_channel* user_channel);
 
 #endif // XRDP_WM_H

@@ -155,7 +155,7 @@ struct xrdp_session
 };
 
 struct xrdp_session* DEFAULT_CC
-libxrdp_init(tbus id, struct trans* trans);
+libxrdp_init(struct trans* trans);
 int DEFAULT_CC
 libxrdp_exit(struct xrdp_session* session);
 int DEFAULT_CC

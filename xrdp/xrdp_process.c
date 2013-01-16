@@ -26,6 +26,7 @@
 */
 
 #include "xrdp.h"
+#include <userChannel/abstract/xrdp_module.h>
 
 static int g_session_id = 0;
 
@@ -76,10 +77,10 @@ xrdp_process_loop(struct xrdp_process* self)
   {
     rv = libxrdp_process_data(self->session);
   }
-  if ((self->wm == 0) && (self->session->up_and_running) && (rv == 0))
+  if ((self->mod->wm == 0) && (self->session->up_and_running) && (rv == 0))
   {
     DEBUG(("calling xrdp_wm_init and creating wm"));
-    self->wm = self->mod->connect(self);
+    self->mod->connect(self->mod, self->session_id, self->session);
     /* at this point the wm(window manager) is create and wm::login_mode is
        zero and login_mode_event is set so xrdp_wm_init should be called by
        xrdp_wm_check_wait_objs */
@@ -114,7 +115,7 @@ xrdp_process_mod_end(struct xrdp_process* self)
 {
   if (self->mod != 0)
   {
-    self->mod->end(self->wm);
+    self->mod->end(self->mod);
   }
   return 0;
 }
@@ -153,18 +154,21 @@ xrdp_process_main_loop(struct xrdp_process* self)
   self->status = 1;
   self->server_trans->trans_data_in = xrdp_process_data_in;
   self->server_trans->callback_data = self;
-  self->session = libxrdp_init((tbus)self, self->server_trans);
+  self->session = libxrdp_init(self->server_trans);
   if (!xrdp_module_load(self, self->session->client_info->user_channel_plugin))
   {
     printf("Failed to load module %s\n", self->session->client_info->user_channel_plugin);
     return 0;
   }
+  self->session->id = (tbus)self->mod;
   self->session->callback = self->mod->callback;
+  self->mod->self_term_event = self->self_term_event;
 
   /* this callback function is in xrdp_wm.c */
   /* this function is just above */
   self->session->is_term = xrdp_is_term;
   self->server_trans->last_time = g_time2();
+
   if (libxrdp_process_incomming(self->session) == 0)
   {
     int connectivity_check_interval = self->session->client_info->connectivity_check_interval * 1000;
@@ -180,7 +184,7 @@ xrdp_process_main_loop(struct xrdp_process* self)
       wobjs_count = 0;
       robjs[robjs_count++] = term_obj;
       robjs[robjs_count++] = self->self_term_event;
-      self->mod->get_data_descriptor(self->wm, robjs, &robjs_count, wobjs, &wobjs_count, &timeout);
+      self->mod->get_data_descriptor(self->mod, robjs, &robjs_count, wobjs, &wobjs_count, &timeout);
       if (self->session->client_info->connectivity_check)
       {
         current_time =  g_time2();
@@ -221,7 +225,7 @@ xrdp_process_main_loop(struct xrdp_process* self)
       {
         break;
       }
-      if (self->mod->get_data(self->wm) != 0)
+      if (self->mod->get_data(self->mod) != 0)
       {
         break;
       }
@@ -230,9 +234,9 @@ xrdp_process_main_loop(struct xrdp_process* self)
         break;
       }
     }
-    if( self->wm != 0)
+    if( self->mod != 0)
     {
-      self->mod->disconnect(self->wm);
+      self->mod->disconnect(self->mod);
     }
 
     libxrdp_disconnect(self->session);

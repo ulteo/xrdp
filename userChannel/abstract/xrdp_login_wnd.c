@@ -46,6 +46,7 @@
 #include "xrdp_mm.h"
 #include "xrdp_wm.h"
 #include "funcs.h"
+#include "xrdp_module.h"
 #include <xrdp/xrdp_types.h>
 
 
@@ -198,9 +199,9 @@ xrdp_wm_cancel_clicked(struct xrdp_bitmap* wnd)
   {
     if (wnd->wm != 0)
     {
-      if (wnd->wm->pro_layer != 0)
+      if (wnd->wm->user_channel != 0)
       {
-        g_set_wait_obj(wnd->wm->pro_layer->self_term_event);
+        g_set_wait_obj(wnd->wm->user_channel->self_term_event);
       }
     }
   }

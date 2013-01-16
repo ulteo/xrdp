@@ -47,6 +47,7 @@
 #include "xrdp_painter.h"
 #include "xrdp_cache.h"
 #include "userChannel.h"
+#include "xrdp_module.h"
 #include <xrdp/xrdp_types.h>
 
 
@@ -305,14 +306,16 @@ xrdp_mm_setup_mod2(struct xrdp_mm* self)
   int device_flags;
   rv = 1;
   text[0] = 0;
-  if (!g_is_wait_obj_set(self->wm->pro_layer->self_term_event))
+  tbus term_event = self->wm->user_channel->self_term_event;
+
+  if (!g_is_wait_obj_set(term_event))
   {
     if (lib_userChannel_mod_start(self->mod, self->wm->screen->width, self->wm->screen->height, self->wm->screen->bpp) != 0)
     {
-      g_set_wait_obj(self->wm->pro_layer->self_term_event); /* kill session */
+      g_set_wait_obj(term_event); /* kill session */
     }
   }
-  if (!g_is_wait_obj_set(self->wm->pro_layer->self_term_event))
+  if (!g_is_wait_obj_set(term_event))
   {
     if (self->display > 0)
     {
@@ -326,11 +329,11 @@ xrdp_mm_setup_mod2(struct xrdp_mm* self)
       }
       else
       {
-    	  g_set_wait_obj(self->wm->pro_layer->self_term_event); /* kill session */
+        g_set_wait_obj(term_event); /* kill session */
       }
     }
   }
-  if (!g_is_wait_obj_set(self->wm->pro_layer->self_term_event))
+  if (!g_is_wait_obj_set(term_event))
   {
     /* this adds the port to the end of the list, it will already be in
        the list as -1
@@ -1034,6 +1037,7 @@ int APP_CC
 xrdp_mm_end(struct xrdp_mm* self)
 {
   lib_userChannel_mod_end(self->mod);
+  return 0;
 }
 
 /*****************************************************************************/

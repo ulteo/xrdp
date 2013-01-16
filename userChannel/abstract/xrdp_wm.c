@@ -50,30 +50,26 @@
 #include "xrdp_login_wnd.h"
 #include "lang.h"
 #include "funcs.h"
+#include "xrdp_module.h"
 #include <xrdp/xrdp_types.h>
 
 
 /*****************************************************************************/
 struct xrdp_wm* APP_CC
-xrdp_wm_create(struct xrdp_process* owner,
-               struct xrdp_client_info* client_info)
+xrdp_wm_create(int session_id, struct xrdp_session* session)
 {
   struct xrdp_wm* self;
   char event_name[256];
   int pid;
 
   self = (struct xrdp_wm*)g_malloc(sizeof(struct xrdp_wm), 1);
-  self->client_info = client_info;
-  self->screen = xrdp_bitmap_create(client_info->width,
-                                    client_info->height,
-                                    client_info->bpp,
-                                    WND_TYPE_SCREEN, self);
+  self->client_info = session->client_info;
+  self->screen = xrdp_bitmap_create(self->client_info->width, self->client_info->height, self->client_info->bpp, WND_TYPE_SCREEN, self);
   self->screen->wm = self;
-  self->pro_layer = owner;
-  self->session = owner->session;
+  self->session = session;
   pid = g_getpid();
   g_snprintf(event_name, 255, "xrdp_%8.8x_wm_login_mode_event_%8.8x",
-             pid, owner->session_id);
+             pid, session_id);
   self->login_mode_event = g_create_wait_obj(event_name);
   self->painter = xrdp_painter_create(self, self->session);
   self->cache = xrdp_cache_create(self, self->session, self->client_info);
@@ -1419,7 +1415,7 @@ callback(long id, int msg, long param1, long param2, long param3, long param4)
   {
     return 0;
   }
-  wm = ((struct xrdp_process*)id)->wm;
+  wm = ((struct xrdp_user_channel*)id)->wm;
   if (wm == 0)
   {
     return 0;
@@ -1681,39 +1677,40 @@ xrdp_wm_log_error(struct xrdp_wm* self, char* msg)
 
 /*****************************************************************************/
 int APP_CC
-xrdp_wm_get_wait_objs(struct xrdp_wm* self, tbus* robjs, int* rc,
-                      tbus* wobjs, int* wc, int* timeout)
+xrdp_wm_get_wait_objs(struct xrdp_user_channel* user_channel, tbus* robjs, int* rc, tbus* wobjs, int* wc, int* timeout)
 {
   int i;
+  struct xrdp_wm* wm = (struct xrdp_wm*)user_channel->wm;
 
-  if (self == 0)
+  if (wm == 0)
   {
     return 0;
   }
   i = *rc;
-  robjs[i++] = self->login_mode_event;
+  robjs[i++] = wm->login_mode_event;
   *rc = i;
-  return xrdp_mm_get_wait_objs(self->mm, robjs, rc, wobjs, wc, timeout);
+  return xrdp_mm_get_wait_objs(wm->mm, robjs, rc, wobjs, wc, timeout);
 }
 
 /******************************************************************************/
 int APP_CC
-xrdp_wm_check_wait_objs(struct xrdp_wm* self)
+xrdp_wm_check_wait_objs(struct xrdp_user_channel* user_channel)
 {
   int rv;
-  if (self == 0)
+  struct xrdp_wm* wm = (struct xrdp_wm*)user_channel->wm;
+  if (wm == 0)
   {
     return 0;
   }
   rv = 0;
-  if (g_is_wait_obj_set(self->login_mode_event))
+  if (g_is_wait_obj_set(wm->login_mode_event))
   {
-    g_reset_wait_obj(self->login_mode_event);
-    xrdp_wm_login_mode_changed(self);
+    g_reset_wait_obj(wm->login_mode_event);
+    xrdp_wm_login_mode_changed(wm);
   }
   if (rv == 0)
   {
-    rv = xrdp_mm_check_wait_objs(self->mm);
+    rv = xrdp_mm_check_wait_objs(wm->mm);
   }
   return rv;
 }
@@ -1729,43 +1726,46 @@ xrdp_wm_set_login_mode(struct xrdp_wm* self, int login_mode)
 
 
 int DEFAULT_CC
-xrdp_module_exit(struct xrdp_process* process)
+xrdp_module_exit(struct xrdp_user_channel* user_channel)
 {
-  xrdp_wm_delete(process->wm);
+  xrdp_wm_delete((struct xrdp_wm*)user_channel->wm);
   return 1;
 }
 
 /*****************************************************************************/
-struct xrdp_wm* APP_CC
-xrdp_wm_connect(struct xrdp_process* process)
+bool
+xrdp_wm_connect(struct xrdp_user_channel* user_channel, int session_id, struct xrdp_session* session)
 {
-  struct xrdp_wm* res = xrdp_wm_create(process, process->session->client_info);
-  res->user_channel = process->mod;
-  return res;
+  struct xrdp_wm* wm = xrdp_wm_create(session_id, session);
+  user_channel->wm = (tbus)wm;
+  wm->user_channel = user_channel;
+  return true;
 }
 
 /*****************************************************************************/
 int APP_CC
-xrdp_wm_send_disconnect(struct xrdp_wm* self)
+xrdp_wm_send_disconnect(struct xrdp_user_channel* user_channel)
 {
-  return xrdp_mm_send_disconnect(self->mm);
+  struct xrdp_wm* wm = (struct xrdp_wm*)user_channel->wm;
+  return xrdp_mm_send_disconnect(wm->mm);
 }
 
 int APP_CC
-xrdp_wm_end(struct xrdp_wm* self)
+xrdp_wm_end(struct xrdp_user_channel* user_channel)
 {
-  return xrdp_mm_end(self->mm);
+  struct xrdp_wm* wm = (struct xrdp_wm*)user_channel->wm;
+  return xrdp_mm_end(wm->mm);
 }
 
 /*****************************************************************************/
 bool DEFAULT_CC
-xrdp_module_init(struct xrdp_process* process, struct xrdp_client_info* client)
+xrdp_module_init(struct xrdp_user_channel* user_channel)
 {
-  process->mod->callback = callback;
-  process->mod->disconnect = xrdp_wm_send_disconnect;
-  process->mod->connect = xrdp_wm_connect;
-  process->mod->get_data_descriptor = xrdp_wm_get_wait_objs;
-  process->mod->get_data = xrdp_wm_check_wait_objs;
-  process->mod->end = xrdp_wm_end;
+  user_channel->callback = callback;
+  user_channel->disconnect = xrdp_wm_send_disconnect;
+  user_channel->connect = xrdp_wm_connect;
+  user_channel->get_data_descriptor = xrdp_wm_get_wait_objs;
+  user_channel->get_data = xrdp_wm_check_wait_objs;
+  user_channel->end = xrdp_wm_end;
   return true;
 }

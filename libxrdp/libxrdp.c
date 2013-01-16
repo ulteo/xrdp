@@ -44,12 +44,11 @@
 
 /******************************************************************************/
 struct xrdp_session* EXPORT_CC
-libxrdp_init(tbus id, struct trans* trans)
+libxrdp_init(struct trans* trans)
 {
   struct xrdp_session* session;
 
   session = (struct xrdp_session*)g_malloc(sizeof(struct xrdp_session), 1);
-  session->id = id;
   session->rdp = xrdp_rdp_create(session, trans);
   session->orders = xrdp_orders_create(session, (struct xrdp_rdp*)session->rdp);
   session->client_info = &(((struct xrdp_rdp*)session->rdp)->client_info);

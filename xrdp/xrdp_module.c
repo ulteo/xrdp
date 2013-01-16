@@ -19,6 +19,8 @@
  **/
 
 #include "xrdp.h"
+#include <userChannel/abstract/xrdp_module.h>
+
 
 static long DEFAULT_CC
 xrdp_module_load_library(long param1, long param2)
@@ -46,7 +48,6 @@ xrdp_module_load(struct xrdp_process* self, const char* module_name)
 
   if (self->mod->handle == 0)
   {
-	  printf ("test '%s'\n", module_name);
     self->mod->handle = xrdp_module_load_library((long)module_name, 0);
     if (self->mod->handle != 0)
     {
@@ -75,7 +76,7 @@ xrdp_module_load(struct xrdp_process* self, const char* module_name)
       self->mod->exit = (exit_func_pointer)func;
       if ((self->mod->init != 0) && (self->mod->exit != 0))
       {
-        self->mod->init(self);
+        self->mod->init(self->mod);
         if (self->mod != 0)
         {
           g_writeln("loaded modual '%s' ok", module_name);
@@ -92,7 +93,7 @@ int
 xrdp_module_unload(struct xrdp_process* self)
 {
   if (self->mod->handle && self->mod->exit) {
-	  return self->mod->exit(self);
+    return self->mod->exit(self->mod);
   }
 }
 
