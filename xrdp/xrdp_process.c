@@ -26,7 +26,7 @@
 */
 
 #include "xrdp.h"
-#include <userChannel/abstract/xrdp_module.h>
+#include "abstract/xrdp_module.h"
 
 static int g_session_id = 0;
 

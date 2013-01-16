@@ -15,6 +15,8 @@ lib_LIBRARIES = \
 
 lib_uc_abstract_a_SOURCES = \
   abstract.h \
+  update_order.h \
+  xrdp_module.h \
   funcs.c funcs.h \
   graphics.c graphics.h \
   xrdp_bitmap.c xrdp_bitmap.h \

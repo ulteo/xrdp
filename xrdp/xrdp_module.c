@@ -19,7 +19,7 @@
  **/
 
 #include "xrdp.h"
-#include <userChannel/abstract/xrdp_module.h>
+#include "abstract/xrdp_module.h"
 
 
 static long DEFAULT_CC
