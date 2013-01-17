@@ -43,49 +43,49 @@ xrdp_module_load(struct xrdp_process* self, const char* module_name)
   {
     return false;
   }
-
   self->mod = g_malloc(sizeof(struct xrdp_user_channel), 1);
 
   if (self->mod->handle == 0)
   {
     self->mod->handle = xrdp_module_load_library((long)module_name, 0);
-    if (self->mod->handle != 0)
+    if (self->mod->handle == 0)
     {
-      func = g_get_proc_address(self->mod->handle, "xrdp_module_init");
-      if (func == 0)
-      {
-        func = g_get_proc_address(self->mod->handle, "_xrdp_module_init");
-      }
-      if (func == 0)
-      {
-        g_printf("Failed to load function xrdp_module_init: %s\n", g_get_dlerror());
-        return false;
-      }
-      self->mod->init = (init_func_pointer)func;
-      func = g_get_proc_address(self->mod->handle, "xrdp_module_exit");
-      if (func == 0)
-      {
-        func = g_get_proc_address(self->mod->handle, "_xrdp_module_exit");
-      }
-      if (func == 0)
-      {
-        g_printf("Failed to load function xrdp_module_exit %s\n", g_get_dlerror());
-        return false;
-      }
+      g_printf("Failed to load library: %s\n", g_get_dlerror());
+      return false;
+    }
+    func = g_get_proc_address(self->mod->handle, "xrdp_module_init");
+    if (func == 0)
+    {
+      func = g_get_proc_address(self->mod->handle, "_xrdp_module_init");
+    }
+    if (func == 0)
+    {
+      g_printf("Failed to load function xrdp_module_init: %s\n", g_get_dlerror());
+      return false;
+    }
+    self->mod->init = (init_func_pointer)func;
+    func = g_get_proc_address(self->mod->handle, "xrdp_module_exit");
+    if (func == 0)
+    {
+      func = g_get_proc_address(self->mod->handle, "_xrdp_module_exit");
+    }
+    if (func == 0)
+    {
+      g_printf("Failed to load function xrdp_module_exit %s\n", g_get_dlerror());
+      return false;
+    }
 
-      self->mod->exit = (exit_func_pointer)func;
-      if ((self->mod->init != 0) && (self->mod->exit != 0))
+    self->mod->exit = (exit_func_pointer)func;
+    if ((self->mod->init != 0) && (self->mod->exit != 0))
+    {
+      self->mod->init(self->mod);
+      if (self->mod != 0)
       {
-        self->mod->init(self->mod);
-        if (self->mod != 0)
-        {
-          g_writeln("loaded modual '%s' ok", module_name);
-        }
-        self->mod->is_term = g_is_term;
+        g_writeln("loaded modual '%s' ok", module_name);
       }
+      self->mod->is_term = g_is_term;
     }
   }
-
   return true;
 }
 
