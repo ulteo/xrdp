@@ -961,6 +961,4 @@ libxrdp_update_frame_rate(struct xrdp_session* self, unsigned long data_sended)
   {
     self->client_info->frame_rate = FRAME_RATE_MAX;
   }
-
-  //printf("new framerate = %i/%i = %i\n", data_sended, rdp->bandwidth, self->client_info->frame_rate);
 }
