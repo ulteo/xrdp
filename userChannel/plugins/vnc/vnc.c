@@ -566,18 +566,6 @@ lib_framebuffer_update(struct vnc* v)
     error = v->server_begin_update(v);
   }
 
-  if (lastTime == 0)
-	  lastTime = g_time2();
-
-  if (currentTime - lastTime > 1000)
-  {
-	  v->currentFrameRate = frameCount;
-	  frameCount = 0;
-	  lastTime = currentTime;
-  }
-frameCount++;
-
-
   for (i = 0; i < num_recs; i++)
   {
     if (error != 0)
@@ -680,6 +668,10 @@ frameCount++;
     error = v->server_end_update(v);
   }
   g_free(data);
+  if (error == 0)
+  {
+    lib_framebuffer_request_update(v, 1);
+  }
   free_stream(s);
   return error;
 }
@@ -1131,6 +1123,11 @@ lib_mod_connect(struct vnc* v)
   }
   if (error == 0)
   {
+    /* FrambufferUpdateRequest */
+    lib_framebuffer_request_update(v, 0);
+  }
+  if (error == 0)
+  {
     if (v->server_bpp != v->mod_bpp)
     {
       v->server_msg(v, "error - server and client bpp don't match", 0);
@@ -1238,7 +1235,10 @@ lib_mod_check_wait_objs(struct vnc* v)
   {
     if (v->sck_obj != 0)
     {
-      rv = lib_mod_signal(v);
+      if (g_is_wait_obj_set(v->sck_obj))
+      {
+        rv = lib_mod_signal(v);
+      }
     }
   }
   return rv;
@@ -1254,9 +1254,6 @@ mod_init(void)
   /* set client functions */
   v->size = sizeof(struct vnc);
   v->version = CURRENT_MOD_VER;
-  v->frameRate = 25;
-  v->currentFrameRate = 0;
-  v->lastTime = 0;
   v->handle = (long)v;
   v->mod_connect = lib_mod_connect;
   v->mod_start = lib_mod_start;
@@ -1266,7 +1263,6 @@ mod_init(void)
   v->mod_set_param = lib_mod_set_param;
   v->mod_get_wait_objs = lib_mod_get_wait_objs;
   v->mod_check_wait_objs = lib_mod_check_wait_objs;
-  v->mod_request_update = lib_framebuffer_request_update;
   return v;
 }
 
