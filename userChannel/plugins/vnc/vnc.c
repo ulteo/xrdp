@@ -497,19 +497,19 @@ make_color(int r, int g, int b, int bpp)
 int DEFAULT_CC
 lib_framebuffer_request_update(struct vnc* v, int incremental)
 {
-	struct stream* s;
-	make_stream(s);
+  struct stream* s;
+  make_stream(s);
 
-	/* FrambufferUpdateRequest */
-	init_stream(s, 8192);
-	out_uint8(s, 3);
-	out_uint8(s, incremental);
-	out_uint16_be(s, 0);
-	out_uint16_be(s, 0);
-	out_uint16_be(s, v->mod_width);
-	out_uint16_be(s, v->mod_height);
+  /* FrambufferUpdateRequest */
+  init_stream(s, 8192);
+  out_uint8(s, 3);
+  out_uint8(s, incremental);
+  out_uint16_be(s, 0);
+  out_uint16_be(s, 0);
+  out_uint16_be(s, v->mod_width);
+  out_uint16_be(s, v->mod_height);
 
-	return lib_send(v, s->data, 10);
+  return lib_send(v, s->data, 10);
 }
 
 /******************************************************************************/
