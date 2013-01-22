@@ -63,7 +63,7 @@ xrdp_module_load(struct xrdp_process* self, const char* module_name)
       g_printf("Failed to load function xrdp_module_init: %s\n", g_get_dlerror());
       return false;
     }
-    self->mod->init = (init_func_pointer)func;
+    self->mod->init = (bool(*)(struct xrdp_user_channel*))func;
     func = g_get_proc_address(self->mod->handle, "xrdp_module_exit");
     if (func == 0)
     {
@@ -75,7 +75,7 @@ xrdp_module_load(struct xrdp_process* self, const char* module_name)
       return false;
     }
 
-    self->mod->exit = (exit_func_pointer)func;
+    self->mod->exit = (bool(*)(struct xrdp_user_channel*))func;
     if ((self->mod->init != 0) && (self->mod->exit != 0))
     {
       self->mod->init(self->mod);
