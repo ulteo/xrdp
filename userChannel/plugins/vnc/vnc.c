@@ -499,6 +499,7 @@ lib_framebuffer_request_update(struct vnc* v, int incremental)
 {
   struct stream* s;
   make_stream(s);
+  int res;
 
   /* FrambufferUpdateRequest */
   init_stream(s, 8192);
@@ -509,7 +510,10 @@ lib_framebuffer_request_update(struct vnc* v, int incremental)
   out_uint16_be(s, v->mod_width);
   out_uint16_be(s, v->mod_height);
 
-  return lib_send(v, s->data, 10);
+  res = lib_send(v, s->data, 10);
+  free_stream(s);
+
+  return res;
 }
 
 /******************************************************************************/
