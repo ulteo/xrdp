@@ -129,6 +129,8 @@ struct userChannel
   struct list* current_update_list;
   tbus mod_mutex;
   bool need_request;
+  long bandwidth;
+  int rtt;
 };
 
 
@@ -144,6 +146,8 @@ int DEFAULT_CC
 lib_userChannel_mod_end(struct userChannel* u);
 int DEFAULT_CC
 lib_userChannel_mod_connect(struct userChannel* u);
+void DEFAULT_CC
+lib_userChannel_set_network_stat(struct userChannel* u, long bandwidth, int rtt);
 
 
 

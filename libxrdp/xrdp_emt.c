@@ -84,9 +84,9 @@ xrdp_emt_send_result(struct xrdp_rdp* self, struct xrdp_emt* emt)
   out_uint16_le(s, emt->seq_number++);                   // sequenceNumber
   out_uint16_le(s, field_all);                           // responseType
 
-  out_uint32_le(s, self->base_RTT);
-  out_uint32_le(s, self->bandwidth);
-  out_uint32_le(s, self->average_RTT);
+  out_uint32_le(s, self->session->base_RTT);
+  out_uint32_le(s, self->session->bandwidth);
+  out_uint32_le(s, self->session->average_RTT);
 
   s_mark_end(s);
 
@@ -120,28 +120,28 @@ xrdp_emt_process_results(struct xrdp_rdp* self, struct xrdp_emt* emt, struct str
   {
     if (emt->total_delta == 0)
     {
-      self->bandwidth = byte_count / 0.9;
+      self->session->bandwidth = byte_count / 0.9;
     }
     else
     {
-      self->bandwidth = emt->total_byte_count/emt->total_delta; // Ko/s
+      self->session->bandwidth = emt->total_byte_count/emt->total_delta; // Ko/s
     }
   }
 
   if (emt->time_processing < 2)
   {
-    if (self->base_RTT > current_rtt)
+    if (self->session->base_RTT > current_rtt)
     {
-      self->base_RTT = current_rtt;
+      self->session->base_RTT = current_rtt;
     }
 
-    if (self->average_RTT == 0)
+    if (self->session->average_RTT == 0)
     {
-      self->average_RTT = current_rtt;
+      self->session->average_RTT = current_rtt;
     }
     else
     {
-      self->average_RTT = (self->average_RTT + current_rtt) / 2;
+      self->session->average_RTT = (self->session->average_RTT + current_rtt) / 2;
     }
   }
 
@@ -151,9 +151,11 @@ xrdp_emt_process_results(struct xrdp_rdp* self, struct xrdp_emt* emt, struct str
     emt->need_result = false;
 //  }
 
-  printf("bandwidth: %i Ko/s\n", self->bandwidth);
-  printf("base RTT: %i ms\n", self->base_RTT);
-  printf("average RTT: %i ms\n", self->average_RTT);
+  printf("bandwidth: %i Ko/s\n", self->session->bandwidth);
+  printf("base RTT: %i ms\n", self->session->base_RTT);
+  printf("average RTT: %i ms\n", self->session->average_RTT);
+
+  self->session->network_stat_updated = true;
 }
 
 bool APP_CC

@@ -947,9 +947,9 @@ libxrdp_update_frame_rate(struct xrdp_session* self, unsigned long data_sended)
 
   rdp = self->rdp;
 
-  if (rdp->bandwidth != 0)
+  if (rdp->session->bandwidth != 0)
   {
-    self->client_info->frame_rate = data_sended/rdp->bandwidth;
+    self->client_info->frame_rate = data_sended/rdp->session->bandwidth;
   }
 
   if (self->client_info->frame_rate < FRAME_RATE_MIN)

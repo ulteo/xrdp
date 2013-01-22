@@ -105,6 +105,8 @@ struct xrdp_client_info
   bool use_static_frame_rate;
   unsigned int frame_rate;
   char user_channel_plugin[255];
+  long static_bandwidth;
+  int static_rtt;
 };
 
 struct xrdp_brush
@@ -152,6 +154,11 @@ struct xrdp_session
   int up_and_running;
   struct stream* s;
   int (*is_term)(void);
+
+  bool network_stat_updated;
+  unsigned int average_RTT;
+  unsigned int base_RTT;
+  unsigned int bandwidth;
 };
 
 struct xrdp_session* DEFAULT_CC

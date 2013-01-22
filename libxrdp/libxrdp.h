@@ -164,9 +164,6 @@ struct xrdp_rdp
   int mcs_channel;
   struct xrdp_client_info client_info;
   struct rdp_mppc_enc* compressor;
-  unsigned int average_RTT;
-  unsigned int base_RTT;
-  unsigned int bandwidth;
 };
 
 /* state */

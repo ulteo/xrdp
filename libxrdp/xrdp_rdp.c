@@ -257,6 +257,16 @@ xrdp_rdp_read_config(struct xrdp_client_info* client_info)
       g_strncpy(client_info->user_channel_plugin, value, sizeof(client_info->user_channel_plugin));
       printf("user_channel_plugin: %s\n", client_info->user_channel_plugin);
     }
+    else if (g_strcasecmp(item, "static_bandwidth") == 0)
+    {
+      client_info->static_bandwidth = g_atol(value);
+      printf("static_bandwidth: %li\n", client_info->static_bandwidth);
+    }
+    else if (g_strcasecmp(item, "static_rtt") == 0)
+    {
+      client_info->static_rtt = g_atoi(value);
+      printf("static round trip: %i\n", client_info->static_rtt);
+    }
   }
   list_delete(items);
   list_delete(values);
@@ -296,6 +306,8 @@ xrdp_rdp_create(struct xrdp_session* session, struct trans* trans)
   self->client_info.cache3_entries = 262;
   self->client_info.cache3_size = 4096;
   self->compressor = 0;
+  self->client_info.static_bandwidth = 0;
+  self->client_info.static_rtt = 0;
 
   DEBUG(("out xrdp_rdp_create"));
   return self;
@@ -705,33 +717,33 @@ xrdp_rdp_incoming(struct xrdp_rdp* self)
   switch (self->client_info.connection_type)
   {
   case CONNECTION_TYPE_MODEM:
-	  self->bandwidth = 56000/8/1024;      // 56Kb/s
-	  self->average_RTT = 100;
+	  self->session->bandwidth = 56000/8/1024;      // 56Kb/s
+	  self->session->average_RTT = 100;
 	  break;
   case CONNECTION_TYPE_BROADBAND_LOW:
-	  self->bandwidth = 1000000/8/1024;    // 1Mb/s
-	  self->average_RTT = 100;
+	  self->session->bandwidth = 1000000/8/1024;    // 1Mb/s
+	  self->session->average_RTT = 100;
 	  break;
 
   case CONNECTION_TYPE_SATELLITE:
-	  self->bandwidth = 8000000/8/1024;    // 8Mb/s
-	  self->average_RTT = 800;
+	  self->session->bandwidth = 8000000/8/1024;    // 8Mb/s
+	  self->session->average_RTT = 800;
 	  break;
 
   case CONNECTION_TYPE_BROADBAND_HIGH:
-	  self->bandwidth = 5000000/8/1024;    // 5Mb/s
-	  self->average_RTT = 200;
+	  self->session->bandwidth = 5000000/8/1024;    // 5Mb/s
+	  self->session->average_RTT = 200;
 	  break;
 
   case CONNECTION_TYPE_WAN:
-	  self->bandwidth = 5000000/8/1024;    // 5Mb/s
-	  self->average_RTT = 200;
+	  self->session->bandwidth = 5000000/8/1024;    // 5Mb/s
+	  self->session->average_RTT = 200;
 	  break;
 
   case CONNECTION_TYPE_UNKNOWN:
   case CONNECTION_TYPE_LAN:
-	  self->bandwidth = 100000000/8/1024;  // 100Mb/s
-	  self->average_RTT = 1;
+	  self->session->bandwidth = 100000000/8/1024;  // 100Mb/s
+	  self->session->average_RTT = 1;
 	  break;
 
   case CONNECTION_TYPE_AUTODETECT:

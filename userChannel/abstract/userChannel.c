@@ -105,6 +105,18 @@ lib_userChannel_mod_end(struct userChannel* u)
 }
 
 /******************************************************************************/
+void DEFAULT_CC
+lib_userChannel_set_network_stat(struct userChannel* u, long bandwidth, int rtt)
+{
+  LIB_DEBUG(u, "lib_userChannel_mod_end");
+  if (u)
+  {
+    u->bandwidth = bandwidth;
+    u->rtt = rtt;
+  }
+}
+
+/******************************************************************************/
 int DEFAULT_CC
 lib_userChannel_mod_set_param(struct userChannel* u, char* name, char* value)
 {
@@ -384,6 +396,8 @@ lib_userChannel_init(void)
 
   u->current_update_list = list_create();
   u->current_update_list->auto_free = true;
+  u->bandwidth = 0;
+  u->rtt = 0;
 
   return u;
 }

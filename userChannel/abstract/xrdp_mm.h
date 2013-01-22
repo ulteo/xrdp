@@ -141,6 +141,8 @@ int APP_CC
 xrdp_mm_send_disconnect(struct xrdp_mm* self);
 int APP_CC
 xrdp_mm_end(struct xrdp_mm* self);
+void APP_CC
+xrdp_mm_set_network_stat(struct xrdp_mm* self, long bandwidth, int rtt);
 int APP_CC
 xrdp_mm_get_wait_objs(struct xrdp_mm* self, tbus* read_objs, int* rcount, tbus* write_objs, int* wcount, int* timeout);
 int APP_CC
