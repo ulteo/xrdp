@@ -281,4 +281,10 @@ libxrdp_emt_loop(struct xrdp_session* session);
 int DEFAULT_CC
 libxrdp_send_ime_status(struct xrdp_session* session, int status);
 
+bool DEFAULT_CC
+libxrdp_emt_start_check(struct xrdp_session* session);
+
+bool DEFAULT_CC
+libxrdp_emt_stop_check(struct xrdp_session* session, int time_processing);
+
 #endif

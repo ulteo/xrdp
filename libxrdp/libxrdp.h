@@ -486,9 +486,10 @@ xrdp_image_compute_buffer_size(struct xrdp_client_info* self, int width,
 bool APP_CC
 xrdp_emt_process(struct xrdp_rdp* self, struct stream* s);
 bool EXPORT_CC
-libxrdp_emt_start_check(struct xrdp_session* session);
+xrdp_emt_bw_check_start(struct xrdp_rdp* self);
 bool APP_CC
-libxrdp_emt_stop_check(struct xrdp_session* session, int time_processing);
-void APP_CC
-libxrdp_update_frame_rate(struct xrdp_session* self, unsigned long data_sended);
+xrdp_emt_bw_check_stop(struct xrdp_rdp* self, int time_processing);
+bool APP_CC
+xrdp_emt_send_init(struct xrdp_rdp* self);
+
 #endif
