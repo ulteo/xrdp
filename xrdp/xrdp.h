@@ -101,3 +101,9 @@ bool
 xrdp_module_load(struct xrdp_process* self, const char* module_name);
 int
 xrdp_module_unload(struct xrdp_process* self);
+
+/* xrdp_qos.c */
+THREAD_RV THREAD_CC
+xrdp_qos_loop(void* in_val);
+struct xrdp_qos*
+xrdp_qos_create(struct xrdp_process* process, struct xrdp_user_channel* user_channel);

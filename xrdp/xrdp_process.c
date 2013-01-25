@@ -15,11 +15,9 @@
 
    xrdp: A Remote Desktop Protocol server.
    Copyright (C) Jay Sorg 2004-2009
-   Copyright (C) 2011-2012 Ulteo SAS
-   http://www.ulteo.com
-   Author David LECHEVALIER <david@ulteo.com> 2011, 2012
+   http://www.ulteo.com 2011-2013
+   Author David LECHEVALIER <david@ulteo.com> 2011, 2012, 2013
    Author James B. MacLean <macleajb@ednet.ns.ca> 2012
-
 
    main rdp process
 
@@ -171,34 +169,21 @@ xrdp_process_main_loop(struct xrdp_process* self)
 
   if (libxrdp_process_incomming(self->session) == 0)
   {
-    int connectivity_check_interval = self->session->client_info->connectivity_check_interval * 1000;
     term_obj = g_get_term_event();
     self->cont = 1;
+
+    // QOS initialization
+    self->qos = xrdp_qos_create(self, self->mod);
+    self->qos->thread_handle = tc_thread_create(xrdp_qos_loop, self->qos);
 
     while (self->cont)
     {
       /* build the wait obj list */
-      frame_rate = self->session->client_info->frame_rate;
       timeout = 1000;
       robjs_count = 0;
       wobjs_count = 0;
       robjs[robjs_count++] = term_obj;
       robjs[robjs_count++] = self->self_term_event;
-      self->mod->get_data_descriptor(self->mod, robjs, &robjs_count, wobjs, &wobjs_count, &timeout);
-      if (self->session->client_info->connectivity_check)
-      {
-        current_time =  g_time2();
-        if (current_time - self->server_trans->last_time >= connectivity_check_interval)
-        {
-          libxrdp_send_keepalive(self->session);
-          self->server_trans->last_time = current_time;
-          if (g_tcp_socket_ok(self->server_trans->sck) == 0)
-          {
-            printf("Connection end due to keepalive\n");
-            break;
-          }
-        }
-      }
 
       timeout = frame_rate;
       if (timeout == 0)
@@ -225,21 +210,11 @@ xrdp_process_main_loop(struct xrdp_process* self)
       {
         break;
       }
-      if (self->mod->get_data(self->mod) != 0)
-      {
-        break;
-      }
       if (trans_check_wait_objs(self->server_trans) != 0)
       {
         break;
       }
     }
-    if( self->mod != 0)
-    {
-      self->mod->disconnect(self->mod);
-    }
-
-    libxrdp_disconnect(self->session);
   }
   xrdp_process_mod_end(self);
   libxrdp_exit(self->session);

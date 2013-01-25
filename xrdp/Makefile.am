@@ -36,6 +36,7 @@ xrdp_SOURCES = \
   xrdp.c xrdp.h xrdp_types.h \
   xrdp_listen.c \
   xrdp_module.c \
+  xrdp_qos.c \
   xrdp_process.c
 
 xrdp_LDADD = \

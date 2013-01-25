@@ -35,13 +35,22 @@
 
    xrdp: A Remote Desktop Protocol server.
    Copyright (C) Jay Sorg 2004-2009
-
+   http://www.ulteo.com 2013
+   Author David LECHEVALIER <david@ulteo.com> 2013
    types
 
 */
 
 /* lib */
 
+
+struct xrdp_qos
+{
+  struct xrdp_process* process;
+  struct xrdp_user_channel* mod;
+
+  tbus thread_handle;
+};
 
 /* rdp process */
 struct xrdp_process
@@ -53,6 +62,7 @@ struct xrdp_process
   struct xrdp_session* session;
   /* create these when up and running */
   struct xrdp_user_channel* mod;
+  struct xrdp_qos* qos;
   //int app_sck;
   tbus done_event;
   int session_id;
