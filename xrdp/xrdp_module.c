@@ -95,5 +95,6 @@ xrdp_module_unload(struct xrdp_process* self)
   if (self->mod->handle && self->mod->exit) {
     return self->mod->exit(self->mod);
   }
+  return 0;
 }
 
