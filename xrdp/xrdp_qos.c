@@ -81,7 +81,8 @@ printf("process -> cont %i\n", process->cont);
     robjs_count = 0;
     wobjs_count = 0;
     process->mod->get_data_descriptor(process->mod, robjs, &robjs_count, wobjs, &wobjs_count, &timeout);
-    if (process->session->client_info->connectivity_check)
+
+    if (process->session && process->session->client_info->connectivity_check)
     {
       current_time =  g_time2();
       if (current_time - process->server_trans->last_time >= connectivity_check_interval)
