@@ -1763,6 +1763,11 @@ int APP_CC
 xrdp_wm_end(struct xrdp_user_channel* user_channel)
 {
   struct xrdp_wm* wm = (struct xrdp_wm*)user_channel->wm;
+  if (wm == NULL)
+  {
+    return 0;
+  }
+
   return xrdp_mm_end(wm->mm);
 }
 
