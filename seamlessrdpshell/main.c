@@ -608,6 +608,7 @@ void process_message(char *buffer)
 	if (recv_msg_id == 0 && strcmp(token2, "0") != 0) {
 		log_message(l_config, LOG_LEVEL_WARNING, "XHook[process_message]: "
 			    "Received a bad message id : %s", token2);
+		g_free(buffer2);
 		return;
 	}
 
@@ -622,6 +623,7 @@ void process_message(char *buffer)
 		Window w = (Window) hex2int(token3);
 
 		change_state(w, state, recv_msg_id);
+		g_free(buffer2);
 		return;
 	}
 
@@ -677,6 +679,7 @@ void process_message(char *buffer)
 	}
 	log_message(l_config, LOG_LEVEL_WARNING, "XHook[process_message]: "
 		    "Invalid message : %s\n", token1);
+	g_free(buffer2);
 
 }
 
