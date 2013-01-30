@@ -113,6 +113,7 @@ static int APP_CC
 xrdp_iso_send_connection_confirm(struct xrdp_iso* self, struct stream* s)
 {
   bool send_request_response = self->need_negotiation_response;
+  bool client_support_network_detection = self->mcs_layer->sec_layer->rdp_layer->client_info.support_network_detection;
   int x224_len = 6;
   int tpkt_len = 11;
 
@@ -121,7 +122,7 @@ xrdp_iso_send_connection_confirm(struct xrdp_iso* self, struct stream* s)
     return 1;
   }
 
-  if (send_request_response)
+  if (send_request_response && client_support_network_detection)
   {
     x224_len += 8;
     tpkt_len += 8;
@@ -137,13 +138,10 @@ xrdp_iso_send_connection_confirm(struct xrdp_iso* self, struct stream* s)
   out_uint8(s, 0);             // X.224 class
 
   // send Negotiation Response
-  if (self->need_negotiation_response)
+  if (send_request_response && client_support_network_detection)
   {
     unsigned char flags = 0;
-    if (self->mcs_layer->sec_layer->rdp_layer->client_info.support_network_detection)
-    {
-      flags = EXTENDED_CLIENT_DATA_SUPPORTED;
-    }
+    flags = EXTENDED_CLIENT_DATA_SUPPORTED;
 
     out_uint8(s, TYPE_RDP_NEG_RSP);                // type
     out_uint8(s, flags);                           // flags
