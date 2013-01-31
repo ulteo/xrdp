@@ -151,7 +151,7 @@ xrdp_orders_send(struct xrdp_orders* self)
 
       if (self->rdp_layer->client_info.support_fastpath)
       {
-        return xrdp_rdp_send_fast_path_update(self->rdp_layer, self->out_s, FASTPATH_UPDATETYPE_ORDERS);
+        return xrdp_rdp_spool_fast_path_update(self->rdp_layer, self->out_s, FASTPATH_UPDATETYPE_ORDERS);
       }
       else
       {
@@ -177,7 +177,7 @@ xrdp_orders_force_send(struct xrdp_orders* self)
 
     if (self->rdp_layer->client_info.support_fastpath)
     {
-      rv = xrdp_rdp_send_fast_path_update(self->rdp_layer, self->out_s, FASTPATH_UPDATETYPE_ORDERS);
+      rv = xrdp_rdp_spool_fast_path_update(self->rdp_layer, self->out_s, FASTPATH_UPDATETYPE_ORDERS);
     }
     else
     {
