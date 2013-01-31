@@ -152,6 +152,7 @@ xrdp_qos_loop(void* in_val)
   int connectivity_check_interval;
   long total_tosend;
   struct list* data_to_send;
+  int spent_time;
 
   if (qos == NULL)
   {
@@ -205,6 +206,12 @@ xrdp_qos_loop(void* in_val)
         total_tosend += s->data->size;
       }
 
+      if (total_tosend > 5000)
+      {
+        libxrdp_emt_start_check(process->session);
+        spent_time = g_time3();
+      }
+
       for(i = 0 ; i < data_to_send->count ; i++)
       {
         s = (struct spacket*)list_get_item(data_to_send, i);
@@ -220,6 +227,17 @@ xrdp_qos_loop(void* in_val)
         free_stream(s->data);
       }
       list_clear(data_to_send);
+
+      if (total_tosend > 5000)
+      {
+        spent_time = g_time3() - spent_time;
+        libxrdp_emt_stop_check(session, spent_time);
+        if (session->network_stat_updated)
+        {
+          process->mod->set_network_stat(process->mod, session->bandwidth, session->average_RTT);
+          process->session->network_stat_updated = false;
+        }
+      }
     }
   }
 

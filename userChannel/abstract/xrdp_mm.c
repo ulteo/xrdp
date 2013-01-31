@@ -1149,14 +1149,6 @@ xrdp_mm_check_wait_objs(struct xrdp_mm* self)
     if (self->mod->mod_check_wait_objs != 0)
     {
       rv = self->mod->mod_check_wait_objs(self->mod);
-
-      spent_time = g_time3() - spent_time;
-      libxrdp_emt_stop_check(self->wm->session, spent_time);
-      if (self->wm->session->network_stat_updated)
-      {
-        xrdp_mm_set_network_stat(self, self->wm->session->bandwidth, self->wm->session->average_RTT);
-        self->wm->session->network_stat_updated = false;
-      }
     }
   }
   if (self->delete_sesman_trans)
