@@ -237,6 +237,17 @@ xrdp_qos_loop(void* in_val)
           process->mod->set_network_stat(process->mod, session->bandwidth, session->average_RTT);
           process->session->network_stat_updated = false;
         }
+        if(session->client_info->use_static_frame_rate == false && session->bandwidth > 0)
+        {
+          int next_request_time = total_tosend/session->bandwidth;
+          if (next_request_time > 1000)
+          {
+            next_request_time = 1000;
+          }
+
+          printf("next send in %i\n", (total_tosend/session->bandwidth));
+          g_sleep(next_request_time);
+        }
       }
     }
   }
