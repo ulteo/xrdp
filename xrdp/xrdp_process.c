@@ -24,6 +24,7 @@
 */
 
 #include "xrdp.h"
+#include "libxrdp.h"
 #include "abstract/xrdp_module.h"
 
 static int g_session_id = 0;
@@ -134,6 +135,112 @@ xrdp_process_data_in(struct trans* self)
 }
 
 /*****************************************************************************/
+THREAD_RV THREAD_CC
+xrdp_qos_loop(void* in_val)
+{
+  struct xrdp_process* process = (struct xrdp_process*)in_val;
+  struct xrdp_qos* qos = (struct xrdp_qos*)process->qos;
+  struct xrdp_session* session = process->session;
+  struct xrdp_rdp* rdp;
+  int timeout = 1000;
+  int robjs_count;
+  int wobjs_count;
+  tbus robjs[32];
+  tbus wobjs[32];
+  int current_time = 0;
+  int last_update_time = 0;
+  int connectivity_check_interval;
+  long total_tosend;
+  struct list* data_to_send;
+
+  if (qos == NULL)
+  {
+    printf("Failed to initialize qos thread\n");
+    return (void*)1;
+  }
+
+  printf("=====> QOS Start\n");
+  connectivity_check_interval = session->client_info->connectivity_check_interval * 1000;
+  rdp = session->rdp;
+
+  while(process->cont)
+  {
+    /* build the wait obj list */
+    timeout = 1000;
+    robjs_count = 0;
+    wobjs_count = 0;
+    process->mod->get_data_descriptor(process->mod, robjs, &robjs_count, wobjs, &wobjs_count, &timeout);
+
+    if (session && session->client_info->connectivity_check)
+    {
+      current_time =  g_time2();
+      if (current_time - session->trans->last_time >= connectivity_check_interval)
+      {
+        libxrdp_send_keepalive(session);
+        session->trans->last_time = current_time;
+        if (g_tcp_socket_ok(session->trans->sck) == 0)
+        {
+          printf("Connection end due to keepalive\n");
+          break;
+        }
+      }
+    }
+    // Waiting for new data
+    if (g_obj_wait(robjs, robjs_count, wobjs, wobjs_count, timeout) != 0)
+    {
+      /* error, should not get here */
+      g_sleep(100);
+    }
+    data_to_send = process->mod->get_data(process->mod);
+
+    if (data_to_send->count > 0)
+    {
+      struct spacket* s;
+      total_tosend = 0;
+      int i = 0;
+
+      for(i = 0 ; i < data_to_send->count ; i++)
+      {
+        s = (struct spacket*)list_get_item(data_to_send, i);
+        total_tosend += s->data->size;
+      }
+
+      for(i = 0 ; i < data_to_send->count ; i++)
+      {
+        s = (struct spacket*)list_get_item(data_to_send, i);
+        if (s->packet_type == 1)
+        {
+          xrdp_rdp_send_data(rdp, s->data, s->update_type);
+        }
+        if (s->packet_type == 2)
+        {
+          xrdp_rdp_send_fast_path_update(rdp, s->data, s->update_type);
+        }
+
+        free_stream(s->data);
+      }
+      list_clear(data_to_send);
+    }
+  }
+
+  if( process->mod != 0)
+  {
+    process->mod->disconnect(process->mod);
+  }
+
+  libxrdp_disconnect(session);
+  return 0;
+}
+
+int APP_CC
+xrdp_qos_start(struct xrdp_process* process)
+{
+  process->qos = process->session->qos;
+  process->qos->thread_handle = tc_thread_create(xrdp_qos_loop, process);
+  return 0;
+}
+
+/*****************************************************************************/
 int APP_CC
 xrdp_process_main_loop(struct xrdp_process* self)
 {
@@ -172,9 +279,7 @@ xrdp_process_main_loop(struct xrdp_process* self)
     term_obj = g_get_term_event();
     self->cont = 1;
 
-    // QOS initialization
-    self->qos = xrdp_qos_create(self, self->mod);
-    self->qos->thread_handle = tc_thread_create(xrdp_qos_loop, self->qos);
+    xrdp_qos_start(self);
 
     while (self->cont)
     {

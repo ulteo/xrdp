@@ -147,6 +147,22 @@ struct xrdp_emt
   unsigned long total_delta;
 };
 
+/* qos */
+
+struct spacket {
+  struct stream* data;
+  int update_type;
+  int packet_type;
+};
+
+struct xrdp_qos
+{
+  struct xrdp_session* session;
+
+  tbus thread_handle;
+  struct list* spooled_packet;
+};
+
 /* channel */
 struct xrdp_channel
 {
@@ -344,7 +360,7 @@ xrdp_rdp_send(struct xrdp_rdp* self, struct stream* s, int pdu_type);
 int APP_CC
 xrdp_rdp_send_fast_path_update(struct xrdp_rdp* self, struct stream* s, int update_code);
 int APP_CC
-xrdp_rdp_send_data(struct xrdp_rdp* self, struct stream* s,
+xrdp_rdp_spool_data(struct xrdp_rdp* self, struct stream* s,
                    int data_pdu_type);
 int APP_CC
 xrdp_rdp_send_data_update_sync(struct xrdp_rdp* self);
@@ -488,5 +504,9 @@ bool APP_CC
 xrdp_emt_bw_check_stop(struct xrdp_rdp* self, int time_processing);
 bool APP_CC
 xrdp_emt_send_init(struct xrdp_rdp* self);
+
+/* xrdp_qos.c */
+struct xrdp_qos*
+xrdp_qos_create(struct xrdp_session* session);
 
 #endif

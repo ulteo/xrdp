@@ -52,6 +52,10 @@ libxrdp_init(struct trans* trans)
   session->rdp = xrdp_rdp_create(session, trans);
   session->orders = xrdp_orders_create(session, (struct xrdp_rdp*)session->rdp);
   session->client_info = &(((struct xrdp_rdp*)session->rdp)->client_info);
+
+  // QOS initialization
+  session->qos = xrdp_qos_create(session);
+
   make_stream(session->s);
   init_stream(session->s, 8192 * 2);
   return session;
@@ -178,7 +182,7 @@ libxrdp_send_palette(struct xrdp_session* session, int* palette)
     out_uint8(s, color);
   }
   s_mark_end(s);
-  xrdp_rdp_send_data((struct xrdp_rdp*)session->rdp, s, RDP_DATA_PDU_UPDATE);
+  xrdp_rdp_spool_data((struct xrdp_rdp*)session->rdp, s, RDP_DATA_PDU_UPDATE);
   free_stream(s);
   /* send the orders palette too */
   libxrdp_orders_init(session);
@@ -298,7 +302,7 @@ libxrdp_send_bitmap(struct xrdp_session* session, int width, int height,
       } while (total_bufsize < 4096 && i > 0);
       p_num_updates[0] = num_updates;
       p_num_updates[1] = num_updates >> 8;
-      xrdp_rdp_send_data((struct xrdp_rdp*)session->rdp, s,
+      xrdp_rdp_spool_data((struct xrdp_rdp*)session->rdp, s,
                          RDP_DATA_PDU_UPDATE);
       if (total_bufsize > 8192)
       {
@@ -345,7 +349,7 @@ libxrdp_send_bitmap(struct xrdp_session* session, int width, int height,
           out_uint8s(s, e * Bpp);
         }
         s_mark_end(s);
-        xrdp_rdp_send_data((struct xrdp_rdp*)session->rdp, s,
+        xrdp_rdp_spool_data((struct xrdp_rdp*)session->rdp, s,
                            RDP_DATA_PDU_UPDATE);
         i = i + lines_sending;
       }
@@ -393,7 +397,7 @@ libxrdp_send_pointer(struct xrdp_session* session, int cache_idx,
   }
   out_uint8a(s, mask, 128); /* mask */
   s_mark_end(s);
-  xrdp_rdp_send_data((struct xrdp_rdp*)session->rdp, s, RDP_DATA_PDU_POINTER);
+  xrdp_rdp_spool_data((struct xrdp_rdp*)session->rdp, s, RDP_DATA_PDU_POINTER);
   free_stream(s);
   return 0;
 }
@@ -412,7 +416,7 @@ libxrdp_set_pointer(struct xrdp_session* session, int cache_idx)
   out_uint16_le(s, 0); /* pad */
   out_uint16_le(s, cache_idx); /* cache_idx */
   s_mark_end(s);
-  xrdp_rdp_send_data((struct xrdp_rdp*)session->rdp, s, RDP_DATA_PDU_POINTER);
+  xrdp_rdp_spool_data((struct xrdp_rdp*)session->rdp, s, RDP_DATA_PDU_POINTER);
   free_stream(s);
   return 0;
 }
@@ -905,7 +909,7 @@ libxrdp_send_ime_status(struct xrdp_session* session, int status)
   state |= status ? IME_CMODE_NATIVE : 0;
   out_uint32_le(s, state);           /* ImeConvMode : see flags IME_CMODE_* */
   s_mark_end(s);
-  xrdp_rdp_send_data((struct xrdp_rdp*)session->rdp, s, RDP_DATA_PDU_SET_IME_STATUS);
+  xrdp_rdp_spool_data((struct xrdp_rdp*)session->rdp, s, RDP_DATA_PDU_SET_IME_STATUS);
   free_stream(s);
   return 0;
 }

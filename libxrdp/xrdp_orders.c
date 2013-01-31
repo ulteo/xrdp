@@ -155,7 +155,7 @@ xrdp_orders_send(struct xrdp_orders* self)
       }
       else
       {
-        return xrdp_rdp_send_data(self->rdp_layer, self->out_s, RDP_DATA_PDU_UPDATE);
+        return xrdp_rdp_spool_data(self->rdp_layer, self->out_s, RDP_DATA_PDU_UPDATE);
       }
     }
   }
@@ -181,7 +181,7 @@ xrdp_orders_force_send(struct xrdp_orders* self)
     }
     else
     {
-      rv =  xrdp_rdp_send_data(self->rdp_layer, self->out_s, RDP_DATA_PDU_UPDATE);
+      rv =  xrdp_rdp_spool_data(self->rdp_layer, self->out_s, RDP_DATA_PDU_UPDATE);
     }
   }
 

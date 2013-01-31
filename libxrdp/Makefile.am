@@ -24,6 +24,7 @@ libxrdp_la_SOURCES = \
   xrdp_sec.c \
   xrdp_tcp.c \
   xrdp_emt.c \
+  xrdp_qos.c \
   xrdp_bitmap_compress.c
 
 libxrdp_la_LIBADD = \

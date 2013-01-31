@@ -132,8 +132,8 @@ int APP_CC
 xrdp_wm_log_error(struct xrdp_wm* self, char* msg);
 int APP_CC
 xrdp_wm_get_wait_objs(struct xrdp_user_channel* user_channel, tbus* robjs, int* rc, tbus* wobjs, int* wc, int* timeout);
-int APP_CC
-xrdp_wm_check_wait_objs(struct xrdp_user_channel* user_channel);
+struct list* APP_CC
+xrdp_wm_get_data(struct xrdp_user_channel* user_channel);
 int APP_CC
 xrdp_wm_set_login_mode(struct xrdp_wm* self, int login_mode);
 int APP_CC

@@ -20,7 +20,7 @@ struct xrdp_user_channel
 
   // module functions
   int (*get_data_descriptor)(struct xrdp_user_channel*, tbus* robjs, int* rc, tbus* wobjs, int* wc, int* timeout);
-  int (*get_data)(struct xrdp_user_channel*);
+  struct list* (*get_data)(struct xrdp_user_channel*);
   int (*disconnect)(struct xrdp_user_channel*);
   int (*end)(struct xrdp_user_channel*);
   bool (*connect)(struct xrdp_user_channel* user_channel, int session_id, struct xrdp_session* session);

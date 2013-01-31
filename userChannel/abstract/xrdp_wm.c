@@ -1702,14 +1702,14 @@ xrdp_wm_get_wait_objs(struct xrdp_user_channel* user_channel, tbus* robjs, int* 
 }
 
 /******************************************************************************/
-int APP_CC
-xrdp_wm_check_wait_objs(struct xrdp_user_channel* user_channel)
+struct list* APP_CC
+xrdp_wm_get_data(struct xrdp_user_channel* user_channel)
 {
   int rv;
   struct xrdp_wm* wm = (struct xrdp_wm*)user_channel->wm;
   if (wm == 0)
   {
-    return 0;
+    return NULL;
   }
   rv = 0;
   if (g_is_wait_obj_set(wm->login_mode_event))
@@ -1721,7 +1721,8 @@ xrdp_wm_check_wait_objs(struct xrdp_user_channel* user_channel)
   {
     rv = xrdp_mm_check_wait_objs(wm->mm);
   }
-  return rv;
+
+  return wm->session->qos->spooled_packet;
 }
 
 /*****************************************************************************/
@@ -1786,7 +1787,7 @@ xrdp_module_init(struct xrdp_user_channel* user_channel)
   user_channel->disconnect = xrdp_wm_send_disconnect;
   user_channel->connect = xrdp_wm_connect;
   user_channel->get_data_descriptor = xrdp_wm_get_wait_objs;
-  user_channel->get_data = xrdp_wm_check_wait_objs;
+  user_channel->get_data = xrdp_wm_get_data;
   user_channel->end = xrdp_wm_end;
   user_channel->set_network_stat = xrdp_wm_set_network_stat;
 

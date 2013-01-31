@@ -44,14 +44,6 @@
 /* lib */
 
 
-struct xrdp_qos
-{
-  struct xrdp_process* process;
-  struct xrdp_user_channel* mod;
-
-  tbus thread_handle;
-};
-
 /* rdp process */
 struct xrdp_process
 {

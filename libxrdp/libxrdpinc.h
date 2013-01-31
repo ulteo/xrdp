@@ -151,6 +151,7 @@ struct xrdp_session
   void* rdp;
   void* orders;
   struct xrdp_client_info* client_info;
+  struct xrdp_qos* qos;
   int up_and_running;
   struct stream* s;
   int (*is_term)(void);
