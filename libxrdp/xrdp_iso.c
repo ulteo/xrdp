@@ -177,6 +177,7 @@ xrdp_iso_parse_connection_request(struct xrdp_iso* self, struct stream* s, int c
       g_strncpy(cookie, s->p, cookie_len);
       printf("cookie: %s\n", cookie);
       s->p += (cookie_len + 2); // CR+LF
+      g_free(cookie);
     }
   }
 
