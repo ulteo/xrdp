@@ -133,8 +133,8 @@ xrdp_iso_send_connection_confirm(struct xrdp_iso* self, struct stream* s)
   out_uint16_be(s, tpkt_len);  // TPKT length
   out_uint8(s, x224_len);      // X.224 length
   out_uint8(s, ISO_PDU_CC);    // X.224 type
-  out_uint16_le(s, 0);         // X.224 dst
-  out_uint16_le(s, 0);         // X.224 src
+  out_uint16_be(s, 0);         // X.224 dst
+  out_uint16_be(s, 0x1234);    // X.224 src (bogus value)
   out_uint8(s, 0);             // X.224 class
 
   // send Negotiation Response
