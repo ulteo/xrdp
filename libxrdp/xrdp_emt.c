@@ -145,11 +145,11 @@ xrdp_emt_process_results(struct xrdp_rdp* self, struct xrdp_emt* emt, struct str
     }
   }
 
-//  if (emt->need_result)
-//  {
+  if (emt->need_result)
+  {
     xrdp_emt_send_result(self, emt);
     emt->need_result = false;
-//  }
+  }
 
   printf("bandwidth: %i Ko/s\n", self->session->bandwidth);
   printf("base RTT: %i ms\n", self->session->base_RTT);
