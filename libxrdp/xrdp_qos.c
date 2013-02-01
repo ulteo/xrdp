@@ -56,7 +56,7 @@ xrdp_qos_stream_copy(struct spacket* packet, struct stream* src)
 {
   int size = src->end - src->data;
   make_stream(packet->data);
-  init_stream(packet->data, size);
+  init_stream(packet->data, src->size);
   struct stream* dst = packet->data;
 
   g_memcpy(dst->data, src->data, (src->end-src->data));
