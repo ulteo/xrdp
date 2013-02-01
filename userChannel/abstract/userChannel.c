@@ -72,6 +72,7 @@ lib_userChannel_mod_start(struct userChannel* u, int w, int h, int bpp)
   u->server_height = h;
   u->server_bpp = bpp;
   int res = false;
+  u->desktop = xrdp_screen_create(u->server_width, u->server_height, u->server_bpp);
 
   res = u->mod->mod_start(u->mod, w, h, bpp);
 
@@ -100,7 +101,7 @@ lib_userChannel_mod_end(struct userChannel* u)
   {
     u->mod->mod_end(u->mod);
   }
-
+  xrdp_screen_delete(u->desktop);
   return 0;
 }
 
@@ -154,6 +155,44 @@ lib_userChannel_mod_get_wait_objs(struct userChannel* u, tbus* read_objs, int* r
 /******************************************************************************/
 /* return error */
 int DEFAULT_CC
+lib_userChannel_update_screen(struct userChannel* u) {
+	struct xrdp_screen* desktop = u->desktop;
+	int i;
+	update* up;
+	int bpp = (u->server_bpp + 7) / 8;
+	if (bpp == 3) {
+		bpp = 4;
+	}
+	if (desktop->update_rects->count > 0) {
+		lib_userChannel_server_begin_update(u);
+		for (i = 0 ; i < desktop->update_rects->count ; i++) {
+			struct xrdp_rect* cur = (struct xrdp_rect*) list_get_item(desktop->update_rects, i);
+			up = g_malloc(sizeof(update), 1);
+			up->order_type = paint_rect;
+			up->x = cur->left;
+			up->y = cur->top;
+			int w = cur->right - cur->left;
+			int h = cur->bottom - cur->top;
+			up->cx = w;
+			up->cy = h;
+			up->width = w;
+			up->height = h;
+			up->srcx = 0;
+			up->srcy = 0;
+			up->data_len = up->cx * up->cy * bpp;
+			up->data = g_malloc(up->data_len, 0);
+			ip_image_crop(desktop->screen, up->x, up->y, up->cx, up->cy, up->data);
+			list_add_item(u->current_update_list, (tbus) up);
+		}
+		list_clear(desktop->update_rects);
+		lib_userChannel_server_end_update(u);
+	}
+	return 0;
+}
+
+/******************************************************************************/
+/* return error */
+int DEFAULT_CC
 lib_userChannel_mod_check_wait_objs(struct userChannel* u)
 {
   LIB_DEBUG(u, "lib_userChannel_mod_check_wait_objs");
@@ -165,6 +204,7 @@ lib_userChannel_mod_check_wait_objs(struct userChannel* u)
   }
 
   tc_mutex_lock(u->mod_mutex);
+  lib_userChannel_update_screen(u);
   g_file_read(u->efd, (char*)&event, sizeof(uint64_t));
 
   if (u->current_update_list->count > 0) {

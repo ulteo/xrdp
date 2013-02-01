@@ -25,6 +25,7 @@
 #include <libxrdp/libxrdp.h>
 #include <libxrdp/libxrdpinc.h>
 #include "update_order.h"
+#include "xrdp_screen.h"
 
 
 #define CURRENT_MOD_VER 1
@@ -131,6 +132,7 @@ struct userChannel
   bool need_request;
   long bandwidth;
   int rtt;
+  struct xrdp_screen* desktop;
 };
 
 

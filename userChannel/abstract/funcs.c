@@ -21,6 +21,152 @@
 */
 #include "funcs.h"
 
+ /*****************************************************************************/
+int list_add_rect(struct list* l, int left, int top, int right, int bottom) {
+	struct xrdp_rect* r;
+	r = (struct xrdp_rect*) g_malloc(sizeof(struct xrdp_rect), 1);
+	r->left = left;
+	r->top = top;
+	r->right = right;
+	r->bottom = bottom;
+	list_add_item(l, (tbus) r);
+	return 0;
+}
+
+/*****************************************************************************/
+/* returns boolean */
+int APP_CC
+rect_equal(struct xrdp_rect* in1, struct xrdp_rect* in2)
+{
+  if (in2->left != in1->left)
+  {
+	  return 0;
+  }
+  if (in2->top != in1->top)
+  {
+	  return 0;
+  }
+  if (in2->right != in1->right)
+  {
+	  return 0;
+  }
+  if (in2->bottom != in1->bottom)
+  {
+	  return 0;
+  }
+  return 1;
+}
+
+
+
+/*****************************************************************************/
+/* returns boolean */
+int APP_CC
+rect_union(struct xrdp_rect* in1, struct xrdp_rect* in2, struct list* out) {
+	struct xrdp_rect tmp;
+	if (!rect_intersect(in1, in2, &tmp)) {
+		return 0;
+	}
+	if (rect_equal(in1, in2)) {
+		return 0; 
+	} 
+	if (in1->left <= in2->left &&
+		in1->top <= in2->top &&
+		in1->right >= in2->right &&
+		in1->bottom >= in2->bottom) {
+		list_add_rect(out, in1->left, in1->top, in1->right, in1->bottom);
+	} else if (in1->left <= in2->left &&
+		in1->right >= in2->right &&
+		in1->bottom < in2->bottom &&
+		in1->top <= in2->top) { /* partially covered(whole top) */
+		list_add_rect(out, in1->left, in1->top, in1->right, in1->bottom);
+		list_add_rect(out, in2->left, in1->bottom, in2->right, in2->bottom);
+	} else if (in1->top <= in2->top &&
+			   in1->bottom >= in2->bottom &&
+			   in1->right < in2->right &&
+			   in1->left <= in2->left) { /* partially covered(left) */
+		list_add_rect(out, in1->left, in1->top, in1->right, in1->bottom);
+		list_add_rect(out, in1->right, in2->bottom, in2->right, in2->bottom);
+	} else if (in1->left <= in2->left &&
+			   in1->right >= in2->right &&
+			   in1->top > in2->top &&
+			   in1->bottom >= in2->bottom) { /* partially covered(bottom) */
+		list_add_rect(out, in1->left, in1->top, in1->right, in1->bottom);
+		list_add_rect(out, in2->left, in2->top, in2->right, in1->top);
+	} else if (in1->top <= in2->top &&
+			   in1->bottom >= in2->bottom &&
+			   in1->left > in2->left &&
+			   in1->right >= in2->right) { /* partially covered(right) */
+		list_add_rect(out, in1->left, in1->top, in1->right, in1->bottom);
+		list_add_rect(out, in2->left, in2->top, in1->left, in2->bottom);
+	} else if (in1->left <= in2->left &&
+			   in1->top <= in2->top &&
+			   in1->right < in2->right &&
+			   in1->bottom < in2->bottom) { /* partially covered(top left) */
+		list_add_rect(out, in1->left, in1->top, in1->right, in1->bottom);
+		list_add_rect(out, in1->right, in2->top, in2->right, in1->bottom);
+		list_add_rect(out, in2->left, in1->bottom, in2->right, in2->bottom);
+	} else if (in1->left <= in2->left &&
+			   in1->bottom >= in2->bottom &&
+			   in1->right < in2->right &&
+			   in1->top > in2->top) { /* partially covered(bottom left) */
+		list_add_rect(out, in1->left, in1->top, in1->right, in1->bottom);
+		list_add_rect(out, in2->left, in2->top, in2->right, in1->top);
+		list_add_rect(out, in1->right, in1->top, in2->right, in2->bottom);
+	} else if (in1->left > in2->left &&
+			   in1->right >= in2->right &&
+			   in1->top <= in2->top &&
+			   in1->bottom < in2->bottom) { /* partially covered(top right) */
+		list_add_rect(out, in1->left, in1->top, in1->right, in1->bottom);
+		list_add_rect(out, in2->left, in2->top, in1->left, in2->bottom);
+		list_add_rect(out, in1->left, in1->bottom, in2->right, in2->bottom);
+	} else if (in1->left > in2->left &&
+			   in1->right >= in2->right &&
+			   in1->top > in2->top &&
+			   in1->bottom >= in2->bottom) { /* partially covered(bottom right) */
+		list_add_rect(out, in1->left, in1->top, in1->right, in1->bottom);
+		list_add_rect(out, in2->left, in2->top, in2->right, in1->top);
+		list_add_rect(out, in2->left, in1->top, in1->left, in2->bottom);
+	} else if (in1->left > in2->left &&
+			   in1->top <= in2->top &&
+			   in1->right < in2->right &&
+			   in1->bottom >= in2->bottom) { /* 2 rects, one on each end */
+		list_add_rect(out, in1->left, in1->top, in1->right, in1->bottom);
+		list_add_rect(out, in2->left, in2->top, in1->left, in2->bottom);
+		list_add_rect(out, in1->right, in2->top, in2->right, in2->bottom);
+	} else if (in1->left <= in2->left &&
+			   in1->top > in2->top &&
+			   in1->right >= in2->right &&
+			   in1->bottom < in2->bottom) { /* 2 rects, one on each end */
+		list_add_rect(out, in2->left, in2->top, in2->right, in2->bottom);
+		list_add_rect(out, in1->left, in1->top, in1->right, in2->top);
+	} else if (in1->top > in2->top &&
+			   in1->bottom < in2->bottom &&
+			   in1->left <= in2->left &&
+			   in1->right < in2->right) { /* partially covered(left) */
+		list_add_rect(out, in2->left, in2->top, in2->right, in2->bottom);
+		list_add_rect(out, in1->left, in1->top, in2->left, in2->top);
+	} else if (in1->left > in2->left &&
+			   in1->right < in2->right &&
+			   in1->bottom >= in2->bottom &&
+			   in1->top > in2->top) { /* partially covered(bottom) */
+		list_add_rect(out, in2->left, in2->top, in2->right, in2->bottom);
+		list_add_rect(out, in1->left, in2->bottom, in1->right, in1->bottom);
+	} else if (in1->top > in2->top &&
+			   in1->bottom < in2->bottom &&
+			   in1->right >= in2->right &&
+			   in1->left > in2->left) { /* partially covered(right) */
+		list_add_rect(out, in2->left, in2->top, in2->right, in2->bottom);
+		list_add_rect(out, in2->right, in1->top, in1->right, in1->bottom);
+	} else if (in1->left > in2->left &&
+			   in1->top > in2->top &&
+			   in1->right < in2->right &&
+			   in1->bottom < in2->bottom) { /* totally contained, 4 rects */
+		list_add_rect(out, in2->left, in2->top, in2->right, in2->bottom);
+	}
+	return 0;
+}
+ 
 /*****************************************************************************/
 /* returns boolean */
 int APP_CC
