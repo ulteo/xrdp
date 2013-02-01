@@ -8,7 +8,8 @@ AM_CFLAGS = \
 
 INCLUDES = \
   -I$(top_srcdir) \
-  -I$(top_srcdir)/common
+  -I$(top_srcdir)/common \
+  -I$(top_srcdir)/userChannel/ip
 
 lib_LIBRARIES = \
   lib_uc_abstract.a
@@ -29,4 +30,5 @@ lib_uc_abstract_a_SOURCES = \
   xrdp_login_wnd.c xrdp_login_wnd.h \
   lang.c lang.h \
   userChannel.c  userChannel.h
+
 
