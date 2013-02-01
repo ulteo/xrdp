@@ -39,6 +39,7 @@ libxrdp_common_la_SOURCES = \
   d3des.c d3des.h \
   file.c file.h file_loc.h \
   list.c list.h \
+  fifo.c fifo.h \
   log.c log.h \
   os_calls.c os_calls.h \
   ssl_calls.c ssl_calls.h \
