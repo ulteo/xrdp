@@ -1073,7 +1073,7 @@ xrdp_mm_get_wait_objs(struct xrdp_mm* self,
   }
   if (self->connected)
   {
-    if (self->mod->mod_get_wait_objs != 0)
+    if (self->mod && self->mod->mod_get_wait_objs != 0)
     {
       rv = self->mod->mod_get_wait_objs(self->mod, read_objs, rcount,
                                         write_objs, wcount, timeout);
@@ -1146,7 +1146,7 @@ xrdp_mm_check_wait_objs(struct xrdp_mm* self)
   }
   if (self->connected)
   {
-    if (self->mod->mod_check_wait_objs != 0)
+    if (self->mod && self->mod->mod_check_wait_objs)
     {
       rv = self->mod->mod_check_wait_objs(self->mod);
     }
