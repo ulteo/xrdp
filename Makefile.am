@@ -20,9 +20,9 @@
 SUBDIRS = \
   common \
   vchannel \
-  userChannel \
   mc \
   libxrdp \
+  userChannel \
   xrdp \
   sesman \
   keygen \

@@ -19,6 +19,7 @@ lib_uc_proxy_la_SOURCES = \
 
 lib_uc_proxy_la_LIBADD = \
   $(top_builddir)/common/libxrdp_common.la \
+  $(top_builddir)/libxrdp/libxrdp.la \
   $(top_builddir)/userChannel/abstract/lib_uc_abstract.a
 
 
