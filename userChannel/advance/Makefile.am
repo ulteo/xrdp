@@ -20,7 +20,6 @@ lib_uc_advance_la_SOURCES = \
 
 lib_uc_advance_la_LIBADD = \
   $(top_builddir)/common/libxrdp_common.la \
-  $(top_builddir)/userChannel/ip/libip.a \
-  $(top_builddir)/userChannel/abstract/lib_uc_abstract.a
-
+  $(top_builddir)/userChannel/abstract/lib_uc_abstract.a \
+  $(top_builddir)/userChannel/ip/libip.a
 
