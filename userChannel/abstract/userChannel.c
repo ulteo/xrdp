@@ -288,8 +288,6 @@ lib_userChannel_mod_check_wait_objs(struct userChannel* u)
   }
   tc_mutex_unlock(u->mod_mutex);
 
-  u->need_request = true;
-
   return 0;
 }
 
@@ -388,12 +386,6 @@ void *lib_ulteo_thread_run(void *arg)
 
   while (! u->terminate)
   {
-    if (!u->need_request)
-    {
-      g_sleep(100);
-      continue;
-    }
-
     g_tcp_can_recv(u->mod->sck, timeout);
 
     tc_mutex_lock(u->mod_mutex);
@@ -403,7 +395,6 @@ void *lib_ulteo_thread_run(void *arg)
       u->terminate = 1;
     }
 
-    u->need_request = false;
     g_file_write(u->efd, (char*)&event, sizeof(event));
     tc_mutex_unlock(u->mod_mutex);
   }
