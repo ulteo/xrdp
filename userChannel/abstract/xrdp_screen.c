@@ -33,7 +33,7 @@ struct xrdp_screen* xrdp_screen_create(int w, int h, int bpp) {
 	self->bpp = bpp;
 	self->screen = ip_image_create(w, h, bpp);
 	self->update_rects = list_create();
-	self->update_rects->auto_free = 0;
+	self->update_rects->auto_free = 1;
 	return self;
 }
 
@@ -101,4 +101,6 @@ void xrdp_screen_update_desktop(struct xrdp_screen* self, int x, int y, int cx, 
 			list_add_item(update_rects, (tbus) f_rect);
 		}
 	}
+	list_delete(l_tmp);
+	fifo_free(f_tmp);
 }
