@@ -41,8 +41,11 @@ void ip_image_delete(struct ip_image* self){
 
 void ip_image_merge(struct ip_image* self, int x, int y, int w, int h, char* data) {
 	int i, j, ii, jj, pixel;
-	for (j = y, jj = 0; j < y + h; j++,  jj++) {
-		for (i = x, ii = 0 ; i < x + w ; i++, ii++) {
+	int width = ((x + w) > self->width) ? self->width : x + w;
+	int height = ((y + h) > self->height) ? self->height : y + h;
+	
+	for (j = y, jj = 0; j < height ; j++,  jj++) {
+		for (i = x, ii = 0 ; i < width ; i++, ii++) {
 			if(self->bpp == 8) {
 				pixel = GETPIXEL8(data, ii, jj, w);
 				SETPIXEL8(self->data, i, j, self->width, pixel);
