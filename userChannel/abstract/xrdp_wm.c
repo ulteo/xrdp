@@ -1722,6 +1722,11 @@ xrdp_wm_get_data(struct xrdp_user_channel* user_channel)
     rv = xrdp_mm_check_wait_objs(wm->mm);
   }
 
+  if (rv == 1)
+  {
+    return NULL;
+  }
+
   return wm->session->qos->spooled_packet;
 }
 

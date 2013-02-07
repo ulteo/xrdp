@@ -193,6 +193,10 @@ xrdp_qos_loop(void* in_val)
       g_sleep(100);
     }
     data_to_send = process->mod->get_data(process->mod);
+    if (data_to_send == NULL)
+    {
+      break;
+    }
 
     if (data_to_send->count > 0)
     {
