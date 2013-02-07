@@ -5,7 +5,7 @@ AM_CFLAGS = \
 
 INCLUDES = \
   -I$(top_srcdir)/common \
-  -I$(top_srcdir)/vchannel
+  -I$(top_srcdir)/vchannel/lib
 
 sbin_PROGRAMS = \
   vchannel_cliprdr
@@ -18,7 +18,7 @@ vchannel_cliprdr_SOURCES = \
 
 vchannel_cliprdr_LDADD = \
   -lX11 -lpthread \
-  $(top_builddir)/vchannel/libxrdp_vchannel.la \
+  $(top_builddir)/vchannel/lib/libxrdp_vchannel.la \
   $(top_builddir)/common/libxrdp_common.la 
 
 cliprdrsysconfdir=$(sysconfdir)/xrdp

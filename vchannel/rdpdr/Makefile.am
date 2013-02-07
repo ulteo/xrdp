@@ -18,35 +18,40 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 AM_CFLAGS = \
-  `pkg-config --cflags libpulse-simple` \
-  -DXRDP_CFG_PATH=\"${sysconfdir}/xrdp\"
+  -DXRDP_CFG_PATH=\"${sysconfdir}/xrdp\" \
+  -Wall -O2 -D_REENTRANT \
+  `pkg-config fuse --cflags` \
+  `xml2-config --cflags`
 
 INCLUDES = \
   -I$(top_srcdir)/common \
-  -I$(top_srcdir)/vchannel
+  -I$(top_srcdir)/vchannel/lib
+
+AM_LDFLAGS = \
+  `pkg-config fuse --libs` \
+  `xml2-config --libs`
 
 sbin_PROGRAMS = \
-  vchannel_rdpsnd
+  vchannel_rdpdr
 
-vchannel_rdpsnd_SOURCES = \
-  config.h main.c \
-  sound_channel.h sound_channel.c
+vchannel_rdpdr_SOURCES = \
+  main.c  rdpdr.h\
+  shares.c shares.h \
+  printers.c printers.h \
+  fuse_dev.c fuse_dev.h \
+  hashmap.c hashmap.h \
+  rdpfs_cache.c rdpfs_cache.h \
+  rdpfs.h rdpfs.c 
 
-vchannel_rdpsnd_LDADD = \
-  $(top_builddir)/vchannel/libxrdp_vchannel.la \
-  $(top_builddir)/common/libxrdp_common.la
+vchannel_rdpdr_LDADD = \
+  -L/usr/X11R6/lib \
+  $(top_builddir)/vchannel/lib/libxrdp_vchannel.la \
+  $(top_builddir)/common/libxrdp_common.la 
 
-vchannel_rdpsnd_LDFLAGS = \
-  `pkg-config --libs libpulse-simple`
+rdpdrsysconfdir=$(sysconfdir)/xrdp
 
-alsaconfdir=$(sysconfdir)
-alsaconf_DATA = \
-  asound.conf
-
-sndsysconfdir=$(sysconfdir)/xrdp
-sndsysconf_DATA = \
-  rdpsnd.conf rdpsnd.pa
+rdpdrsysconf_DATA = \
+  rdpdr.conf  
 
 EXTRA_DIST = \
-  $(sndsysconf_DATA) \
-  $(alsaconf_DATA)
+  $(rdpdrsysconf_DATA)

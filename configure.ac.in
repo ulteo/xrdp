@@ -251,9 +251,6 @@ AC_CONFIG_FILES([Makefile
                  logd/Makefile
                  mc/Makefile
                  sesman/Makefile
-                 sesman/chansrv/rdpdr/Makefile
-                 sesman/chansrv/rdpsnd2/Makefile
-                 sesman/chansrv/cliprdr/Makefile
                  sesman/libscp/Makefile
                  sesman/tools/Makefile
                  sesman/sessvc/Makefile
@@ -263,6 +260,10 @@ AC_CONFIG_FILES([Makefile
                  python/Makefile
                  seamlessrdpshell/Makefile
                  vchannel/Makefile
+                 vchannel/lib/Makefile
+                 vchannel/rdpdr/Makefile
+                 vchannel/rdpsnd/Makefile
+                 vchannel/cliprdr/Makefile
                  userChannel/Makefile
                  userChannel/ip/Makefile
                  userChannel/abstract/Makefile

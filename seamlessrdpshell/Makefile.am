@@ -28,7 +28,7 @@ AM_LDFLAGS = \
 
 INCLUDES = \
   -I$(top_srcdir)/common \
-  -I$(top_srcdir)/vchannel
+  -I$(top_srcdir)/vchannel/lib
 
 bin_PROGRAMS = \
   XHook
@@ -39,7 +39,7 @@ XHook_SOURCES = \
 
 XHook_LDADD = \
   -lX11 -lpthread \
-  $(top_builddir)/vchannel/libxrdp_vchannel.la \
+  $(top_builddir)/vchannel/lib/libxrdp_vchannel.la \
   $(top_builddir)/common/libxrdp_common.la
 
 seamlessrdpshelldir=$(bindir)
