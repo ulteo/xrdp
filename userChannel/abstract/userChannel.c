@@ -164,7 +164,6 @@ lib_userChannel_update_screen(struct userChannel* u) {
 		bpp = 4;
 	}
 	if (desktop->update_rects->count > 0) {
-		lib_userChannel_server_begin_update(u);
 		for (i = 0 ; i < desktop->update_rects->count ; i++) {
 			struct xrdp_rect* cur = (struct xrdp_rect*) list_get_item(desktop->update_rects, i);
 			up = g_malloc(sizeof(update), 1);
@@ -185,7 +184,6 @@ lib_userChannel_update_screen(struct userChannel* u) {
 			list_add_item(u->current_update_list, (tbus) up);
 		}
 		list_clear(desktop->update_rects);
-		lib_userChannel_server_end_update(u);
 	}
 	return 0;
 }
@@ -209,19 +207,12 @@ lib_userChannel_mod_check_wait_objs(struct userChannel* u)
 
   if (u->current_update_list->count > 0) {
     int i;
+    graphics_begin_update(u);
     for(i = 0 ; i < u->current_update_list->count ; i++)
     {
       update* up = (update*)list_get_item(u->current_update_list, i);
       switch (up->order_type)
       {
-      case begin_update:
-        graphics_begin_update(u);
-        break;
-
-      case end_update:
-        graphics_end_update(u);
-        break;
-
       case reset:
         server_reset(u, up->width, up->height, up->bpp);
         break;
@@ -284,6 +275,7 @@ lib_userChannel_mod_check_wait_objs(struct userChannel* u)
         break;
       }
     }
+    graphics_end_update(u);
     list_clear(u->current_update_list);
   }
   tc_mutex_unlock(u->mod_mutex);

@@ -36,12 +36,6 @@ void update_add(update* up)
 int DEFAULT_CC
 lib_userChannel_server_begin_update (struct xrdp_mod* mod)
 {
-  if (u)
-  {
-    update* up = g_malloc(sizeof(update), 1);
-    up->order_type = begin_update;
-    update_add(up);
-  }
   return 0;
 }
 
@@ -49,12 +43,6 @@ lib_userChannel_server_begin_update (struct xrdp_mod* mod)
 int DEFAULT_CC
 lib_userChannel_server_end_update(struct xrdp_mod* mod)
 {
-  if (u)
-  {
-    update* up = g_malloc(sizeof(update), 1);
-    up->order_type = end_update;
-    update_add(up);
-  }
   return 0;
 }
 
