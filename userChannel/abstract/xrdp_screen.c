@@ -80,8 +80,8 @@ void xrdp_screen_update_desktop(struct xrdp_screen* self, int x, int y, int cx, 
 				if (! rect_equal(rect, f_rect)) {
 					if (rect_intersect(rect, f_rect, &intersection)) {
 						no_inter = false;
-						list_remove_item(update_rects, i);
 						rect_union(f_rect, rect, l_tmp);
+						list_remove_item(update_rects, i);
 						for (j = 0 ; j < l_tmp->count; j++) {
 							r = (struct xrdp_rect*) list_get_item(l_tmp, j);
 							fifo_push(f_tmp, r);
