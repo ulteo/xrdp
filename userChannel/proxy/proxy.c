@@ -112,26 +112,7 @@ lib_userChannel_server_paint_rect(struct xrdp_mod* mod, int x, int y, int cx, in
 {
   if (u)
   {
-    int bpp = (u->server_bpp + 7) / 8;
-    if (bpp == 3)
-    {
-      bpp = 4;
-    }
-
-    update* up = g_malloc(sizeof(update), 1);
-    up->order_type = paint_rect;
-    up->x = x;
-    up->y = y;
-    up->cx = cx;
-    up->cy = cy;
-    up->width = width;
-    up->height = height;
-    up->srcx = srcx;
-    up->srcy = srcy;
-    up->data_len = cx*cy*bpp;
-    up->data = g_malloc(up->data_len, 0);
-    g_memcpy(up->data, data, up->data_len);
-    update_add(up);
+    xrdp_screen_update_desktop(u->desktop, x, y, cx, cy, data, width, height, srcx, srcy);
   }
   return 0;
 }
