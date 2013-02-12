@@ -1,8 +1,8 @@
 /**
- * Copyright (C) 2008-2012 Ulteo SAS
+ * Copyright (C) 2008-2013 Ulteo SAS
  * http://www.ulteo.com
  * Author David LECHEVALIER <david@ulteo.com> 2009-2011
- * Author Thomas MOUTON <thomas@ulteo.com> 2010-2012
+ * Author Thomas MOUTON <thomas@ulteo.com> 2010-2013
  * Author Guillaume DUPAS <guillaume@ulteo.com> 2011
  *
  * This program is free software; you can redistribute it and/or
@@ -301,7 +301,7 @@ void synchronize()
 
 	for (i = 0; i < window_list.item_count; i++) {
 		witem = &window_list.list[i];
-		XGetGeometry(display, witem->window_id, &root, &x, &y, &width,
+		XGetGeometry(display, witem->win_out, &root, &x, &y, &width,
 			     &height, &border, &depth);
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[synchronize]: "
 			    "GEOM OUT: %i,%i,%i,%i,%i,%i", x, y, width, height,
