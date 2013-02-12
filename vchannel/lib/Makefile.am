@@ -24,7 +24,7 @@ pkglib_LTLIBRARIES = \
   libxrdp_chansrv.la
 
 libxrdp_chansrv_la_SOURCES = \
-  user_channel.c user_channel.h
+  chansrv.c chansrv.h
 
 libxrdp_chansrv_la_LIBADD = \
   $(top_builddir)/common/libxrdp_common.la

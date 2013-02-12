@@ -18,7 +18,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  **/
 
-#include "user_channel.h"
+#include "chansrv.h"
 #include <os_calls.h>
 #include <list.h>
 #include <file.h>

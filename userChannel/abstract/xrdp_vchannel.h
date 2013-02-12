@@ -9,7 +9,7 @@
 #define XRDP_VCHANNEL_H_
 
 
-#include <vchannel/lib/user_channel.h>
+#include <vchannel/lib/chansrv.h>
 #include "xrdp_mm.h"
 
 
