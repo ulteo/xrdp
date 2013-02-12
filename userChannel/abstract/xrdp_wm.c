@@ -1396,8 +1396,7 @@ xrdp_wm_process_channel_data(struct xrdp_wm* self,
   {
     if (self->mm->sesman_controlled)
     {
-      rv = xrdp_mm_process_channel_data(self->mm, param1, param2,
-                                        param3, param4);
+      rv = xrdp_vchannel_process_channel_data(self->mm, param1, param2, param3, param4);
     }
     else
     {

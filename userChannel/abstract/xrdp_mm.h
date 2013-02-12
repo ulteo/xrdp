@@ -1,7 +1,7 @@
 /**
- * Copyright (C) 2011 Ulteo SAS
+ * Copyright (C) 2011-2013 Ulteo SAS
  * http://www.ulteo.com
- * Author David LECHEVALIER <david@ulteo.com> 2011
+ * Author David LECHEVALIER <david@ulteo.com> 2011, 2013
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -22,6 +22,7 @@
 #define XRDP_MM_H
 
 #include "userChannel.h"
+#include "xrdp_vchannel.h"
 
 
 struct xrdp_mod
@@ -106,12 +107,11 @@ struct xrdp_mm
   struct xrdp_mod* (*mod_init)(void);
   int (*mod_exit)(struct xrdp_mod*);
   struct xrdp_mod* mod; /* module interface */
+  vchannel* vc; /* virtual channel interface */
   bool connected;
   int display; /* 10 for :10.0, 11 for :11.0, etc */
   int code; /* 0 Xvnc session 10 X11rdp session */
   int sesman_controlled; /* true if this is a sesman session */
-  struct trans* chan_trans; /* connection to chansrv */
-  int chan_trans_up; /* true once connected to chansrv */
   int delete_chan_trans; /* boolean set when done with channel connection */
   struct trans* scim_trans; /* connection to scim-panel */
   int scim_trans_up; /* true once connected to scim-panel */

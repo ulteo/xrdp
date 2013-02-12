@@ -23,6 +23,7 @@
 
 #include "arch.h"
 #include "parse.h"
+#include "log.h"
 
 
 #define SETUP_MESSAGE			0x01
@@ -43,6 +44,26 @@
 #define CHANNEL_TYPE_USER				"UserChannel"
 #define CHANNEL_TYPE_CUSTOM				"CustomChannel"
 
+#define CHANSRV_LIBRARY  "libxrdp_chansrv.so"
+
+typedef struct _vchannel
+{
+	int display;
+	bool stop;
+	char* username;
+	tbus handle;
+	tbus session;
+	tbus thread_handle;
+
+	bool (*init)(struct _vchannel*);
+	void (*exit)(struct _vchannel*);
+
+	bool (*add_channel)(struct _vchannel*, char*, int, int);
+	int (*has_data)(struct _vchannel*, int);
+	int (*get_data)(struct _vchannel*, int, struct stream* s);
+	int (*send_data)(struct _vchannel*, unsigned char*, int, int, int, int);
+} vchannel;
+
 struct user_channel
 {
 	int channel_id;
@@ -50,21 +71,25 @@ struct user_channel
 	int client_channel_socket[5];
 	int client_channel_count;
 	int server_channel_socket;
+	struct list* psooled_packet;
 };
 
 int APP_CC
-user_channel_do_up();
+user_channel_do_up(vchannel* v, char* chan_name);
 
-int APP_CC
-user_channel_init(char* channel_name, int channel_id);
+bool APP_CC
+user_channel_init(vchannel* v, char* channel_name, int channel_id, int chan_flags);
 int APP_CC
 user_channel_deinit(void);
 int APP_CC
-user_channel_data_in(struct stream* s, int chan_id, int chan_flags, int length,
-                  int total_length);
+user_channel_send_data(vchannel* v, unsigned char* data, int chan_id, int chan_flags, int length, int total_length);
 int APP_CC
 user_channel_get_wait_objs(tbus* objs, int* count, int* timeout);
 int APP_CC
 user_channel_check_wait_objs(void);
+int APP_CC
+user_channel_has_data(vchannel* v, int channel_id);
+int APP_CC
+user_channel_get_data(vchannel* v, int chanid, struct stream* s);
 
 #endif

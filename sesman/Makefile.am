@@ -1,7 +1,7 @@
-# Copyright (C) 2010 Ulteo SAS
+# Copyright (C) 2010-2013 Ulteo SAS
 # http://www.ulteo.com
 # Author Samuel BOVEE <samuel@ulteo.com> 2010
-# Author David LECHEVALIER <david@ulteo.com> 2010
+# Author David LECHEVALIER <david@ulteo.com> 2010, 2013
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -80,8 +80,7 @@ sesmansysconf_DATA = \
 SUBDIRS = \
   libscp \
   tools \
-  sessvc \
-  chansrv
+  sessvc
 
 install-data-hook:
 	chmod 755 $(DESTDIR)$(sysconfdir)/xrdp/startwm.sh

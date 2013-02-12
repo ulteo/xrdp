@@ -31,6 +31,7 @@ lib_uc_abstract_a_SOURCES = \
   xrdp_login_wnd.c xrdp_login_wnd.h \
   lang.c lang.h \
   xrdp_screen.c xrdp_screen.h \
+  xrdp_vchannel.c xrdp_vchannel.h \
   userChannel.c  userChannel.h
 
 

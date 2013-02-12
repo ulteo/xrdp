@@ -15,8 +15,8 @@
 
    xrdp: A Remote Desktop Protocol server.
    Copyright (C) Jay Sorg 2005-2009
-   Copyright (C) 2012 Ulteo SAS
-    Author David LECHEVALIER <david@ulteo.com> 2012
+   Copyright (C) 2012-2013 Ulteo SAS
+    Author David LECHEVALIER <david@ulteo.com> 2012, 2013
 */
 
 /**
@@ -39,7 +39,6 @@
 static int g_term = 0;
 static int wm_pid;
 static int x_pid;
-static int chansrv_pid;
 
 /*****************************************************************************/
 void DEFAULT_CC
@@ -52,9 +51,6 @@ term_signal_handler(int sig)
 
   g_sigterm(x_pid);
   g_waitpid(x_pid);
-
-  g_sigterm(chansrv_pid);
-  g_waitpid(chansrv_pid);
 }
 
 /*****************************************************************************/
@@ -103,28 +99,6 @@ nil_signal_handler(int sig)
 }
 
 /******************************************************************************/
-/* chansrv can exit at any time without cleaning up, its an xlib app */
-int APP_CC
-chansrv_cleanup(int pid)
-{
-  char text[256];
-
-  g_snprintf(text, 255, "/var/spool/xrdp/xrdp_chansrv_%8.8x_main_term", pid);
-  if (g_file_exist(text))
-  {
-    g_file_delete(text);
-  }
-  g_snprintf(text, 255, "/var/spool/xrdp/xrdp_chansrv_%8.8x_thread_done", pid);
-  if (g_file_exist(text))
-  {
-    g_file_delete(text);
-  }
-  return 0;
-}
-
-
-
-/******************************************************************************/
 int DEFAULT_CC
 main(int argc, char** argv)
 {
@@ -145,22 +119,6 @@ main(int argc, char** argv)
 
   g_writeln("xrdp-sessvc: waiting for X (pid %d) and WM (pid %d)",
              x_pid, wm_pid);
-  /* run xrdp-chansrv as a seperate process */
-  chansrv_pid = g_fork();
-  if (chansrv_pid == -1)
-  {
-    g_writeln("xrdp-sessvc: fork error");
-    return 1;
-  }
-  else if (chansrv_pid == 0) /* child */
-  {
-    g_set_current_dir(XRDP_SBIN_PATH);
-    g_snprintf(exe_path, 261, "%s/xrdp-chansrv", XRDP_SBIN_PATH);
-    g_execlp3(exe_path, "xrdp-chansrv", username);
-    /* should not get here */
-    g_writeln("xrdp-sessvc: g_execvp failed: %s ", strerror(g_get_errno()));
-    g_exit(1);
-  }
   lerror = 0;
 
   g_signal_kill(term_signal_handler); /* SIGKILL */
@@ -180,15 +138,6 @@ main(int argc, char** argv)
   }
   g_writeln("xrdp-sessvc: WM is dead (waitpid said %d, errno is %d) "
             "exiting...", ret, lerror);
-  /* kill channel server */
-  g_writeln("xrdp-sessvc: stopping channel server");
-  g_sigterm(chansrv_pid);
-  ret = g_waitpid(chansrv_pid);
-  while ((ret == 0) && !g_term)
-  {
-    ret = g_waitpid(chansrv_pid);
-  }
-  chansrv_cleanup(chansrv_pid);
   /* kill X server */
   g_writeln("xrdp-sessvc: stopping X server");
   g_sigterm(x_pid);
