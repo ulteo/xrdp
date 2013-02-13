@@ -164,7 +164,7 @@ xrdp_process_check_connectivity(struct xrdp_session* session)
 }
 
 /*****************************************************************************/
-static void DEFAULT_CC
+static int DEFAULT_CC
 xrdp_process_check_channel(struct xrdp_process* self)
 {
   struct stream* channel_data;
@@ -174,10 +174,11 @@ xrdp_process_check_channel(struct xrdp_process* self)
   int chan_flags;
   int size;
   int available_data;
+  int total_send = 0;
 
   if (! self->vc)
   {
-    return;
+    return 0;
   }
 
   // replace that by using priority defined in the configuration file
@@ -193,9 +194,12 @@ xrdp_process_check_channel(struct xrdp_process* self)
       self->vc->get_data(self->vc, chan_id, channel_data);
 
       xrdp_vchannel_send_data(self->vc, chan_id, channel_data->data, available_data);
+      total_send += available_data;
       free_stream(channel_data);
     }
   }
+
+  return total_send;
 }
 
 
@@ -313,7 +317,7 @@ xrdp_qos_loop(void* in_val)
       }
     }
 
-    xrdp_process_check_channel(process);
+    total_tosend += xrdp_process_check_channel(process);
 
     if(session->client_info->use_qos && session->bandwidth > 0)
     {
