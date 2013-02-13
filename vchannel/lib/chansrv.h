@@ -61,6 +61,8 @@ typedef struct _vchannel
 	int (*has_data)(struct _vchannel*, int);
 	int (*get_data)(struct _vchannel*, int, struct stream* s);
 	int (*send_data)(struct _vchannel*, unsigned char*, int, int, int, int);
+	int (*get_data_descriptor)(struct _vchannel*, tbus*, int*, tbus*, int*, int*);
+
 } vchannel;
 
 struct chansrv

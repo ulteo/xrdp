@@ -217,6 +217,25 @@ chansrv_get_channel_from_name(char* channel_name)
 
 /*****************************************************************************/
 int APP_CC
+chansrv_get_data_descriptor(vchannel* vc, tbus* robjs, int* rc, tbus* wobjs, int* wc, int* timeout)
+{
+	int i;
+	int j;
+	struct chansrv* channel;
+
+	for(i=0 ; i<channel_count; i++)
+	{
+		channel = &user_channels[i];
+		for(j=0 ; j<channel->client_channel_count; j++)
+		{
+			robjs[(*rc)++] = channel->client_channel_socket[j];
+		}
+	}
+	return 0;
+}
+
+/*****************************************************************************/
+int APP_CC
 chansrv_has_data(vchannel* v, int channel_id)
 {
 	struct stream* header;
@@ -588,6 +607,7 @@ bool chansrv_init(vchannel* vc)
   vc->has_data = chansrv_has_data;
   vc->get_data = chansrv_get_data;
   vc->send_data = chansrv_send_data;
+  vc->get_data_descriptor = chansrv_get_data_descriptor;
   vc->thread_handle = tc_thread_create(channel_thread_loop, vc);
 
   return true;

@@ -195,6 +195,11 @@ xrdp_qos_loop(void* in_val)
         }
       }
     }
+    if (process->vc != 0)
+    {
+      process->vc->get_data_descriptor(process->vc, robjs, &robjs_count, wobjs, &wobjs_count, &timeout);
+    }
+
     // Waiting for new data
     if (g_obj_wait(robjs, robjs_count, wobjs, wobjs_count, timeout) != 0)
     {
