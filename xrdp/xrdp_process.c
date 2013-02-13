@@ -227,6 +227,56 @@ xrdp_process_flush_main_channel(struct xrdp_rdp* rdp, struct list* data_to_send)
 
 }
 
+static int DEFAULT_CC
+xrdp_process_check_main_channel(struct xrdp_process* process)
+{
+  struct list* data_to_send;
+  struct xrdp_session* session = process->session;
+  struct xrdp_rdp* rdp = session->rdp;
+  int received = 0;
+  int spent_time;
+
+  data_to_send = process->mod->get_data(process->mod);
+  if (data_to_send == NULL)
+  {
+    return -1;
+  }
+
+  if (data_to_send->count > 0)
+  {
+    struct spacket* s;
+    int i = 0;
+
+    for(i = 0 ; i < data_to_send->count ; i++)
+    {
+      s = (struct spacket*)list_get_item(data_to_send, i);
+      received += s->data->size;
+    }
+
+    if (received > 5000)
+    {
+      libxrdp_emt_start_check(session);
+      spent_time = g_time3();
+    }
+
+    xrdp_process_flush_main_channel(rdp, data_to_send);
+
+    if (received > 5000)
+    {
+      spent_time = g_time3() - spent_time;
+      libxrdp_emt_stop_check(session, spent_time);
+      if (session->network_stat_updated)
+      {
+        process->mod->set_network_stat(process->mod, session->bandwidth, session->average_RTT);
+        session->network_stat_updated = false;
+      }
+    }
+  }
+
+  return received;
+}
+
+
 /*****************************************************************************/
 THREAD_RV THREAD_CC
 xrdp_qos_loop(void* in_val)
@@ -236,14 +286,14 @@ xrdp_qos_loop(void* in_val)
   struct xrdp_session* session = process->session;
   struct xrdp_rdp* rdp;
   int timeout = 1000;
+  int static_frame_rate = 0;
   int robjs_count;
   int wobjs_count;
   tbus robjs[32];
   tbus wobjs[32];
-  int last_update_time = 0;
+  unsigned int last_update_time = g_time3();
+  unsigned int current_time = 0;
   long total_tosend;
-  struct list* data_to_send;
-  int spent_time;
 
 
   if (qos == NULL)
@@ -253,7 +303,10 @@ xrdp_qos_loop(void* in_val)
   }
 
   printf("=====> QOS Start\n");
-  rdp = session->rdp;
+  if (session->client_info->use_static_frame_rate)
+  {
+    static_frame_rate = session->client_info->frame_rate;
+  }
 
   while(process->cont)
   {
@@ -262,13 +315,18 @@ xrdp_qos_loop(void* in_val)
     total_tosend = 0;
     robjs_count = 0;
     wobjs_count = 0;
+    current_time = g_time3();
 
     if (! xrdp_process_check_connectivity(session))
     {
       break;
     }
 
-    process->mod->get_data_descriptor(process->mod, robjs, &robjs_count, wobjs, &wobjs_count, &timeout);
+    if (current_time - last_update_time >= static_frame_rate)
+    {
+      process->mod->get_data_descriptor(process->mod, robjs, &robjs_count, wobjs, &wobjs_count, &timeout);
+    }
+
     if (process->vc != 0)
     {
       process->vc->get_data_descriptor(process->vc, robjs, &robjs_count, wobjs, &wobjs_count, &timeout);
@@ -280,41 +338,16 @@ xrdp_qos_loop(void* in_val)
       /* error, should not get here */
       g_sleep(100);
     }
-    data_to_send = process->mod->get_data(process->mod);
-    if (data_to_send == NULL)
+
+    if (current_time - last_update_time >= static_frame_rate)
     {
-      break;
-    }
-
-    if (data_to_send->count > 0)
-    {
-      struct spacket* s;
-      int i = 0;
-
-      for(i = 0 ; i < data_to_send->count ; i++)
+      last_update_time = current_time;
+      int received = xrdp_process_check_main_channel(process);
+      if (received == -1)
       {
-        s = (struct spacket*)list_get_item(data_to_send, i);
-        total_tosend += s->data->size;
+        break;
       }
-
-      if (total_tosend > 5000)
-      {
-        libxrdp_emt_start_check(process->session);
-        spent_time = g_time3();
-      }
-
-      xrdp_process_flush_main_channel(rdp, data_to_send);
-
-      if (total_tosend > 5000)
-      {
-        spent_time = g_time3() - spent_time;
-        libxrdp_emt_stop_check(session, spent_time);
-        if (session->network_stat_updated)
-        {
-          process->mod->set_network_stat(process->mod, session->bandwidth, session->average_RTT);
-          process->session->network_stat_updated = false;
-        }
-      }
+      total_tosend += received;
     }
 
     total_tosend += xrdp_process_check_channel(process);
