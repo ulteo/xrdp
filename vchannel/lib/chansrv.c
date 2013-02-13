@@ -28,7 +28,7 @@
 
 static int g_chansrv_up = 0;
 struct log_config log_conf;
-static struct chansrv user_channels[15];
+static struct channel user_channels[15];
 static int channel_count = 0;
 
 
@@ -221,7 +221,7 @@ chansrv_get_data_descriptor(vchannel* vc, tbus* robjs, int* rc, tbus* wobjs, int
 {
 	int i;
 	int j;
-	struct chansrv* channel;
+	struct channel* channel;
 
 	for(i=0 ; i<channel_count; i++)
 	{
@@ -239,7 +239,7 @@ int APP_CC
 chansrv_has_data(vchannel* v, int channel_id)
 {
 	struct stream* header;
-	struct chansrv* channel;
+	struct channel* channel;
 	int data_length = 0;
 	int size;
 	int j;
@@ -302,7 +302,7 @@ int APP_CC
 chansrv_get_data(vchannel* v, int chanid, struct stream* s)
 {
 	struct stream* header;
-	struct chansrv* channel;
+	struct channel* channel;
 	int data_length;
 	int size;
 	int j;

@@ -65,7 +65,7 @@ typedef struct _vchannel
 
 } vchannel;
 
-struct chansrv
+struct channel
 {
 	int channel_id;
 	char channel_name[9];
