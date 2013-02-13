@@ -22,7 +22,6 @@
 #define XRDP_MM_H
 
 #include "userChannel.h"
-#include "xrdp_vchannel.h"
 
 
 struct xrdp_mod
@@ -107,7 +106,6 @@ struct xrdp_mm
   struct xrdp_mod* (*mod_init)(void);
   int (*mod_exit)(struct xrdp_mod*);
   struct xrdp_mod* mod; /* module interface */
-  vchannel* vc; /* virtual channel interface */
   bool connected;
   int display; /* 10 for :10.0, 11 for :11.0, etc */
   int code; /* 0 Xvnc session 10 X11rdp session */

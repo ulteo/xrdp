@@ -27,6 +27,7 @@
 #include "libxrdp.h"
 #include "abstract/xrdp_module.h"
 
+
 static int g_session_id = 0;
 
 /*****************************************************************************/
@@ -147,12 +148,20 @@ xrdp_qos_loop(void* in_val)
   int wobjs_count;
   tbus robjs[32];
   tbus wobjs[32];
+  char chan_name[256];
   int current_time = 0;
   int last_update_time = 0;
   int connectivity_check_interval;
   long total_tosend;
   struct list* data_to_send;
   int spent_time;
+  int index = 0;
+  int chan_id;
+  int chan_flags;
+  int size;
+  int available_data;
+  struct stream* channel_data;
+
 
   if (qos == NULL)
   {
@@ -254,6 +263,26 @@ xrdp_qos_loop(void* in_val)
         }
       }
     }
+    if ((process->vc != 0))
+    {
+      index = 0;
+      // replace that by using priority defined in the configuration file
+      while (libxrdp_query_channel(process->session, index++, chan_name, &chan_flags) == 0)
+      {
+        chan_id = libxrdp_get_channel_id(session, chan_name);
+        available_data = process->vc->has_data(process->vc, chan_id);
+        if(available_data > 0)
+        {
+          make_stream(channel_data);
+          init_stream(channel_data, available_data);
+
+          process->vc->get_data(process->vc, chan_id, channel_data);
+
+          xrdp_vchannel_send_data(process->vc, chan_id, channel_data->data, available_data);
+          free_stream(channel_data);
+        }
+      }
+    }
   }
 
   if( process->mod != 0)
@@ -298,8 +327,17 @@ xrdp_process_main_loop(struct xrdp_process* self)
     printf("Failed to load module %s\n", self->session->client_info->user_channel_plugin);
     return 0;
   }
+
+  self->vc = xrdp_vchannel_create();
+  if (self->vc == NULL)
+  {
+    return 0;
+  }
+
   self->session->id = (tbus)self->mod;
   self->session->callback = self->mod->callback;
+  self->session->chan_id = (tbus)self->vc;
+  self->session->channel_callback = xrdp_vchannel_process_channel_data;
   self->mod->self_term_event = self->self_term_event;
 
   /* this callback function is in xrdp_wm.c */
@@ -323,10 +361,12 @@ xrdp_process_main_loop(struct xrdp_process* self)
       robjs[robjs_count++] = term_obj;
       robjs[robjs_count++] = self->self_term_event;
 
-      timeout = frame_rate;
-      if (timeout == 0)
+      // Channel connection
+      if (self->mod->get_login_mode(self->mod) > 10 && self->vc->session == NULL)
       {
-        timeout = 1000;
+        self->vc->session = (tbus)self->session;
+      	self->vc->username = self->session->client_info->username;
+      	xrdp_vchannel_setup(self->vc);
       }
 
       trans_get_wait_objs(self->server_trans, robjs, &robjs_count, &timeout);

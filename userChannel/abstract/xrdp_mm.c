@@ -36,6 +36,7 @@
 
    xrdp: A Remote Desktop Protocol server.
    Copyright (C) Jay Sorg 2004-2010
+   Copyright (C) 2013 Ulteo SAS
    http://www.ulteo.com 2013
    Author David LECHEVALIER <david@ulteo.com> 2013
 
@@ -448,6 +449,7 @@ xrdp_mm_process_login_response(struct xrdp_mm* self, struct stream* s)
   int index;
   char ip[256];
   char port[256];
+  char display_string[256];
 
   rv = 0;
   in_uint16_be(s, ok);
@@ -455,6 +457,8 @@ xrdp_mm_process_login_response(struct xrdp_mm* self, struct stream* s)
   if (ok)
   {
     self->display = display;
+    g_sprintf(display_string, ":%i.0", display);
+    g_setenv("DISPLAY", display_string, true);
 #ifdef OLD_LOG_VERSION
     g_snprintf(text, 255, "xrdp_mm_process_login_response: login successful "
                "for display %d", display);
@@ -465,19 +469,6 @@ xrdp_mm_process_login_response(struct xrdp_mm* self, struct stream* s)
       xrdp_mm_get_value(self, "ip", ip, 255);
       xrdp_wm_set_login_mode(self->wm, 10);
       self->wm->dragging = 0;
-
-      // Channel connection
-      self->vc = xrdp_vchannel_create();
-      if (self->vc == NULL)
-      {
-        return 2;
-      }
-      self->vc->username = self->wm->client_info->username;
-      self->vc->display = self->wm->mm->display;
-      self->vc->session = self->wm->session;
-
-      //self->vchannel->trans_data_in = xrdp_mm_chan_data_in;
-      xrdp_vchannel_setup(self, self->vc);
 
       if(self->wm->session->client_info->use_scim)
       {
@@ -825,13 +816,6 @@ int APP_CC
 xrdp_mm_check_wait_objs(struct xrdp_mm* self)
 {
   int rv;
-  int index = 0;
-  int chan_id;
-  int chan_flags;
-  int size;
-  int available_data;
-  char chan_name[256];
-  struct stream* channel_data;
 
   if (self == 0)
   {
@@ -845,31 +829,7 @@ xrdp_mm_check_wait_objs(struct xrdp_mm* self)
       self->delete_sesman_trans = 1;
     }
   }
-  if ((self->vc != 0))
-  {
-    // replace that by using priority defined in the configuration file
-    while (libxrdp_query_channel(self->wm->session, index++, chan_name, &chan_flags) == 0)
-    {
-      chan_id = libxrdp_get_channel_id(self->wm->session, chan_name);
-      available_data = self->vc->has_data(self->vc, chan_id);
-      if(available_data > 0)
-      {
-        make_stream(channel_data);
-        init_stream(channel_data, available_data);
-
-        self->vc->get_data(self->vc, chan_id, channel_data);
-
-        xrdp_vchannel_send_data(self->vc, chan_id, channel_data->data, available_data);
-        free_stream(channel_data);
-      }
-    }
-  }
-<<<<<<< HEAD
   if ((self->scim_trans != 0))
-=======
-
-  if ((self->scim_trans != 0) && self->scim_trans_up)
->>>>>>> Improvement: convert chansrv from binary to library
   {
     if (! self->scim_trans_up)
     {

@@ -43,6 +43,8 @@
 
 /* lib */
 
+#include "xrdp_vchannel.h"
+
 
 /* rdp process */
 struct xrdp_process
@@ -54,6 +56,7 @@ struct xrdp_process
   struct xrdp_session* session;
   /* create these when up and running */
   struct xrdp_user_channel* mod;
+  vchannel* vc; /* virtual channel interface */
   struct xrdp_qos* qos;
   //int app_sck;
   tbus done_event;

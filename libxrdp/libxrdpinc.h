@@ -35,6 +35,9 @@
 
    xrdp: A Remote Desktop Protocol server.
    Copyright (C) Jay Sorg 2004-2009
+   Copyright (C) 2013 Ulteo SAS
+   http://www.ulteo.com 2013
+   Author David LECHEVALIER <david@ulteo.com> 2013
 
    header file for use with libxrdp.so / xrdp.dll
 
@@ -145,9 +148,10 @@ struct xrdp_rect
 struct xrdp_session
 {
   long id;
+  long chan_id;
   struct trans* trans;
-  int (*callback)(long id, int msg, long param1, long param2, long param3,
-                  long param4);
+  int (*channel_callback)(long id, long param1, long param2, long param3, long param4);
+  int (*callback)(long id, int msg, long param1, long param2, long param3, long param4);
   void* rdp;
   void* orders;
   struct xrdp_client_info* client_info;

@@ -48,7 +48,6 @@
 
 typedef struct _vchannel
 {
-	int display;
 	bool stop;
 	char* username;
 	tbus handle;

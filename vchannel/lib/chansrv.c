@@ -108,7 +108,7 @@ user_channel_transmit(int socket, int type, char* mess, int length, int total_le
 
 /*****************************************************************************/
 int APP_CC
-user_channel_launch_server_channel(vchannel* v, char* channel_name)
+user_channel_launch_server_channel(vchannel* v, int display, char* channel_name)
 {
 	char channel_file_conf[256];
 	char* channel_program_name;
@@ -128,7 +128,6 @@ user_channel_launch_server_channel(vchannel* v, char* channel_name)
 	channel_program_name = user_channel_get_channel_app_property(channel_file_conf, CHANNEL_APP_NAME_PROP);
 	channel_type = user_channel_get_channel_app_property(channel_file_conf, CHANNEL_TYPE_PROP);
 	channel_program_arguments = user_channel_get_channel_app_property(channel_file_conf, CHANNEL_APP_ARGS_PROP);
-
 
 	if (g_strcmp(channel_program_name, "") == 0 || g_strcmp(channel_type, "") == 0)
 	{
@@ -162,11 +161,11 @@ user_channel_launch_server_channel(vchannel* v, char* channel_name)
 
 	if( g_strcmp(channel_type, CHANNEL_TYPE_ROOT) == 0)
 	{
-		pid = g_launch_process(v->display, channel_params, 0);
+		pid = g_launch_process(display, channel_params, 0);
 	}
 	else
 	{
-		pid = g_su(v->username, v->display, channel_params, 0);
+		pid = g_su(v->username, display, channel_params, 0);
 	}
 	if (pid == 0)
 	{
@@ -185,13 +184,16 @@ user_channel_do_up(vchannel* v, char* chan_name)
   		"Activate the channel '%s'", chan_name);
 	char socket_filename[256];
 	int sock = 0;
-	g_sprintf(socket_filename, "/var/spool/xrdp/%i/vchannel_%s", v->display, chan_name);
+	int display;
+
+	display = g_get_display_num_from_display(g_getenv("DISPLAY"));
+	g_sprintf(socket_filename, "/var/spool/xrdp/%i/vchannel_%s", display, chan_name);
 	sock = g_create_unix_socket(socket_filename);
 	g_chown(socket_filename, v->username);
 
   log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_do_up]: "
   		"Channel socket '%s' is created", socket_filename);
-  user_channel_launch_server_channel(v, chan_name);
+  user_channel_launch_server_channel(v, display, chan_name);
 
 	return sock;
 }

@@ -15,6 +15,9 @@
 
    xrdp: A Remote Desktop Protocol server.
    Copyright (C) Jay Sorg 2006-2009
+   Copyright (C) 2013 Ulteo SAS
+   http://www.ulteo.com 2013
+   Author David LECHEVALIER <david@ulteo.com> 2013
 
    channel layer
 
@@ -129,9 +132,7 @@ xrdp_channel_call_callback(struct xrdp_channel* self, struct stream* s,
     {
       size = (int)(s->end - s->p);
       /* in xrdp_wm.c */
-      rv = session->callback(session->id, 0x5555,
-                             MAKELONG(channel_id, flags),
-                             size, (tbus)(s->p), total_data_len);
+      rv = session->channel_callback(session->chan_id, MAKELONG(channel_id, flags), size, (tbus)(s->p), total_data_len);
     }
     else
     {

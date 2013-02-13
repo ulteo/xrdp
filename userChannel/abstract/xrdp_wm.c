@@ -35,6 +35,9 @@
 
    xrdp: A Remote Desktop Protocol server.
    Copyright (C) Jay Sorg 2004-2009
+   Copyright (C) 2013 Ulteo SAS
+   http://www.ulteo.com 2013
+   Author David LECHEVALIER <david@ulteo.com> 2013
 
    simple window manager
 
@@ -1379,36 +1382,6 @@ xrdp_wm_process_input_mouse(struct xrdp_wm* self, int device_flags,
   return 0;
 }
 
-/******************************************************************************/
-/* param1 = MAKELONG(channel_id, flags)
-   param2 = size
-   param3 = pointer to data
-   param4 = total size */
-static int APP_CC
-xrdp_wm_process_channel_data(struct xrdp_wm* self,
-                            tbus param1, tbus param2,
-                            tbus param3, tbus param4)
-{
-  int rv;
-
-  rv = 1;
-  if (self->mm->connected)
-  {
-    if (self->mm->sesman_controlled)
-    {
-      rv = xrdp_vchannel_process_channel_data(self->mm, param1, param2, param3, param4);
-    }
-    else
-    {
-      if (self->mm->mod->mod_event != 0)
-      {
-        rv = self->mm->mod->mod_event(self->mm->mod, 0x5555, param1, param2,
-                                      param3, param4);
-      }
-    }
-  }
-  return rv;
-}
 
 /******************************************************************************/
 /* this is the callbacks comming from libxrdp.so */
@@ -1448,10 +1421,6 @@ callback(long id, int msg, long param1, long param2, long param3, long param4)
                  /* its the rdp client asking for a screen update */
       MAKERECT(rect, param1, param2, param3, param4);
       rv = xrdp_bitmap_invalidate(wm->screen, &rect);
-      break;
-    case 0x5555: /* called from xrdp_channel.c, channel data has come in,
-                    pass it to module if there is one */
-      rv = xrdp_wm_process_channel_data(wm, param1, param2, param3, param4);
       break;
   }
   return rv;
@@ -1738,7 +1707,21 @@ xrdp_wm_set_login_mode(struct xrdp_wm* self, int login_mode)
   return 0;
 }
 
+/*****************************************************************************/
+int APP_CC
+xrdp_wm_get_login_mode(struct xrdp_user_channel* user_channel)
+{
+  struct xrdp_wm* wm = user_channel->wm;
 
+  if (wm != NULL)
+  {
+    return wm->login_mode;
+  }
+
+  return 0;
+}
+
+/*****************************************************************************/
 int DEFAULT_CC
 xrdp_module_exit(struct xrdp_user_channel* user_channel)
 {
@@ -1753,6 +1736,7 @@ xrdp_wm_connect(struct xrdp_user_channel* user_channel, int session_id, struct x
   struct xrdp_wm* wm = xrdp_wm_create(session_id, session);
   user_channel->wm = (tbus)wm;
   wm->user_channel = user_channel;
+
   return true;
 }
 
@@ -1794,6 +1778,7 @@ xrdp_module_init(struct xrdp_user_channel* user_channel)
   user_channel->get_data = xrdp_wm_get_data;
   user_channel->end = xrdp_wm_end;
   user_channel->set_network_stat = xrdp_wm_set_network_stat;
+  user_channel->get_login_mode = xrdp_wm_get_login_mode;
 
   return true;
 }

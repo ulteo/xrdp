@@ -25,7 +25,7 @@ struct xrdp_user_channel
   int (*end)(struct xrdp_user_channel*);
   bool (*connect)(struct xrdp_user_channel* user_channel, int session_id, struct xrdp_session* session);
   int (*callback)(long id, int msg, long param1, long param2, long param3, long param4);
-
+  int (*get_login_mode)(struct xrdp_user_channel*);
   void (*set_network_stat)(struct xrdp_user_channel* user_channel, long bandwidth, int rtt);
 
   // xrdp function

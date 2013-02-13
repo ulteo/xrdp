@@ -1,15 +1,24 @@
-/*
- * xrdp_vchannel.c
+/**
+ * Copyright (C) 2013 Ulteo SAS
+ * http://www.ulteo.com
+ * Author David LECHEVALIER <david@ulteo.com> 2013
  *
- *  Created on: 8 févr. 2013
- *      Author: david
- */
-
-
-#include "userChannel.h"
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; version 2
+ * of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ **/
+#include "defines.h"
 #include "xrdp_vchannel.h"
-#include "xrdp_mm.h"
-#include "xrdp_wm.h"
 
 
 
@@ -73,7 +82,7 @@ failed:
 /*****************************************************************************/
 /* returns error */
 bool APP_CC
-xrdp_vchannel_setup(struct xrdp_mm* self, vchannel* vc)
+xrdp_vchannel_setup(vchannel* vc)
 {
   int index;
   int chan_id;
@@ -82,9 +91,9 @@ xrdp_vchannel_setup(struct xrdp_mm* self, vchannel* vc)
   char chan_name[256];
 
   index = 0;
-  while (libxrdp_query_channel(self->wm->session, index++, chan_name, &chan_flags) == 0)
+  while (libxrdp_query_channel(vc->session, index++, chan_name, &chan_flags) == 0)
   {
-    chan_id = libxrdp_get_channel_id(self->wm->session, chan_name);
+    chan_id = libxrdp_get_channel_id(vc->session, chan_name);
     vc->add_channel(vc, chan_name, chan_id, chan_flags);
   }
 
@@ -104,7 +113,7 @@ xrdp_vchannel_send_data(vchannel* vc, int chan_id, char* data, int size)
 
   if (data == 0)
   {
-    printf ("xrdp[xrdp_vchannel_send_data]: no data to send");
+    g_printf ("xrdp[xrdp_vchannel_send_data]: no data to send");
     return 1;
   }
   rv = 0;
@@ -139,8 +148,7 @@ xrdp_vchannel_send_data(vchannel* vc, int chan_id, char* data, int size)
 /* returns error
    data coming from client that need to go to channel handler */
 int APP_CC
-xrdp_vchannel_process_channel_data(struct xrdp_mm* self, tbus param1, tbus param2,
-                             tbus param3, tbus param4)
+xrdp_vchannel_process_channel_data(vchannel* vc, tbus param1, tbus param2, tbus param3, tbus param4)
 {
   int rv;
   int length;
@@ -148,13 +156,11 @@ xrdp_vchannel_process_channel_data(struct xrdp_mm* self, tbus param1, tbus param
   int flags;
   int id;
   unsigned char* data;
-
   rv = 0;
-  if ((self->vc != 0))
+  if ((vc != 0))
   {
     if (data != 0)
     {
-      printf("test %i\n", id);
       id = LOWORD(param1);
       flags = HIWORD(param1);
       length = param2;
@@ -165,11 +171,9 @@ xrdp_vchannel_process_channel_data(struct xrdp_mm* self, tbus param1, tbus param
         g_writeln("warning in xrdp_mm_process_channel_data total_len < length");
         total_length = length;
       }
-
-      self->vc->send_data(self->vc, data, id, flags, length, total_length);
+      vc->send_data(vc, data, id, flags, length, total_length);
     }
   }
   return rv;
 }
-
 
