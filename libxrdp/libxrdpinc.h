@@ -103,6 +103,7 @@ struct xrdp_client_info
   image_policy_comp_ptr image_policy_ptr;
   unsigned char connection_type;
   bool support_fastpath;
+  bool use_qos;
   bool support_network_detection;
   unsigned int network_detection_interval;
   bool use_static_frame_rate;

@@ -255,6 +255,7 @@ xrdp_qos_loop(void* in_val)
   {
     /* build the wait obj list */
     timeout = 1000;
+    total_tosend = 0;
     robjs_count = 0;
     wobjs_count = 0;
 
@@ -284,7 +285,6 @@ xrdp_qos_loop(void* in_val)
     if (data_to_send->count > 0)
     {
       struct spacket* s;
-      total_tosend = 0;
       int i = 0;
 
       for(i = 0 ; i < data_to_send->count ; i++)
@@ -310,20 +310,21 @@ xrdp_qos_loop(void* in_val)
           process->mod->set_network_stat(process->mod, session->bandwidth, session->average_RTT);
           process->session->network_stat_updated = false;
         }
-        if(session->client_info->use_static_frame_rate == false && session->bandwidth > 0)
-        {
-          int next_request_time = total_tosend/session->bandwidth;
-          if (next_request_time > 1000)
-          {
-            next_request_time = 1000;
-          }
-
-          printf("next send in %i\n", (total_tosend/session->bandwidth));
-          g_sleep(next_request_time);
-        }
       }
     }
+
     xrdp_process_check_channel(process);
+
+    if(session->client_info->use_qos && session->bandwidth > 0)
+    {
+      int next_request_time = total_tosend/session->bandwidth;
+      if (next_request_time > 1000)
+      {
+        next_request_time = 1000;
+      }
+      printf("next send in %i\n", (total_tosend/session->bandwidth));
+      g_sleep(next_request_time);
+    }
   }
 
   if( process->mod != 0)

@@ -257,6 +257,11 @@ xrdp_rdp_read_config(struct xrdp_client_info* client_info)
       g_strncpy(client_info->user_channel_plugin, value, sizeof(client_info->user_channel_plugin));
       printf("user_channel_plugin: %s\n", client_info->user_channel_plugin);
     }
+    else if (g_strcasecmp(item, "use_qos") == 0)
+    {
+      client_info->use_qos = log_text2bool(value);
+      printf("use QOS: %i\n", client_info->use_qos);
+    }
     else if (g_strcasecmp(item, "static_bandwidth") == 0)
     {
       client_info->static_bandwidth = g_atol(value);
@@ -288,6 +293,7 @@ xrdp_rdp_create(struct xrdp_session* session, struct trans* trans)
   self->client_info.image_policy = IMAGE_COMP_POLICY_FULL;
   self->client_info.image_policy_ptr = libxrdp_orders_send_image_full;
   self->client_info.support_fastpath = false;
+  self->client_info.use_qos = false;
   self->client_info.support_network_detection = false;
   self->client_info.connection_type = CONNECTION_TYPE_UNKNOWN;
   self->client_info.network_detection_interval = 10000;
