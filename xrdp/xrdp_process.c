@@ -136,6 +136,94 @@ xrdp_process_data_in(struct trans* self)
 }
 
 /*****************************************************************************/
+static bool DEFAULT_CC
+xrdp_process_check_connectivity(struct xrdp_session* session)
+{
+  int connectivity_check_interval = session->client_info->connectivity_check_interval * 1000;
+  int current_time = 0;
+
+
+  if (!session || !session->client_info->connectivity_check)
+  {
+    return true;
+  }
+
+  current_time =  g_time2();
+  if (current_time - session->trans->last_time >= connectivity_check_interval)
+  {
+    libxrdp_send_keepalive(session);
+    session->trans->last_time = current_time;
+    if (g_tcp_socket_ok(session->trans->sck) == 0)
+    {
+      printf("Connection end due to keepalive\n");
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/*****************************************************************************/
+static void DEFAULT_CC
+xrdp_process_check_channel(struct xrdp_process* self)
+{
+  struct stream* channel_data;
+  char chan_name[256];
+  int index = 0;
+  int chan_id;
+  int chan_flags;
+  int size;
+  int available_data;
+
+  if (! self->vc)
+  {
+    return;
+  }
+
+  // replace that by using priority defined in the configuration file
+  while (libxrdp_query_channel(self->session, index++, chan_name, &chan_flags) == 0)
+  {
+    chan_id = libxrdp_get_channel_id(self->session, chan_name);
+    available_data = self->vc->has_data(self->vc, chan_id);
+    if(available_data > 0)
+    {
+      make_stream(channel_data);
+      init_stream(channel_data, available_data);
+
+      self->vc->get_data(self->vc, chan_id, channel_data);
+
+      xrdp_vchannel_send_data(self->vc, chan_id, channel_data->data, available_data);
+      free_stream(channel_data);
+    }
+  }
+}
+
+
+static void DEFAULT_CC
+xrdp_process_flush_main_channel(struct xrdp_rdp* rdp, struct list* data_to_send)
+{
+  struct spacket* s;
+  int i = 0;
+
+  for(i = 0 ; i < data_to_send->count ; i++)
+  {
+    s = (struct spacket*)list_get_item(data_to_send, i);
+    if (s->packet_type == 1)
+    {
+      xrdp_rdp_send_data(rdp, s->data, s->update_type);
+    }
+    if (s->packet_type == 2)
+    {
+      xrdp_rdp_send_fast_path_update(rdp, s->data, s->update_type);
+    }
+
+    free_stream(s->data);
+  }
+  list_clear(data_to_send);
+
+}
+
+/*****************************************************************************/
 THREAD_RV THREAD_CC
 xrdp_qos_loop(void* in_val)
 {
@@ -148,19 +236,10 @@ xrdp_qos_loop(void* in_val)
   int wobjs_count;
   tbus robjs[32];
   tbus wobjs[32];
-  char chan_name[256];
-  int current_time = 0;
   int last_update_time = 0;
-  int connectivity_check_interval;
   long total_tosend;
   struct list* data_to_send;
   int spent_time;
-  int index = 0;
-  int chan_id;
-  int chan_flags;
-  int size;
-  int available_data;
-  struct stream* channel_data;
 
 
   if (qos == NULL)
@@ -170,7 +249,6 @@ xrdp_qos_loop(void* in_val)
   }
 
   printf("=====> QOS Start\n");
-  connectivity_check_interval = session->client_info->connectivity_check_interval * 1000;
   rdp = session->rdp;
 
   while(process->cont)
@@ -179,22 +257,13 @@ xrdp_qos_loop(void* in_val)
     timeout = 1000;
     robjs_count = 0;
     wobjs_count = 0;
-    process->mod->get_data_descriptor(process->mod, robjs, &robjs_count, wobjs, &wobjs_count, &timeout);
 
-    if (session && session->client_info->connectivity_check)
+    if (! xrdp_process_check_connectivity(session))
     {
-      current_time =  g_time2();
-      if (current_time - session->trans->last_time >= connectivity_check_interval)
-      {
-        libxrdp_send_keepalive(session);
-        session->trans->last_time = current_time;
-        if (g_tcp_socket_ok(session->trans->sck) == 0)
-        {
-          printf("Connection end due to keepalive\n");
-          break;
-        }
-      }
+      break;
     }
+
+    process->mod->get_data_descriptor(process->mod, robjs, &robjs_count, wobjs, &wobjs_count, &timeout);
     if (process->vc != 0)
     {
       process->vc->get_data_descriptor(process->vc, robjs, &robjs_count, wobjs, &wobjs_count, &timeout);
@@ -230,21 +299,7 @@ xrdp_qos_loop(void* in_val)
         spent_time = g_time3();
       }
 
-      for(i = 0 ; i < data_to_send->count ; i++)
-      {
-        s = (struct spacket*)list_get_item(data_to_send, i);
-        if (s->packet_type == 1)
-        {
-          xrdp_rdp_send_data(rdp, s->data, s->update_type);
-        }
-        if (s->packet_type == 2)
-        {
-          xrdp_rdp_send_fast_path_update(rdp, s->data, s->update_type);
-        }
-
-        free_stream(s->data);
-      }
-      list_clear(data_to_send);
+      xrdp_process_flush_main_channel(rdp, data_to_send);
 
       if (total_tosend > 5000)
       {
@@ -268,26 +323,7 @@ xrdp_qos_loop(void* in_val)
         }
       }
     }
-    if ((process->vc != 0))
-    {
-      index = 0;
-      // replace that by using priority defined in the configuration file
-      while (libxrdp_query_channel(process->session, index++, chan_name, &chan_flags) == 0)
-      {
-        chan_id = libxrdp_get_channel_id(session, chan_name);
-        available_data = process->vc->has_data(process->vc, chan_id);
-        if(available_data > 0)
-        {
-          make_stream(channel_data);
-          init_stream(channel_data, available_data);
-
-          process->vc->get_data(process->vc, chan_id, channel_data);
-
-          xrdp_vchannel_send_data(process->vc, chan_id, channel_data->data, available_data);
-          free_stream(channel_data);
-        }
-      }
-    }
+    xrdp_process_check_channel(process);
   }
 
   if( process->mod != 0)
