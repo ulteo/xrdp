@@ -19,6 +19,7 @@
  **/
 #include "defines.h"
 #include "xrdp_vchannel.h"
+#include "xrdp.h"
 
 
 
@@ -89,12 +90,25 @@ xrdp_vchannel_setup(vchannel* vc)
   int chan_flags;
   int size;
   char chan_name[256];
+  struct xrdp_session* session = (struct xrdp_session*)vc->session;
+  struct list* channel_priority = session->client_info->channel_priority;
+
+  if (channel_priority == NULL)
+  {
+    channel_priority = list_create();
+    channel_priority->auto_free = true;
+  }
 
   index = 0;
   while (libxrdp_query_channel(vc->session, index++, chan_name, &chan_flags) == 0)
   {
     chan_id = libxrdp_get_channel_id(vc->session, chan_name);
     vc->add_channel(vc, chan_name, chan_id, chan_flags);
+
+    if (!list_contains_string(channel_priority, chan_name))
+    {
+      list_add_item(channel_priority, g_strdup(chan_name));
+    }
   }
 
   return true;

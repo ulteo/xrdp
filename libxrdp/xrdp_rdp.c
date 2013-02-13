@@ -272,6 +272,13 @@ xrdp_rdp_read_config(struct xrdp_client_info* client_info)
       client_info->static_rtt = g_atoi(value);
       printf("static round trip: %i\n", client_info->static_rtt);
     }
+    else if (g_strcasecmp(item, "channel_priority") == 0)
+    {
+      g_strtrim(value, 4);
+      client_info->channel_priority = g_str_split_to_list(value, ',');
+      printf("channel priority:\n", value);
+      list_dump_items(client_info->channel_priority);
+    }
   }
   list_delete(items);
   list_delete(values);
@@ -300,6 +307,9 @@ xrdp_rdp_create(struct xrdp_session* session, struct trans* trans)
   self->client_info.frame_rate = 40;
   self->client_info.use_static_frame_rate = true;
   self->client_info.user_channel_plugin[0] = '\0';
+  self->client_info.channel_priority = NULL;
+  self->client_info.static_bandwidth = 0;
+  self->client_info.static_rtt = 0;
   xrdp_rdp_read_config(&self->client_info);
   /* create sec layer */
   self->sec_layer = xrdp_sec_create(self, trans, self->client_info.crypt_level,
@@ -312,9 +322,11 @@ xrdp_rdp_create(struct xrdp_session* session, struct trans* trans)
   self->client_info.cache3_entries = 262;
   self->client_info.cache3_size = 4096;
   self->compressor = 0;
-  self->client_info.static_bandwidth = 0;
-  self->client_info.static_rtt = 0;
-
+  if (self->client_info.channel_priority == NULL)
+  {
+    self->client_info.channel_priority = list_create();
+    self->client_info.channel_priority->auto_free = true;
+  }
   DEBUG(("out xrdp_rdp_create"));
   return self;
 }

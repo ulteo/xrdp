@@ -168,23 +168,30 @@ static int DEFAULT_CC
 xrdp_process_check_channel(struct xrdp_process* self)
 {
   struct stream* channel_data;
-  char chan_name[256];
+  char* chan_name;
   int index = 0;
   int chan_id;
   int chan_flags;
   int size;
   int available_data;
   int total_send = 0;
+  struct list* channel_priority;
 
   if (! self->vc)
   {
     return 0;
   }
 
-  // replace that by using priority defined in the configuration file
-  while (libxrdp_query_channel(self->session, index++, chan_name, &chan_flags) == 0)
+  channel_priority = self->session->client_info->channel_priority;
+  for(index = 0 ; index< channel_priority->count ; index++)
   {
+    chan_name = list_get_item(channel_priority, index);
     chan_id = libxrdp_get_channel_id(self->session, chan_name);
+    if (chan_id == -1)
+    {
+      continue;
+    }
+
     available_data = self->vc->has_data(self->vc, chan_id);
     if(available_data > 0)
     {

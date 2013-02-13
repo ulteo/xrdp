@@ -111,6 +111,7 @@ struct xrdp_client_info
   char user_channel_plugin[255];
   long static_bandwidth;
   int static_rtt;
+  struct list* channel_priority;
 };
 
 struct xrdp_brush
