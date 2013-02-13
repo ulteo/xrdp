@@ -26,21 +26,21 @@
 #include "thread_calls.h"
 
 
-static int g_user_channel_up = 0;
+static int g_chansrv_up = 0;
 struct log_config log_conf;
-static struct user_channel user_channels[15];
+static struct chansrv user_channels[15];
 static int channel_count = 0;
 
 
 /*****************************************************************************/
 int APP_CC
-user_channel_cleanup(){
+chansrv_cleanup(){
 	return 0;
 }
 
 /*****************************************************************************/
 char* APP_CC
-user_channel_get_channel_app_property(const char* channel_file_conf, const char* property)
+chansrv_get_channel_app_property(const char* channel_file_conf, const char* property)
 {
   char* name;
   char* value;
@@ -72,7 +72,7 @@ user_channel_get_channel_app_property(const char* channel_file_conf, const char*
 
 /*****************************************************************************/
 int APP_CC
-user_channel_transmit(int socket, int type, char* mess, int length, int total_length )
+chansrv_transmit(int socket, int type, char* mess, int length, int total_length )
 {
   struct stream* header;
   int rv;
@@ -83,24 +83,24 @@ user_channel_transmit(int socket, int type, char* mess, int length, int total_le
   out_uint32_be(header, total_length);
   s_mark_end(header);
   rv = g_tcp_send(socket, header->data, 9, 0);
-  log_message(&log_conf, LOG_LEVEL_DEBUG_PLUS, "chansrv[user_channel_transmit]: "
+  log_message(&log_conf, LOG_LEVEL_DEBUG_PLUS, "chansrv[chansrv_transmit]: "
   		"Header sended:");
   log_hexdump(&log_conf, LOG_LEVEL_DEBUG_PLUS, header->data, 9);
   if (rv != 9)
   {
-    log_message(&log_conf, LOG_LEVEL_ERROR, "chansrv[user_channel_transmit]: "
+    log_message(&log_conf, LOG_LEVEL_ERROR, "chansrv[chansrv_transmit]: "
     		"Error while sending the header");
     free_stream(header);
     return rv;
   }
   free_stream(header);
   rv = g_tcp_send(socket, mess, length, 0);
-  log_message(&log_conf, LOG_LEVEL_DEBUG_PLUS, "chansrv[user_channel_transmit]: "
+  log_message(&log_conf, LOG_LEVEL_DEBUG_PLUS, "chansrv[chansrv_transmit]: "
   		"Message sended:");
   log_hexdump(&log_conf, LOG_LEVEL_DEBUG_PLUS, mess, length);
   if (rv != length)
   {
-    log_message(&log_conf, LOG_LEVEL_ERROR, "chansrv[user_channel_transmit]: "
+    log_message(&log_conf, LOG_LEVEL_ERROR, "chansrv[chansrv_transmit]: "
     		"Error while sending the message: %s", mess);
   }
 	return rv;
@@ -108,7 +108,7 @@ user_channel_transmit(int socket, int type, char* mess, int length, int total_le
 
 /*****************************************************************************/
 int APP_CC
-user_channel_launch_server_channel(vchannel* v, int display, char* channel_name)
+chansrv_launch_server_channel(vchannel* v, int display, char* channel_name)
 {
 	char channel_file_conf[256];
 	char* channel_program_name;
@@ -121,34 +121,34 @@ user_channel_launch_server_channel(vchannel* v, int display, char* channel_name)
 	g_sprintf(channel_file_conf, "%s/%s.conf", XRDP_CFG_PATH, channel_name);
 	if (!g_file_exist(channel_file_conf))
 	{
-		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_launch_server_channel]: "
+		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[chansrv_launch_server_channel]: "
 				"Channel %s is not registered ", channel_name);
 		return 0;
 	}
-	channel_program_name = user_channel_get_channel_app_property(channel_file_conf, CHANNEL_APP_NAME_PROP);
-	channel_type = user_channel_get_channel_app_property(channel_file_conf, CHANNEL_TYPE_PROP);
-	channel_program_arguments = user_channel_get_channel_app_property(channel_file_conf, CHANNEL_APP_ARGS_PROP);
+	channel_program_name = chansrv_get_channel_app_property(channel_file_conf, CHANNEL_APP_NAME_PROP);
+	channel_type = chansrv_get_channel_app_property(channel_file_conf, CHANNEL_TYPE_PROP);
+	channel_program_arguments = chansrv_get_channel_app_property(channel_file_conf, CHANNEL_APP_ARGS_PROP);
 
 	if (g_strcmp(channel_program_name, "") == 0 || g_strcmp(channel_type, "") == 0)
 	{
-		log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[user_channel_launch_server_channel]: "
+		log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[chansrv_launch_server_channel]: "
 				"Channel conf file for %s is not correct", channel_name);
 		return 1;
 	}
 
 	if (g_strcmp(channel_type, CHANNEL_TYPE_CUSTOM) == 0)
 	{
-		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_launch_server_channel]: "
+		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[chansrv_launch_server_channel]: "
 				"The custom channel %s must be start by the user", channel_name);
 		return 1;
 	}
 
 	g_snprintf(channel_program_path, 256, "%s/%s", XRDP_SBIN_PATH, channel_program_name);
-	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_launch_server_channel]: "
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[chansrv_launch_server_channel]: "
 			"Channel app name for %s: %s", channel_name, channel_program_name);
-	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_launch_server_channel]: "
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[chansrv_launch_server_channel]: "
 			"Channel app path for %s: %s", channel_name, channel_program_path);
-	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_launch_server_channel]: "
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[chansrv_launch_server_channel]: "
 				"Channel type for %s: %s", channel_name, channel_type);
 
 	channel_params = list_create();
@@ -169,7 +169,7 @@ user_channel_launch_server_channel(vchannel* v, int display, char* channel_name)
 	}
 	if (pid == 0)
 	{
-		log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[user_channel_launch_server_channel]: "
+		log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[chansrv_launch_server_channel]: "
 					"Unable to launch the channel application %s ", channel_program_path);
 		return 1;
 	}
@@ -178,9 +178,9 @@ user_channel_launch_server_channel(vchannel* v, int display, char* channel_name)
 
 /*****************************************************************************/
 int APP_CC
-user_channel_do_up(vchannel* v, char* chan_name)
+chansrv_do_up(vchannel* v, char* chan_name)
 {
-  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_do_up]: "
+  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[chansrv_do_up]: "
   		"Activate the channel '%s'", chan_name);
 	char socket_filename[256];
 	int sock = 0;
@@ -191,9 +191,9 @@ user_channel_do_up(vchannel* v, char* chan_name)
 	sock = g_create_unix_socket(socket_filename);
 	g_chown(socket_filename, v->username);
 
-  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_do_up]: "
+  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[chansrv_do_up]: "
   		"Channel socket '%s' is created", socket_filename);
-  user_channel_launch_server_channel(v, display, chan_name);
+  chansrv_launch_server_channel(v, display, chan_name);
 
 	return sock;
 }
@@ -201,7 +201,7 @@ user_channel_do_up(vchannel* v, char* chan_name)
 
 /*****************************************************************************/
 int APP_CC
-user_channel_get_channel_from_name(char* channel_name)
+chansrv_get_channel_from_name(char* channel_name)
 {
 	int i;
 	for(i=0 ; i<channel_count ; i++)
@@ -217,10 +217,10 @@ user_channel_get_channel_from_name(char* channel_name)
 
 /*****************************************************************************/
 int APP_CC
-user_channel_has_data(vchannel* v, int channel_id)
+chansrv_has_data(vchannel* v, int channel_id)
 {
 	struct stream* header;
-	struct user_channel* channel;
+	struct chansrv* channel;
 	int data_length = 0;
 	int size;
 	int j;
@@ -241,7 +241,7 @@ user_channel_has_data(vchannel* v, int channel_id)
 		test = g_is_wait_obj_set(sock);
 		if (test)
 		{
-			log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
+			log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[chansrv_check_wait_objs]: "
 					"New data from channel '%s'",channel->channel_name);
 			make_stream(header);
 			init_stream(header, 5);
@@ -249,7 +249,7 @@ user_channel_has_data(vchannel* v, int channel_id)
 			size = g_tcp_recv(sock, header->data, 5, MSG_PEEK);
 			if ( size != 5)
 			{
-				log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
+				log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[chansrv_check_wait_objs]: "
 						"Channel %s closed : [%s]", channel->channel_name, g_get_strerror());
 				g_tcp_close(sock);
 				channel->client_channel_count--;
@@ -262,13 +262,13 @@ user_channel_has_data(vchannel* v, int channel_id)
 			in_uint8(header, type);
 			if(type != DATA_MESSAGE)
 			{
-				log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_process_channel_opening]: "
+				log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[chansrv_process_channel_opening]: "
 						"Invalid operation type");
 				free_stream(header);
 				return 0;
 			}
 			in_uint32_be(header, data_length);
-			log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
+			log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[chansrv_check_wait_objs]: "
 					"Data_length : %i\n", data_length);
 			free_stream(header);
 		}
@@ -280,10 +280,10 @@ user_channel_has_data(vchannel* v, int channel_id)
 
 /*****************************************************************************/
 int APP_CC
-user_channel_get_data(vchannel* v, int chanid, struct stream* s)
+chansrv_get_data(vchannel* v, int chanid, struct stream* s)
 {
 	struct stream* header;
-	struct user_channel* channel;
+	struct chansrv* channel;
 	int data_length;
 	int size;
 	int j;
@@ -298,7 +298,7 @@ user_channel_get_data(vchannel* v, int chanid, struct stream* s)
 		test = g_is_wait_obj_set(sock);
 		if (test)
 		{
-			log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
+			log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[chansrv_check_wait_objs]: "
 					"New data from channel '%s'", channel->channel_name);
 			make_stream(header);
 			init_stream(header, 5);
@@ -306,7 +306,7 @@ user_channel_get_data(vchannel* v, int chanid, struct stream* s)
 			size = g_tcp_recv(sock, header->data, 5, 0);
 			if ( size != 5)
 			{
-				log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
+				log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[chansrv_check_wait_objs]: "
 						"Channel %s closed : [%s]", channel->channel_name, g_get_strerror());
 				g_tcp_close(sock);
 				channel->client_channel_count--;
@@ -319,31 +319,31 @@ user_channel_get_data(vchannel* v, int chanid, struct stream* s)
 			in_uint8(header, type);
 			if(type != DATA_MESSAGE)
 			{
-				log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_process_channel_opening]: "
+				log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[chansrv_process_channel_opening]: "
 						"Invalid operation type");
 				free_stream(header);
 				return 0;
 			}
 			in_uint32_be(header, data_length);
-			log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
+			log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[chansrv_check_wait_objs]: "
 					"Data_length : %i\n", data_length);
 			free_stream(header);
 
 			size = g_tcp_recv(sock, s->data, data_length, 0);
 			if ( size != data_length)
 			{
-				log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
+				log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[chansrv_check_wait_objs]: "
 						"Unable to read data message");
 				free_stream(s);
 				continue;
 			}
 			//s->data[data_length] = 0;
-			log_message(&log_conf, LOG_LEVEL_DEBUG_PLUS, "chansrv[user_channel_check_wait_objs]: "
+			log_message(&log_conf, LOG_LEVEL_DEBUG_PLUS, "chansrv[chansrv_check_wait_objs]: "
 					"Data:");
 			log_hexdump(&log_conf, LOG_LEVEL_DEBUG_PLUS, s->data, data_length);
 			if( channel->channel_id == -1)
 			{
-				log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
+				log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[chansrv_check_wait_objs]: "
 						"Client channel is not opened");
 				free_stream(s);
 				return 0 ;
@@ -356,28 +356,28 @@ user_channel_get_data(vchannel* v, int chanid, struct stream* s)
 
 /*****************************************************************************/
 bool APP_CC
-user_channel_init(vchannel* v, char* channel_name, int channel_id, int chan_flags)
+chansrv_add(vchannel* v, char* channel_name, int channel_id, int chan_flags)
 {
 	int sock = 0;
 	char status[1];
 
-	if (g_user_channel_up == 0)
+	if (g_chansrv_up == 0)
 	{
-		g_user_channel_up = 1;
+		g_chansrv_up = 1;
 	}
 
 	if (user_channels[channel_id].client_channel_socket[0] != 0 )
 	{
 		status[0] = STATUS_CONNECTED;
-		user_channel_transmit(sock, SETUP_MESSAGE, status, 1, 1);
+		chansrv_transmit(sock, SETUP_MESSAGE, status, 1, 1);
 		return true;
 	}
-	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_init]: "
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[chansrv_add]: "
 			"new client connection for channel '%s' with id= %i ", channel_name, channel_id);
-	sock = user_channel_do_up(v, channel_name);
+	sock = chansrv_do_up(v, channel_name);
 	if (sock < 0)
 	{
-		log_message(&log_conf, LOG_LEVEL_ERROR, "chansrv[user_channel_init]: "
+		log_message(&log_conf, LOG_LEVEL_ERROR, "chansrv[chansrv_add]: "
 				"Unable to open channel %s", channel_name);
 		return false;
 	}
@@ -391,7 +391,7 @@ user_channel_init(vchannel* v, char* channel_name, int channel_id, int chan_flag
 
 /*****************************************************************************/
 int APP_CC
-user_channel_deinit(void)
+chansrv_deinit(void)
 {
 	char status[1];
 	int i;
@@ -404,7 +404,7 @@ user_channel_deinit(void)
 		for (j=0 ; j<user_channels[i].client_channel_count ; j++ )
 		{
 			socket = user_channels[i].client_channel_socket[j];
-			user_channel_transmit(socket, SETUP_MESSAGE, status, 1, 1 );
+			chansrv_transmit(socket, SETUP_MESSAGE, status, 1, 1 );
 		}
 	}
 	return 0;
@@ -412,7 +412,7 @@ user_channel_deinit(void)
 
 /*****************************************************************************/
 int APP_CC
-user_channel_send_data(vchannel* v, unsigned char* data, int chan_id, int chan_flags, int length, int total_length)
+chansrv_send_data(vchannel* v, unsigned char* data, int chan_id, int chan_flags, int length, int total_length)
 {
 	int i;
 
@@ -420,22 +420,22 @@ user_channel_send_data(vchannel* v, unsigned char* data, int chan_id, int chan_f
 	{
 		if( user_channels[i].channel_id == chan_id )
 		{
-		  log_message(&log_conf, LOG_LEVEL_DEBUG_PLUS, "chansrv[user_channel_data_in]: "
+		  log_message(&log_conf, LOG_LEVEL_DEBUG_PLUS, "chansrv[chansrv_data_in]: "
 		  		"new client message for channel %s ",user_channels[i].channel_name);
 			log_hexdump(&log_conf, LOG_LEVEL_DEBUG_PLUS, data, length);
 			//user_channels[i].client_channel_socket[0] -> the main client socket
 			if(user_channels[i].client_channel_socket[0] == 0 )
 			{
-			  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_data_in]: "
+			  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[chansrv_data_in]: "
 			  		"server side channel is not opened");
 				return 0;
 			}
-			user_channel_transmit(user_channels[i].client_channel_socket[0], DATA_MESSAGE, data, length, total_length);
+			chansrv_transmit(user_channels[i].client_channel_socket[0], DATA_MESSAGE, data, length, total_length);
 			return 0;
 		}
 	}
 
-  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_data_in]: "
+  log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[chansrv_data_in]: "
   		"the channel id %i is invalid",chan_id);
 
 	return 0;
@@ -443,12 +443,12 @@ user_channel_send_data(vchannel* v, unsigned char* data, int chan_id, int chan_f
 
 /*****************************************************************************/
 int APP_CC
-user_channel_get_wait_objs(tbus* objs, int* count, int* timeout)
+chansrv_get_wait_objs(tbus* objs, int* count, int* timeout)
 {
   int lcount;
   int i;
 
-  if ((!g_user_channel_up) || (objs == 0) || (count == 0))
+  if ((!g_chansrv_up) || (objs == 0) || (count == 0))
   {
     return 0;
   }
@@ -468,7 +468,7 @@ user_channel_get_wait_objs(tbus* objs, int* count, int* timeout)
 
 /************************************************************************/
 int DEFAULT_CC
-user_channel_process_channel_opening(int channel_index, int client)
+chansrv_process_channel_opening(int channel_index, int client)
 {
 	struct stream* s;
   int data_length;
@@ -482,7 +482,7 @@ user_channel_process_channel_opening(int channel_index, int client)
 
 	if ( size < 1)
 	{
-		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_process_channel_opening]: "
+		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[chansrv_process_channel_opening]: "
 				"Unable to get information on the opening channel");
 		g_tcp_close(client);
 		free_stream(s);
@@ -491,33 +491,33 @@ user_channel_process_channel_opening(int channel_index, int client)
 	in_uint8(s, type);
 	if(type != CHANNEL_OPEN)
 	{
-		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_process_channel_opening]: "
+		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[chansrv_process_channel_opening]: "
 				"Invalid operation type");
 		free_stream(s);
 		return 0;
 	}
 	in_uint32_be(s, data_length);
-	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_process_channel_opening]: "
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[chansrv_process_channel_opening]: "
 			"Data_length : %i", data_length);
 	size = g_tcp_recv(client, s->data, data_length, 0);
 	s->data[data_length] = 0;
-	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_process_channel_opening]: "
+	log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[chansrv_process_channel_opening]: "
 			"Channel name : %s",s->data);
 
 	if(g_strcmp(user_channels[channel_index].channel_name, s->data) == 0)
 	{
 		printf("adding new user channel\n");
-		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_process_channel_opening]: "
+		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[chansrv_process_channel_opening]: "
 				"New server connection for channel %s ", user_channels[channel_index].channel_name);
 		count = user_channels[channel_index].client_channel_count;
 		user_channels[channel_index].client_channel_socket[count] = client;
-		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_process_channel_opening]: "
+		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[chansrv_process_channel_opening]: "
 				"Socket : %i", client);
 		user_channels[channel_index].client_channel_count++;
 	}
 	else
 	{
-		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_process_channel_opening]: "
+		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[chansrv_process_channel_opening]: "
 				"Unable to open a channel without client");
 	}
 	free_stream(s);
@@ -527,7 +527,7 @@ user_channel_process_channel_opening(int channel_index, int client)
 
 /*****************************************************************************/
 int APP_CC
-user_channel_check_wait_objs(void)
+chansrv_check_wait_objs(void)
 {
   int i;
   int new_client;
@@ -538,10 +538,10 @@ user_channel_check_wait_objs(void)
     test = g_is_wait_obj_set(user_channels[i].server_channel_socket);
     if (test)
     {
-      log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[user_channel_check_wait_objs]: "
+      log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[chansrv_check_wait_objs]: "
            "New server side channel connection for channel %s : ",user_channels[i].channel_name);
       new_client = g_wait_connection(user_channels[i].server_channel_socket);
-      user_channel_process_channel_opening(i, new_client);
+      chansrv_process_channel_opening(i, new_client);
       return 0;
     }
   }
@@ -569,12 +569,12 @@ channel_thread_loop(void* in_val)
 	  g_obj_wait(objs, num_objs, 0, 0, timeout);
 	}
 
-    user_channel_check_wait_objs();
+    chansrv_check_wait_objs();
     timeout = 0;
     num_objs = 0;
-    user_channel_get_wait_objs(objs, &num_objs, &timeout);
+    chansrv_get_wait_objs(objs, &num_objs, &timeout);
   }
-  user_channel_deinit();
+  chansrv_deinit();
 
   log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[channel_thread_loop]: "
 				"channel_thread_loop: thread stop");
@@ -584,10 +584,10 @@ channel_thread_loop(void* in_val)
 /*****************************************************************************/
 bool chansrv_init(vchannel* vc)
 {
-  vc->add_channel = user_channel_init;
-  vc->has_data = user_channel_has_data;
-  vc->get_data = user_channel_get_data;
-  vc->send_data = user_channel_send_data;
+  vc->add_channel = chansrv_add;
+  vc->has_data = chansrv_has_data;
+  vc->get_data = chansrv_get_data;
+  vc->send_data = chansrv_send_data;
   vc->thread_handle = tc_thread_create(channel_thread_loop, vc);
 
   return true;

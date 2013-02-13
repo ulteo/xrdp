@@ -63,7 +63,7 @@ typedef struct _vchannel
 	int (*send_data)(struct _vchannel*, unsigned char*, int, int, int, int);
 } vchannel;
 
-struct user_channel
+struct chansrv
 {
 	int channel_id;
 	char channel_name[9];
@@ -74,21 +74,21 @@ struct user_channel
 };
 
 int APP_CC
-user_channel_do_up(vchannel* v, char* chan_name);
+chansrv_do_up(vchannel* v, char* chan_name);
 
 bool APP_CC
-user_channel_init(vchannel* v, char* channel_name, int channel_id, int chan_flags);
+chansrv_add(vchannel* v, char* channel_name, int channel_id, int chan_flags);
 int APP_CC
-user_channel_deinit(void);
+chansrv_deinit(void);
 int APP_CC
-user_channel_send_data(vchannel* v, unsigned char* data, int chan_id, int chan_flags, int length, int total_length);
+chansrv_send_data(vchannel* v, unsigned char* data, int chan_id, int chan_flags, int length, int total_length);
 int APP_CC
-user_channel_get_wait_objs(tbus* objs, int* count, int* timeout);
+chansrv_get_wait_objs(tbus* objs, int* count, int* timeout);
 int APP_CC
-user_channel_check_wait_objs(void);
+chansrv_check_wait_objs(void);
 int APP_CC
-user_channel_has_data(vchannel* v, int channel_id);
+chansrv_has_data(vchannel* v, int channel_id);
 int APP_CC
-user_channel_get_data(vchannel* v, int chanid, struct stream* s);
+chansrv_get_data(vchannel* v, int chanid, struct stream* s);
 
 #endif
