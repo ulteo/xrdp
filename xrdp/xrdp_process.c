@@ -165,7 +165,7 @@ xrdp_process_check_connectivity(struct xrdp_session* session)
 
 /*****************************************************************************/
 static int DEFAULT_CC
-xrdp_process_check_channel(struct xrdp_process* self)
+xrdp_process_check_channel(struct xrdp_process* self, bool use_qos, int bandwidth)
 {
   struct stream* channel_data;
   char* chan_name;
@@ -175,7 +175,9 @@ xrdp_process_check_channel(struct xrdp_process* self)
   int size;
   int available_data;
   int total_send = 0;
+  bool can_send = true;
   struct list* channel_priority;
+  bw_limit_list* channels_limitation;
 
   if (! self->vc)
   {
@@ -183,9 +185,10 @@ xrdp_process_check_channel(struct xrdp_process* self)
   }
 
   channel_priority = self->session->client_info->channel_priority;
+  channels_limitation = self->session->client_info->channels_bw_limit;
   for(index = 0 ; index< channel_priority->count ; index++)
   {
-    chan_name = list_get_item(channel_priority, index);
+    chan_name = (char*)list_get_item(channel_priority, index);
     chan_id = libxrdp_get_channel_id(self->session, chan_name);
     if (chan_id == -1)
     {
@@ -193,7 +196,12 @@ xrdp_process_check_channel(struct xrdp_process* self)
     }
 
     available_data = self->vc->has_data(self->vc, chan_id);
-    if(available_data > 0)
+    if (use_qos && available_data > 0)
+    {
+      can_send = libxrdp_can_send_to_channel(channels_limitation, chan_name, bandwidth, available_data);
+    }
+
+    if(available_data > 0 && can_send)
     {
       make_stream(channel_data);
       init_stream(channel_data, available_data);
@@ -298,6 +306,7 @@ xrdp_qos_loop(void* in_val)
   int wobjs_count;
   tbus robjs[32];
   tbus wobjs[32];
+  bool use_qos = false;
   unsigned int last_update_time = g_time3();
   unsigned int current_time = 0;
   long total_tosend;
@@ -314,6 +323,8 @@ xrdp_qos_loop(void* in_val)
   {
     static_frame_rate = session->client_info->frame_rate;
   }
+
+  use_qos = session->client_info->use_qos;
 
   while(process->cont)
   {
@@ -357,11 +368,14 @@ xrdp_qos_loop(void* in_val)
       total_tosend += received;
     }
 
-    total_tosend += xrdp_process_check_channel(process);
-
-    if(session->client_info->use_qos && session->bandwidth > 0)
+    if (use_qos && total_tosend < session->bandwidth)
     {
-      int next_request_time = total_tosend/session->bandwidth;
+      total_tosend += xrdp_process_check_channel(process, use_qos, (session->bandwidth - total_tosend));
+    }
+
+    if(use_qos && (session->bandwidth > 0))
+    {
+      int next_request_time = total_tosend/(session->bandwidth * 0.8);
       if (next_request_time > 1000)
       {
         next_request_time = 1000;
@@ -448,7 +462,7 @@ xrdp_process_main_loop(struct xrdp_process* self)
       robjs[robjs_count++] = self->self_term_event;
 
       // Channel connection
-      if (self->mod->get_login_mode(self->mod) > 10 && self->vc->session == NULL)
+      if (self->mod->get_login_mode(self->mod) > 10 && self->vc->session == 0)
       {
         self->vc->session = (tbus)self->session;
       	self->vc->username = self->session->client_info->username;

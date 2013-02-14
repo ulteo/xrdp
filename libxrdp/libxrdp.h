@@ -508,5 +508,14 @@ xrdp_emt_send_init(struct xrdp_rdp* self);
 /* xrdp_qos.c */
 struct xrdp_qos*
 xrdp_qos_create(struct xrdp_session* session);
+struct xrdp_qos* DEFAULT_CC
+xrdp_qos_create(struct xrdp_session* session);
+void DEFAULT_CC
+xrdp_qos_add_limitation(bw_limit_list* channels_bw_limit, char* item, char* value);
+int DEFAULT_CC
+xrdp_qos_get_limitation(bw_limit* channel_bw_limit, int bw);
+bw_limit_list* DEFAULT_CC
+xrdp_qos_create_bw_limit();
+
 
 #endif

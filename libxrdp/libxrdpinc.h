@@ -49,6 +49,20 @@
 struct xrdp_session;
 typedef void (*image_policy_comp_ptr) (struct xrdp_session*, int, int, int, char*,int, int);
 
+typedef struct _bw_limit
+{
+  char* channel_name;
+  char* bw_limit;
+  unsigned long already_sended;
+} bw_limit;
+
+typedef struct _bw_limit_list
+{
+  unsigned int lastReset;
+  struct list* chan_list;
+} bw_limit_list;
+
+
 struct xrdp_client_info
 {
   int bpp;
@@ -112,6 +126,7 @@ struct xrdp_client_info
   long static_bandwidth;
   int static_rtt;
   struct list* channel_priority;
+  bw_limit_list* channels_bw_limit;
 };
 
 struct xrdp_brush
@@ -301,4 +316,6 @@ libxrdp_emt_start_check(struct xrdp_session* session);
 bool DEFAULT_CC
 libxrdp_emt_stop_check(struct xrdp_session* session, int time_processing);
 
+bool DEFAULT_CC
+libxrdp_can_send_to_channel(bw_limit_list* channels_limitation, char* chan_name, unsigned int bandwidth, unsigned int data_len);
 #endif
