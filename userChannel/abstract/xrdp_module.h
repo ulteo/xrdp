@@ -27,6 +27,7 @@ struct xrdp_user_channel
   int (*callback)(long id, int msg, long param1, long param2, long param3, long param4);
   int (*get_login_mode)(struct xrdp_user_channel*);
   void (*set_network_stat)(struct xrdp_user_channel* user_channel, long bandwidth, int rtt);
+  void (*set_static_framerate)(struct xrdp_user_channel* user_channel, int framerate);
 
   // xrdp function
   int (*is_term)();

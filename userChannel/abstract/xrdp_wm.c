@@ -1692,7 +1692,7 @@ xrdp_wm_get_data(struct xrdp_user_channel* user_channel)
 
   if (rv == 1)
   {
-    return NULL;
+    g_set_wait_obj(wm->user_channel->self_term_event);
   }
 
   return wm->session->qos->spooled_packet;
@@ -1767,6 +1767,14 @@ xrdp_wm_set_network_stat(struct xrdp_user_channel* user_channel, long bandwidth,
   return xrdp_mm_set_network_stat(wm->mm, bandwidth, rtt);
 }
 
+void APP_CC
+xrdp_wm_set_static_framerate(struct xrdp_user_channel* user_channel, int framerate)
+{
+  struct xrdp_wm* wm = (struct xrdp_wm*)user_channel->wm;
+  return xrdp_mm_set_static_framerate(wm->mm, framerate);
+}
+
+
 /*****************************************************************************/
 bool DEFAULT_CC
 xrdp_module_init(struct xrdp_user_channel* user_channel)
@@ -1778,6 +1786,7 @@ xrdp_module_init(struct xrdp_user_channel* user_channel)
   user_channel->get_data = xrdp_wm_get_data;
   user_channel->end = xrdp_wm_end;
   user_channel->set_network_stat = xrdp_wm_set_network_stat;
+  user_channel->set_static_framerate = xrdp_wm_set_static_framerate;
   user_channel->get_login_mode = xrdp_wm_get_login_mode;
 
   return true;

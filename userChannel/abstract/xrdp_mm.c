@@ -767,6 +767,13 @@ xrdp_mm_set_network_stat(struct xrdp_mm* self, long bandwidth, int rtt)
 }
 
 /*****************************************************************************/
+void APP_CC
+xrdp_mm_set_static_framerate(struct xrdp_mm* self, int framerate)
+{
+  lib_userChannel_set_static_framerate(self->mod, framerate);
+}
+
+/*****************************************************************************/
 int APP_CC
 xrdp_mm_get_wait_objs(struct xrdp_mm* self,
                       tbus* read_objs, int* rcount,

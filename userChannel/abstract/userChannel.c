@@ -118,6 +118,17 @@ lib_userChannel_set_network_stat(struct userChannel* u, long bandwidth, int rtt)
 }
 
 /******************************************************************************/
+void DEFAULT_CC
+lib_userChannel_set_static_framerate(struct userChannel* u, int framerate)
+{
+  LIB_DEBUG(u, "lib_userChannel_set_static_framerate");
+  if (u)
+  {
+    u->framerate = framerate;
+  }
+}
+
+/******************************************************************************/
 int DEFAULT_CC
 lib_userChannel_mod_set_param(struct userChannel* u, char* name, char* value)
 {
@@ -138,6 +149,11 @@ lib_userChannel_mod_get_wait_objs(struct userChannel* u, tbus* read_objs, int* r
                       tbus* write_objs, int* wcount, int* timeout)
 {
   LIB_DEBUG(u, "lib_userChannel_mod_get_wait_objs");
+
+  if (g_time3() - u->last_update_time < u->framerate)
+  {
+    return 0;
+  }
 
   int i = *rcount;
   if (u != 0)
@@ -199,6 +215,11 @@ lib_userChannel_mod_check_wait_objs(struct userChannel* u)
   if (u->terminate)
   {
     return 1;
+  }
+
+  if (g_time3() - u->last_update_time < u->framerate)
+  {
+    return 0;
   }
 
   tc_mutex_lock(u->mod_mutex);
@@ -373,6 +394,7 @@ void *lib_ulteo_thread_run(void *arg)
   uint64_t event = 1;
   int res = 0;
   int timeout = 1000;
+  u->last_update_time = g_time3();
 
   g_tcp_set_blocking(u->mod->sck);
 
@@ -387,7 +409,13 @@ void *lib_ulteo_thread_run(void *arg)
       u->terminate = 1;
     }
 
-    g_file_write(u->efd, (char*)&event, sizeof(event));
+    // manage static framerate here
+    if (g_time3() - u->last_update_time >= u->framerate)
+    {
+      u->last_update_time = g_time3();
+      g_file_write(u->efd, (char*)&event, sizeof(event));
+    }
+
     tc_mutex_unlock(u->mod_mutex);
   }
   return 0;
@@ -419,6 +447,7 @@ lib_userChannel_init(void)
 
   u->current_update_list = list_create();
   u->current_update_list->auto_free = true;
+  u->framerate = 0;
   u->bandwidth = 0;
   u->rtt = 0;
 

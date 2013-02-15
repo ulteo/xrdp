@@ -179,7 +179,7 @@ xrdp_process_check_channel(struct xrdp_process* self, bool use_qos, int bandwidt
   struct list* channel_priority;
   bw_limit_list* channels_limitation;
 
-  if (! self->vc)
+  if (! self->vc || ! self->session)
   {
     return 0;
   }
@@ -247,14 +247,20 @@ xrdp_process_check_main_channel(struct xrdp_process* process)
 {
   struct list* data_to_send;
   struct xrdp_session* session = process->session;
-  struct xrdp_rdp* rdp = session->rdp;
+  struct xrdp_rdp* rdp;
   int received = 0;
   int spent_time;
 
+  if (!session)
+  {
+    return 0;
+  }
+
+  rdp = session->rdp;
   data_to_send = process->mod->get_data(process->mod);
   if (data_to_send == NULL)
   {
-    return -1;
+    return 0;
   }
 
   if (data_to_send->count > 0)
@@ -306,9 +312,8 @@ xrdp_qos_loop(void* in_val)
   int wobjs_count;
   tbus robjs[32];
   tbus wobjs[32];
+  tbus term_event;
   bool use_qos = false;
-  unsigned int last_update_time = g_time3();
-  unsigned int current_time = 0;
   long total_tosend;
 
 
@@ -318,11 +323,13 @@ xrdp_qos_loop(void* in_val)
     return (void*)1;
   }
 
-  printf("=====> QOS Start\n");
-  if (session->client_info->use_static_frame_rate)
+  if (process->vc == NULL)
   {
-    static_frame_rate = session->client_info->frame_rate;
+    printf("Failed to initialize vchannel\n");
+    return (void*)1;
   }
+
+  printf("=====> QOS Start\n");
 
   use_qos = session->client_info->use_qos;
 
@@ -333,22 +340,19 @@ xrdp_qos_loop(void* in_val)
     total_tosend = 0;
     robjs_count = 0;
     wobjs_count = 0;
-    current_time = g_time3();
 
     if (! xrdp_process_check_connectivity(session))
     {
       break;
     }
 
-    if (current_time - last_update_time >= static_frame_rate)
+    if (g_is_wait_obj_set(process->self_term_event))
     {
-      process->mod->get_data_descriptor(process->mod, robjs, &robjs_count, wobjs, &wobjs_count, &timeout);
+      break;
     }
 
-    if (process->vc != 0)
-    {
-      process->vc->get_data_descriptor(process->vc, robjs, &robjs_count, wobjs, &wobjs_count, &timeout);
-    }
+    process->mod->get_data_descriptor(process->mod, robjs, &robjs_count, wobjs, &wobjs_count, &timeout);
+    process->vc->get_data_descriptor(process->vc, robjs, &robjs_count, wobjs, &wobjs_count, &timeout);
 
     // Waiting for new data
     if (g_obj_wait(robjs, robjs_count, wobjs, wobjs_count, timeout) != 0)
@@ -357,21 +361,9 @@ xrdp_qos_loop(void* in_val)
       g_sleep(100);
     }
 
-    if (current_time - last_update_time >= static_frame_rate)
-    {
-      last_update_time = current_time;
-      int received = xrdp_process_check_main_channel(process);
-      if (received == -1)
-      {
-        break;
-      }
-      total_tosend += received;
-    }
-
-    if (use_qos && total_tosend < session->bandwidth)
-    {
-      total_tosend += xrdp_process_check_channel(process, use_qos, (session->bandwidth - total_tosend));
-    }
+    // Processing data
+    total_tosend += xrdp_process_check_main_channel(process);
+    total_tosend += xrdp_process_check_channel(process, use_qos, (session->bandwidth - total_tosend));
 
     if(use_qos && (session->bandwidth > 0))
     {
@@ -385,12 +377,6 @@ xrdp_qos_loop(void* in_val)
     }
   }
 
-  if( process->mod != 0)
-  {
-    process->mod->disconnect(process->mod);
-  }
-
-  libxrdp_disconnect(session);
   return 0;
 }
 
@@ -467,6 +453,11 @@ xrdp_process_main_loop(struct xrdp_process* self)
         self->vc->session = (tbus)self->session;
       	self->vc->username = self->session->client_info->username;
       	xrdp_vchannel_setup(self->vc);
+
+        if (self->session->client_info->use_static_frame_rate)
+        {
+          self->mod->set_static_framerate(self->mod, self->session->client_info->frame_rate);
+        }
       }
 
       trans_get_wait_objs(self->server_trans, robjs, &robjs_count, &timeout);
@@ -494,6 +485,13 @@ xrdp_process_main_loop(struct xrdp_process* self)
       }
     }
   }
+
+  if( self->mod != 0)
+  {
+    self->mod->disconnect(self->mod);
+  }
+
+  libxrdp_disconnect(self->session);
   xrdp_process_mod_end(self);
   libxrdp_exit(self->session);
   self->session = 0;

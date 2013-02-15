@@ -132,6 +132,8 @@ struct userChannel
   bool need_request;
   long bandwidth;
   int rtt;
+  int framerate;
+  unsigned last_update_time;
   struct xrdp_screen* desktop;
 };
 
