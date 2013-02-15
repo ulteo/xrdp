@@ -662,7 +662,7 @@ xrdp_rdp_send_data_update_sync(struct xrdp_rdp* self)
   out_uint16_le(s, RDP_UPDATE_SYNCHRONIZE);
   out_uint8s(s, 2);
   s_mark_end(s);
-  if (xrdp_rdp_spool_data(self, s, RDP_DATA_PDU_UPDATE) != 0)
+  if (xrdp_rdp_send_data(self, s, RDP_DATA_PDU_UPDATE) != 0)
   {
     DEBUG(("out xrdp_rdp_send_data_update_sync error"));
     free_stream(s);
@@ -1368,7 +1368,7 @@ xrdp_rdp_send_synchronise(struct xrdp_rdp* self)
   out_uint16_le(s, 1);
   out_uint16_le(s, 1002);
   s_mark_end(s);
-  if (xrdp_rdp_spool_data(self, s, RDP_DATA_PDU_SYNCHRONISE) != 0)
+  if (xrdp_rdp_send_data(self, s, RDP_DATA_PDU_SYNCHRONISE) != 0)
   {
     free_stream(s);
     return 1;
@@ -1394,7 +1394,7 @@ xrdp_rdp_send_control(struct xrdp_rdp* self, int action)
   out_uint16_le(s, 0); /* userid */
   out_uint32_le(s, 1002); /* control id */
   s_mark_end(s);
-  if (xrdp_rdp_spool_data(self, s, RDP_DATA_PDU_CONTROL) != 0)
+  if (xrdp_rdp_send_data(self, s, RDP_DATA_PDU_CONTROL) != 0)
   {
     free_stream(s);
     return 1;
@@ -1526,7 +1526,7 @@ xrdp_rdp_send_unknown1(struct xrdp_rdp* self)
   }
   out_uint8a(s, g_unknown1, 172);
   s_mark_end(s);
-  if (xrdp_rdp_spool_data(self, s, RDP_DATA_PDU_TYPE2_FONTMAP) != 0)
+  if (xrdp_rdp_send_data(self, s, RDP_DATA_PDU_TYPE2_FONTMAP) != 0)
   {
     free_stream(s);
     return 1;
