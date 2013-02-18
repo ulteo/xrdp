@@ -1662,6 +1662,8 @@ xrdp_bitmap_def_proc(struct xrdp_bitmap* self, int msg,
       }
     }
   }
+
+  g_set_wait_obj(self->wm->login_mode_event);
   return 0;
 }
 
