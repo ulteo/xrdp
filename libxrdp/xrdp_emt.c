@@ -145,12 +145,6 @@ xrdp_emt_process_results(struct xrdp_rdp* self, struct xrdp_emt* emt, struct str
     }
   }
 
-  if (emt->need_result)
-  {
-    xrdp_emt_send_result(self, emt);
-    emt->need_result = false;
-  }
-
   printf("bandwidth: %i Ko/s\n", self->session->bandwidth);
   printf("base RTT: %i ms\n", self->session->base_RTT);
   printf("average RTT: %i ms\n", self->session->average_RTT);
@@ -257,6 +251,12 @@ xrdp_emt_bw_check_stop(struct xrdp_rdp* self, int time_processing)
   emt->state = wait_next_mesure;
   res = xrdp_emt_send_request(self, emt, RDP_BW_SESSION_STOP);
   emt->stop_time = g_time3();
+
+  if (emt->need_result && self->session->bandwidth > 0)
+  {
+    xrdp_emt_send_result(self, emt);
+    emt->need_result = false;
+  }
 
   return res;
 }
