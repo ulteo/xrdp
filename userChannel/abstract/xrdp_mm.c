@@ -504,7 +504,7 @@ xrdp_mm_process_login_response(struct xrdp_mm* self, struct stream* s)
   self->connected_state = 0;
   if (self->wm->login_mode != 10)
   {
-    xrdp_wm_set_login_mode(self->wm, 11);
+    xrdp_wm_set_login_mode(self->wm, 1);
     xrdp_mm_module_cleanup(self);
   }
   return rv;
