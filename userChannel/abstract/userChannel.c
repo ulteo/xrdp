@@ -464,8 +464,6 @@ lib_userChannel_init(void)
   u->mod_get_wait_objs = lib_userChannel_mod_get_wait_objs;
   u->mod_check_wait_objs = lib_userChannel_mod_check_wait_objs;
 
-  lib_userChannel_load_library(u);
-
   u->efd = eventfd(0, EFD_NONBLOCK);
   u->terminate = 0;
   u->need_request = true;
