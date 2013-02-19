@@ -306,7 +306,7 @@ lib_userChannel_mod_check_wait_objs(struct userChannel* u)
 
 /*****************************************************************************/
 int APP_CC
-lib_userChannel_load_library(struct userChannel* self)
+lib_userChannel_load_library(struct userChannel* self, char* lib)
 {
   void* func;
 
@@ -317,7 +317,7 @@ lib_userChannel_load_library(struct userChannel* self)
 
   if (self->mod_handle == 0)
   {
-    self->mod_handle = g_load_library(LIBRARY_NAME);
+    self->mod_handle = g_load_library(lib);
     if (self->mod_handle != 0)
     {
       func = g_get_proc_address(self->mod_handle, "mod_init");
@@ -348,7 +348,7 @@ lib_userChannel_load_library(struct userChannel* self)
     self->mod = (struct xrdp_mod*)self->mod_lib_init();
     if (self->mod != 0)
     {
-      g_writeln("loaded modual '%s' ok, interface size %d, version %d", LIBRARY_NAME, self->size, self->version);
+      g_writeln("loaded modual '%s' ok, interface size %d, version %d", lib, self->size, self->version);
     }
     if (self->mod != 0)
     {

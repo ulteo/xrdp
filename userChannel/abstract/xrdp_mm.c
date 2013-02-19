@@ -427,7 +427,9 @@ xrdp_mm_process_login_response(struct xrdp_mm* self, struct stream* s)
   int rv;
   int index;
   char ip[256];
+  char lib[256];
   char port[256];
+  char text[256];
   char display_string[256];
 
   rv = 0;
@@ -443,7 +445,35 @@ xrdp_mm_process_login_response(struct xrdp_mm* self, struct stream* s)
                "for display %d", display);
     xrdp_wm_log_msg(self->wm, text);
 #endif
-    if (lib_userChannel_load_library(self->mod) == 0)
+
+    lib[0] = 0;
+    if (xrdp_mm_get_value(self, "lib", lib, 255) != 0)
+    {
+  #ifdef OLD_LOG_VERSION
+          g_snprintf(text, 255, "no library name specified in xrdp.ini, please add "
+                 "lib=libxrdp-vnc.so or similar");
+      xrdp_wm_log_msg(self->wm, text);
+  #else
+      xrdp_wm_log_error(self->wm, "no library name specified in xrdp.ini");
+      xrdp_wm_log_error(self->wm, "please add lib=libxrdp-vnc.so");
+  #endif
+      return 1;
+    }
+    if (lib[0] == 0)
+    {
+  #ifdef OLD_LOG_VERSION
+      g_snprintf(text, 255, "empty library name specified in xrdp.ini,\n please "
+                 "add lib=libxrdp-vnc.so or similar");
+      xrdp_wm_log_msg(self->wm, text);
+  #else
+      xrdp_wm_log_error(self->wm, "empty library name specified in xrdp.ini");
+      xrdp_wm_log_error(self->wm, "please add lib=libxrdp-vnc.so");
+  #endif
+
+      return 1;
+    }
+
+    if (lib_userChannel_load_library(self->mod, lib) == 0)
     {
       if (xrdp_mm_setup_mod2(self) == 0)
       {

@@ -29,7 +29,6 @@
 
 
 #define CURRENT_MOD_VER 1
-#define LIBRARY_NAME "libvnc.so"
 
 
 struct userChannel
@@ -142,6 +141,8 @@ void* lib_ulteo_thread_run(void *arg);
 
 struct userChannel* APP_CC
 lib_userChannel_init(void);
+int APP_CC
+lib_userChannel_load_library(struct userChannel* self, char* lib);
 int APP_CC
 lib_userChannel_cleanup(struct userChannel* self);
 int DEFAULT_CC
