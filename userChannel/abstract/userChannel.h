@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2012 userChannel SAS
+ * Copyright (C) 2012-2013 userChannel SAS
  * http://www.ulteo.com
- * Author David LECHEVALIER <david@ulteo.com> 2012
+ * Author David LECHEVALIER <david@ulteo.com> 2012,2013
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -142,6 +142,8 @@ void* lib_ulteo_thread_run(void *arg);
 
 struct userChannel* APP_CC
 lib_userChannel_init(void);
+int APP_CC
+lib_userChannel_cleanup(struct userChannel* self);
 int DEFAULT_CC
 lib_userChannel_mod_signal(struct userChannel* u);
 int DEFAULT_CC

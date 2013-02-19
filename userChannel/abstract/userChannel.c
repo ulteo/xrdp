@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2012 userChannel SAS
+ * Copyright (C) 2012-2013 userChannel SAS
  * http://www.ulteo.com
- * Author David LECHEVALIER <david@ulteo.com> 2012
+ * Author David LECHEVALIER <david@ulteo.com> 2012,2013
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -386,6 +386,32 @@ lib_userChannel_load_library(struct userChannel* self)
     DEBUG(("problem loading lib in xrdp_mm_setup_mod1"));
     return 1;
   }
+  return 0;
+}
+
+/*****************************************************************************/
+int APP_CC
+lib_userChannel_cleanup(struct userChannel* self)
+{
+  if (self->mod != 0)
+  {
+    if (self->mod_end != 0)
+    {
+      /* let the module cleanup */
+      self->mod_lib_exit(self->mod);
+    }
+  }
+  if (self->mod_handle != 0)
+  {
+    /* main thread unload */
+	  g_free_library(self->mod_handle);
+  }
+
+  self->mod_lib_init = 0;
+  self->mod_lib_exit = 0;
+  self->mod = 0;
+  self->mod_handle = 0;
+
   return 0;
 }
 
