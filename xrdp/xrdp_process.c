@@ -486,11 +486,14 @@ xrdp_process_main_loop(struct xrdp_process* self)
     }
   }
 
+  xrdp_vchannel_delete(self->vc);
+
   if( self->mod != 0)
   {
     self->mod->disconnect(self->mod);
   }
 
+  self->cont = false;
   libxrdp_disconnect(self->session);
   xrdp_process_mod_end(self);
   libxrdp_exit(self->session);

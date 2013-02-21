@@ -81,6 +81,24 @@ failed:
 
 
 /*****************************************************************************/
+void APP_CC
+xrdp_vchannel_delete(vchannel* vc)
+{
+  if (vc == NULL)
+  {
+    return;
+  }
+
+  if (vc->exit != 0)
+  {
+    vc->exit(vc);
+  }
+
+  g_free(vc);
+}
+
+
+/*****************************************************************************/
 /* returns error */
 bool APP_CC
 xrdp_vchannel_setup(vchannel* vc)

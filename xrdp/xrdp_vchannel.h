@@ -27,7 +27,8 @@
 
 vchannel* APP_CC
 xrdp_vchannel_create();
-
+void APP_CC
+xrdp_vchannel_delete(vchannel* vc);
 bool APP_CC
 xrdp_vchannel_setup(vchannel* vc);
 
