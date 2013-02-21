@@ -163,61 +163,8 @@ xrdp_process_check_connectivity(struct xrdp_session* session)
   return true;
 }
 
+
 /*****************************************************************************/
-static int DEFAULT_CC
-xrdp_process_check_channel(struct xrdp_process* self, bool use_qos, int bandwidth)
-{
-  struct stream* channel_data;
-  char* chan_name;
-  int index = 0;
-  int chan_id;
-  int chan_flags;
-  int size;
-  int available_data;
-  int total_send = 0;
-  bool can_send = true;
-  struct list* channel_priority;
-  bw_limit_list* channels_limitation;
-
-  if (! self->vc || ! self->session)
-  {
-    return 0;
-  }
-
-  channel_priority = self->session->client_info->channel_priority;
-  channels_limitation = self->session->client_info->channels_bw_limit;
-  for(index = 0 ; index< channel_priority->count ; index++)
-  {
-    chan_name = (char*)list_get_item(channel_priority, index);
-    chan_id = libxrdp_get_channel_id(self->session, chan_name);
-    if (chan_id == -1)
-    {
-      continue;
-    }
-
-    available_data = self->vc->has_data(self->vc, chan_id);
-    if (use_qos && available_data > 0)
-    {
-      can_send = libxrdp_can_send_to_channel(channels_limitation, chan_name, bandwidth, available_data);
-    }
-
-    if(available_data > 0 && can_send)
-    {
-      make_stream(channel_data);
-      init_stream(channel_data, available_data);
-
-      self->vc->get_data(self->vc, chan_id, channel_data);
-
-      xrdp_vchannel_send_data(self->vc, chan_id, channel_data->data, available_data);
-      total_send += available_data;
-      free_stream(channel_data);
-    }
-  }
-
-  return total_send;
-}
-
-
 static void DEFAULT_CC
 xrdp_process_flush_main_channel(struct xrdp_rdp* rdp, struct list* data_to_send)
 {
@@ -242,6 +189,8 @@ xrdp_process_flush_main_channel(struct xrdp_rdp* rdp, struct list* data_to_send)
 
 }
 
+
+/*****************************************************************************/
 static int DEFAULT_CC
 xrdp_process_check_main_channel(struct xrdp_process* process)
 {
@@ -295,6 +244,73 @@ xrdp_process_check_main_channel(struct xrdp_process* process)
   }
 
   return received;
+}
+
+/*****************************************************************************/
+static int DEFAULT_CC
+xrdp_process_check_channel(struct xrdp_process* self, bool use_qos, int bandwidth)
+{
+  struct stream* channel_data;
+  char* chan_name;
+  int index = 0;
+  int chan_id;
+  int chan_flags;
+  int size;
+  int available_data;
+  int total_send = 0;
+  bool can_send = true;
+  struct list* channel_priority;
+  bw_limit_list* channels_limitation;
+
+  if (! self->vc || ! self->session)
+  {
+    return 0;
+  }
+
+  channel_priority = self->session->client_info->channel_priority;
+  channels_limitation = self->session->client_info->channels_bw_limit;
+  for(index = 0 ; index< channel_priority->count ; index++)
+  {
+    if (total_send > bandwidth)
+    {
+      return total_send;
+    }
+
+    chan_name = (char*)list_get_item(channel_priority, index);
+    if (g_strcmp(chan_name, "main") == 0)
+    {
+      total_send += xrdp_process_check_main_channel(self);
+      continue;
+    }
+    else
+    {
+      chan_id = libxrdp_get_channel_id(self->session, chan_name);
+      if (chan_id == -1)
+      {
+        continue;
+      }
+
+      available_data = self->vc->has_data(self->vc, chan_id);
+      if (use_qos && available_data > 0)
+      {
+        can_send = libxrdp_can_send_to_channel(channels_limitation, chan_name, bandwidth, available_data);
+      }
+
+      if(available_data > 0 && can_send)
+      {
+        make_stream(channel_data);
+        init_stream(channel_data, available_data);
+
+        self->vc->get_data(self->vc, chan_id, channel_data);
+
+        xrdp_vchannel_send_data(self->vc, chan_id, channel_data->data, available_data);
+        total_send += available_data;
+        free_stream(channel_data);
+      }
+    }
+  }
+
+  return total_send;
 }
 
 
@@ -362,7 +378,6 @@ xrdp_qos_loop(void* in_val)
     }
 
     // Processing data
-    total_tosend += xrdp_process_check_main_channel(process);
     total_tosend += xrdp_process_check_channel(process, use_qos, (session->bandwidth - total_tosend));
 
     if(use_qos && (session->bandwidth > 0))

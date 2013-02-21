@@ -1,7 +1,7 @@
 /**
- * Copyright (C) 2011-2012 Ulteo SAS
+ * Copyright (C) 2011-2013 Ulteo SAS
  * http://www.ulteo.com
- * Author David LECHEVALIER <david@ulteo.com> 2011, 2012
+ * Author David LECHEVALIER <david@ulteo.com> 2011, 2012, 2013
  * Author Thomas MOUTON <thomas@ulteo.com> 2012
  *
  * This program is free software; you can redistribute it and/or
@@ -60,6 +60,8 @@
 #define REQUEST_TYPE_PRINTER            "printer"
 #define REQUEST_TYPE_PRINTERS           "printers"
 
+
+#define DEFAULT_CHANNEL_PRIORITY        "seamrdp,main"
 
 
 /* TCP port for Remote Desktop Protocol */

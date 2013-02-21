@@ -331,7 +331,7 @@ xrdp_rdp_create(struct xrdp_session* session, struct trans* trans)
   self->client_info.frame_rate = 40;
   self->client_info.use_static_frame_rate = true;
   self->client_info.user_channel_plugin[0] = '\0';
-  self->client_info.channel_priority = NULL;
+  self->client_info.channel_priority = g_str_split_to_list(DEFAULT_CHANNEL_PRIORITY, ',');
   self->client_info.static_bandwidth = 0;
   self->client_info.static_rtt = 0;
   self->client_info.channels_bw_limit = xrdp_qos_create_bw_limit();
