@@ -1,7 +1,7 @@
 /**
- * Copyright (C) 2011-2012 Ulteo SAS
+ * Copyright (C) 2011-2013 Ulteo SAS
  * http://www.ulteo.com
- * Author David LECHEVALIER <david@ulteo.com> 2011, 2012
+ * Author David LECHEVALIER <david@ulteo.com> 2011, 2012, 2013
  * Author Vincent Roullier <vincent.roullier@ulteo.com> 2012
  * Author Thomas MOUTON <thomas@ulteo.com> 2012
  * Author David PHAM-VAN <d.pham-van@ulteo.com> 2012
@@ -279,6 +279,14 @@ xrdp_rdp_read_config(struct xrdp_client_info* client_info)
       printf("channel priority:\n", value);
       list_dump_items(client_info->channel_priority);
     }
+    else if (g_strcasecmp(item, "order_packet_size") == 0)
+    {
+      client_info->order_packet_size = g_atoi(value);
+      if (client_info->order_packet_size)
+      {
+        printf("order packet size: %i \n", client_info->order_packet_size);
+      }
+    }
 
     // Check if item is a bw limitation
     else if(g_str_end_with(item, "_bw") == 0)
@@ -319,6 +327,7 @@ xrdp_rdp_create(struct xrdp_session* session, struct trans* trans)
   self->client_info.static_bandwidth = 0;
   self->client_info.static_rtt = 0;
   self->client_info.channels_bw_limit = xrdp_qos_create_bw_limit();
+  self->client_info.order_packet_size = 0;
   xrdp_rdp_read_config(&self->client_info);
   /* create sec layer */
   self->sec_layer = xrdp_sec_create(self, trans, self->client_info.crypt_level,

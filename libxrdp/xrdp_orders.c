@@ -1,7 +1,7 @@
 /**
- * Copyright (C) 2011-2012 Ulteo SAS
+ * Copyright (C) 2011-2013 Ulteo SAS
  * http://www.ulteo.com
- * Author David LECHEVALIER <david@ulteo.com> 2011, 2012
+ * Author David LECHEVALIER <david@ulteo.com> 2011, 2012, 2013
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -213,6 +213,12 @@ xrdp_orders_check(struct xrdp_orders* self, int max_size)
   {
     max_packet_size = 16000;
   }
+
+  if (self->rdp_layer->client_info.order_packet_size > 0)
+  {
+    max_packet_size = self->rdp_layer->client_info.order_packet_size;
+  }
+
   if (self->order_level < 1)
   {
     if (max_size > max_packet_size)
