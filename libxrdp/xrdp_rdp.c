@@ -287,6 +287,14 @@ xrdp_rdp_read_config(struct xrdp_client_info* client_info)
         printf("order packet size: %i \n", client_info->order_packet_size);
       }
     }
+    else if (g_strcasecmp(item, "tcp_frame_size") == 0)
+    {
+      client_info->tcp_frame_size = g_atoi(value);
+      if (client_info->tcp_frame_size)
+      {
+        printf("tcp frame size: %i \n", client_info->tcp_frame_size);
+      }
+    }
 
     // Check if item is a bw limitation
     else if(g_str_end_with(item, "_bw") == 0)

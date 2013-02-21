@@ -52,6 +52,7 @@ libxrdp_init(struct trans* trans)
   session->rdp = xrdp_rdp_create(session, trans);
   session->orders = xrdp_orders_create(session, (struct xrdp_rdp*)session->rdp);
   session->client_info = &(((struct xrdp_rdp*)session->rdp)->client_info);
+  trans->frame_size = session->client_info->tcp_frame_size;
 
   // QOS initialization
   session->qos = xrdp_qos_create(session);

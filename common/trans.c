@@ -259,6 +259,7 @@ trans_force_write_s(struct trans* self, struct stream* out_s)
   int total;
   int rv;
   int sent;
+  int to_send;
 
   if (self->status != TRANS_STATUS_UP)
   {
@@ -270,7 +271,13 @@ trans_force_write_s(struct trans* self, struct stream* out_s)
   self->last_time = g_time2();
   while (total < size && self->status == TRANS_STATUS_UP)
   {
-    sent = g_tcp_send(self->sck, out_s->data + total, size - total, 0);
+    to_send = (size - total);
+    if (self->frame_size & to_send > self->frame_size)
+    {
+      to_send = self->frame_size;
+    }
+
+    sent = g_tcp_send(self->sck, out_s->data + total, to_send, 0);
     if (sent == -1)
     {
       if (g_tcp_last_error_would_block(self->sck))

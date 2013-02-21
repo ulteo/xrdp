@@ -128,6 +128,7 @@ struct xrdp_client_info
   struct list* channel_priority;
   bw_limit_list* channels_bw_limit;
   int order_packet_size;
+  int tcp_frame_size;
 };
 
 struct xrdp_brush
