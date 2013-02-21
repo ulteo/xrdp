@@ -63,6 +63,7 @@ struct trans
   struct stream* out_s;
   char* listen_filename;
   unsigned long total_send;
+  int frame_size;
 };
 
 struct trans* APP_CC
