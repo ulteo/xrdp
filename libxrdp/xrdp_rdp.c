@@ -276,7 +276,7 @@ xrdp_rdp_read_config(struct xrdp_client_info* client_info)
     {
       g_strtrim(value, 4);
       client_info->channel_priority = g_str_split_to_list(value, ',');
-      printf("channel priority:\n", value);
+      printf("channel priority:\n");
       list_dump_items(client_info->channel_priority);
     }
     else if (g_strcasecmp(item, "order_packet_size") == 0)
