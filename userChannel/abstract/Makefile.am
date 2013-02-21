@@ -10,6 +10,7 @@ INCLUDES = \
   -I$(top_srcdir) \
   -I$(top_srcdir)/common \
   -I$(top_srcdir)/libxrdp \
+  -I$(top_srcdir)/vchannel/lib \
   -I$(top_srcdir)/userChannel/ip
 
 lib_LIBRARIES = \

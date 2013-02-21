@@ -27,7 +27,8 @@ AM_CFLAGS = \
 INCLUDES = \
   -I$(top_srcdir)/common \
   -I$(top_srcdir)/libxrdp \
-  -I$(top_srcdir)/userChannel
+  -I$(top_srcdir)/userChannel \
+  -I$(top_srcdir)/vchannel/lib
 
 sbin_PROGRAMS = \
   xrdp

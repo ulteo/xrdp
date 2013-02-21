@@ -21,7 +21,7 @@
 #define XRDP_VCHANNEL_H_
 
 
-#include <vchannel/lib/chansrv.h>
+#include "chansrv.h"
 
 
 
