@@ -326,6 +326,7 @@ xrdp_qos_loop(void* in_val)
   int static_frame_rate = 0;
   int robjs_count;
   int wobjs_count;
+  unsigned int spent_time;
   tbus robjs[32];
   tbus wobjs[32];
   tbus term_event;
@@ -378,11 +379,17 @@ xrdp_qos_loop(void* in_val)
     }
 
     // Processing data
+    spent_time = g_time3();
     total_tosend += xrdp_process_check_channel(process, use_qos, (session->bandwidth - total_tosend));
+    spent_time = g_time3() - spent_time;
 
     if(use_qos && (session->bandwidth > 0))
     {
-      int next_request_time = total_tosend/(session->bandwidth * 0.8);
+      int next_request_time = total_tosend/(session->bandwidth * 0.8) - spent_time;
+      if (next_request_time < 0)
+      {
+        next_request_time = 10;
+      }
       if (next_request_time > 1000)
       {
         next_request_time = 1000;
