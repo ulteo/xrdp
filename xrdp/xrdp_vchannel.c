@@ -188,7 +188,11 @@ xrdp_vchannel_process_channel_data(vchannel* vc, tbus param1, tbus param2, tbus 
   int flags;
   int id;
   unsigned char* data;
+  unsigned char chan_name[8];
   rv = 0;
+  struct xrdp_session* session = vc->session;
+  bw_limit_list* channels_limitation = session->client_info->channels_bw_limit;
+
   if ((vc != 0))
   {
     if (data != 0)
@@ -204,6 +208,15 @@ xrdp_vchannel_process_channel_data(vchannel* vc, tbus param1, tbus param2, tbus 
         total_length = length;
       }
       vc->send_data(vc, data, id, flags, length, total_length);
+
+      if (libxrdp_query_channel(session, id, chan_name, NULL) == 0)
+      {
+        bw_limit* chan_limit = xrdp_qos_get_channel(channels_limitation, chan_name);
+        if (chan_limit)
+        {
+          chan_limit->already_sended += length;
+        }
+      }
     }
   }
   return rv;
