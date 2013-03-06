@@ -805,29 +805,6 @@ xrdp_mm_process_login_response(struct xrdp_mm* self, struct stream* s)
           self->scim_trans->trans_data_in = xrdp_mm_scim_data_in;
           self->scim_trans->header_size = 1;
           self->scim_trans->callback_data = self;
-
-          g_snprintf(port, 255, "/var/spool/xrdp/xrdp_scim_socket_%d", 7200 + display);
-
-          /* try to connect up to 4 times */
-          for (index = 0; index < 4; index++)
-          {
-            if (trans_connect(self->scim_trans, ip, port, 3000) == 0)
-            {
-              self->scim_trans_up = 1;
-              break;
-            }
-            g_sleep(1000);
-            g_writeln("xrdp_mm_process_login_response: connect failed. Trying again...");
-          }
-          if (self->scim_trans_up)
-          {
-            self->wm->compose=true;
-            libxrdp_send_ime_status(self->wm->session, self->wm->compose);
-          }
-          else
-          {
-            g_writeln("xrdp_mm_process_login_response: error in scim_connect");
-          }
         }
       }
     }
@@ -1196,11 +1173,32 @@ xrdp_mm_check_wait_objs(struct xrdp_mm* self)
       self->delete_chan_trans = 1;
     }
   }
-  if ((self->scim_trans != 0) && self->scim_trans_up)
+  if ((self->scim_trans != 0))
   {
-    if (trans_check_wait_objs(self->scim_trans) != 0)
+    if (! self->scim_trans_up)
     {
-      self->delete_scim_trans = 1;
+      /* try to connect */
+      char socket_file[255];
+      g_snprintf(socket_file, 255, "/var/spool/xrdp/xrdp_scim_socket_%d", 7200 + self->display);
+      g_writeln("xrdp_mm_check_wait_objs: try to join scim-panel");
+      if (trans_connect(self->scim_trans, "127.0.0.1", socket_file, 3000) == 0)
+      {
+        g_writeln("xrdp_mm_check_wait_objs: scim-panel connection OK");
+        self->scim_trans_up = 1;
+        self->wm->compose=false;
+        libxrdp_send_ime_status(self->wm->session, self->wm->compose);
+      }
+      else
+      {
+        g_writeln("xrdp_mm_check_wait_objs: scim-panel connection failed (will retry)");
+      }
+    }
+    else
+    {
+      if (trans_check_wait_objs(self->scim_trans) != 0)
+      {
+        self->delete_scim_trans = 1;
+      }
     }
   }
   if (self->mod != 0)
