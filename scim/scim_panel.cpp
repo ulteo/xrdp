@@ -22,6 +22,7 @@
 extern "C" {
 	void g_printf(const char* format, ...);
 	int g_tcp_send(int sck, const void* ptr, int len, int flags);
+	int g_tcp_recv(int sck, void* ptr, int len, int flags);
 	int g_create_unix_socket(const char *socket_filename);
 	int g_tcp_accept(int sck);
 	int g_file_close(int fd);
@@ -34,6 +35,7 @@ static GThread *_panel_agent_thread = 0;
 static ConfigModule *_config_module = 0;
 static ConfigPointer _config;
 static int listen_sock, data_sock;
+static GThread *_xrdp_scim_server_thread = 0;
 
 static void slot_update_factory_info(const PanelFactoryInfo &info) { } 
 static void slot_show_help(const String &help) { }
@@ -68,6 +70,51 @@ static bool run_panel_agent(void) {
 		_panel_agent_thread = g_thread_create(panel_agent_thread_func, NULL, TRUE, NULL);
 	}
 	return (_panel_agent_thread != NULL);
+}
+
+static gpointer xrdp_scim_server_thread_func(gpointer data) {
+	int num;
+	char name[250];
+	char *p = getenv("DISPLAY");
+	unsigned int unicode;
+
+	/* socket name */
+	sscanf(p, ":%d", &num);
+	g_snprintf(name, 250, "/var/spool/xrdp/xrdp_scim_socket_72%d", num);
+
+	g_printf("Socket name : %s\n", name);
+
+	/* destroy file if it already exist */
+	unlink(name);
+
+	if ((listen_sock = g_create_unix_socket(name)) == 1) {
+		/* error creating socket */
+		fprintf(stderr, "Failed to create socket : %s\n", name);
+		return ((gpointer) NULL);
+	}
+
+	g_printf("Waiting for incomming connection\n");
+
+	if ((data_sock = g_tcp_accept(listen_sock)) == -1) {
+		fprintf(stderr, "Failed to accept\n");
+		return ((gpointer) NULL);
+	}
+
+	while (g_tcp_recv(data_sock, &unicode, sizeof(uint32), 0) == sizeof(uint32)) {
+		_panel_agent->select_candidate(unicode);
+	}
+
+	gdk_threads_enter();
+	gtk_main_quit();
+	gdk_threads_leave();
+	g_thread_exit(NULL);
+	return ((gpointer) NULL);
+}
+
+static bool run_xrdp_scim_server(void) {
+	_xrdp_scim_server_thread = NULL;
+	_xrdp_scim_server_thread = g_thread_create(xrdp_scim_server_thread_func, NULL, TRUE, NULL);
+	return (_xrdp_scim_server_thread != NULL);
 }
 
 static void slot_turn_on(void) {
@@ -131,8 +178,7 @@ static bool initialize_panel_agent(const String &config, const String &display, 
 int main(int argc, char *argv []) {
 	String config_name("simple");
 	String display_name("");
-	char *p, name[250];
-	int num;
+	char *p;
 
 	//load config module
 	_config_module = new ConfigModule(config_name);
@@ -172,25 +218,8 @@ int main(int argc, char *argv []) {
 		return 1;
 	}
 
-	/* socket name */
-	sscanf(p, ":%d", &num);
-	g_snprintf(name, 250, "/var/spool/xrdp/xrdp_scim_socket_72%d", num);
-
-	g_printf("Socket name : %s\n", name);
-
-	/* destroy file */
-	unlink(name);
-
-	if ((listen_sock = g_create_unix_socket(name)) == 1) {
-		/* error creating socket */
-		fprintf(stderr, "Failed to create socket : %s\n", name);
-		return 1;
-	}
-
-	g_printf("Waiting for incomming connection\n");
-
-	if ((data_sock = g_tcp_accept(listen_sock)) == -1) {
-		fprintf(stderr, "Failed to accept\n");
+	if (!run_xrdp_scim_server()) {
+		fprintf(stderr, "Failed to run Socket Server!\n");
 		return 1;
 	}
 

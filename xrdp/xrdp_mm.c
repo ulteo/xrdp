@@ -691,6 +691,23 @@ xrdp_mm_scim_data_in(struct trans* trans)
 }
 
 /*****************************************************************************/
+/* returns error */
+int APP_CC
+xrdp_mm_scim_send_unicode(struct xrdp_mm* self, unsigned int unicode_key)
+{
+  struct stream* s;
+
+  s = trans_get_out_s(self->scim_trans, 8192);
+  if (s == 0)
+  {
+    return 1;
+  }
+  out_uint32_le(s, unicode_key);
+  s_mark_end(s);
+  return trans_force_write(self->scim_trans);
+}
+
+/*****************************************************************************/
 static int APP_CC
 xrdp_mm_chan_send_init(struct xrdp_mm* self)
 {

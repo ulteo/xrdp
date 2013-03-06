@@ -1224,20 +1224,9 @@ xrdp_wm_unicode_key(struct xrdp_wm* self, int unicode_key)
       {
         if (self->compose) {
           /* Session IME is in "compose mode" : send unicode */
-          /* Send unicode as Hex text value.
-             No other choice because :
-             - Unicode values are to large to fit in a single keyevent
-             - Cannot be sent splitted in 3 8bit values because zeros are dropped
-           */
-
-          char buffer[7];
-          sprintf(buffer, "%06x", unicode_key);
-
-          for (i=0 ; i<6 ; ++i) {
-            int code = buffer[i];
-            self->mm->mod->mod_event(self->mm->mod, WM_KEYDOWN, code, code, code, code);
-            self->mm->mod->mod_event(self->mm->mod, WM_KEYUP, code, code, code, code);
-            usleep(2000); /* needed to avoid keypress loss or inversion */
+          if(self->mm->scim_trans_up)
+          {
+            xrdp_mm_scim_send_unicode(self->mm, unicode_key);
           }
         }
         else
