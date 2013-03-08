@@ -333,6 +333,7 @@ xrdp_sec_process_logon_info(struct xrdp_sec* self, struct stream* s)
   int len_dll;
   int tzone;
   char tmpdata[256];
+  struct list* upn_components;
 
   in_uint8s(s, 4);
   in_uint32_le(s, flags);
@@ -383,6 +384,14 @@ xrdp_sec_process_logon_info(struct xrdp_sec* self, struct stream* s)
 
   uni_rdp_in_str(s, self->rdp_layer->client_info.username, 255, len_user);
   DEBUG(("username %s", self->rdp_layer->client_info.username));
+
+  upn_components = g_str_split_to_list(self->rdp_layer->client_info.username, '@');
+  if (upn_components->count == 2)
+  {
+	  char* user = list_get_item(upn_components, 0);
+	  g_snprintf(self->rdp_layer->client_info.username, sizeof(self->rdp_layer->client_info.username), user);
+  }
+  list_delete(upn_components);
 
   if (flags & RDP_LOGON_AUTO)
   {
