@@ -54,7 +54,7 @@ if [ "$ARCH" = "32" ]; then
 elif [ "$ARCH" = "64" ]; then
     LIBDIR=/usr/lib64
 fi
-./configure --mandir=/usr/share/man --libdir=$LIBDIR
+./configure --mandir=/usr/share/man --libdir=$LIBDIR --disable-scim
 make -j 4
 %{__python} setup.py build
 
