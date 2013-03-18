@@ -1056,6 +1056,9 @@ main(int argc, char** argv)
 	int pid;
 	char pid_s[8];
 	char text[256];
+	char * stdout_buffer;
+	char * stderr_buffer;
+	int stream_buffer_size = 8096;
 
 	if(g_is_root() != 0){
 		g_printf("Error, xrdp-sesman service must be start with root privilege\n");
@@ -1066,6 +1069,12 @@ main(int argc, char** argv)
 	g_snprintf(pid_file, 255, "%s/xrdp-sesman.pid", XRDP_PID_PATH);
 	if (1 == argc)
 	{
+		stdout_buffer = g_malloc(stream_buffer_size, 0);
+		stderr_buffer = g_malloc(stream_buffer_size, 0);
+		
+		setvbuf(stdout, stdout_buffer, _IOFBF, stream_buffer_size);
+		setvbuf(stderr, stderr_buffer, _IOFBF, stream_buffer_size);
+	  
 		/* no options on command line. normal startup */
 		g_printf("starting sesman...");
 		daemon = 1;
@@ -1186,12 +1195,38 @@ main(int argc, char** argv)
 
 	if (daemon)
 	{
+		char *stdout_buffer_bis;
+		char *stderr_buffer_bis;
+		
+		stdout_buffer_bis = g_malloc(stream_buffer_size, 0);
+		stderr_buffer_bis = g_malloc(stream_buffer_size, 0);
+		
+		g_memcpy((void*)stdout_buffer_bis, (void*)stdout_buffer, stream_buffer_size);
+		g_memcpy((void*)stderr_buffer_bis, (void*)stderr_buffer, stream_buffer_size);
+		
+		g_memset((void*)stdout_buffer, '\0', stream_buffer_size);
+		g_memset((void*)stderr_buffer, '\0', stream_buffer_size);
+		
 		/* start of daemonizing code */
 		if (g_daemonize(pid_file) == 0)
 		{
 			g_writeln("problem daemonize");
 			g_exit(1);
 		}
+		
+		freopen(g_cfg->log.log_file, "a", stdout);
+		freopen(g_cfg->log.log_file, "a", stderr);
+		
+		setvbuf(stdout, NULL, _IOLBF, 4096);
+		setvbuf(stderr, NULL, _IOLBF, 4096);
+		
+		fputs(stdout_buffer_bis, stdout);
+		fputs(stderr_buffer_bis, stderr);
+		
+		g_free(stdout_buffer_bis);
+		g_free(stderr_buffer_bis);
+		g_free(stdout_buffer);
+		g_free(stderr_buffer);
 	}
 
 	/* initializing locks */
