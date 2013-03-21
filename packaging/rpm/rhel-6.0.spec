@@ -160,7 +160,10 @@ XRDP channel that handle disks redirection.
 %doc /usr/share/man/man1/vchannel_rdpdr.1.gz
 
 %post rdpdr
-sed -ri "s/^# *(user_allow_other)/\1/" /etc/fuse.conf
+grep -q -E "^ *[^#] *user_allow_other *" /etc/fuse.conf
+if [ $? -ne 0 ]; then
+	echo "user_allow_other" >> /etc/fuse.conf
+fi
 
 ###########################################
 %package clipboard
