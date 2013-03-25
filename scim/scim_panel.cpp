@@ -209,9 +209,7 @@ int main(int argc, char *argv []) {
 		return 1;
 	}
 
-	if (daemon) {
-		scim_daemon();
-	}
+	scim_daemon();
 
 	if (!run_panel_agent()) {
 		fprintf(stderr, "Failed to run Socket Server!\n");
