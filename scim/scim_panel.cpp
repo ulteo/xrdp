@@ -23,6 +23,9 @@ extern "C" {
 	void g_printf(const char* format, ...);
 	int g_tcp_send(int sck, const void* ptr, int len, int flags);
 	int g_tcp_recv(int sck, void* ptr, int len, int flags);
+	int g_tcp_can_send(int sck, int millis);
+	int g_tcp_can_recv(int sck, int millis);
+	int g_tcp_last_error_would_block(int sck);
 	int g_create_unix_socket(const char *socket_filename);
 	int g_tcp_accept(int sck);
 	int g_file_close(int fd);
@@ -51,6 +54,58 @@ static void slot_update_helper_property(int id, const Property &prop) { }
 static void slot_register_helper(int id, const HelperInfo &helper) { }
 static void noop_v(void) { }
 static void noop_i(int) { }
+
+static int data_recv(int socket, char* data, int len) {
+	int rcvd;
+
+	while (len > 0) { 
+		rcvd = g_tcp_recv(socket, data, len, 0);
+
+		if (rcvd == -1) { 
+			if (g_tcp_last_error_would_block(socket)) {
+				/* not an error, must retry */
+				g_tcp_can_recv(socket, 10);
+			} else {
+				/* error, stop */
+				return -1;
+			}
+		} else if (rcvd == 0) {
+			/* disconnection, stop */
+			return 0;
+		} else {
+			/* got data */
+			data += rcvd;
+			len -= rcvd;
+		}
+	}
+	return 1;
+}
+
+static int data_send(int socket, char* data, int len) {
+	int sent;
+
+	while (len > 0) { 
+		sent = g_tcp_send(socket, data, len, 0);
+
+		if (sent == -1) { 
+			if (g_tcp_last_error_would_block(socket)) {
+				/* not an error, must retry */
+				g_tcp_can_send(socket, 10);
+			} else {
+				/* error, stop */
+				return -1;
+			}
+		} else if (sent == 0) {
+			/* disconnection, stop */
+			return 0;
+		} else {
+			/* got data */
+			data += sent;
+			len -= sent;
+		}
+	}
+	return 1;
+}
 
 static gpointer panel_agent_thread_func(gpointer data) {
 	if (!_panel_agent->run()) {
