@@ -16,6 +16,8 @@
 #include <gdk/gdk.h>
 #include <glib.h>
 
+#define XRDP_SOCKET_TIMEOUT 100
+
 /* Declarations picked from os_calls.h.
    Needed because direct include of this file
    makes symbol collision problems with glib */
@@ -39,6 +41,7 @@ static ConfigModule *_config_module = 0;
 static ConfigPointer _config;
 static int listen_sock, data_sock;
 static GThread *_xrdp_scim_server_thread = 0;
+static char imeState, imeStateLast;
 
 static void slot_update_factory_info(const PanelFactoryInfo &info) { } 
 static void slot_show_help(const String &help) { }
@@ -131,7 +134,6 @@ static gpointer xrdp_scim_server_thread_func(gpointer data) {
 	int num;
 	char name[250];
 	char *p = getenv("DISPLAY");
-	unsigned int unicode;
 
 	/* socket name */
 	sscanf(p, ":%d", &num);
@@ -155,8 +157,52 @@ static gpointer xrdp_scim_server_thread_func(gpointer data) {
 		return ((gpointer) NULL);
 	}
 
-	while (g_tcp_recv(data_sock, &unicode, sizeof(uint32), 0) == sizeof(uint32)) {
-		_panel_agent->select_candidate(unicode);
+	/* Initial values */
+	imeStateLast = imeState = 0;
+
+	/* Server mainloop */
+	while (true) {
+		int status;
+		unsigned int unicode;
+
+		if (g_tcp_can_recv(data_sock, XRDP_SOCKET_TIMEOUT)) {
+			status = data_recv(data_sock, (char*)(&unicode), sizeof(uint32));
+
+			if (status == -1) {
+				/* got an error */
+				fprintf(stderr, "Connection error\n");
+				break;
+			}
+
+			if (status == 0) {
+				/* disconnection */
+				fprintf(stderr, "Disconnected\n");
+				break;
+			}
+
+			/* Dirty hack Used to send an unicode symbol without a keypress */
+			_panel_agent->select_candidate(unicode);
+		}
+
+		/* read ImeState spool */
+		if (imeState != imeStateLast) {
+
+			/* send it */
+			status = data_send(data_sock, &imeState, 1);
+			imeStateLast = imeState;
+
+			if (status == -1) {
+				/* got an error */
+				fprintf(stderr, "Connection error\n");
+				break;
+			}
+
+			if (status == 0) {
+				/* disconnection */
+				fprintf(stderr, "Disconnected\n");
+				break;
+			}
+		}
 	}
 
 	gdk_threads_enter();
@@ -173,14 +219,12 @@ static bool run_xrdp_scim_server(void) {
 }
 
 static void slot_turn_on(void) {
-	char message = 1;
-	g_tcp_send(data_sock, &message, 1, 0);
+	imeState = 1;
 	fprintf(stderr, "IME enabled\n");
 }
 
 static void slot_turn_off(void) {
-	char message = 0;
-	g_tcp_send(data_sock, &message, 1, 0);
+	imeState = 0;
 	fprintf(stderr, "IME disabled\n");
 }
 
