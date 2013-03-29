@@ -45,30 +45,43 @@ printer_convert_name(const char *name)
 	char *new_name = NULL;
 	char *pnew_name = NULL;
 	char *pname = NULL;
+	char *last = NULL;
 
 	new_name = g_malloc(g_strlen(name) + 1, 1);
 	pnew_name = new_name;
 	pname = (char*)name;
+	last = pnew_name;
 
 	while(*pname)
 	{
 		if (*pname == '@')
 		{
-			*pnew_name = '_';
+			if (last != new_name && last != pnew_name && *last != '_')
+			{
+				*pnew_name = '_';
+				last = pnew_name;
+				pnew_name++;
+			}
 		}
 		else
 		{
-			if ((*pname >= 0 && *pname <= ' ') || *pname == 127 || *pname == '/' || *pname == '#' || *pname == '!')
+			if ((*pname >= 0 && *pname <= ' ') || *pname == 127 || *pname == '/' || *pname == '#' || *pname == '!' || *pname == ':' || *pname == '_')
 			{
-				*pnew_name = '_';
+				if (last != new_name && last != pnew_name && *last != '_')
+				{
+					*pnew_name = '_';
+					last = pnew_name;
+					pnew_name++;
+				}
 			}
 			else
 			{
 				*pnew_name = *pname;
+				last = pnew_name;
+				pnew_name++;
 			}
 		}
 		pname++;
-		pnew_name++;
 	}
 	return new_name;
 }
