@@ -1270,6 +1270,53 @@ xrdp_rdp_send_control(struct xrdp_rdp* self, int action)
   return 0;
 }
 
+int APP_CC
+xrdp_rdp_send_logon(struct xrdp_rdp* self)
+{
+  struct stream* s;
+  char data[512];
+  int len;
+
+  DEBUG((" in xrdp_rdp_send_logon"));
+  make_stream(s);
+  init_stream(s, 8192);
+  if (xrdp_rdp_init_data(self, s) != 0)
+  {
+    DEBUG(("xrdp_rdp_send_logon failed to init stream"));
+    free_stream(s);
+    return 1;
+  }
+
+  out_uint32_le(s, 0); /* Simple Login */
+
+
+  len = ((g_strlen(self->client_info.domain)+1)*2);
+  DEBUG(("  set xrdp_rdp_send_logon domain %s uni len is %d", self->client_info.domain, len));
+  out_uint32_le(s, len - 1);
+  uni_rdp_out_str(s, self->client_info.domain, len);
+  out_uint8s(s, 52 - len );
+
+  len = (g_strlen(self->client_info.username)+1)*2;
+  DEBUG(("  set xrdp_rdp_send_logon user %s uni len is %d", self->client_info.username, len));
+  out_uint32_le(s, len - 1);
+  uni_rdp_out_str(s, self->client_info.username, len);
+  out_uint8s(s, 512 - len );
+
+  DEBUG(("  set xrdp_rdp_send_logon session 0x%x", self->session->id));
+  out_uint32_le(s, self->session->id);
+
+  s_mark_end(s);
+  if (xrdp_rdp_send_data(self, s, RDP_DATA_PDU_LOGON) != 0)
+  {
+    DEBUG(("xrdp_rdp_send_logon failed to send RDP_DATA_PDU_LOGON"));
+    free_stream(s);
+    return 1;
+  }
+  free_stream(s);
+  DEBUG(("  out xrdp_rdp_send_logon"));
+  return 0;
+}
+
 /*****************************************************************************/
 static int APP_CC
 xrdp_rdp_process_data_control(struct xrdp_rdp* self, struct stream* s)

@@ -321,6 +321,8 @@ int APP_CC
 xrdp_rdp_send_deactive(struct xrdp_rdp* self);
 int APP_CC
 xrdp_rdp_send_keepalive(struct xrdp_rdp* self);
+int APP_CC
+xrdp_rdp_send_logon(struct xrdp_rdp* self);
 
 /* xrdp_orders.c */
 void APP_CC

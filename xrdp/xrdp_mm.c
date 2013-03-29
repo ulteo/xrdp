@@ -189,6 +189,13 @@ xrdp_mm_send_login(struct xrdp_mm* self)
   index = g_strlen(password);
   out_uint16_be(s, index);
   out_uint8a(s, password, index);
+
+/*
+ * Username needs to be kept in session info so that save PDU can use it (send_logon)
+ */
+
+  g_strcpy(self->wm->client_info->username, username);
+
   out_uint16_be(s, self->wm->screen->width);
   out_uint16_be(s, self->wm->screen->height);
   out_uint16_be(s, self->wm->screen->bpp);
