@@ -398,7 +398,7 @@ rdpfs_create(int device_id, int desired_access, int shared_access,
 	out_uint32_le(s, 0);                                  /* minor version */
 
 	out_uint32_le(s, desired_access);                     /* FsInformationClass */
-	out_uint8s(s, 8);                                     /* allocationSizee */
+	out_uint64_le(s, 8000);                               /* allocationSizee */
 	out_uint32_le(s, 0x80);                               /* FileAttributes */
 	out_uint32_le(s, shared_access);                      /* SharedMode */
 	out_uint32_le(s, creation_disposition);               /* Disposition */
