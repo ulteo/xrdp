@@ -622,13 +622,14 @@ rdpfs_query_setinformation(int completion_id, int information, struct fs_info* f
 		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpfs_query_setinformation]: "
 				"set FileDispositionInformation");
 		out_uint32_le(s, 0);                               /* length */
-		out_uint8(s, 24);                                  /* padding */
+		out_uint8s(s, 24);                                  /* padding */
 		break;
 
 	case FileEndOfFileInformation:
 		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpfs_query_setinformation]: "
 				"set FileEndOfFileInformation to %i", fs->file_size);
-		out_uint8s(s, 28);	/* padding */
+		out_uint32_le(s, 4);                               /* length */
+		out_uint8s(s, 24);	/* padding */
 		out_uint32_le(s, fs->file_size);	/* file size */
 		break;
 
