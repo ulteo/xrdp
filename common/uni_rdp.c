@@ -33,7 +33,7 @@ void
 uni_rdp_out_str(struct stream* s, char *string, int len)
 {
 #ifdef HAVE_ICONV
-	size_t ibl = strlen(string), obl = len + 2;
+	size_t ibl = strlen(string) + 1, obl = len ;
 	static iconv_t iconv_h = (iconv_t) - 1;
 	char *pin = string, *pout = (char *) s->p;
 
@@ -79,15 +79,13 @@ uni_rdp_out_str(struct stream* s, char *string, int len)
 			return;
 		}
 
-		s->p += len + 2;
+		s->p += len;
 
 	}
 	else
 #endif
 	{
 		int i = 0, j = 0;
-
-		len += 2;
 
 		while (i < len)
 		{
