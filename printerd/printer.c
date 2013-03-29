@@ -572,7 +572,7 @@ printer_add(const char* username, const char* printer_name)
 		goto error_disconnect;
 	}
 	log_message(l_config, LOG_LEVEL_DEBUG, "printerd[printer_add]: "
-				"Succedd to add printer");
+				"Succedd to add printer: %s", printer_name);
 
 	printer_do_operation(http, IPP_RESUME_PRINTER, cups_printer_name);
 	printer_do_operation(http, CUPS_ACCEPT_JOBS, cups_printer_name);
