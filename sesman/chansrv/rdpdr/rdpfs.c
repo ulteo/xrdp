@@ -416,7 +416,7 @@ rdpfs_create(int device_id, int desired_access, int shared_access,
 int APP_CC
 rdpfs_request_read(int completion_id, int device_id, int length, int offset)
 {
-	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpfs_request_read]:");
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpfs_request_read]: CID: %d, Fileid:%d length_requested:%d, offset:%d pdevid:%d actdevid:%d", completion_id, actions[completion_id].file_id, length, offset, device_id, actions[completion_id].device);
 	struct stream* s;
 	make_stream(s);
 	init_stream(s,1024);
@@ -751,7 +751,7 @@ rdpfs_add(struct stream* s, int device_data_length, int device_id, char* device_
 		}
 		g_strcpy(disk_devices[disk_devices_count].dir_name, converted_name);
 		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpfs_add]: "
-				"Succedd to add printer %s", disk_devices[disk_devices_count].dir_name);
+				"Succeed to add printer %s", disk_devices[disk_devices_count].dir_name);
 		printer_add(username, disk_devices[disk_devices_count].dir_name);
 
 		g_free(converted_name);
@@ -960,7 +960,7 @@ rdpfs_process_read_response(int completion_id, struct stream* s)
 	int length;
 	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpfs_process_read_response]");
 	in_uint32_le(s, length);
-	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpfs_process_read_response] : %i return ",length );
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpfs_process_read_response] : %i bytes returned ",length );
 
 	g_memcpy(rdpfs_response[completion_id].buffer, s->p, length);
 	rdpfs_response[completion_id].buffer_length = length;
@@ -973,9 +973,9 @@ int APP_CC
 rdpfs_process_write_response(int completion_id, struct stream* s)
 {
 	int length;
-	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpfs_process_read_response]");
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpfs_process_write_response]");
 	in_uint32_le(s, length);
-	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpfs_process_read_response] : %i return ",length );
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[rdpfs_process_write_response] : %i return ",length );
 
 	g_memcpy(rdpfs_response[completion_id].buffer, s->p, length);
 	rdpfs_response[completion_id].buffer_length = length;
