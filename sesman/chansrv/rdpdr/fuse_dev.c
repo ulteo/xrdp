@@ -295,6 +295,8 @@ static int fuse_dev_mknod(const char *path, mode_t mode, dev_t rdev)
 
 	if( rdpfs_response[completion_id].request_status != 0 )
 	{
+		rdpfs_request_close(completion_id, disk->device_id);
+		rdpfs_wait_reply(completion_id);
 		return -errno;
 	}
 	rdpfs_request_close(completion_id, disk->device_id);
@@ -338,6 +340,8 @@ static int fuse_dev_mkdir(const char *path, mode_t mode)
 
 	if( rdpfs_response[completion_id].request_status != 0 )
 	{
+		rdpfs_request_close(completion_id, disk->device_id);
+		rdpfs_wait_reply(completion_id);
 		return -errno;
 	}
 	rdpfs_request_close(completion_id, disk->device_id);
@@ -439,8 +443,21 @@ static int fuse_dev_rmdir(const char *path)
 	}
 	rdpfs_query_setinformation(completion_id, FileDispositionInformation, &fs);
 	rdpfs_wait_reply(completion_id);
+	if( rdpfs_response[completion_id].request_status != 0 )
+	{
+		log_message(l_config, LOG_LEVEL_INFO, "vchannel_rdpdr[fuse_dev_unlink]: "
+				"FileDispositionInformation fails 0x%x", rdpfs_response[completion_id].request_status);
+		return -errno;
+	}
+
 	rdpfs_request_close(completion_id, disk->device_id);
 	rdpfs_wait_reply(completion_id);
+	if( rdpfs_response[completion_id].request_status != 0 )
+	{
+		log_message(l_config, LOG_LEVEL_INFO, "vchannel_rdpdr[fuse_dev_unlink]: "
+				"rdpfs_request_close fails 0x%x", rdpfs_response[completion_id].request_status);
+		return -errno;
+	}
 
 	return 0;
 }
@@ -481,6 +498,8 @@ static int fuse_dev_rename(const char *from, const char *to)
 
 	if( rdpfs_response[completion_id].request_status != 0 )
 	{
+		rdpfs_request_close(completion_id, disk->device_id);
+		rdpfs_wait_reply(completion_id);
  		return -errno;
 	}
 
@@ -682,21 +701,42 @@ static int fuse_dev_read(const char *path, char *buf, size_t size, off_t offset,
 
 	if( rdpfs_response[completion_id].request_status != 0 )
 	{
+		log_message(l_config, LOG_LEVEL_INFO, "vchannel_rdpdr[fuse_dev_read]:"
+					"Bad response : %s : 0x%x", rdp_path, rdpfs_response[completion_id].request_status);
+		rdpfs_request_close(completion_id, disk->device_id);
+		rdpfs_wait_reply(completion_id);
 		return -errno;
 	}
 
 	rdpfs_query_information(completion_id, disk->device_id, FileStandardInformation,path);
 	rdpfs_wait_reply(completion_id);
 
+	if( rdpfs_response[completion_id].request_status != 0 )
+	{
+		log_message(l_config, LOG_LEVEL_INFO, "vchannel_rdpdr[fuse_dev_read]: "
+			"Read fileinfo on %s fails:%d", rdp_path, rdpfs_response[completion_id].request_status);
+	}
+
 	fs = &rdpfs_response[completion_id].fs_inf;
 
 	rdpfs_response[completion_id].buffer = (unsigned char*)buf;
 	while (size_to_read != 0)
 	{
+		rdpfs_response[completion_id].request_status = 0;
 		chunk_size_to_read = size_to_read > MAX_SIZE ? MAX_SIZE : size_to_read;
 
 		rdpfs_request_read(completion_id, disk->device_id, chunk_size_to_read, current_offset);
 		rdpfs_wait_reply(completion_id);
+
+		if( rdpfs_response[completion_id].request_status != 0 )
+		{
+			log_message(l_config, LOG_LEVEL_INFO, "vchannel_rdpdr[fuse_dev_read]: "
+					"Read request fails:0x%x, CID:%d, File:%s", rdpfs_response[completion_id].request_status, completion_id, rdp_path);
+			if (rdpfs_response[completion_id].request_status == 0xc0000022)
+			{
+				break;
+			}
+		}
 
 		size_read = rdpfs_response[completion_id].buffer_length;
 		current_offset += size_read;
@@ -860,11 +900,27 @@ static int fuse_dev_write(const char *path, const char *buf, size_t size,
 
 		rdpfs_request_write(completion_id, current_offset, chunk_size_to_write);
 		rdpfs_wait_reply(completion_id);
+		if( rdpfs_response[completion_id].request_status != 0 )
+		{
+			log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr[fuse_printer_dev_write]:"
+					"write fails to: %s with rc 0x%x", path, rdpfs_response[completion_id].request_status);
+			return -errno;
+		}
 
 		size_write = rdpfs_response[completion_id].buffer_length;
 		current_offset += size_write;
 		rdpfs_response[completion_id].buffer += size_write;
 		size_to_write -= size_write;
+
+		if( rdpfs_response[completion_id].request_status != 0 )
+		{
+			log_message(l_config, LOG_LEVEL_INFO, "vchannel_rdpdr[fuse_dev_write]: "
+						"rdpfs_write fails 0x%x", rdpfs_response[completion_id].request_status);
+			rdpfs_request_close(completion_id, disk->device_id);
+			rdpfs_wait_reply(completion_id);
+			return -errno;
+		}
+
 	}
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[fuse_dev_write]:"
