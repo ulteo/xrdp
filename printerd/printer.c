@@ -174,13 +174,13 @@ printer_get_printer_list(http_t* http)
 	if ((response = cupsDoRequest(http, request, "/admin/")) == NULL)
 	{
 		log_message(l_config, LOG_LEVEL_WARNING, "printerd[printer_get_printer_list]: "
-				" %s", cupsLastErrorString());
+				"%s", cupsLastErrorString());
 		goto fail;
 	}
 	else if (response->request.status.status_code > IPP_OK_CONFLICT)
 	{
 		log_message(l_config, LOG_LEVEL_WARNING, "printerd[printer_get_printer_list]: "
-				" %s", cupsLastErrorString());
+				"%s", cupsLastErrorString());
 		goto fail;
 	}
 	printers = list_create();
