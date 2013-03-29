@@ -1030,10 +1030,10 @@ fuse_run()
 	fuse_opt_add_arg(&args, "");
 	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[fuse_run]: "
 			"Setup of the main mount point: %s", mount_point);
-	fuse_opt_add_arg(&args, mount_point);
 	fuse_opt_add_arg(&args, "-f");
 	fuse_opt_add_arg(&args, "-o");
 	fuse_opt_add_arg(&args, "allow_other");
+	fuse_opt_add_arg(&args, mount_point);
 
 	ret = fuse_main(args.argc, args.argv, &fuse_dev_oper, NULL);
 	fuse_opt_free_args(&args);
