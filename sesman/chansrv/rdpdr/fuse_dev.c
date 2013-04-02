@@ -132,7 +132,7 @@ static int fuse_dev_getattr(const char *path, struct stat *stbuf)
 		if ( disk == 0)
 		{
 			log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[fuse_dev_getattr]: "
-					"Device from path(%s) did not exists", rdp_path);
+					"Device from path(%s) did not exist", rdp_path);
 			return 0;
 		}
 		g_str_replace_first(rdp_path, disk->dir_name, "");
@@ -253,7 +253,7 @@ static int fuse_dev_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	rdpfs_wait_reply(completion_id);
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[fuse_dev_readdir]: "
-				"Fin");
+				"End of %s", rdp_path);
 
 	return 0;
 }
@@ -696,7 +696,7 @@ static int fuse_dev_read(const char *path, char *buf, size_t size, off_t offset,
 	attributes = FILE_SYNCHRONOUS_IO_NONALERT;
 	desired_access = GENERIC_READ|FILE_EXECUTE_ATTRIBUTES;
 	shared_access = FILE_SHARE_READ|FILE_SHARE_DELETE|FILE_SHARE_WRITE;
-	completion_id = rdpfs_create(disk->device_id, desired_access , shared_access,	FILE_OPEN, attributes, rdp_path);
+	completion_id = rdpfs_create(disk->device_id, desired_access , shared_access, FILE_OPEN, attributes, rdp_path);
 	rdpfs_wait_reply(completion_id);
 
 	if( rdpfs_response[completion_id].request_status != 0 )
@@ -826,7 +826,7 @@ static int fuse_dev_printer_write(const char *path, const char *buf, size_t size
 		size_to_write -= size_write;
 	}
 
-	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[fuse_dev_write]:"
+	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[fuse_printer_dev_write]:"
 				"try to write %i -> really write : %i", size, rdpfs_response[completion_id].buffer_length);
 
 	return rdpfs_response[completion_id].buffer_length;
@@ -858,7 +858,7 @@ static int fuse_dev_write(const char *path, const char *buf, size_t size,
 	disk = rdpfs_get_device_from_path(path);
 	if (disk == NULL)
 	{
-		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr[fuse_dev_write]:"
+		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpdr[fuse_printer_dev_write]:"
 					"Unable to get device from path : %s", path);
 		return -errno;
 	}
