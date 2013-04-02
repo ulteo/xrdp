@@ -708,7 +708,7 @@ static int fuse_dev_read(const char *path, char *buf, size_t size, off_t offset,
 		return -errno;
 	}
 
-	rdpfs_query_information(completion_id, disk->device_id, FileStandardInformation,path);
+	rdpfs_query_information(completion_id, disk->device_id, FileStandardInformation,rdp_path);
 	rdpfs_wait_reply(completion_id);
 
 	if( rdpfs_response[completion_id].request_status != 0 )
