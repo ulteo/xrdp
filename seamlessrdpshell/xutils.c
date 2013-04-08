@@ -479,6 +479,9 @@ int get_window_state(Display * display, Window wnd) {
 	}
 
 	for (i = 0; i < nstates; i++) {
+		if (states[i] == None)
+			continue;
+		
 		log_message(l_config, LOG_LEVEL_DEBUG, "XHook[get_window_state]: "
 			    "%iWindow 0x%08lx has state: %s", i, wnd, XGetAtomName(display, states[i]));
 
