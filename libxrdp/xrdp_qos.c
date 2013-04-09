@@ -230,7 +230,7 @@ xrdp_qos_stream_copy(struct spacket* packet, struct stream* src)
 int APP_CC
 xrdp_qos_spool(struct xrdp_qos* self, struct stream* s, int data_pdu_type, int packet_type)
 {
-  DEBUG(("    in xrdp_qos_spool, gota send %d bytes", (src->end - src->data)));
+  DEBUG(("    in xrdp_qos_spool, gota send %d bytes", (s->end - s->data)));
   struct spacket* p = g_malloc(sizeof(struct spacket), true);
 
   xrdp_qos_stream_copy(p, s);
@@ -239,7 +239,7 @@ xrdp_qos_spool(struct xrdp_qos* self, struct stream* s, int data_pdu_type, int p
 
   list_add_item(self->spooled_packet, (tbus)p);
 
-  DEBUG(("    out xrdp_qos_spool, sent %d bytes ok", (src->end - src->data)));
+  DEBUG(("    out xrdp_qos_spool, sent %d bytes ok", (s->end - s->data)));
 
   return 0;
 }
