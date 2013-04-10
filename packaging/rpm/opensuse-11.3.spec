@@ -108,6 +108,9 @@ ldconfig
 chkconfig --add xrdp > /dev/null
 service xrdp start
 
+# Hack because opensuse is unable to use the Xrdp rpath attribute correctly on OpenSUSE...
+%{__ln_s} %{_libdir}/xrdp/libvnc.so %{_libdir}/libvnc.so
+
 %preun
 service xrdp stop
 chkconfig --del xrdp > /dev/null
