@@ -18,6 +18,8 @@
    Copyright (C) 2011-2012 Ulteo SAS
    http://www.ulteo.com
    Author David LECHEVALIER <david@ulteo.com> 2011, 2012
+   Author James B. MacLean <macleajb@ednet.ns.ca> 2012
+
 
    main rdp process
 

@@ -1,7 +1,8 @@
 /**
- * Copyright (C) 2008 Ulteo SAS
+ * Copyright (C) 2008-2013 Ulteo SAS
  * http://www.ulteo.com
- * Author David LECHEVALIER <david@ulteo.com> 2010
+ * Author David LECHEVALIER <david@ulteo.com> 2010, 2013
+ * Author James B. MacLean <macleajb@ednet.ns.ca> 2012
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License

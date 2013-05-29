@@ -1,6 +1,7 @@
 /**
- * Copyright (C) 2013 Ulteo SAS
+ * Copyright (C) 2012-2013 Ulteo SAS
  * http://www.ulteo.com
+ * Author James B. MacLean <macleajb@ednet.ns.ca> 2012
  * Author Alexandre CONFIANT-LATOUR <a.confiant@ulteo.com> 2013
  *
  * This program is free software; you can redistribute it and/or

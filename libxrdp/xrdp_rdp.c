@@ -5,6 +5,7 @@
  * Author Vincent Roullier <vincent.roullier@ulteo.com> 2012
  * Author Thomas MOUTON <thomas@ulteo.com> 2012
  * Author David PHAM-VAN <d.pham-van@ulteo.com> 2012
+ * Author James B. MacLean <macleajb@ednet.ns.ca> 2012
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
