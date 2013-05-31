@@ -15,7 +15,8 @@
 
    xrdp: A Remote Desktop Protocol server.
    Copyright (C) Jay Sorg 2004-2009
-   http://www.ulteo.com 2011-2013
+   Copyright (C) 2011-2013 Ulteo SAS
+   http://www.ulteo.com
    Author David LECHEVALIER <david@ulteo.com> 2011, 2012, 2013
    Author James B. MacLean <macleajb@ednet.ns.ca> 2012
 
