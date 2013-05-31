@@ -85,18 +85,6 @@ xrdp_process_loop(struct xrdp_process* self)
        zero and login_mode_event is set so xrdp_wm_init should be called by
        xrdp_wm_check_wait_objs */
   }
-
-/*
- * Clients want to see a save PDU info, so we do it here based on client login grabbed along the way
- * Mode 11 seems to be the right time so we act and then set mode to 12
- */
-
-  if ((self->wm != 0) && (self->session->up_and_running) && (self->wm->login_mode == 11))
-  {
-    DEBUG(("xrdp_process_loop sending LOGON PDU mode=%d User %s", self->wm->login_mode, self->wm->client_info->username));
-    xrdp_rdp_send_logon((struct xrdp_rdp*)self->session->rdp);
-    self->wm->login_mode = 12;
-  }
   return rv;
 }
 

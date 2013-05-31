@@ -33,6 +33,7 @@ SUBDIRS = \
   printerd \
   python \
   logd \
+  scim \
   seamlessrdpshell
 
 EXTRA_DIST = \

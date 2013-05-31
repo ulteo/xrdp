@@ -21,7 +21,6 @@ default build will install the following
   xrdp
   xrdp-sesman
   xrdp-sessvc
-  xrdp-chansrv
 
 /etc/xrdp/
   km-xxxx.ini

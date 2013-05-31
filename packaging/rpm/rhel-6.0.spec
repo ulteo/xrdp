@@ -83,6 +83,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/lib*/xrdp/libvnc.so*
 /usr/lib*/xrdp/libxrdp.so*
 /usr/lib*/xrdp/libxup.so*
+/usr/lib*/xrdp/lib_uc_proxy.so*
 /usr/lib*/*.so*
 /usr/sbin/xrdp*
 /usr/share/xrdp/*
