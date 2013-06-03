@@ -3,6 +3,7 @@
  * http://www.ulteo.com
  * Author James B. MacLean <macleajb@ednet.ns.ca> 2012
  * Author Alexandre CONFIANT-LATOUR <a.confiant@ulteo.com> 2013
+ * Author David LECHEVALIER <david@ulteo.com> 2013
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -36,9 +37,6 @@
 
    xrdp: A Remote Desktop Protocol server.
    Copyright (C) Jay Sorg 2004-2010
-   Copyright (C) 2013 Ulteo SAS
-   http://www.ulteo.com 2013
-   Author David LECHEVALIER <david@ulteo.com> 2013
 
    module manager
 
@@ -820,15 +818,6 @@ xrdp_mm_get_wait_objs(struct xrdp_mm* self,
   }
   return rv;
 }
-
-
-/*****************************************************************************/
-int APP_CC
-xrdp_mm_request_update(struct xrdp_mm* self, int incremental)
-{
-  self->mod->mod_request_update(self->mod, incremental);
-}
-
 
 /*****************************************************************************/
 int APP_CC

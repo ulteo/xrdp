@@ -473,14 +473,10 @@ xrdp_process_main_loop(struct xrdp_process* self)
 
       trans_get_wait_objs(self->server_trans, robjs, &robjs_count, &timeout);
       /* wait */
-      if (g_obj_wait(robjs, robjs_count, wobjs, wobjs_count, frame_rate) != 0)
+      if (g_obj_wait(robjs, robjs_count, wobjs, wobjs_count, timeout) != 0)
       {
         /* error, should not get here */
         g_sleep(100);
-      }
-      if (self->wm != NULL && self->wm->mm->mod != NULL && frame_rate == 0)
-      {
-        xrdp_wm_request_update(self->wm, 1);
       }
       if (g_is_wait_obj_set(term_obj)) /* term */
       {

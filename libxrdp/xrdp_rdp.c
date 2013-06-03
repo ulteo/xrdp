@@ -252,6 +252,7 @@ xrdp_rdp_read_config(struct xrdp_client_info* client_info)
     {
       client_info->frame_rate = g_atoi(value);
       printf("frame rate: %i\n", client_info->frame_rate);
+    }
     else if (g_strcasecmp(item, "user_channel_plugin") == 0)
     {
       g_strncpy(client_info->user_channel_plugin, value, sizeof(client_info->user_channel_plugin));
