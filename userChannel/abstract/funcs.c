@@ -86,7 +86,7 @@ rect_union(struct xrdp_rect* in1, struct xrdp_rect* in2, struct list* out) {
 			   in1->right < in2->right &&
 			   in1->left <= in2->left) { /* partially covered(left) */
 		list_add_rect(out, in1->left, in1->top, in1->right, in1->bottom);
-		list_add_rect(out, in1->right, in2->bottom, in2->right, in2->bottom);
+		list_add_rect(out, in1->right, in2->top, in2->right, in2->bottom);
 	} else if (in1->left <= in2->left &&
 			   in1->right >= in2->right &&
 			   in1->top > in2->top &&
@@ -119,7 +119,7 @@ rect_union(struct xrdp_rect* in1, struct xrdp_rect* in2, struct list* out) {
 			   in1->bottom < in2->bottom) { /* partially covered(top right) */
 		list_add_rect(out, in1->left, in1->top, in1->right, in1->bottom);
 		list_add_rect(out, in2->left, in2->top, in1->left, in2->bottom);
-		list_add_rect(out, in1->left, in1->bottom, in2->right, in2->bottom);
+		list_add_rect(out, in2->left, in1->bottom, in2->right, in2->bottom);
 	} else if (in1->left > in2->left &&
 			   in1->right >= in2->right &&
 			   in1->top > in2->top &&
@@ -139,13 +139,20 @@ rect_union(struct xrdp_rect* in1, struct xrdp_rect* in2, struct list* out) {
 			   in1->right >= in2->right &&
 			   in1->bottom < in2->bottom) { /* 2 rects, one on each end */
 		list_add_rect(out, in2->left, in2->top, in2->right, in2->bottom);
-		list_add_rect(out, in1->left, in1->top, in1->right, in2->top);
+		list_add_rect(out, in1->left, in1->top, in2->left, in1->bottom);
+		list_add_rect(out, in2->right, in1->top, in1->right, in1->bottom);
+	 } else if (in1->left > in2->left &&
+			 in1->right < in2->right &&
+			 in1->top <= in2->top &&
+			 in1->bottom < in2->bottom) { /* partially covered(top) */
+		 list_add_rect(out, in2->left, in2->top, in2->right, in2->bottom);
+		 list_add_rect(out, in1->left, in1->top, in1->right, in2->top);
 	} else if (in1->top > in2->top &&
 			   in1->bottom < in2->bottom &&
 			   in1->left <= in2->left &&
 			   in1->right < in2->right) { /* partially covered(left) */
 		list_add_rect(out, in2->left, in2->top, in2->right, in2->bottom);
-		list_add_rect(out, in1->left, in1->top, in2->left, in2->top);
+		list_add_rect(out, in1->left, in1->top, in2->left, in1->bottom);
 	} else if (in1->left > in2->left &&
 			   in1->right < in2->right &&
 			   in1->bottom >= in2->bottom &&
