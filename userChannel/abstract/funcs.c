@@ -24,12 +24,15 @@
  /*****************************************************************************/
 int list_add_rect(struct list* l, int left, int top, int right, int bottom) {
 	struct xrdp_rect* r;
-	r = (struct xrdp_rect*) g_malloc(sizeof(struct xrdp_rect), 1);
-	r->left = left;
-	r->top = top;
-	r->right = right;
-	r->bottom = bottom;
-	list_add_item(l, (tbus) r);
+	if (left < right && top < bottom)
+	{
+		r = (struct xrdp_rect*) g_malloc(sizeof(struct xrdp_rect), 1);
+		r->left = left;
+		r->top = top;
+		r->right = right;
+		r->bottom = bottom;
+		list_add_item(l, (tbus) r);
+	}
 	return 0;
 }
 
