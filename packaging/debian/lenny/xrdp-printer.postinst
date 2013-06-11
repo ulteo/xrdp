@@ -1,7 +1,0 @@
-#!/bin/sh
-
-chown -R lp /var/spool/xrdp_printer
-
-#DEBHELPER#
-
-exit 0

@@ -1,9 +1,0 @@
-#!/bin/sh
-
-if [ "$1" != "upgrade" ]; then
-	getent group tsusers >/dev/null && groupdel tsusers
-fi
-
-rm -rf /var/spool/xrdp/*
-
-#DEBHELPER#

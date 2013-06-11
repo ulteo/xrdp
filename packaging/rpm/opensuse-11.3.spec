@@ -1,7 +1,7 @@
-# Copyright (C) 2010-2012 Ulteo SAS
+# Copyright (C) 2010-2013 Ulteo SAS
 # http://www.ulteo.com
 # Author Samuel BOVEE <samuel@ulteo.com> 2010-2011
-# Author David PHAM-VAN <d.pham-van@ulteo.com> 2012
+# Author David PHAM-VAN <d.pham-van@ulteo.com> 2012-2013
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -66,6 +66,7 @@ make install DESTDIR=$RPM_BUILD_ROOT
 %{__python} setup.py install --prefix=%{_prefix} --root=%{buildroot} --record-rpm=INSTALLED_FILES
 mkdir -p $RPM_BUILD_ROOT/var/log/xrdp $RPM_BUILD_ROOT/var/spool/xrdp
 install -D instfiles/init/suse/xrdp $RPM_BUILD_ROOT/etc/init.d/xrdp
+rm -f $RPM_BUILD_ROOT/usr/lib*/xrdp/lib_uc_advance.so*
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -78,14 +79,14 @@ rm -rf $RPM_BUILD_ROOT
 %config /etc/xrdp/Xserver/*
 %config /etc/pam.d/*
 %config /etc/init.d/*
-/usr/lib*/xrdp/libmc.so.*
-/usr/lib*/xrdp/librdp.so.*
-/usr/lib*/xrdp/libscp.so.*
-/usr/lib*/xrdp/libvnc.so.*
-/usr/lib*/xrdp/libxrdp.so.*
-/usr/lib*/xrdp/libxup.so.*
+/usr/lib*/xrdp/libmc.so*
+/usr/lib*/xrdp/librdp.so*
+/usr/lib*/xrdp/libscp.so*
+/usr/lib*/xrdp/libvnc.so*
+/usr/lib*/xrdp/libxrdp.so*
+/usr/lib*/xrdp/libxup.so*
 /usr/lib*/xrdp/lib_uc_proxy.so*
-/usr/lib*/*.so.*
+/usr/lib*/*.so*
 /usr/sbin/xrdp*
 /usr/share/xrdp/*
 /usr/bin/xrdp-disconnect

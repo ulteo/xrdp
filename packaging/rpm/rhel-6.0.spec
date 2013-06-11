@@ -65,6 +65,7 @@ make install DESTDIR=$RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT/var/log/xrdp $RPM_BUILD_ROOT/var/spool/xrdp
 install -D instfiles/init/redhat/xrdp $RPM_BUILD_ROOT/etc/init.d/xrdp
 mv %{buildroot}/etc/asound.conf %{buildroot}/etc/xrdp/
+rm -f $RPM_BUILD_ROOT/usr/lib*/xrdp/lib_uc_advance.so*
 
 %clean
 rm -rf $RPM_BUILD_ROOT
