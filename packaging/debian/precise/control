@@ -3,7 +3,7 @@ Section: x11
 Priority: extra
 Maintainer: David PHAM-VAN <d.pham-van@ulteo.com>
 Build-Depends: debhelper (>= 6), cdbs, quilt,
- python (>= 2.6), python-central, python-svn,
+ python (>= 2.6), python-central,
  libxml2-dev, libx11-dev, libxfixes-dev, libssl-dev, libpam0g-dev,
  libpulse-dev, libcups2-dev, libltdl-dev, libfuse-dev, libjpeg-turbo8-dev,
  libmagickwand-dev, libscim-dev
