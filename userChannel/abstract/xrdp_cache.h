@@ -2,6 +2,7 @@
  * Copyright (C) 2012 Ulteo SAS
  * http://www.ulteo.com
  * Author David LECHEVALIER <david@ulteo.com> 2012
+ * Author Vincent ROULLIER <vincent.roullier@ulteo.com> 2013
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -58,6 +59,7 @@ struct xrdp_cache
   struct xrdp_brush_item brush_items[64];
 };
 
+int APP_CC (*xrdp_bitmap_compare_ptr)(struct xrdp_bitmap*, struct xrdp_bitmap*);
 
 struct xrdp_cache* APP_CC
 xrdp_cache_create(struct xrdp_wm* owner, struct xrdp_session* session, struct xrdp_client_info* client_info);
@@ -66,7 +68,7 @@ xrdp_cache_delete(struct xrdp_cache* self);
 int APP_CC
 xrdp_cache_reset(struct xrdp_cache* self, struct xrdp_client_info* client_info);
 int APP_CC
-xrdp_cache_add_bitmap(struct xrdp_cache* self, struct xrdp_bitmap* bitmap);
+xrdp_cache_add_bitmap(struct xrdp_cache* self, struct xrdp_bitmap* bitmap, int quality);
 int APP_CC
 xrdp_cache_add_palette(struct xrdp_cache* self, int* palette);
 int APP_CC

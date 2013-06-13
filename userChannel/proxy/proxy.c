@@ -21,10 +21,42 @@
 #include <abstract.h>
 #include "userChannel.h"
 #include "xrdp_mm.h"
-
+#include "xrdp_screen.h"
+#include "xrdp_wm.h"
+#include "fifo.h"
 
 extern struct userChannel* u;
 
+
+/******************************************************************************/
+int DEFAULT_CC
+lib_userChannel_mod_start(struct userChannel* u, int w, int h, int bpp)
+{
+  LIB_DEBUG(u, "lib_userChannel_mod_start");
+
+  u->server_width = w;
+  u->server_height = h;
+  u->server_bpp = bpp;
+  int res = false;
+  struct xrdp_wm* wm = (struct xrdp_wm*) u->wm;
+  u->desktop = xrdp_screen_create(u->server_width, u->server_height, u->server_bpp, wm->client_info);
+  res = u->mod->mod_start(u->mod, w, h, bpp);
+
+  return res;
+}
+
+/******************************************************************************/
+int DEFAULT_CC
+lib_userChannel_mod_end(struct userChannel* u)
+{
+  LIB_DEBUG(u, "lib_userChannel_mod_end");
+  if (u->mod)
+  {
+    u->mod->mod_end(u->mod);
+  }
+  xrdp_screen_delete(u->desktop);
+  return 0;
+}
 
 /*****************************************************************************/
 void update_add(update* up)
@@ -100,6 +132,14 @@ lib_userChannel_server_paint_rect(struct xrdp_mod* mod, int x, int y, int cx, in
 {
   if (u)
   {
+    struct update_rect* current_urect = (struct update_rect*) g_malloc(sizeof(struct update_rect), 0);
+    current_urect->rect = (struct xrdp_rect*) g_malloc(sizeof(struct xrdp_rect), 0);
+    current_urect->rect->left = x;
+    current_urect->rect->top = y;
+    current_urect->rect->right = x + cx;
+    current_urect->rect->bottom = y + cy;
+    current_urect->quality = 0;
+    fifo_push(u->desktop->candidate_update_rects, current_urect);
     xrdp_screen_update_desktop(u->desktop, x, y, cx, cy, data, width, height, srcx, srcy);
   }
   return 0;
@@ -359,5 +399,54 @@ lib_userChannel_server_send_to_channel(struct xrdp_mod* mod, int channel_id,
   }
 
   return 0;
+}
+
+/******************************************************************************/
+/* return error */
+int DEFAULT_CC
+lib_userChannel_update_screen(struct userChannel* u)
+{
+  struct xrdp_screen* desktop = u->desktop;
+  int i;
+  update* up;
+  int bpp = (u->server_bpp + 7) / 8;
+  if (bpp == 3)
+  {
+    bpp = 4;
+  }
+  if (desktop->update_rects->count > 0)
+  {
+    for (i = 0 ; i < desktop->update_rects->count ; i++)
+    {
+      struct update_rect* ucur = (struct update_rect*) list_get_item(desktop->update_rects, i);
+      struct xrdp_rect* cur = ucur->rect;
+      up = g_malloc(sizeof(update), 1);
+      up->order_type = paint_rect;
+      up->x = cur->left;
+      up->y = cur->top;
+      int w = cur->right - cur->left;
+      int h = cur->bottom - cur->top;
+      up->cx = w;
+      up->cy = h;
+      up->width = w;
+      up->height = h;
+      up->srcx = 0;
+      up->srcy = 0;
+      up->quality = ucur->quality;
+      up->data_len = up->cx * up->cy * bpp;
+      up->data = g_malloc(up->data_len, 0);
+      ip_image_crop(desktop->screen, up->x, up->y, up->cx, up->cy, up->data);
+      list_add_item(u->current_update_list, (tbus) up);
+    }
+    list_clear(desktop->update_rects);
+  }
+  return 0;
+}
+
+/******************************************************************************/
+/* return error */
+int DEFAULT_CC
+lib_userChannel_update(struct userChannel* u, long * t0) {
+	return 0;
 }
 

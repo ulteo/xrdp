@@ -22,6 +22,29 @@
 #define UPDATE_ORDER_H_
 
 
+static const char* const USERCHANNEL_UPDATE_LIST[] =
+{
+  "begin_update",
+  "end_update",
+  "reset",
+  "reset_clip",
+  "fill_rect",
+  "paint_rect",
+  "screen_blt",
+  "set_cursor",
+  "set_clip",
+  "set_fgcolor",
+  "set_bgcolor",
+  "set_opcode",
+  "set_mixmode",
+  "set_brush",
+  "set_pen",
+  "draw_line",
+  "add_char",
+  "send_to_channel",
+  "paint_update"
+};
+
 typedef enum {
   begin_update,
   end_update,
@@ -40,7 +63,8 @@ typedef enum {
   set_pen,
   draw_line,
   add_char,
-  send_to_channel
+  send_to_channel,
+  paint_update
 } order_type;
 
 typedef struct _update {
@@ -64,6 +88,7 @@ typedef struct _update {
   unsigned int channel_id;
   unsigned int total_data_len;
   unsigned int flags;
+  unsigned int quality;
 } update;
 
 

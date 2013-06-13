@@ -2,6 +2,7 @@
  * Copyright (C) 2011-2012 Ulteo SAS
  * http://www.ulteo.com
  * Author David LECHEVALIER <david@ulteo.com> 2011, 2012
+ * Author Vincent ROULLIER <vincent.roullier@ulteo.com> 2012, 2013
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -125,6 +126,18 @@ struct xrdp_client_info
   char user_channel_plugin[255];
   long static_bandwidth;
   int static_rtt;
+  bool use_video_detection;
+  int video_detection_fps;
+  int video_detection_maxfps;
+  int video_detection_updatetime;
+  bool video_display_borders;
+  int video_display_fps;
+  bool use_subtiling;
+  bool use_progressive_display;
+  int progressive_display_nb_level;
+  int progressive_display_scale;
+  int progressive_display_maxfps;
+  int progressive_display_minfps;
   struct list* channel_priority;
   bw_limit_list* channels_bw_limit;
   int order_packet_size;
@@ -183,6 +196,7 @@ struct xrdp_session
   unsigned int average_RTT;
   unsigned int base_RTT;
   unsigned int bandwidth;
+  int next_request_time;
 };
 
 struct xrdp_session* DEFAULT_CC

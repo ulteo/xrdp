@@ -32,5 +32,7 @@ struct ip_image* ip_image_create();
 void ip_image_delete(struct ip_image* self);
 void ip_image_merge(struct ip_image* self, int x, int y, int w, int h, char* data);
 void ip_image_crop(struct ip_image* self, int x, int y, int cx, int cy, char* out);
+int ip_image_mean(char* data, int x, int y, int x_size, int y_size, int w, int h, int bpp);
+void ip_image_subsampling(char* data, int w, int h, int bpp, int scale, int quality, char* out);
 
 #endif // _IP_IMAGE_H

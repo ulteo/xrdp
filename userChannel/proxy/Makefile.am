@@ -9,6 +9,7 @@ AM_CFLAGS = \
 INCLUDES = \
   -I$(top_srcdir) \
   -I$(top_srcdir)/common \
+  -I$(top_srcdir)/userChannel/ip \
   -I$(top_srcdir)/userChannel/abstract
 
 pkglib_LTLIBRARIES = \

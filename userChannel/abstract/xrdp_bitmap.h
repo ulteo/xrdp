@@ -2,6 +2,7 @@
  * Copyright (C) 2011-2012 Ulteo SAS
  * http://www.ulteo.com
  * Author David LECHEVALIER <david@ulteo.com> 2011, 2012
+ * Author Vincent ROULLIER <vincent.roullier@ulteo.com> 2013
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -94,6 +95,9 @@ struct xrdp_bitmap
   int item_height;
   /* crc */
   int crc;
+  /* coords */
+  long *coords;
+  int srcX, srcY;
 };
 
 
@@ -124,6 +128,8 @@ xrdp_bitmap_compare(struct xrdp_bitmap* self, struct xrdp_bitmap* b);
 int APP_CC
 xrdp_bitmap_compare_with_crc(struct xrdp_bitmap* self, struct xrdp_bitmap* b);
 int APP_CC
+xrdp_bitmap_compare_subtile_with_crc(struct xrdp_bitmap* self, struct xrdp_bitmap* b);
+int APP_CC
 xrdp_bitmap_invalidate(struct xrdp_bitmap* self, struct xrdp_rect* rect);
 int APP_CC
 xrdp_bitmap_def_proc(struct xrdp_bitmap* self, int msg, int param1, int param2);
@@ -140,5 +146,11 @@ xrdp_bitmap_get_screen_clip(struct xrdp_bitmap* self,
                             struct xrdp_painter* painter,
                             struct xrdp_rect* rect,
                             int* dx, int* dy);
+int APP_CC
+xrdp_bitmap_add_coords(struct xrdp_bitmap* self, int x, int y);
+int APP_CC
+xrdp_bitmap_is_contained_by(struct xrdp_bitmap* self, struct xrdp_bitmap* other, int* x, int* y);
+int APP_CC
+xrdp_bitmap_compare_sub_tile(struct xrdp_bitmap* self, struct xrdp_bitmap* other, int x, int y);
 
 #endif // XRDP_BITMAP_H

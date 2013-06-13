@@ -21,10 +21,48 @@
 #include <abstract.h>
 #include "userChannel.h"
 #include "xrdp_mm.h"
-
+#include "xrdp_wm.h"
+#include "fifo.h"
+#include "quality_params.h"
+#include "progressive_display.h"
+#include "video_detection.h"
+#include "quality_params.h"
+#include "funcs.h"
 
 extern struct userChannel* u;
 
+
+/******************************************************************************/
+int DEFAULT_CC
+lib_userChannel_mod_start(struct userChannel* u, int w, int h, int bpp)
+{
+  LIB_DEBUG(u, "lib_userChannel_mod_start");
+
+  u->server_width = w;
+  u->server_height = h;
+  u->server_bpp = bpp;
+  int res = false;
+  struct xrdp_wm* wm = (struct xrdp_wm*) u->wm;
+  u->desktop = xrdp_screen_create(u->server_width, u->server_height, u->server_bpp, wm->client_info);
+  u->q_params = (struct quality_params*) quality_params_create(wm->client_info);
+  res = u->mod->mod_start(u->mod, w, h, bpp);
+
+  return res;
+}
+
+/******************************************************************************/
+int DEFAULT_CC
+lib_userChannel_mod_end(struct userChannel* u)
+{
+  LIB_DEBUG(u, "lib_userChannel_mod_end");
+  if (u->mod)
+  {
+    u->mod->mod_end(u->mod);
+  }
+  xrdp_screen_delete(u->desktop);
+  quality_params_delete(u->q_params);
+  return 0;
+}
 
 /*****************************************************************************/
 void update_add(update* up)
@@ -100,7 +138,37 @@ lib_userChannel_server_paint_rect(struct xrdp_mod* mod, int x, int y, int cx, in
 {
   if (u)
   {
-    xrdp_screen_update_desktop(u->desktop, x, y, cx, cy, data, width, height, srcx, srcy);
+    struct xrdp_wm* wm = (struct xrdp_wm*) u->wm;
+    struct xrdp_cache* cache = (struct xrdp_cache*) wm->cache;
+    struct quality_params* q_params = (struct quality_params*) u->q_params;
+    struct xrdp_screen* self = u->desktop;
+    struct update_rect* current_urect;
+    unsigned int quality = (wm->client_info->use_progressive_display) ? wm->client_info->progressive_display_nb_level - 1 : 0;
+    if (q_params->use_video_detection)
+    {
+      video_detection_update(u->desktop, x, y, cx, cy, 0);
+    }
+    else
+    {
+      current_urect = (struct update_rect*) g_malloc(sizeof(struct update_rect), 0);
+      current_urect->quality = 0;
+      current_urect->quality_already_send = -1;
+      current_urect->rect = (struct xrdp_rect*) g_malloc(sizeof(struct xrdp_rect), 0);
+      current_urect->rect->left = x;
+      current_urect->rect->top = y;
+      current_urect->rect->right = x + cx;
+      current_urect->rect->bottom = y + cy;
+      fifo_push(u->desktop->candidate_update_rects, current_urect);
+    }
+
+    if (wm->client_info->use_progressive_display)
+    {
+      progressive_display_add_rect(self, x, y, cx, cy, data, width, height, srcx, srcy);
+	}
+    else
+    {
+      xrdp_screen_update_desktop(u->desktop, x, y, cx, cy, data, width, height, srcx, srcy);
+    }
   }
   return 0;
 }
@@ -361,3 +429,63 @@ lib_userChannel_server_send_to_channel(struct xrdp_mod* mod, int channel_id,
   return 0;
 }
 
+/******************************************************************************/
+/* return error */
+int DEFAULT_CC
+lib_userChannel_update_screen(struct userChannel* u)
+{
+  struct xrdp_screen* desktop = u->desktop;
+  quality_params_prepare_data(u->q_params, u->desktop, u);
+  return 0;
+}
+
+/******************************************************************************/
+/* return error */
+int DEFAULT_CC
+lib_userChannel_update(struct userChannel* u, long * t0)
+{
+  int i;
+  struct quality_params* q_params = (struct quality_params*) u->q_params;
+  if (q_params->use_video_detection)
+  {
+    int t1 = g_time3();
+    if ((t1 - *t0) > u->desktop->client_info->video_detection_updatetime)
+    {
+      /* // ici */
+      for (i = u->desktop->candidate_video_regs->count-1 ; i >= 0; i--)
+      {
+        struct video_reg* tmp = (struct video_reg*) list_get_item(u->desktop->candidate_video_regs, i);
+        tmp->nb_update-= 5;
+      }
+      for (i = u->desktop->candidate_video_regs->count-1 ; i >= 0; i--)
+      {
+        struct video_reg* tmp = (struct video_reg*) list_get_item(u->desktop->candidate_video_regs, i);
+        int Bpp = (u->desktop->bpp + 7) / 8;
+        if (Bpp == 3) Bpp = 4;
+        if (tmp->nb_update <= 0)
+        {
+          update* up;
+          up = g_malloc(sizeof(update), 1);
+          up->order_type = paint_rect;
+          up->x = tmp->rect->left;
+          up->y = tmp->rect->top;
+          int w = rect_width(tmp->rect);
+          int h = rect_height(tmp->rect);
+          up->cx = w;
+          up->cy = h;
+          up->width = w;
+          up->height = h;
+          up->srcx = 0;
+          up->srcy = 0;
+          up->data_len = up->cx * up->cy * Bpp;
+          up->data = g_malloc(up->data_len, 0);
+          ip_image_crop(u->desktop->screen, up->x, up->y, up->cx, up->cy, up->data);
+          list_add_item(u->current_update_list, (tbus) up);
+          list_remove_item(u->desktop->candidate_video_regs, i);
+        }
+      }
+      *t0 = g_time3();
+    }
+  }
+  return 0;
+}

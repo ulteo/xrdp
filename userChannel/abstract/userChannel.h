@@ -2,6 +2,7 @@
  * Copyright (C) 2012-2013 userChannel SAS
  * http://www.ulteo.com
  * Author David LECHEVALIER <david@ulteo.com> 2012,2013
+ * Author Vincent ROULLIER <vincent.roullier@ulteo.com> 2013
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -56,7 +57,7 @@ struct userChannel
   int (*server_screen_blt)(struct userChannel* v, int x, int y, int cx, int cy,
                            int srcx, int srcy);
   int (*server_paint_rect)(struct userChannel* v, int x, int y, int cx, int cy,
-                           char* data, int width, int height, int srcx, int srcy);
+                           char* data, int width, int height, int srcx, int srcy, int quality);
   int (*server_set_cursor)(struct userChannel* v, int x, int y, char* data, char* mask);
   int (*server_palette)(struct userChannel* v, int* palette);
   int (*server_msg)(struct userChannel* v, char* msg, int code);
@@ -133,6 +134,7 @@ struct userChannel
   int rtt;
   int framerate;
   unsigned last_update_time;
+  long q_params;
   struct xrdp_screen* desktop;
 };
 
@@ -155,6 +157,10 @@ int DEFAULT_CC
 lib_userChannel_mod_connect(struct userChannel* u);
 void DEFAULT_CC
 lib_userChannel_set_network_stat(struct userChannel* u, long bandwidth, int rtt);
+int DEFAULT_CC
+lib_userChannel_update_screen(struct userChannel* u);
+int DEFAULT_CC
+lib_userChannel_update(struct userChannel* u, long *t);
 
 
 

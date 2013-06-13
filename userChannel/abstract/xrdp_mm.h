@@ -2,6 +2,7 @@
  * Copyright (C) 2011-2013 Ulteo SAS
  * http://www.ulteo.com
  * Author David LECHEVALIER <david@ulteo.com> 2011, 2013
+ * Author Vincent ROULLIER <vincent.roullier@ulteo.com> 2013
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -49,7 +50,7 @@ struct xrdp_mod
   int (*server_screen_blt)(struct xrdp_mod* v, int x, int y, int cx, int cy,
                            int srcx, int srcy);
   int (*server_paint_rect)(struct xrdp_mod* v, int x, int y, int cx, int cy,
-                           char* data, int width, int height, int srcx, int srcy);
+                           char* data, int width, int height, int srcx, int srcy, int quality);
   int (*server_set_pointer)(struct xrdp_mod* v, int x, int y, char* data, char* mask);
   int (*server_palette)(struct xrdp_mod* v, int* palette);
   int (*server_msg)(struct xrdp_mod* v, char* msg, int code);
@@ -150,7 +151,9 @@ server_fill_rect(struct userChannel* mod, int x, int y, int cx, int cy);
 int DEFAULT_CC
 server_screen_blt(struct userChannel* mod, int x, int y, int cx, int cy, int srcx, int srcy);
 int DEFAULT_CC
-server_paint_rect(struct userChannel* mod, int x, int y, int cx, int cy, char* data, int width, int height, int srcx, int srcy);
+server_paint_update(struct userChannel* mod, int x, int y, int cx, int cy, char* data);
+int DEFAULT_CC
+server_paint_rect(struct userChannel* mod, int x, int y, int cx, int cy, char* data, int width, int height, int srcx, int srcy, int quality);
 int DEFAULT_CC
 server_set_pointer(struct userChannel* mod, int x, int y, char* data, char* mask);
 int DEFAULT_CC

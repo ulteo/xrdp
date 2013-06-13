@@ -2,6 +2,7 @@
  * Copyright (C) 2011 Ulteo SAS
  * http://www.ulteo.com
  * Author David LECHEVALIER <david@ulteo.com> 2011
+ * Author Vincent ROULLIER <vincent.roullier@ulteo.com> 2013
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -73,6 +74,14 @@ xrdp_cache_create(struct xrdp_wm* owner,
   self->bitmap_cache_persist_enable = client_info->bitmap_cache_persist_enable;
   self->bitmap_cache_version = client_info->bitmap_cache_version;
   self->pointer_cache_entries = client_info->pointer_cache_entries;
+  if (client_info->use_subtiling)
+  {
+      xrdp_bitmap_compare_ptr = xrdp_bitmap_compare_subtile_with_crc;
+  }
+  else
+  {
+      xrdp_bitmap_compare_ptr = xrdp_bitmap_compare_with_crc;
+  }
   return self;
 }
 
@@ -156,7 +165,7 @@ xrdp_cache_reset(struct xrdp_cache* self,
 /*****************************************************************************/
 /* returns cache id */
 int APP_CC
-xrdp_cache_add_bitmap(struct xrdp_cache* self, struct xrdp_bitmap* bitmap)
+xrdp_cache_add_bitmap(struct xrdp_cache* self, struct xrdp_bitmap* bitmap, int quality)
 {
   int i;
   int j;
@@ -166,6 +175,7 @@ xrdp_cache_add_bitmap(struct xrdp_cache* self, struct xrdp_bitmap* bitmap)
   int bmp_size;
   int e;
   int Bpp;
+  bool is_already_send = true;
 
   e = bitmap->width % 4;
   if (e != 0)
@@ -173,6 +183,7 @@ xrdp_cache_add_bitmap(struct xrdp_cache* self, struct xrdp_bitmap* bitmap)
     e = 4 - e;
   }
   Bpp = (bitmap->bpp + 7) / 8;
+  if (Bpp == 3) Bpp = 4;
   bmp_size = (bitmap->width + e) * bitmap->height * Bpp;
   self->bitmap_stamp++;
   /* look for match */
@@ -182,15 +193,24 @@ xrdp_cache_add_bitmap(struct xrdp_cache* self, struct xrdp_bitmap* bitmap)
     for (j = 0; j < self->cache1_entries; j++)
     {
 #ifdef USE_CRC
-      if (xrdp_bitmap_compare_with_crc(self->bitmap_items[i][j].bitmap, bitmap))
+      if (xrdp_bitmap_compare_ptr(self->bitmap_items[i][j].bitmap, bitmap))
 #else
       if (xrdp_bitmap_compare(self->bitmap_items[i][j].bitmap, bitmap))
 #endif
       {
-        self->bitmap_items[i][j].stamp = self->bitmap_stamp;
-        DEBUG(("found bitmap at %d %d", i, j));
-        xrdp_bitmap_delete(bitmap);
-        return MAKELONG(j, i);
+    	  if (self->bitmap_items[i][j].quality <= quality)
+    	  {
+    		  self->bitmap_items[i][j].stamp = self->bitmap_stamp;
+    		  DEBUG(("found bitmap at %d %d", i, j));
+    		  xrdp_bitmap_delete(bitmap);
+    		  return MAKELONG(j, i);
+    	  }
+    	  else
+    	  {
+    		  is_already_send = false;
+    		  cache_id = i;
+    		  cache_idx = j;
+    	  }
       }
     }
   }
@@ -200,15 +220,24 @@ xrdp_cache_add_bitmap(struct xrdp_cache* self, struct xrdp_bitmap* bitmap)
     for (j = 0; j < self->cache2_entries; j++)
     {
 #ifdef USE_CRC
-      if (xrdp_bitmap_compare_with_crc(self->bitmap_items[i][j].bitmap, bitmap))
+      if (xrdp_bitmap_compare_ptr(self->bitmap_items[i][j].bitmap, bitmap))
 #else
       if (xrdp_bitmap_compare(self->bitmap_items[i][j].bitmap, bitmap))
 #endif
       {
-        self->bitmap_items[i][j].stamp = self->bitmap_stamp;
-        DEBUG(("found bitmap at %d %d", i, j));
-        xrdp_bitmap_delete(bitmap);
-        return MAKELONG(j, i);
+    	  if (self->bitmap_items[i][j].quality <= quality)
+    	  {
+    		  self->bitmap_items[i][j].stamp = self->bitmap_stamp;
+    		  DEBUG(("found bitmap at %d %d", i, j));
+    		  xrdp_bitmap_delete(bitmap);
+    		  return MAKELONG(j, i);
+    	  }
+    	  else
+    	  {
+              is_already_send = false;
+              cache_id = i;
+              cache_idx = j;
+    	  }
       }
     }
   }
@@ -218,15 +247,24 @@ xrdp_cache_add_bitmap(struct xrdp_cache* self, struct xrdp_bitmap* bitmap)
     for (j = 0; j < self->cache3_entries; j++)
     {
 #ifdef USE_CRC
-      if (xrdp_bitmap_compare_with_crc(self->bitmap_items[i][j].bitmap, bitmap))
+      if (xrdp_bitmap_compare_ptr(self->bitmap_items[i][j].bitmap, bitmap))
 #else
       if (xrdp_bitmap_compare(self->bitmap_items[i][j].bitmap, bitmap))
 #endif
       {
-        self->bitmap_items[i][j].stamp = self->bitmap_stamp;
-        DEBUG(("found bitmap at %d %d", i, j));
-        xrdp_bitmap_delete(bitmap);
-        return MAKELONG(j, i);
+    	  if (self->bitmap_items[i][j].quality <= quality)
+    	  {
+    		  self->bitmap_items[i][j].stamp = self->bitmap_stamp;
+    		  DEBUG(("found bitmap at %d %d", i, j));
+    		  xrdp_bitmap_delete(bitmap);
+    		  return MAKELONG(j, i);
+    	  }
+    	  else
+    	  {
+    		  is_already_send = false;
+    		  cache_id = i;
+    		  cache_idx = j;
+    	  }
       }
     }
   }
@@ -234,46 +272,49 @@ xrdp_cache_add_bitmap(struct xrdp_cache* self, struct xrdp_bitmap* bitmap)
   {
     g_writeln("error in xrdp_cache_add_bitmap, too big(%d)", bmp_size);
   }
-  /* look for oldest */
-  cache_id = 0;
-  cache_idx = 0;
-  oldest = 0x7fffffff;
-  if (bmp_size <= self->cache1_size)
+  if (is_already_send)
   {
-    i = 0;
-    for (j = 0; j < self->cache1_entries; j++)
+    /* look for oldest */
+    cache_id = 0;
+    cache_idx = 0;
+    oldest = 0x7fffffff;
+    if (bmp_size <= self->cache1_size)
     {
-      if (self->bitmap_items[i][j].stamp < oldest)
+      i = 0;
+      for (j = 0; j < self->cache1_entries; j++)
       {
-        oldest = self->bitmap_items[i][j].stamp;
-        cache_id = i;
-        cache_idx = j;
+        if (self->bitmap_items[i][j].stamp < oldest)
+        {
+          oldest = self->bitmap_items[i][j].stamp;
+          cache_id = i;
+          cache_idx = j;
+        }
       }
     }
-  }
-  else if (bmp_size <= self->cache2_size)
-  {
-    i = 1;
-    for (j = 0; j < self->cache2_entries; j++)
+    else if (bmp_size <= self->cache2_size)
     {
-      if (self->bitmap_items[i][j].stamp < oldest)
+      i = 1;
+      for (j = 0; j < self->cache2_entries; j++)
       {
-        oldest = self->bitmap_items[i][j].stamp;
-        cache_id = i;
-        cache_idx = j;
+        if (self->bitmap_items[i][j].stamp < oldest)
+        {
+          oldest = self->bitmap_items[i][j].stamp;
+          cache_id = i;
+          cache_idx = j;
+        }
       }
     }
-  }
-  else if (bmp_size <= self->cache3_size)
-  {
-    i = 2;
-    for (j = 0; j < self->cache3_entries; j++)
+    else if (bmp_size <= self->cache3_size)
     {
-      if (self->bitmap_items[i][j].stamp < oldest)
+      i = 2;
+      for (j = 0; j < self->cache3_entries; j++)
       {
-        oldest = self->bitmap_items[i][j].stamp;
-        cache_id = i;
-        cache_idx = j;
+        if (self->bitmap_items[i][j].stamp < oldest)
+        {
+          oldest = self->bitmap_items[i][j].stamp;
+          cache_id = i;
+          cache_idx = j;
+        }
       }
     }
   }
@@ -282,11 +323,23 @@ xrdp_cache_add_bitmap(struct xrdp_cache* self, struct xrdp_bitmap* bitmap)
   xrdp_bitmap_delete(self->bitmap_items[cache_id][cache_idx].bitmap);
   self->bitmap_items[cache_id][cache_idx].bitmap = bitmap;
   self->bitmap_items[cache_id][cache_idx].stamp = self->bitmap_stamp;
+  self->bitmap_items[cache_id][cache_idx].quality = quality;
+  char* data = g_malloc(bmp_size, 1);
+  memcpy(data, bitmap->data, bitmap->width * bitmap->height * Bpp);
+
+  if (self->session->client_info->use_progressive_display)
+  {
+    if (quality != 0)
+    {
+      ip_image_subsampling(bitmap->data, bitmap->width, bitmap->height, bitmap->bpp, quality, self->session->client_info->progressive_display_scale, data);
+    }
+  }
 
   if (self->session->client_info->image_policy_ptr)
       self->session->client_info->image_policy_ptr(self->session, bitmap->width,
                                                    bitmap->height, bitmap->bpp,
-                                                   bitmap->data, cache_id, cache_idx);
+                                                   data, cache_id, cache_idx);
+  g_free(data);
   return MAKELONG(cache_idx, cache_id);
 }
 

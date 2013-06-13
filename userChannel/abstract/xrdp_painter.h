@@ -52,6 +52,7 @@ struct xrdp_bitmap_item
 {
   int stamp;
   struct xrdp_bitmap* bitmap;
+  int quality;
 };
 
 struct xrdp_char_item
@@ -115,7 +116,7 @@ xrdp_painter_copy(struct xrdp_painter* self,
                   struct xrdp_bitmap* src,
                   struct xrdp_bitmap* dst,
                   int x, int y, int cx, int cy,
-                  int srcx, int srcy);
+                  int srcx, int srcy, int quality);
 int APP_CC
 xrdp_painter_line(struct xrdp_painter* self,
                   struct xrdp_bitmap* bitmap,

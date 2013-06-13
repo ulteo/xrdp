@@ -25,9 +25,17 @@
 
 int list_add_rect(struct list* l, int left, int top, int right, int bottom);
 int APP_CC
+rect_height(struct xrdp_rect* self);
+int APP_CC
+rect_width(struct xrdp_rect* self);
+int APP_CC
+rect_adjacency(struct xrdp_rect* in1, struct xrdp_rect* in2);
+int APP_CC
 rect_equal(struct xrdp_rect* in1, struct xrdp_rect* in2);
 int APP_CC
 rect_union(struct xrdp_rect* in1, struct xrdp_rect* in2, struct list* out);
+int APP_CC
+rect_substract(struct xrdp_rect* in1, struct xrdp_rect* in2, struct list* out);
 int APP_CC
 rect_contains_pt(struct xrdp_rect* in, int x, int y);
 int APP_CC

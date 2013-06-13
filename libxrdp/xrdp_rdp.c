@@ -2,7 +2,7 @@
  * Copyright (C) 2011-2013 Ulteo SAS
  * http://www.ulteo.com
  * Author David LECHEVALIER <david@ulteo.com> 2011, 2012, 2013
- * Author Vincent Roullier <vincent.roullier@ulteo.com> 2012
+ * Author Vincent Roullier <vincent.roullier@ulteo.com> 2012, 2013
  * Author Thomas MOUTON <thomas@ulteo.com> 2012
  * Author David PHAM-VAN <d.pham-van@ulteo.com> 2012
  * Author James B. MacLean <macleajb@ednet.ns.ca> 2012
@@ -273,6 +273,66 @@ xrdp_rdp_read_config(struct xrdp_client_info* client_info)
       client_info->static_rtt = g_atoi(value);
       printf("static round trip: %i\n", client_info->static_rtt);
     }
+    else if (g_strcasecmp(item, "use_video_detection") == 0)
+    {
+      client_info->use_video_detection = log_text2bool(value);
+      printf("Use video detection : %i \n", client_info->use_video_detection);
+    }
+    else if (g_strcasecmp(item, "video_detection_fps") == 0)
+    {
+      client_info->video_detection_fps = g_atoi(value);
+      printf("Video detection fps : %i \n", client_info->video_detection_fps);
+    }
+    else if (g_strcasecmp(item, "video_detection_maxfps") == 0)
+    {
+      client_info->video_detection_maxfps = g_atoi(value);
+      printf("Video detection max fps : %i \n", client_info->video_detection_maxfps);
+    }
+    else if (g_strcasecmp(item, "video_detection_updatetime") == 0)
+    {
+      client_info->video_detection_updatetime = g_atoi(value);
+      printf("Video detection update_time : %i \n", client_info->video_detection_updatetime);
+    }
+    else if (g_strcasecmp(item, "video_display_borders") == 0)
+    {
+        client_info->video_display_borders = log_text2bool(value);
+        printf("Video display borders : %i \n", client_info->video_display_borders);
+    }
+    else if (g_strcasecmp(item, "video_display_fps") == 0)
+    {
+        client_info->video_display_fps = g_atoi(value);
+        printf("Video display fps : %i \n", client_info->video_display_fps);
+    }
+    else if (g_strcasecmp(item, "use_subtiling") == 0)
+    {
+      client_info->use_subtiling = log_text2bool(value);
+      printf("Use subtiling : %i \n", client_info->use_subtiling);
+    }
+    else if (g_strcasecmp(item, "use_progressive_display") == 0)
+    {
+        client_info->use_progressive_display = log_text2bool(value);
+        printf("Use progressive display : %i \n", client_info->use_progressive_display);
+    }
+    else if (g_strcasecmp(item, "progressive_display_nb_level") == 0)
+    {
+        client_info->progressive_display_nb_level = g_atoi(value);
+        printf("Nb level in progressive display : %i \n", client_info->progressive_display_nb_level);
+    }
+    else if (g_strcasecmp(item, "progressive_display_scale") == 0)
+    {
+        client_info->progressive_display_scale = g_atoi(value);
+        printf("progressive display scale factor : %i \n", client_info->progressive_display_scale);
+    }
+    else if (g_strcasecmp(item, "progressive_display_maxfps") == 0)
+    {
+      client_info->progressive_display_maxfps = g_atoi(value);
+      printf("progressive display max fps : %i \n", client_info->progressive_display_maxfps);
+    }
+    else if (g_strcasecmp(item, "progressive_display_minfps") == 0)
+    {
+      client_info->progressive_display_minfps = g_atoi(value);
+      printf("progressive display in fps : %i \n", client_info->progressive_display_minfps);
+    }
     else if (g_strcasecmp(item, "channel_priority") == 0)
     {
       g_strtrim(value, 4);
@@ -335,6 +395,19 @@ xrdp_rdp_create(struct xrdp_session* session, struct trans* trans)
   self->client_info.channel_priority = g_str_split_to_list(DEFAULT_CHANNEL_PRIORITY, ',');
   self->client_info.static_bandwidth = 0;
   self->client_info.static_rtt = 0;
+  self->client_info.use_video_detection = false;
+  self->client_info.video_detection_fps = 15;
+  self->client_info.video_detection_maxfps = 30;
+  self->client_info.video_detection_updatetime = 400;
+  self->client_info.video_display_borders = false;
+  self->client_info.video_display_fps = 0;
+  self->client_info.use_subtiling = false;
+  self->client_info.use_progressive_display = false;
+  self->client_info.progressive_display_nb_level = 3;
+  self->client_info.progressive_display_scale = 4;
+  self->client_info.progressive_display_maxfps = 24;
+  self->client_info.progressive_display_minfps = 5;
+  self->client_info.use_subtiling = false;
   self->client_info.channels_bw_limit = xrdp_qos_create_bw_limit();
   self->client_info.order_packet_size = 0;
   xrdp_rdp_read_config(&self->client_info);

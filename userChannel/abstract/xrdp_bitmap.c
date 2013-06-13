@@ -2,6 +2,7 @@
  * Copyright (C) 2011-2012 Ulteo SAS
  * http://www.ulteo.com
  * Author David LECHEVALIER <david@ulteo.com> 2011, 2012
+ * Author Vincent ROULLIER <vincent.roullier@ulteo.com> 2013
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -141,6 +142,9 @@ xrdp_bitmap_create(int width, int height, int bpp,
     self->data_list->auto_free = 1;
   }
   self->wm = wm;
+  self->coords = 0;
+  self->srcX = 0;
+  self->srcY = 0;
   return self;
 }
 
@@ -160,6 +164,9 @@ xrdp_bitmap_create_with_data(int width, int height,
   self->data = data;
   self->do_not_free_data = 1;
   self->wm = wm;
+  self->coords = 0;
+  self->srcX = 0;
+  self->srcY = 0;
   return self;
 }
 
@@ -246,6 +253,10 @@ xrdp_bitmap_delete(struct xrdp_bitmap* self)
     g_free(self->data);
   }
   g_free(self->caption1);
+  if (self->coords)
+  {
+      xrdp_bitmap_free_coords(self);
+  }
   g_free(self);
 }
 
@@ -920,6 +931,62 @@ xrdp_bitmap_compare_with_crc(struct xrdp_bitmap* self,
 }
 
 /*****************************************************************************/
+/* returns true if they are the same, else returns false */
+int APP_CC
+xrdp_bitmap_compare_subtile_with_crc(struct xrdp_bitmap* self,
+                                     struct xrdp_bitmap* b)
+{
+  if (self == 0)
+  {
+    return 0;
+  }
+  if (b == 0)
+  {
+    return 0;
+  }
+  if (self->bpp != b->bpp)
+  {
+    return 0;
+  }
+  if (self->width == b->width && self->height == b->height)
+  {
+      /* same size : check crc */
+      if (self->crc == b->crc)
+      {
+          if (b->coords != 0)
+          {
+              int x, y;
+              for ( x = 1 ; x <= self->coords[0] ; ++x )
+              {
+                  if ( b->coords[1] == self->coords[x] )
+                  {
+                      return 1;
+                  }
+              }
+              x = LOWORD(b->coords[1]);
+              y = HIWORD(b->coords[1]);
+
+              /* Add this new location to coord list */
+              xrdp_bitmap_add_coords(self, x, y);
+          }
+          return 1;
+      }
+      return 0;
+  }
+  else
+  {
+      /* Different size : check position */
+      int x, y;
+      if (xrdp_bitmap_is_contained_by(b, self, &x , &y) ) /* is 'b' in 'self' ? */
+      {
+          return xrdp_bitmap_compare_sub_tile(b, self, x, y); /* is data at (x,y) from 'self' == data from 'b' ? */
+      }
+      return 0;
+  }
+  return 0;
+}
+
+/*****************************************************************************/
 static int APP_CC
 xrdp_bitmap_draw_focus_box(struct xrdp_bitmap* self,
                            struct xrdp_painter* painter,
@@ -1188,7 +1255,7 @@ xrdp_bitmap_invalidate(struct xrdp_bitmap* self, struct xrdp_rect* rect)
   else if (self->type == WND_TYPE_IMAGE) /* 4 */
   {
     xrdp_painter_copy(painter, self, self, 0, 0, self->width,
-                      self->height, 0, 0);
+                      self->height, 0, 0, 0);
   }
   else if (self->type == WND_TYPE_EDIT) /* 5 */
   {
@@ -1767,4 +1834,121 @@ xrdp_bitmap_get_screen_clip(struct xrdp_bitmap* self,
     *dy = ldy;
   }
   return 0;
+}
+
+/*****************************************************************************/
+void xrdp_bitmap_free_coords(struct xrdp_bitmap* self)
+{
+  if (self->coords)
+    g_free(self->coords);
+
+  self->coords = 0;
+}
+
+/*****************************************************************************/
+int APP_CC
+xrdp_bitmap_add_coords(struct xrdp_bitmap* self, int x, int y)
+{
+    long * tmp;
+    if (self->coords == 0)
+    {
+        tmp = g_malloc(sizeof(long) * 2, 0);
+        if (tmp == 0) return 0;
+        self->coords = tmp;
+        self->coords[0] = 1;
+    }
+    else
+    {
+        tmp = realloc(self->coords, (self->coords[0] * 2) * sizeof(long));
+        if (tmp == 0) return 0;
+        self->coords = tmp;
+        self->coords[0]++;
+    }
+    self->coords[self->coords[0]] = MAKELONG(x, y);
+    return 1;
+}
+
+/*****************************************************************************/
+ int APP_CC
+xrdp_bitmap_is_contained_by(struct xrdp_bitmap* self, struct xrdp_bitmap* other, int *x, int *y) /* self is contained by other ? */
+{
+    int i, j;
+    int selfX, selfY, otherX, otherY;
+
+
+    if( self->coords == NULL || other->coords == NULL || self->width  > other->width || self->height > other->height )
+    {
+        return 0;
+    }
+
+    for( i = 1 ; i <= self->coords[0] ; ++i )
+    {
+        selfX = LOWORD(self->coords[i]);
+        selfY = HIWORD(self->coords[i]);
+
+        for( j = 1 ; j <= other->coords[0] ; ++j )
+        {
+            otherX = LOWORD(other->coords[j]);
+            otherY = HIWORD(other->coords[j]);
+
+            if( selfX >= otherX && selfY >= otherY && selfX+self->width <= otherX+other->width && selfY+self->height <= otherY+other->height )
+            {
+                /* 'self' included in or equals 'other' */
+                if( x && y)
+                {
+                    *x = selfX-otherX;
+                    *y = selfY-otherY;
+                }
+
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+/*****************************************************************************/
+int APP_CC
+xrdp_bitmap_compare_sub_tile(struct xrdp_bitmap* self, struct xrdp_bitmap* other, int x, int y) /* compare self with subTile form other */
+{
+    int ret, size, i;
+    struct xrdp_bitmap* subTile;
+
+    /* crop part of "other" at (x, y) for self->width x self->height */
+    subTile = xrdp_bitmap_create( self->width, self->height, self->wm->screen->bpp, 0, self->wm);
+    xrdp_bitmap_copy_box_with_crc(other, subTile, x, y, self->width, self->height);
+
+    /* compare data with duff's device */
+    {
+        size = self->width * self->height * (self->bpp/8);
+        i = 0;
+        int n = (size+7)/8;
+        switch(size % 8)
+        {
+        case 0:
+            do
+            {
+                if( self->data[i] != subTile->data[i] ) { break; } ++i;
+            case 7: if( self->data[i] != subTile->data[i] ) { break; } ++i;
+            case 6: if( self->data[i] != subTile->data[i] ) { break; } ++i;
+            case 5: if( self->data[i] != subTile->data[i] ) { break; } ++i;
+            case 4: if( self->data[i] != subTile->data[i] ) { break; } ++i;
+            case 3: if( self->data[i] != subTile->data[i] ) { break; } ++i;
+            case 2: if( self->data[i] != subTile->data[i] ) { break; } ++i;
+            case 1: if( self->data[i] != subTile->data[i] ) { break; } ++i;
+            } while(--n > 0);
+        }
+    }
+
+    ret = ( i == size );
+
+    if(ret)
+    {
+        //printf("----- sub_tile found : 0x%X is contained in 0x%X at (%d, %d) \n", self, other, x, y );
+        other->srcX = x;
+        other->srcY = y;
+    }
+
+    xrdp_bitmap_delete(subTile);
+    return ret;
 }

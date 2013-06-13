@@ -554,7 +554,7 @@ xrdp_painter_copy(struct xrdp_painter* self,
                   struct xrdp_bitmap* src,
                   struct xrdp_bitmap* dst,
                   int x, int y, int cx, int cy,
-                  int srcx, int srcy)
+                  int srcx, int srcy, int quality)
 {
   struct xrdp_rect clip_rect;
   struct xrdp_rect draw_rect;
@@ -575,6 +575,8 @@ xrdp_painter_copy(struct xrdp_painter* self,
   int dsty;
   int w;
   int h;
+  int tileSrcX = 0;
+  int tileSrcY = 0;
 
   if (self == 0 || src == 0 || dst == 0)
   {
@@ -629,11 +631,21 @@ xrdp_painter_copy(struct xrdp_painter* self,
         h = MIN(64, src->height - j);
         b = xrdp_bitmap_create(w, h, self->wm->screen->bpp, 0, self->wm);
         xrdp_bitmap_copy_box_with_crc(src, b, i, j, w, h);
-        bitmap_id = xrdp_cache_add_bitmap(self->wm->cache, b);
-        cache_id = HIWORD(bitmap_id);
-        cache_idx = LOWORD(bitmap_id);
         dstx = (x + i) - srcx;
         dsty = (y + j) - srcy;
+        if (self->wm->client_info->use_subtiling)
+        {
+            xrdp_bitmap_add_coords(b, dstx, dsty);
+        }
+        bitmap_id = xrdp_cache_add_bitmap(self->wm->cache, b, quality);
+        cache_id = HIWORD(bitmap_id);
+        cache_idx = LOWORD(bitmap_id);
+        k = 0;
+        if (self->wm->client_info->use_subtiling)
+        {
+            tileSrcX = self->wm->cache->bitmap_items[cache_id][cache_idx].bitmap->srcX;
+            tileSrcY = self->wm->cache->bitmap_items[cache_id][cache_idx].bitmap->srcY;
+        }
         k = 0;
         while (xrdp_region_get_rect(region, k, &rect1) == 0)
         {
@@ -643,15 +655,20 @@ xrdp_painter_copy(struct xrdp_painter* self,
             if (rect_intersect(&rect2, &rect1, &draw_rect))
             {
               libxrdp_orders_mem_blt(self->session, cache_id, palette_id,
-                                     dstx, dsty, w, h, self->rop, 0, 0,
+                                     dstx, dsty, w, h, self->rop, tileSrcX, tileSrcY,
                                      cache_idx, &draw_rect);
             }
           }
           k++;
         }
-        i += 64;
+        if (self->wm->client_info->use_subtiling)
+        {
+          self->wm->cache->bitmap_items[cache_id][cache_idx].bitmap->srcX = 0;
+          self->wm->cache->bitmap_items[cache_id][cache_idx].bitmap->srcY = 0;
+        }
+        i += w;
       }
-      j += 64;
+      j += h;
     }
     xrdp_region_delete(region);
   }

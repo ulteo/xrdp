@@ -4,6 +4,7 @@
  * Author James B. MacLean <macleajb@ednet.ns.ca> 2012
  * Author Alexandre CONFIANT-LATOUR <a.confiant@ulteo.com> 2013
  * Author David LECHEVALIER <david@ulteo.com> 2013
+ * Author Vincent ROULLIER <vincent.roullier@ulteo.com> 2013
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -914,14 +915,30 @@ server_screen_blt(struct userChannel* mod, int x, int y, int cx, int cy,
   wm = (struct xrdp_wm*)(mod->wm);
   p = (struct xrdp_painter*)(mod->painter);
   p->rop = 0xcc;
-  xrdp_painter_copy(p, wm->screen, wm->screen, x, y, cx, cy, srcx, srcy);
+  xrdp_painter_copy(p, wm->screen, wm->screen, x, y, cx, cy, srcx, srcy, 0);
+  return 0;
+}
+
+/*****************************************************************************/
+int DEFAULT_CC
+server_paint_update(struct userChannel* mod, int x, int y, int cx, int cy, char* data)
+{
+  struct xrdp_wm* wm;
+  struct xrdp_bitmap* b;
+  struct xrdp_painter* p;
+
+  wm = (struct xrdp_wm*)(mod->wm);
+  p = (struct xrdp_painter*)(mod->painter);
+  b = xrdp_bitmap_create_with_data(cx, cy, wm->screen->bpp, data, wm);
+  xrdp_wm_send_bitmap(wm, b, x, y, cx, cy);
+  xrdp_bitmap_delete(b);
   return 0;
 }
 
 /*****************************************************************************/
 int DEFAULT_CC
 server_paint_rect(struct userChannel* mod, int x, int y, int cx, int cy,
-                  char* data, int width, int height, int srcx, int srcy)
+                  char* data, int width, int height, int srcx, int srcy, int quality)
 {
   struct xrdp_wm* wm;
   struct xrdp_bitmap* b;
@@ -930,7 +947,7 @@ server_paint_rect(struct userChannel* mod, int x, int y, int cx, int cy,
   wm = (struct xrdp_wm*)(mod->wm);
   p = (struct xrdp_painter*)(mod->painter);
   b = xrdp_bitmap_create_with_data(width, height, wm->screen->bpp, data, wm);
-  xrdp_painter_copy(p, b, wm->screen, x, y, cx, cy, srcx, srcy);
+  xrdp_painter_copy(p, b, wm->screen, x, y, cx, cy, srcx, srcy, quality);
   xrdp_bitmap_delete(b);
   return 0;
 }
