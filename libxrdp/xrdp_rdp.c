@@ -1165,6 +1165,10 @@ xrdp_process_capset_bmpcache2(struct xrdp_rdp* self, struct stream* s,
 
   self->client_info.bitmap_cache_version = 2;
   Bpp = (self->client_info.bpp + 7) / 8;
+  if (Bpp == 3)
+  {
+    Bpp = 4;
+  }
   in_uint16_le(s, i);
   self->client_info.bitmap_cache_persist_enable = i;
   in_uint8s(s, 2); /* number of caches in set, 3 */
