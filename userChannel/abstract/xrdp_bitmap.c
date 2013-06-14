@@ -1944,7 +1944,6 @@ xrdp_bitmap_compare_sub_tile(struct xrdp_bitmap* self, struct xrdp_bitmap* other
 
     if(ret)
     {
-        //printf("----- sub_tile found : 0x%X is contained in 0x%X at (%d, %d) \n", self, other, x, y );
         other->srcX = x;
         other->srcY = y;
     }

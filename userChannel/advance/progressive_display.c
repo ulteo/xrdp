@@ -70,10 +70,6 @@ void progressive_display_add_rect(struct xrdp_screen * self, int x, int y, int c
 	struct list* l_tmp = list_create();
 	l_tmp->auto_free = 1;
 	ip_image_merge(self->screen, x, y, w, h, data);
-//	char name[128];
-//	sprintf(name, "img3/image_%03i.png", count);
-//	ip_png_manager_save_png(name, self->screen->data, self->width, self->height, 16, 3);
-//	count++;
 
 	bool no_inter = true;
 	while (!fifo_is_empty(self->candidate_update_rects)) {
@@ -152,11 +148,9 @@ void progressive_display_add_update_order(struct xrdp_screen* self, struct list*
 			up->data = g_malloc(up->data_len, 0);
 			ip_image_crop(desktop, up->x, up->y, up->cx, up->cy, up->data);
 			list_add_item(update_list, (tbus) up);
-			//list_remove_item(p_display, i);
 			if (cur->quality != 0)
 			{
 				struct update_rect* tmp = (struct update_rect*) g_malloc(sizeof(struct update_rect), 0);
-				//			g_memcpy(tmp, cur, sizeof(struct update_rect));
 				tmp->quality = 0;
 				tmp->quality_already_send = cur->quality;
 				tmp->rect = (struct xrdp_rect*) g_malloc(sizeof(struct xrdp_rect), 0);
@@ -166,11 +160,9 @@ void progressive_display_add_update_order(struct xrdp_screen* self, struct list*
 				tmp->rect->bottom = cur->rect->bottom;
 				fifo_push(self->candidate_update_rects, tmp);
 			}
-//			list_add_item(self->update_rects, tmp);
 			list_remove_item(p_display, i);
 		}
 	}
-	//printf("%s 0x%X count %i  \n", __FUNCTION__, self->update_rects, self->update_rects->count);
 }
 
 void progressive_display_update_level(struct xrdp_screen* self, long *t0)
@@ -480,7 +472,6 @@ void progressive_display_rect_union(struct update_rect* r1, struct update_rect* 
 			in1->top <= in2->top &&
 			in1->right >= in2->right &&
 			in1->bottom >= in2->bottom) {
-//		printf("0\n");
 		if (send1 == send2)
 		{
 			list_add_progressive_display_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, send1);
@@ -497,7 +488,6 @@ void progressive_display_rect_union(struct update_rect* r1, struct update_rect* 
 			in1->right >= in2->right &&
 			in1->bottom < in2->bottom &&
 			in1->top <= in2->top) { /* partially covered(whole top) */
-//		printf("1\n");
 		if (send1 == send2)
 		{
 			list_add_progressive_display_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, send1);
@@ -515,7 +505,6 @@ void progressive_display_rect_union(struct update_rect* r1, struct update_rect* 
 			in1->bottom >= in2->bottom &&
 			in1->right < in2->right &&
 			in1->left <= in2->left) { /* partially covered(left) */
-		//printf("2\n");
 		if (send1 == send2)
 		{
 			list_add_progressive_display_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, send1);
@@ -533,7 +522,6 @@ void progressive_display_rect_union(struct update_rect* r1, struct update_rect* 
 			in1->right >= in2->right &&
 			in1->top > in2->top &&
 			in1->bottom >= in2->bottom) { /* partially covered(bottom) */
-		//printf("3\n");
 		if (send1 == send2)
 		{
 			list_add_progressive_display_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, send1);
@@ -551,7 +539,6 @@ void progressive_display_rect_union(struct update_rect* r1, struct update_rect* 
 			in1->bottom >= in2->bottom &&
 			in1->left > in2->left &&
 			in1->right >= in2->right) { /* partially covered(right) */
-		//printf("4\n");
 		if (send1 == send2)
 		{
 			list_add_progressive_display_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, send1);
@@ -569,7 +556,6 @@ void progressive_display_rect_union(struct update_rect* r1, struct update_rect* 
 			in1->top <= in2->top &&
 			in1->right < in2->right &&
 			in1->bottom < in2->bottom) { /* partially covered(top left) */
-		//printf("5\n");
 		if (send1 == send2)
 		{
 			list_add_progressive_display_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, send1);
@@ -588,7 +574,6 @@ void progressive_display_rect_union(struct update_rect* r1, struct update_rect* 
 			in1->bottom >= in2->bottom &&
 			in1->right < in2->right &&
 			in1->top > in2->top) { /* partially covered(bottom left) */
-		//printf("6\n");
 		if (send1 == send2)
 		{
 			list_add_progressive_display_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, send1);
@@ -607,7 +592,6 @@ void progressive_display_rect_union(struct update_rect* r1, struct update_rect* 
 			in1->right >= in2->right &&
 			in1->top <= in2->top &&
 			in1->bottom < in2->bottom) { /* partially covered(top right) */
-		//printf("7\n");
 		if (send1 == send2)
 		{
 			list_add_progressive_display_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, send1);
@@ -626,7 +610,6 @@ void progressive_display_rect_union(struct update_rect* r1, struct update_rect* 
 			in1->right >= in2->right &&
 			in1->top > in2->top &&
 			in1->bottom >= in2->bottom) { /* partially covered(bottom right) */
-		//printf("8\n");
 		if (send1 == send2)
 		{
 			list_add_progressive_display_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, send1);
@@ -645,7 +628,6 @@ void progressive_display_rect_union(struct update_rect* r1, struct update_rect* 
 			in1->top <= in2->top &&
 			in1->right < in2->right &&
 			in1->bottom >= in2->bottom) { /* 2 rects, one on each end */
-		//printf("9\n");
 		if (send1 == send2)
 		{
 			list_add_progressive_display_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, send2);
@@ -664,7 +646,6 @@ void progressive_display_rect_union(struct update_rect* r1, struct update_rect* 
 			in1->top > in2->top &&
 			in1->right >= in2->right &&
 			in1->bottom < in2->bottom) { /* 2 rects, one on each end */
-		//printf("10\n");
 		if (send1 == send2)
 		{
 			list_add_progressive_display_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, send1);
@@ -683,7 +664,6 @@ void progressive_display_rect_union(struct update_rect* r1, struct update_rect* 
 			in1->right < in2->right &&
 			in1->top <= in2->top &&
 			in1->bottom < in2->bottom) { /* partially covered(top) */
-		//printf("11\n");
 		if (send1 == send2)
 		{
 			list_add_progressive_display_rect(out, in2->left, in2->top, in2->right, in2->bottom, l2, send2);
@@ -701,7 +681,6 @@ void progressive_display_rect_union(struct update_rect* r1, struct update_rect* 
 			in1->bottom < in2->bottom &&
 			in1->left <= in2->left &&
 			in1->right < in2->right) { /* partially covered(left) */
-		//printf("12\n");
 		if (send1 == send2)
 		{
 			list_add_progressive_display_rect(out, in2->left, in2->top, in2->right, in2->bottom, l2, send2);
@@ -719,7 +698,6 @@ void progressive_display_rect_union(struct update_rect* r1, struct update_rect* 
 			in1->right < in2->right &&
 			in1->bottom >= in2->bottom &&
 			in1->top > in2->top) { /* partially covered(bottom) */
-		//printf("13\n");
 		if (send1 == send2)
 		{
 			list_add_progressive_display_rect(out, in2->left, in2->top, in2->right, in2->bottom, l2, send2);
@@ -737,7 +715,6 @@ void progressive_display_rect_union(struct update_rect* r1, struct update_rect* 
 			in1->bottom < in2->bottom &&
 			in1->right >= in2->right &&
 			in1->left > in2->left) { /* partially covered(right) */
-		//printf("14\n");
 		if (send1 == send2)
 		{
 			list_add_progressive_display_rect(out, in2->left, in2->top, in2->right, in2->bottom, l2, send2);
@@ -755,7 +732,6 @@ void progressive_display_rect_union(struct update_rect* r1, struct update_rect* 
 			in1->top > in2->top &&
 			in1->right < in2->right &&
 			in1->bottom < in2->bottom) { /* totally contained, 4 rects */
-		//printf("15\n");
 		if (send1 == send2)
 		{
 			list_add_progressive_display_rect(out, in2->left, in2->top, in2->right, in2->bottom, l2, send2);
@@ -769,5 +745,4 @@ void progressive_display_rect_union(struct update_rect* r1, struct update_rect* 
 			list_add_progressive_display_rect(out, in2->left, in1->bottom, in2->right, in2->bottom, l2, send2);
 		}
 	}
-//	//printf("16\n");
 }

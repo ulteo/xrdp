@@ -183,7 +183,6 @@ int update_rect_union(struct update_rect* f1, struct update_rect* f2, struct lis
 			in1->top <= in2->top &&
 			in1->right >= in2->right &&
 			in1->bottom >= in2->bottom) {
-		//		printf("0\n");
 		if (send1 == send2)
 		{
 			list_add_update_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, send1);
@@ -200,7 +199,6 @@ int update_rect_union(struct update_rect* f1, struct update_rect* f2, struct lis
 			in1->right >= in2->right &&
 			in1->bottom < in2->bottom &&
 			in1->top <= in2->top) { /* partially covered(whole top) */
-		//		printf("1\n");
 		if (send1 == send2)
 		{
 			list_add_update_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, send1);
@@ -218,7 +216,6 @@ int update_rect_union(struct update_rect* f1, struct update_rect* f2, struct lis
 			in1->bottom >= in2->bottom &&
 			in1->right < in2->right &&
 			in1->left <= in2->left) { /* partially covered(left) */
-		//		printf("2\n");
 		if (send1 == send2)
 		{
 			list_add_update_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, send1);
@@ -236,7 +233,6 @@ int update_rect_union(struct update_rect* f1, struct update_rect* f2, struct lis
 			in1->right >= in2->right &&
 			in1->top > in2->top &&
 			in1->bottom >= in2->bottom) { /* partially covered(bottom) */
-		//		printf("3\n");
 		if (send1 == send2)
 		{
 			list_add_update_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, send1);
@@ -254,7 +250,6 @@ int update_rect_union(struct update_rect* f1, struct update_rect* f2, struct lis
 			in1->bottom >= in2->bottom &&
 			in1->left > in2->left &&
 			in1->right >= in2->right) { /* partially covered(right) */
-		//		printf("4\n");
 		if (send1 == send2)
 		{
 			list_add_update_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, send1);
@@ -272,7 +267,6 @@ int update_rect_union(struct update_rect* f1, struct update_rect* f2, struct lis
 			in1->top <= in2->top &&
 			in1->right < in2->right &&
 			in1->bottom < in2->bottom) { /* partially covered(top left) */
-		//		printf("5\n");
 		if (send1 == send2)
 		{
 			list_add_update_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, send1);
@@ -291,7 +285,6 @@ int update_rect_union(struct update_rect* f1, struct update_rect* f2, struct lis
 			in1->bottom >= in2->bottom &&
 			in1->right < in2->right &&
 			in1->top > in2->top) { /* partially covered(bottom left) */
-		//		printf("6\n");
 		if (send1 == send2)
 		{
 			list_add_update_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, send1);
@@ -310,7 +303,6 @@ int update_rect_union(struct update_rect* f1, struct update_rect* f2, struct lis
 			in1->right >= in2->right &&
 			in1->top <= in2->top &&
 			in1->bottom < in2->bottom) { /* partially covered(top right) */
-		//		printf("7\n");
 		if (send1 == send2)
 		{
 			list_add_update_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, send1);
@@ -329,7 +321,6 @@ int update_rect_union(struct update_rect* f1, struct update_rect* f2, struct lis
 			in1->right >= in2->right &&
 			in1->top > in2->top &&
 			in1->bottom >= in2->bottom) { /* partially covered(bottom right) */
-		//		printf("8\n");
 		if (send1 == send2)
 		{
 			list_add_update_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, send1);
@@ -348,7 +339,6 @@ int update_rect_union(struct update_rect* f1, struct update_rect* f2, struct lis
 			in1->top <= in2->top &&
 			in1->right < in2->right &&
 			in1->bottom >= in2->bottom) { /* 2 rects, one on each end */
-		//		printf("9\n");
 		if (send1 == send2)
 		{
 			list_add_update_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, send2);
@@ -367,7 +357,6 @@ int update_rect_union(struct update_rect* f1, struct update_rect* f2, struct lis
 			in1->top > in2->top &&
 			in1->right >= in2->right &&
 			in1->bottom < in2->bottom) { /* 2 rects, one on each end */
-		//		printf("10\n");
 		if (send1 == send2)
 		{
 			list_add_update_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, send1);
@@ -386,7 +375,6 @@ int update_rect_union(struct update_rect* f1, struct update_rect* f2, struct lis
 			in1->right < in2->right &&
 			in1->top <= in2->top &&
 			in1->bottom < in2->bottom) { /* partially covered(top) */
-		//		printf("11\n");
 		if (send1 == send2)
 		{
 			list_add_update_rect(out, in2->left, in2->top, in2->right, in2->bottom, l2, send2);
@@ -404,7 +392,6 @@ int update_rect_union(struct update_rect* f1, struct update_rect* f2, struct lis
 			in1->bottom < in2->bottom &&
 			in1->left <= in2->left &&
 			in1->right < in2->right) { /* partially covered(left) */
-		//		printf("12\n");
 		if (send1 == send2)
 		{
 			list_add_update_rect(out, in2->left, in2->top, in2->right, in2->bottom, l2, send2);
@@ -422,7 +409,6 @@ int update_rect_union(struct update_rect* f1, struct update_rect* f2, struct lis
 			in1->right < in2->right &&
 			in1->bottom >= in2->bottom &&
 			in1->top > in2->top) { /* partially covered(bottom) */
-		//		printf("13\n");
 		if (send1 == send2)
 		{
 			list_add_update_rect(out, in2->left, in2->top, in2->right, in2->bottom, l2, send2);
@@ -440,7 +426,6 @@ int update_rect_union(struct update_rect* f1, struct update_rect* f2, struct lis
 			in1->bottom < in2->bottom &&
 			in1->right >= in2->right &&
 			in1->left > in2->left) { /* partially covered(right) */
-		//		printf("14\n");
 		if (send1 == send2)
 		{
 			list_add_update_rect(out, in2->left, in2->top, in2->right, in2->bottom, l2, send2);
@@ -458,7 +443,6 @@ int update_rect_union(struct update_rect* f1, struct update_rect* f2, struct lis
 			in1->top > in2->top &&
 			in1->right < in2->right &&
 			in1->bottom < in2->bottom) { /* totally contained, 4 rects */
-		//		printf("15\n");
 		if (send1 == send2)
 		{
 			list_add_update_rect(out, in2->left, in2->top, in2->right, in2->bottom, l2, send2);
@@ -472,7 +456,6 @@ int update_rect_union(struct update_rect* f1, struct update_rect* f2, struct lis
 			list_add_update_rect(out, in2->left, in1->bottom, in2->right, in2->bottom, l2, send2);
 		}
 	}
-	//	printf("16\n");
 	return 0;
 }
 
@@ -527,7 +510,6 @@ bool xrdp_screen_reduce_update_list(struct xrdp_screen* self, struct list* l)
 		tmp = (struct update_rect*) g_malloc(sizeof(struct update_rect), 0);
 		memcpy(tmp, cur, sizeof(struct update_rect));
 		fifo_push(self->candidate_update_rects, tmp);
-		//list_add_item(self->update_rects, tmp);
 		list_remove_item(l, i);
 	}
 	return true;
@@ -563,7 +545,6 @@ bool xrdp_screen_reduce_regions(struct xrdp_screen* self, struct list* l)
 		cur->rect->left = max->rect->left;
 		cur->rect->right = max->rect->right;
 		fifo_push(self->candidate_update_rects, cur);
-		//list_add_item(self->update_rects, cur);
 		max->rect->bottom = max->rect->top + rect_height(max->rect)/4;
 		div = true;
 	}
@@ -578,7 +559,6 @@ bool xrdp_screen_reduce_regions(struct xrdp_screen* self, struct list* l)
 		cur->rect->left = max->rect->left + rect_width(max->rect)/2;
 		cur->rect->right = max->rect->right;
 		fifo_push(self->candidate_update_rects, cur);
-		//list_add_item(self->update_rects, cur);
 		max->rect->right = max->rect->left + rect_width(max->rect)/2;
 		div = true;
 	}
@@ -602,7 +582,6 @@ bool xrdp_screen_reduce_rect(struct xrdp_screen* self, struct update_rect* urect
 		cur->rect->left = rect->left;
 		cur->rect->right = rect->right;
 		fifo_push(self->candidate_update_rects, cur);
-		//list_add_item(l, cur);
 		rect->bottom = rect->top + rect_height(rect)/4;
 		div = true;
 	}
@@ -617,7 +596,6 @@ bool xrdp_screen_reduce_rect(struct xrdp_screen* self, struct update_rect* urect
 		cur->rect->left = rect->left + rect_width(rect)/4;
 		cur->rect->right = rect->right;
 		fifo_push(self->candidate_update_rects, cur);
-		//list_add_item(l, cur);
 		rect->right = rect->left + rect_width(rect)/4;
 		div = true;
 	}
