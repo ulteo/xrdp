@@ -383,7 +383,6 @@ xrdp_qos_loop(void* in_val)
       {
         next_request_time = 1000;
       }
-      printf("next send in %i\n", (total_tosend/session->bandwidth));
       session->next_request_time = next_request_time;
       g_sleep(next_request_time);
     }
