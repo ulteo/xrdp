@@ -40,7 +40,6 @@ libxrdp_common_la_SOURCES = \
   file.c file.h file_loc.h \
   list.c list.h \
   fifo.c fifo.h \
-  uthash.h \
   log.c log.h \
   os_calls.c os_calls.h \
   ssl_calls.c ssl_calls.h \
