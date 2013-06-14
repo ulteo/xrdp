@@ -4,7 +4,7 @@ AM_CFLAGS = \
   -DXRDP_SHARE_PATH=\"${datadir}/xrdp\" \
   -DXRDP_PID_PATH=\"${localstatedir}/run\" \
   -DXRDP_UNICODE_EXCEPTION_FILENAME=\"unicode_exception.ini\" \
-  -Wall
+  -Wall -fPIC
 
 INCLUDES = \
   -I$(top_srcdir) \

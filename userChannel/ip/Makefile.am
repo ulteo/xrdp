@@ -17,7 +17,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 AM_CFLAGS = \
-	-Wall -g
+	-Wall -g -fPIC
 
 INCLUDES = \
 	-I${top_srcdir}/common
