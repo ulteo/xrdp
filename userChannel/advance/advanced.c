@@ -182,7 +182,9 @@ lib_userChannel_server_screen_blt(struct xrdp_mod* mod, int x, int y, int cx, in
   {
      int bpp = (u->server_bpp + 7) / 8;
      if (bpp == 3)
-    	 bpp = 4;
+     {
+       bpp = 4;
+     }
      char* data = (char*) g_malloc(cx*cy*bpp, 0);
      ip_image_crop(u->desktop->screen, srcx, srcy, cx, cy, data);
      lib_userChannel_server_paint_rect(u, x, y, cx, cy, data, cx, cy, srcx, srcy);
@@ -461,7 +463,10 @@ lib_userChannel_update(struct userChannel* u, long * t0)
       {
         struct video_reg* tmp = (struct video_reg*) list_get_item(u->desktop->candidate_video_regs, i);
         int Bpp = (u->desktop->bpp + 7) / 8;
-        if (Bpp == 3) Bpp = 4;
+        if (Bpp == 3)
+        {
+          Bpp = 4;
+        }
         if (tmp->nb_update <= 0)
         {
           update* up;

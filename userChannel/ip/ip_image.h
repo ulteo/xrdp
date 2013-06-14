@@ -21,11 +21,12 @@
 #ifndef _IP_IMAGE_H
 #define _IP_IMAGE_H
 
-struct ip_image {
-	int width;
-	int height;
-	int bpp;
-	char* data;
+struct ip_image
+{
+  int width;
+  int height;
+  int bpp;
+  char* data;
 };
 
 struct ip_image* ip_image_create();

@@ -28,10 +28,11 @@
 
 #define DELTA_VIDEO 10
 
-struct video_reg {
-	struct xrdp_rect* rect;
-	int nb_update;
-	bool already_send;
+struct video_reg
+{
+  struct xrdp_rect* rect;
+  int nb_update;
+  bool already_send;
 };
 
 void video_detection_update(struct xrdp_screen* self, int x, int y, int cx, int cy, int quality);

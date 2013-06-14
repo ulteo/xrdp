@@ -27,19 +27,20 @@
 #include "userChannel.h"
 #include "libxrdpinc.h"
 
-struct quality_params {
-	struct xrdp_client_info* client_info;
-	bool is_progressive_display_enable;
-	bool is_video_detection_enable;
-	bool use_progressive_display;
-	bool use_video_detection;
-	int video_display_fps;
-	int progressive_display_nb_level;
-	int progressive_display_scale;
-	int fps;
-	int maxfps;
-	int minfps;
-	float coef_size;
+struct quality_params
+{
+  struct xrdp_client_info* client_info;
+  bool is_progressive_display_enable;
+  bool is_video_detection_enable;
+  bool use_progressive_display;
+  bool use_video_detection;
+  int video_display_fps;
+  int progressive_display_nb_level;
+  int progressive_display_scale;
+  int fps;
+  int maxfps;
+  int minfps;
+  float coef_size;
 };
 
 struct quality_params* quality_params_create(struct xrdp_client_info* cl);
@@ -58,4 +59,3 @@ float quality_params_estimate_size_rect(struct quality_params* self, struct upda
 void quality_params_prepare_data(struct quality_params* self, struct xrdp_screen* screen, struct userChannel* u);
 
 #endif // _QUALITY_PARAMS_H
-

@@ -24,22 +24,24 @@
 #include "list.h"
 #include "ip_image.h"
 
-struct update_rect {
-	struct xrdp_rect* rect;
-	int quality;
-	int quality_already_send;
+struct update_rect
+{
+  struct xrdp_rect* rect;
+  int quality;
+  int quality_already_send;
 };
 
-struct xrdp_screen {
-	struct ip_image* screen;
-	int width;
-	int height;
-	int bpp;
-	struct list* update_rects;
-	struct list* video_regs;
-	struct list* candidate_video_regs;
-	struct xrdp_client_info* client_info;
-	struct fifo* candidate_update_rects;
+struct xrdp_screen
+{
+  struct ip_image* screen;
+  int width;
+  int height;
+  int bpp;
+  struct list* update_rects;
+  struct list* video_regs;
+  struct list* candidate_video_regs;
+  struct xrdp_client_info* client_info;
+  struct fifo* candidate_update_rects;
 };
 
 struct xrdp_screen* xrdp_screen_create(int w, int h, int bpp, struct xrdp_client_info* c);
