@@ -3,6 +3,7 @@
  * http://www.ulteo.com
  * Author David LECHEVALIER <david@ulteo.com> 2011, 2012
  * Author Alexandre CONFIANT-LATOUR <a.confiant@ulteo.com> 2013
+ * Author Vincent ROULLIER <vincent.roullier@ulteo.com> 2013
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -92,9 +93,9 @@ xrdp_wm_create(int session_id, struct xrdp_session* session)
 
   if (self->client_info->use_static_frame_rate == 0)
   {
-    if (self->client_info->static_bandwidth || self->client_info->static_bandwidth)
+    if (self->client_info->static_bandwidth || self->client_info->static_rtt)
     {
-      xrdp_wm_set_network_stat(self->session->id, self->client_info->static_bandwidth, self->client_info->static_bandwidth);
+      xrdp_wm_set_network_stat(self->session->id, self->client_info->static_bandwidth, self->client_info->static_rtt);
     }
   }
 
