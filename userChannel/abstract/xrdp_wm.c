@@ -95,7 +95,7 @@ xrdp_wm_create(int session_id, struct xrdp_session* session)
   {
     if (self->client_info->static_bandwidth || self->client_info->static_rtt)
     {
-      xrdp_wm_set_network_stat(self->session->id, self->client_info->static_bandwidth, self->client_info->static_rtt);
+      xrdp_wm_set_network_stat(self, self->client_info->static_bandwidth, self->client_info->static_rtt);
     }
   }
 
@@ -1752,9 +1752,8 @@ xrdp_wm_end(struct xrdp_user_channel* user_channel)
 }
 
 void APP_CC
-xrdp_wm_set_network_stat(struct xrdp_user_channel* user_channel, long bandwidth, int rtt)
+xrdp_wm_set_network_stat(struct xrdp_wm* wm, long bandwidth, int rtt)
 {
-  struct xrdp_wm* wm = (struct xrdp_wm*)user_channel->wm;
   return xrdp_mm_set_network_stat(wm->mm, bandwidth, rtt);
 }
 
