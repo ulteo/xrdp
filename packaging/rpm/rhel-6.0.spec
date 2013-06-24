@@ -27,12 +27,18 @@ Group: Applications/System
 Vendor: Ulteo SAS
 URL: http://www.ulteo.com
 Packager: David PHAM-VAN <d.pham-van@ulteo.com>
-Distribution: RHEL 6.0
 
 Source: %{name}-%{version}.tar.gz
+%if %{defined rhel}
 ExclusiveArch: i386 x86_64
 BuildRequires: libtool, gcc, libxml2-devel, xorg-x11-server-devel, openssl-devel, pam-devel, pulseaudio-libs-devel, cups-devel, fuse-devel, libXfixes-devel, libtool-ltdl-devel
 Requires: python, tigervnc, cups-libs, libcom_err, libgcrypt, gnutls, krb5-libs, pam, openssl, xorg-x11-server-Xorg, xorg-x11-server-utils, libxml2, zlib, lsb
+%else
+ExclusiveArch: i586 x86_64
+BuildRequires: libtool, gcc, libxml2-devel, xorg-x11-libX11-devel, xorg-x11-libXfixes-devel, openssl-devel, pam-devel, pulseaudio-devel, cups-devel, fuse-devel, scim-devel
+Requires: python, tigervnc, cups-libs, libcom_err2, libgcrypt11, libgnutls26, krb5, pam, libopenssl1_0_0, xorg-x11-libX11, libxml2, zlib, xkeyboard-config
+# xkeyboard-config [Bug 730027] New: xorg-x11-Xvnc: should depend on xkeyboard-config
+%endif
 
 %description
 Xrdp is a RDP server for Linux. It provides remote display of a desktop and
@@ -54,21 +60,28 @@ if [ "$ARCH" = "32" ]; then
 elif [ "$ARCH" = "64" ]; then
     LIBDIR=/usr/lib64
 fi
+%if %{defined rhel}
 ./configure --mandir=/usr/share/man --libdir=$LIBDIR --disable-scim
+%else
+./configure --mandir=/usr/share/man --libdir=$LIBDIR
+%endif
 make -j 4
 %{__python} setup.py build
 
 %install
-rm -fr $RPM_BUILD_ROOT
-make install DESTDIR=$RPM_BUILD_ROOT
+rm -fr %{buildroot}
+make install DESTDIR=%{buildroot}
 %{__python} setup.py install --prefix=%{_prefix} --root=%{buildroot} --record=INSTALLED_FILES
-mkdir -p $RPM_BUILD_ROOT/var/log/xrdp $RPM_BUILD_ROOT/var/spool/xrdp
-install -D instfiles/init/redhat/xrdp $RPM_BUILD_ROOT/etc/init.d/xrdp
+mkdir -p %{buildroot}/var/log/xrdp %{buildroot}/var/spool/xrdp
+%if %{defined rhel}
+install -D instfiles/init/redhat/xrdp %{buildroot}/etc/init.d/xrdp
 mv %{buildroot}/etc/asound.conf %{buildroot}/etc/xrdp/
-rm -f $RPM_BUILD_ROOT/usr/lib*/xrdp/lib_uc_advance.so*
+%else
+install -D instfiles/init/suse/xrdp %{buildroot}/etc/init.d/xrdp
+%endif
 
 %clean
-rm -rf $RPM_BUILD_ROOT
+rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root)
@@ -102,6 +115,7 @@ rm -rf $RPM_BUILD_ROOT
 %dir /var/log/xrdp
 %dir /var/spool/xrdp
 
+
 %post
 getent group tsusers >/dev/null || groupadd tsusers
 chgrp tsusers /var/spool/xrdp
@@ -110,9 +124,16 @@ ldconfig
 chkconfig --add xrdp > /dev/null
 service xrdp start
 
+%if %{undefined rhel}
+# Hack because opensuse is unable to use the Xrdp rpath attribute correctly on OpenSUSE...
+%{__ln_s} %{_libdir}/xrdp/libvnc.so %{_libdir}/libvnc.so
+%endif
+
+
 %preun
 service xrdp stop
 chkconfig --del xrdp > /dev/null
+
 
 %postun
 rm -rf /var/log/xrdp /var/spool/xrdp
@@ -122,17 +143,24 @@ fi
 
 ldconfig
 
+
 ###########################################
 %package seamrdp
 ###########################################
 
 Summary: Seamless XRDP Shell
 Group: Applications/System
+%if %{defined rhel}
 Requires: xrdp, xorg-x11-server-Xorg, xfwm4
+%else
+Requires: xrdp, xorg-x11-libX11
+%endif
+
 
 %description seamrdp
 Seamlessrdpshell is a rdp addon offering the possibility to have an
 application without a desktop
+
 
 %files seamrdp
 %defattr(-,root,root)
@@ -144,6 +172,7 @@ application without a desktop
 %doc /usr/share/man/man1/startapp.1.gz
 %doc /usr/share/man/man1/XHook.1.gz
 
+
 ###########################################
 %package rdpdr
 ###########################################
@@ -152,8 +181,10 @@ Summary: XRDP disks redirection
 Group: Applications/System
 Requires: xrdp, fuse, libxml2
 
+
 %description rdpdr
 XRDP channel that handle disks redirection.
+
 
 %files rdpdr
 %defattr(-,root,root)
@@ -162,11 +193,13 @@ XRDP channel that handle disks redirection.
 %doc /usr/share/man/man1/rdpdr_disk.1.gz
 %doc /usr/share/man/man1/vchannel_rdpdr.1.gz
 
+
 %post rdpdr
 grep -q -E "^ *[^#] *user_allow_other *" /etc/fuse.conf
 if [ $? -ne 0 ]; then
 	echo "user_allow_other" >> /etc/fuse.conf
 fi
+
 
 ###########################################
 %package clipboard
@@ -174,15 +207,22 @@ fi
 
 Summary: XRDP clipboard
 Group: Applications/System
+%if %{defined rhel}
 Requires: xrdp, xorg-x11-server-Xorg
+%else
+Requires: xrdp, xorg-x11-libX11
+%endif
+
 
 %description clipboard
 XRDP channel providing copy/past text functionnality.
+
 
 %files clipboard
 %defattr(-,root,root)
 %config /etc/xrdp/cliprdr.conf
 /usr/sbin/vchannel_cliprdr
+
 
 ###########################################
 %package sound
@@ -190,7 +230,12 @@ XRDP channel providing copy/past text functionnality.
 
 Summary: XRDP plugin for PulseAudio
 Group: Applications/System
+%if %{defined rhel}
 Requires: xrdp, pulseaudio, alsa-utils, alsa-plugins-pulseaudio
+%else
+Requires: xrdp, pulseaudio, alsa-utils, libasound2
+%endif
+
 
 %description sound
 This package contains the XRDP plugin for PulseAudio, a sound server for POSIX
@@ -198,7 +243,11 @@ and WIN32 systems
 
 %files sound
 %defattr(-,root,root)
+%if %{defined rhel}
 %config /etc/xrdp/asound.conf
+%else
+%config /etc/asound.conf
+%endif
 %config /etc/xrdp/rdpsnd.*
 /usr/sbin/vchannel_rdpsnd
 
@@ -214,8 +263,10 @@ Summary: cups file converter to ps format
 Group: Applications/System
 Requires: xrdp-rdpdr, python, ghostscript, cups
 
+
 %description printer
 Xrdpi-Printer convert a ps file from cups in ps
+
 
 %files printer
 %defattr(-,root,root)
@@ -226,6 +277,7 @@ Xrdpi-Printer convert a ps file from cups in ps
 %defattr(-,lp,root)
 %dir /var/spool/xrdp_printer/SPOOL
 
+
 ###########################################
 %package python
 ###########################################
@@ -234,11 +286,14 @@ Summary: Python API for XRDP
 Group: Applications/System
 Requires: xrdp, python
 
+
 %description python
 XRDP-Python is a Python wrapper for XRDP
 
+
 %files -f INSTALLED_FILES python
 %defattr(-,root,root)
+
 
 ###########################################
 %package devel
@@ -250,8 +305,10 @@ Requires: xrdp
 
 # TODO: headers missing
 
+
 %description devel
 Developpement files for XRDP
+
 
 %files devel
 %defattr(-,root,root)
@@ -261,3 +318,26 @@ Developpement files for XRDP
 /usr/lib*/xrdp/*.a
 /usr/lib*/xrdp/*.la
 /usr/lib*/xrdp/*.so
+
+
+%if %{undefined rhel}
+###########################################
+%package scim
+###########################################
+
+Summary: XRDP Unicode input method
+Group: Applications/System
+Requires: scim
+
+
+%description scim
+XRDP-Scim provides unicode input support for XRDP using Scim
+
+
+%files scim
+%defattr(-,root,root)
+/usr/share/scim/*
+/usr/lib*/scim-1.0/*
+%config /etc/xrdp/scim/*
+/usr/bin/xrdp-scim-panel
+%endif
