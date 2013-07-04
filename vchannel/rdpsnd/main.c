@@ -22,9 +22,9 @@
 ***/
 
 /**
- * Copyright (C) 2010-2011 Ulteo SAS
+ * Copyright (C) 2010-2013 Ulteo SAS
  * http://www.ulteo.com
- * Author David Lechavalier <david@ulteo.com> 2010-2011
+ * Author David Lechavalier <david@ulteo.com> 2010-2013
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -123,6 +123,10 @@ void *thread_sound_process (void * arg)
   for (;;) {
       /* Record some data ... */
       if (pa_simple_read(s, buffer, block_size, &error) < 0) {
+        if (error == PA_ERR_CONNECTIONTERMINATED)
+        {
+          goto finish;
+        }
       	log_message(l_config, LOG_LEVEL_ERROR, "vchannel_rdpsnd[thread_sound_process]: "
       			"pa_simple_read() failed: %s", pa_strerror(error));
       	goto finish;
