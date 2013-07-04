@@ -449,6 +449,10 @@ void *thread_vchannel_process (void * arg)
 			vchannel_sound_deinit();
 			break;
 		default:
+			if (length == 0)
+			{
+				pthread_exit (0);
+			}
 			s->data[length]=0;
 			vchannel_sound_process_message(s, length, total_length);
 			break;

@@ -144,6 +144,8 @@ void *thread_sound_process (void * arg)
       if (s)
           pa_simple_free(s);
   g_free(buffer);
+  vchannel_sound_deinit();
+
 	pthread_exit (0);
 }
 

@@ -1713,6 +1713,11 @@ void *thread_vchannel_process (void * arg)
 			disk_deinit();
 			break;
 		default:
+			if (length == 0)
+			{
+				disk_deinit();
+				pthread_exit (0);
+			}
 			rdpfs_process_message(s, length, total_length);
 			break;
 		}

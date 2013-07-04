@@ -1,7 +1,7 @@
 /**
- * Copyright (C) 2010-2012 Ulteo SAS
+ * Copyright (C) 2010-2013 Ulteo SAS
  * http://www.ulteo.com
- * Author David LECHEVALIER <david@ulteo.com> 2010, 2011, 2012
+ * Author David LECHEVALIER <david@ulteo.com> 2010, 2011, 2012, 2013
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -774,6 +774,13 @@ void *thread_vchannel_process (void * arg)
 
 			break;
 		default:
+			if (length == 0)
+			{
+				running = false;
+				send_dummy_event();
+				pthread_exit (0);
+			}
+
 			cliprdr_process_message(s, length, total_length);
 			break;
 		}
