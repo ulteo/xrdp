@@ -25,3 +25,12 @@ libxrdp_chansrv_la_SOURCES = \
 
 libxrdp_chansrv_la_LIBADD = \
   $(top_builddir)/common/libxrdp_common.la
+
+
+chansrvsysconfdir=$(sysconfdir)/xrdp
+
+chansrvsysconf_DATA = \
+  vchannel.ini
+
+EXTRA_DIST = \
+  $(chansrvsysconf_DATA)
