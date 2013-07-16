@@ -32,11 +32,11 @@ Source: %{name}-%{version}.tar.gz
 %if %{defined rhel}
 ExclusiveArch: i386 x86_64
 BuildRequires: libtool, gcc, libxml2-devel, xorg-x11-server-devel, openssl-devel, pam-devel, pulseaudio-libs-devel, cups-devel, fuse-devel, libXfixes-devel, libtool-ltdl-devel
-Requires: python, tigervnc, cups-libs, libcom_err, libgcrypt, gnutls, krb5-libs, pam, openssl, xorg-x11-server-Xorg, xorg-x11-server-utils, libxml2, zlib, lsb
+Requires: python, ulteo-ovd-vnc-server, cups-libs, libcom_err, libgcrypt, gnutls, krb5-libs, pam, openssl, xorg-x11-server-Xorg, xorg-x11-server-utils, libxml2, zlib, lsb
 %else
 ExclusiveArch: i586 x86_64
 BuildRequires: libtool, gcc, libxml2-devel, xorg-x11-libX11-devel, xorg-x11-libXfixes-devel, openssl-devel, pam-devel, pulseaudio-devel, cups-devel, fuse-devel, scim-devel
-Requires: python, tigervnc, cups-libs, libcom_err2, libgcrypt11, libgnutls26, krb5, pam, libopenssl1_0_0, xorg-x11-libX11, libxml2, zlib, xkeyboard-config
+Requires: python, ulteo-ovd-vnc-server, cups-libs, libcom_err2, libgcrypt11, libgnutls26, krb5, pam, libopenssl1_0_0, xorg-x11-libX11, libxml2, zlib, xkeyboard-config
 # xkeyboard-config [Bug 730027] New: xorg-x11-Xvnc: should depend on xkeyboard-config
 %endif
 
