@@ -1,6 +1,7 @@
 /**
  * Copyright (C) 2009-2013 Ulteo SAS
  * http://www.ulteo.com
+ * Author Vincent ROULLIER <v.roullier@ulteo.com> 2013
  * Author David LECHEVALIER <david@ulteo.com> 2009, 2012, 2013
  *
  * This program is free software; you can redistribute it and/or
@@ -257,8 +258,8 @@ vchannel_receive(int sock, const char* data, int* length, int* total_length)
 	nb_read = g_tcp_recv(channel->sock, header->data, 9, 0);
 	if (nb_read == 0) // socket is closed
 	{
-		length = 0;
-		total_length = 0;
+		*length = 0;
+		*total_length = 0;
 		return 0;
 	}
 
@@ -307,8 +308,8 @@ vchannel_receive(int sock, const char* data, int* length, int* total_length)
 	nb_read = g_tcp_recv(channel->sock, (void*)data, *length, 0);
 	if (nb_read == 0) // socket is closed
 	{
-		length = 0;
-		total_length = 0;
+		*length = 0;
+		*total_length = 0;
 		return 0;
 	}
 
