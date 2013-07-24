@@ -85,7 +85,7 @@ chansrv_deinit(void);
 int APP_CC
 chansrv_send_data(vchannel* v, unsigned char* data, int chan_id, int chan_flags, int length, int total_length);
 int APP_CC
-chansrv_get_wait_objs(tbus* objs, int* count, int* timeout);
+chansrv_get_wait_objs(tbus* objs, int* count);
 int APP_CC
 chansrv_check_wait_objs(void);
 int APP_CC

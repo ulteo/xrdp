@@ -462,7 +462,7 @@ chansrv_send_data(vchannel* v, unsigned char* data, int chan_id, int chan_flags,
 
 /*****************************************************************************/
 int APP_CC
-chansrv_get_wait_objs(tbus* objs, int* count, int* timeout)
+chansrv_get_wait_objs(tbus* objs, int* count)
 {
   int lcount;
   int i;
@@ -589,9 +589,8 @@ channel_thread_loop(void* in_val)
 	}
 
     chansrv_check_wait_objs();
-    timeout = 0;
     num_objs = 0;
-    chansrv_get_wait_objs(objs, &num_objs, &timeout);
+    chansrv_get_wait_objs(objs, &num_objs);
   }
   chansrv_deinit();
 
