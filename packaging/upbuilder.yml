@@ -1,0 +1,8 @@
+upbuilder:
+  deb: "packaging/debian"
+  rpm: "packaging/rpm"
+  packages:
+    xrdp:
+      module: "xrdp"
+      builder: autotools
+      archs: $(consts.ANY_ARCH)
