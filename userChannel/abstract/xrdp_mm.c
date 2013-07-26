@@ -487,29 +487,6 @@ xrdp_mm_process_login_response(struct xrdp_mm* self, struct stream* s)
           self->scim_trans->trans_data_in = xrdp_mm_scim_data_in;
           self->scim_trans->header_size = 1;
           self->scim_trans->callback_data = self;
-
-          g_snprintf(port, 255, "/var/spool/xrdp/xrdp_scim_socket_%d", 7200 + display);
-
-          /* try to connect up to 4 times */
-          for (index = 0; index < 4; index++)
-          {
-            if (trans_connect(self->scim_trans, ip, port, 3000) == 0)
-            {
-              self->scim_trans_up = 1;
-              break;
-            }
-            g_sleep(1000);
-            g_writeln("xrdp_mm_process_login_response: connect failed. Trying again...");
-          }
-          if (self->scim_trans_up)
-          {
-              self->wm->compose=true;
-              libxrdp_send_ime_status(self->wm->session, self->wm->compose);
-          }
-          else
-          {
-            g_writeln("xrdp_mm_process_login_response: error in scim_connect");
-          }
         }
       }
     }
