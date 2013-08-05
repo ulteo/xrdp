@@ -616,6 +616,7 @@ bool chansrv_init(vchannel* vc)
 void chansrv_end(vchannel* vc)
 {
   vc->stop = true;
+  chansrv_deinit();
 }
 
 
