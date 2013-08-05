@@ -494,6 +494,7 @@ chansrv_process_channel_opening(int channel_index, int client)
   int size;
   int type;
   int count;
+  char status[1];
 
 	make_stream(s);
 	init_stream(s, 1024);
@@ -533,6 +534,9 @@ chansrv_process_channel_opening(int channel_index, int client)
 		log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[chansrv_process_channel_opening]: "
 				"Socket : %i", client);
 		user_channels[channel_index].client_channel_count++;
+
+		status[0] = STATUS_CONNECTED;
+		chansrv_transmit(client, SETUP_MESSAGE, status, 1, 1);
 	}
 	else
 	{
