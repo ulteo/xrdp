@@ -1412,9 +1412,7 @@ void *thread_Xvent_process(void *arg)
 	pthread_exit(0);
 }
 
-/*****************************************************************************/
-void *thread_vchannel_process(void *arg)
-{
+void process_connection() {
 	char *buffer = g_malloc(1024, 1);
 	struct stream *s = NULL;
 	int rv;
@@ -1425,7 +1423,7 @@ void *thread_vchannel_process(void *arg)
 	sprintf(buffer, "HELLO,%i,0x%08x\n", 0, 0);
 	send_message(buffer, strlen(buffer));
 	g_free(buffer);
-	while (1) {
+	while (seamrdp_channel > 0) {
 		make_stream(s);
 		init_stream(s, 1600);
 
@@ -1454,6 +1452,8 @@ void *thread_vchannel_process(void *arg)
 		case STATUS_DISCONNECTED:
 			log_message(l_config, LOG_LEVEL_INFO, "XHook[thread_vchannel_process]: "
 				    "Status disconnected");
+			vchannel_close(seamrdp_channel);
+			seamrdp_channel = 0;
 			break;
 		default:
 			s->data[length] = 0;
@@ -1461,6 +1461,23 @@ void *thread_vchannel_process(void *arg)
 			break;
 		}
 		free_stream(s);
+	}
+}
+
+
+/*****************************************************************************/
+void *thread_vchannel_process(void *arg)
+{
+	while(1) {
+		process_connection();
+
+		sleep(2);
+		while(seamrdp_channel <= 0) {
+			seamrdp_channel = vchannel_try_open("seamrdp");
+			if(seamrdp_channel == ERROR) {
+				sleep(1);
+			}
+		}
 	}
 	pthread_exit(0);
 }
