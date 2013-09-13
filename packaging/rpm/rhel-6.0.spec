@@ -195,7 +195,7 @@ XRDP channel that handle disks redirection.
 
 
 %post rdpdr
-grep -q -E "^ *[^#] *user_allow_other *" /etc/fuse.conf
+grep -q -E "^ *[^#] *user_allow_other *" /etc/fuse.conf 2>/dev/null
 if [ $? -ne 0 ]; then
 	echo "user_allow_other" >> /etc/fuse.conf
 fi
