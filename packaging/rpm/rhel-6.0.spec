@@ -75,9 +75,11 @@ make install DESTDIR=%{buildroot}
 mkdir -p %{buildroot}/var/log/xrdp %{buildroot}/var/spool/xrdp
 %if %{defined rhel}
 install -D instfiles/init/redhat/xrdp %{buildroot}/etc/init.d/xrdp
+install -D instfiles/pam.d/xrdp-sesman.rhel  %{buildroot}/etc/pam.d/xrdp-sesman
 mv %{buildroot}/etc/asound.conf %{buildroot}/etc/xrdp/
 %else
 install -D instfiles/init/suse/xrdp %{buildroot}/etc/init.d/xrdp
+install -D instfiles/pam.d/xrdp-sesman.suse  %{buildroot}/etc/pam.d/xrdp-sesman
 %endif
 
 %clean

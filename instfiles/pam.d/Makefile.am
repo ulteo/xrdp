@@ -19,4 +19,6 @@ pamd_DATA = \
   $(PAMFILE)
 
 EXTRA_DIST = \
-  xrdp-sesman
+  xrdp-sesman \
+  xrdp-sesman.rhel \
+  xrdp-sesman.suse
