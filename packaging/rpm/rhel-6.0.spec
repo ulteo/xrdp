@@ -254,8 +254,10 @@ and WIN32 systems
 /usr/sbin/vchannel_rdpsnd
 
 %post sound
+%if %{defined rhel}
 [ -f /etc/asound.conf ] && cp /etc/asound.conf /etc/asound.conf.BACK
 cp /etc/xrdp/asound.conf /etc/asound.conf
+%endif
 
 ###########################################
 %package printer
