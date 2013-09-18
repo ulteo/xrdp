@@ -69,6 +69,12 @@ make -j 4
 %{__python} setup.py build
 
 %install
+ARCH=$(getconf LONG_BIT)
+if [ "$ARCH" = "32" ]; then
+    LIBDIR=/usr/lib
+elif [ "$ARCH" = "64" ]; then
+    LIBDIR=/usr/lib64
+fi
 rm -fr %{buildroot}
 make install DESTDIR=%{buildroot}
 %{__python} setup.py install --prefix=%{_prefix} --root=%{buildroot} --record=INSTALLED_FILES
@@ -80,6 +86,8 @@ mv %{buildroot}/etc/asound.conf %{buildroot}/etc/xrdp/
 %else
 install -D instfiles/init/suse/xrdp %{buildroot}/etc/init.d/xrdp
 install -D instfiles/pam.d/xrdp-sesman.suse  %{buildroot}/etc/pam.d/xrdp-sesman
+mkdir -p %{buildroot}/etc/ld.so.conf.d
+echo "$LIBDIR/xrdp" > %{buildroot}/%{_sysconfdir}/ld.so.conf.d/xrdp.conf
 %endif
 
 %clean
@@ -93,6 +101,11 @@ rm -rf %{buildroot}
 %config /etc/xrdp/Xserver/*
 %config /etc/pam.d/*
 %config /etc/init.d/*
+%if %{undefined rhel}
+# Hack because opensuse is unable to use the Xrdp rpath attribute correctly on OpenSUSE...
+#  http://en.opensuse.org/openSUSE:Packaging_checks#Beware_of_Rpath
+%config %{_sysconfdir}/ld.so.conf.d/xrdp.conf
+%endif
 /usr/lib*/xrdp/libmc.so*
 /usr/lib*/xrdp/librdp.so*
 /usr/lib*/xrdp/libscp.so*
@@ -125,11 +138,6 @@ chgrp tsusers /var/spool/xrdp
 ldconfig
 chkconfig --add xrdp > /dev/null
 service xrdp start
-
-%if %{undefined rhel}
-# Hack because opensuse is unable to use the Xrdp rpath attribute correctly on OpenSUSE...
-%{__ln_s} %{_libdir}/xrdp/libvnc.so %{_libdir}/libvnc.so
-%endif
 
 
 %preun
