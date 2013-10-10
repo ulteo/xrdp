@@ -724,7 +724,7 @@ xrdp_fast_path_send(struct xrdp_sec* self, struct stream* s)
   s->p = s->data;
 
   out_uint8(s, FASTPATH_OUTPUT_ENCRYPTED << 6 | FASTPATH_OUTPUT_ACTION_FASTPATH);
-  if ((packet_len - 1) > 128)
+  if ((packet_len - 1) >= 128)
   {
     out_uint8(s, 0x80 | (packet_len >> 8));     /* length1 */
     out_uint8(s, packet_len & 0xFF);            /* length2 */
