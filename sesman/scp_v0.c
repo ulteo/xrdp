@@ -31,6 +31,12 @@
 extern struct config_sesman* g_cfg; /* in sesman.c */
 static tbus session_creation_lock;
 
+#ifdef CHECK_PREMIUM_EDITION
+extern long last_time_premium_edition_check;
+#include "check_premium.h"
+#include "os_calls.h"
+#endif CHECK_PREMIUM_EDITION
+
 void DEFAULT_CC
 scp_init_mutex()
 {
@@ -53,6 +59,23 @@ scp_v0_process(struct SCP_CONNECTION* c, struct SCP_SESSION* s)
 
 	tc_mutex_lock(session_creation_lock);
 	data = auth_userpass(NULL, s->username, s->password);
+
+	#ifdef CHECK_PREMIUM_EDITION
+	bool valid = true;
+	if (get_module_version(get_module_name()) & PREMIUM_EDITION) {
+	  printf("%s %i %i  %i \n", __FUNCTION__, g_time3(), last_time_premium_edition_check, CHECK_INTERVAL);
+	  if (((g_time3() - last_time_premium_edition_check) > CHECK_INTERVAL) ||  last_time_premium_edition_check == 0) {
+	    printf("%s FOFOFOOF\n", __FUNCTION__);
+	    valid = check_premium_edition();
+	  }
+	}
+	if (!valid) {
+	  data = 0;
+	  scp_v0s_deny_connection(c, "Unable to launch the session\nInvalid License\nPlease contact your administrator\n");
+	  tc_mutex_unlock(session_creation_lock);
+	  return;
+	}
+#endif
 
 	if (data == 0)
 	{

@@ -32,7 +32,15 @@ else
     version=$(cat VERSION | head -n 1)~dev
 fi
 
-sed -e "s/@VERSION@/${version}/g" < configure.ac.in > configure.ac
+if [ -f premium/Makefile.am ]; then
+ premium_mk="premium/Makefile"
+else
+ premium_mk=""
+fi
+
+sed -e "s/@VERSION@/${version}/g" \
+    -e "s,@PREMIUM_MK@,${premium_mk},g" \
+    configure.ac.in > configure.ac
 sed -e "s/@VERSION@/${version}/g" < setup.py.in > setup.py
 
 autoreconf -fvi && ./configure $@

@@ -30,6 +30,12 @@ INCLUDES = \
   -I$(top_srcdir)/sesman/libscp \
   `xml2-config --cflags`
 
+if PREMIUM_ENABLED
+INCLUDES += -I$(top_srcdir)/premium
+AM_CFLAGS += -DCHECK_PREMIUM_EDITION @PE_CFLAGS@
+AM_LDFLAGS = @PE_LDFLAGS@
+endif
+
 if SESMAN_NOPAM
 AUTH_C = verify_user.c
 AUTH_LIB = -lcrypt
@@ -70,6 +76,10 @@ xrdp_sesman_LDADD = \
   $(top_builddir)/common/libxrdp_common.la \
   $(top_builddir)/sesman/libscp/libscp.la \
   $(AUTH_LIB)
+
+if PREMIUM_ENABLED
+  xrdp_sesman_LDADD += $(top_builddir)/premium/lib_licensing.la
+endif
 
 sesmansysconfdir=$(sysconfdir)/xrdp
 

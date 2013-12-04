@@ -161,6 +161,9 @@ int DEFAULT_CC
 lib_userChannel_update_screen(struct userChannel* u);
 int DEFAULT_CC
 lib_userChannel_update(struct userChannel* u, long *t);
+int DEFAULT_CC
+lib_userChannel_get_version(struct userChannel* u);
+
 
 
 

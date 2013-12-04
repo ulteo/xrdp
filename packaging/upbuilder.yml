@@ -6,3 +6,5 @@ upbuilder:
       module: "xrdp"
       builder: autotools
       archs: $(consts.ANY_ARCH)
+      clones:
+        - { source: "IpadClient", dest: "premium", orig: "/ulteo/premium"}

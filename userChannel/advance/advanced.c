@@ -30,7 +30,7 @@
 #include "funcs.h"
 
 extern struct userChannel* u;
-
+#define UC_VERSION 0x80
 
 /******************************************************************************/
 int DEFAULT_CC
@@ -501,4 +501,10 @@ lib_userChannel_update(struct userChannel* u, long * t0)
     }
   }
   return 0;
+}
+
+int DEFAULT_CC
+lib_userChannel_get_version(struct userChannel* u)
+{
+  return UC_VERSION;
 }

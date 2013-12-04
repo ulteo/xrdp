@@ -24,6 +24,7 @@ SUBDIRS = \
   libxrdp \
   userChannel \
   xrdp \
+  $(MAYBE_PREMIUM) \
   sesman \
   keygen \
   docs \
@@ -35,6 +36,7 @@ SUBDIRS = \
   logd \
   scim \
   seamlessrdpshell
+
 
 EXTRA_DIST = \
   setup.py

@@ -237,6 +237,21 @@ if test "x$enable_scim" = "xyes" ; then
 fi
 AM_CONDITIONAL(SCIM_ENABLED, [test x$enable_scim = xyes])
 
+AM_CONDITIONAL(PREMIUM_ENABLED, [test -d premium])
+
+if ${PREMIUM_ENABLED} ; then
+ PE_CFLAGS=`$PKG_CONFIG --cflags libxml-2.0 libssl libcurl`
+ PE_LDFLAGS=`$PKG_CONFIG --libs libxml-2.0 libssl libcurl`
+ MAYBE_PREMIUM=premium
+else
+  PE_CFLAGS=""
+  PE_LDFLAGS="" 
+  MAYBE_PREMIUM=
+fi
+AC_SUBST([MAYBE_PREMIUM])
+AC_SUBST(PE_CFLAGS)
+AC_SUBST(PE_LDFLAGS)
+
 AC_CONFIG_FILES([Makefile
                  common/Makefile
                  docs/Makefile
@@ -250,6 +265,7 @@ AC_CONFIG_FILES([Makefile
                  libxrdp/Makefile
                  logd/Makefile
                  mc/Makefile
+                 @PREMIUM_MK@
                  sesman/Makefile
                  sesman/libscp/Makefile
                  sesman/tools/Makefile
