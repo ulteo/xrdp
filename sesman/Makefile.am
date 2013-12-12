@@ -33,7 +33,7 @@ INCLUDES = \
 if PREMIUM_ENABLED
 INCLUDES += -I$(top_srcdir)/premium
 AM_CFLAGS += -DCHECK_PREMIUM_EDITION @PE_CFLAGS@
-AM_LDFLAGS = @PE_LDFLAGS@
+AM_LDFLAGS = @PE_LDFLAGS@  `curl-config --libs`
 endif
 
 if SESMAN_NOPAM

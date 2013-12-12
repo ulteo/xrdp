@@ -240,8 +240,8 @@ AM_CONDITIONAL(SCIM_ENABLED, [test x$enable_scim = xyes])
 AM_CONDITIONAL(PREMIUM_ENABLED, [test -d premium])
 
 if ${PREMIUM_ENABLED} ; then
- PE_CFLAGS=`$PKG_CONFIG --cflags libxml-2.0 libssl libcurl`
- PE_LDFLAGS=`$PKG_CONFIG --libs libxml-2.0 libssl libcurl`
+ PE_CFLAGS=`$PKG_CONFIG --cflags libssl`
+ PE_LDFLAGS=`$PKG_CONFIG --libs libssl`
  MAYBE_PREMIUM=premium
 else
   PE_CFLAGS=""
