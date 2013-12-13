@@ -2,8 +2,8 @@ upbuilder:
   deb: "packaging/debian"
   rpm: "packaging/rpm"
   packages:
-    xrdp:
-      module: "xrdp"
+    uxda:
+      module: "uxda-server"
       builder: autotools
       archs: $(consts.ANY_ARCH)
       clones:

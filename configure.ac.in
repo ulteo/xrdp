@@ -2,6 +2,7 @@
 # http://www.ulteo.com
 # Author David LECHEVALIER <david@ulteo.com> 2010, 2013
 # Author Samuel BOVEE <samuel@ulteo.com> 2010
+# Author David PHAM-VAN <d.pham-van@ulteo.com> 2013
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -18,7 +19,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 AC_PREREQ(2.59)
-AC_INIT([xrdp], [@VERSION@], [http://bugs.ulteo.com])
+AC_INIT([uxda-server], [@VERSION@], [http://bugs.ulteo.com])
 AM_CONFIG_HEADER(config_ac.h:config_ac-h.in)
 AM_INIT_AUTOMAKE([1.6 foreign])
 AC_PROG_CC

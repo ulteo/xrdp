@@ -17,7 +17,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-Name: xrdp
+Name: uxda-server
 Version: @VERSION@
 Release: @RELEASE@
 
@@ -39,9 +39,10 @@ BuildRequires: libtool, gcc, libxml2-devel, xorg-x11-libX11-devel, xorg-x11-libX
 Requires: python, ulteo-ovd-vnc-server, cups-libs, libcom_err2, libgcrypt11, libgnutls26, krb5, pam, libopenssl1_0_0, xorg-x11-libX11, libxml2, zlib, xkeyboard-config
 # xkeyboard-config [Bug 730027] New: xorg-x11-Xvnc: should depend on xkeyboard-config
 %endif
+Conflicts: xrdp
 
 %description
-Xrdp is a RDP server for Linux. It provides remote display of a desktop and
+UXDA Server is a RDP server for Linux. It provides remote display of a desktop and
 many other features such as:
  * seamless display
  * printer and local device mapping
@@ -87,7 +88,7 @@ mv %{buildroot}/etc/asound.conf %{buildroot}/etc/xrdp/
 install -D instfiles/init/suse/xrdp %{buildroot}/etc/init.d/xrdp
 install -D instfiles/pam.d/xrdp-sesman.suse  %{buildroot}/etc/pam.d/xrdp-sesman
 mkdir -p %{buildroot}/etc/ld.so.conf.d
-echo "$LIBDIR/xrdp" > %{buildroot}/%{_sysconfdir}/ld.so.conf.d/xrdp.conf
+echo "$LIBDIR/%{name}" > %{buildroot}/%{_sysconfdir}/ld.so.conf.d/%{name}.conf
 %endif
 
 %clean
@@ -104,16 +105,16 @@ rm -rf %{buildroot}
 %if %{undefined rhel}
 # Hack because opensuse is unable to use the Xrdp rpath attribute correctly on OpenSUSE...
 #  http://en.opensuse.org/openSUSE:Packaging_checks#Beware_of_Rpath
-%config %{_sysconfdir}/ld.so.conf.d/xrdp.conf
+%config %{_sysconfdir}/ld.so.conf.d/%{name}.conf
 %endif
-/usr/lib*/xrdp/libmc.so*
-/usr/lib*/xrdp/librdp.so*
-/usr/lib*/xrdp/libscp.so*
-/usr/lib*/xrdp/libvnc.so*
-/usr/lib*/xrdp/libxrdp.so*
-/usr/lib*/xrdp/libxup.so*
-/usr/lib*/xrdp/lib_uc_proxy.so*
-/usr/lib*/xrdp/lib_uc_advance.so*
+/usr/lib*/%{name}/libmc.so*
+/usr/lib*/%{name}/librdp.so*
+/usr/lib*/%{name}/libscp.so*
+/usr/lib*/%{name}/libvnc.so*
+/usr/lib*/%{name}/libxrdp.so*
+/usr/lib*/%{name}/libxup.so*
+/usr/lib*/%{name}/lib_uc_proxy.so*
+/usr/lib*/%{name}/lib_uc_advance.so*
 /usr/lib*/*.so*
 /usr/sbin/xrdp*
 /usr/share/xrdp/*
@@ -158,12 +159,12 @@ ldconfig
 %package seamrdp
 ###########################################
 
-Summary: Seamless XRDP Shell
+Summary: Seamless UXDA Shell
 Group: Applications/System
 %if %{defined rhel}
-Requires: xrdp, xorg-x11-server-Xorg, xfwm4
+Requires: uxda-server, xorg-x11-server-Xorg, xfwm4
 %else
-Requires: xrdp, xorg-x11-libX11
+Requires: uxda-server, xorg-x11-libX11
 %endif
 
 
@@ -187,13 +188,13 @@ application without a desktop
 %package rdpdr
 ###########################################
 
-Summary: XRDP disks redirection
+Summary: UXDA disks redirection
 Group: Applications/System
-Requires: xrdp, fuse, libxml2
+Requires: uxda-server, fuse, libxml2
 
 
 %description rdpdr
-XRDP channel that handle disks redirection.
+UXDA channel that handle disks redirection.
 
 
 %files rdpdr
@@ -215,17 +216,17 @@ fi
 %package clipboard
 ###########################################
 
-Summary: XRDP clipboard
+Summary: UXDA clipboard
 Group: Applications/System
 %if %{defined rhel}
-Requires: xrdp, xorg-x11-server-Xorg
+Requires: uxda-server, xorg-x11-server-Xorg
 %else
-Requires: xrdp, xorg-x11-libX11
+Requires: uxda-server, xorg-x11-libX11
 %endif
 
 
 %description clipboard
-XRDP channel providing copy/past text functionnality.
+UXDA channel providing copy/past text functionnality.
 
 
 %files clipboard
@@ -238,17 +239,17 @@ XRDP channel providing copy/past text functionnality.
 %package sound
 ###########################################
 
-Summary: XRDP plugin for PulseAudio
+Summary: UXDA plugin for PulseAudio
 Group: Applications/System
 %if %{defined rhel}
-Requires: xrdp, pulseaudio, alsa-utils, alsa-plugins-pulseaudio
+Requires: uxda-server, pulseaudio, alsa-utils, alsa-plugins-pulseaudio
 %else
-Requires: xrdp, pulseaudio, alsa-utils, libasound2
+Requires: uxda-server, pulseaudio, alsa-utils, libasound2
 %endif
 
 
 %description sound
-This package contains the XRDP plugin for PulseAudio, a sound server for POSIX
+This package contains the UXDA plugin for PulseAudio, a sound server for POSIX
 and WIN32 systems
 
 %files sound
@@ -273,11 +274,11 @@ cp /etc/xrdp/asound.conf /etc/asound.conf
 
 Summary: cups file converter to ps format
 Group: Applications/System
-Requires: xrdp-rdpdr, python, ghostscript, cups
+Requires: uxda-server-rdpdr, python, ghostscript, cups
 
 
 %description printer
-Xrdpi-Printer convert a ps file from cups in ps
+UXDA-Printer convert a ps file from cups in ps
 
 
 %files printer
@@ -294,13 +295,13 @@ Xrdpi-Printer convert a ps file from cups in ps
 %package python
 ###########################################
 
-Summary: Python API for XRDP
+Summary: Python API for UXDA
 Group: Applications/System
-Requires: xrdp, python
+Requires: uxda-server, python
 
 
 %description python
-XRDP-Python is a Python wrapper for XRDP
+UXDA-Python is a Python wrapper for UXDA
 
 
 %files -f INSTALLED_FILES python
@@ -311,15 +312,15 @@ XRDP-Python is a Python wrapper for XRDP
 %package devel
 ###########################################
 
-Summary: Developpement files for XRDP
+Summary: Developpement files for UXDA
 Group: Development
-Requires: xrdp
+Requires: uxda-server
 
 # TODO: headers missing
 
 
 %description devel
-Developpement files for XRDP
+Developpement files for UXDA
 
 
 %files devel
@@ -327,9 +328,9 @@ Developpement files for XRDP
 /usr/lib*/*.a
 /usr/lib*/*.la
 /usr/lib*/*.so
-/usr/lib*/xrdp/*.a
-/usr/lib*/xrdp/*.la
-/usr/lib*/xrdp/*.so
+/usr/lib*/%{name}/*.a
+/usr/lib*/%{name}/*.la
+/usr/lib*/%{name}/*.so
 
 
 %if %{undefined rhel}
@@ -337,13 +338,13 @@ Developpement files for XRDP
 %package scim
 ###########################################
 
-Summary: XRDP Unicode input method
+Summary: UXDA Unicode input method
 Group: Applications/System
 Requires: scim
 
 
 %description scim
-XRDP-Scim provides unicode input support for XRDP using Scim
+UXDA-Scim provides unicode input support for UXDA using Scim
 
 
 %files scim

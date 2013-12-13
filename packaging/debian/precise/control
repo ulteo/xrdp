@@ -1,4 +1,4 @@
-Source: xrdp
+Source: uxda-server
 Section: x11
 Priority: extra
 Maintainer: David PHAM-VAN <d.pham-van@ulteo.com>
@@ -10,105 +10,106 @@ Build-Depends: debhelper (>= 6), cdbs, quilt,
 Standards-Version: 3.8.3
 XS-Python-Version: >= 2.5
 
-Package: xrdp
+Package: uxda-server
 Architecture: any
 Depends: ${shlibs:Depends}, ${python:Depends}, ulteo-ovd-vnc-server
 Recommends: xfonts-base, xfonts-encodings
-Suggests: xrdp-scim
+Suggests: uxda-server-scim
+Conflicts: xrdp
 Description: RDP server for Linux
- Xrdp is a RDP server for Linux. It provides remote display of a desktop and
+ UXDA Server is a RDP server for Linux. It provides remote display of a desktop and
  many other features such as:
   * seamless display
   * printer and local device mapping
 
-Package: xrdp-seamrdp
+Package: uxda-server-seamrdp
 Architecture: any
-Depends: ${shlibs:Depends}, xrdp, xfwm4
-Description: Seamless XRDP Shell
+Depends: ${shlibs:Depends}, uxda-server, xfwm4
+Description: Seamless UXDA Shell
  Seamlessrdpshell is a rdp addon offering the possibility to have an
  application without a desktop.
 
-Package: xrdp-rdpdr
+Package: uxda-server-rdpdr
 Architecture: any
-Depends: ${shlibs:Depends}, xrdp, fuse-utils
-Description: XRDP disks redirection
- XRDP channel that handle disks redirection.
+Depends: ${shlibs:Depends}, uxda-server, fuse-utils
+Description: UXDA disks redirection
+ UXDA channel that handle disks redirection.
 
-Package: xrdp-clipboard
+Package: uxda-server-clipboard
 Architecture: any
-Depends: ${shlibs:Depends}, xrdp
-Description: XRDP clipboard
- XRDP channel providing copy/past text functionnality.
+Depends: ${shlibs:Depends}, uxda-server
+Description: UXDA clipboard
+ UXDA channel providing copy/past text functionnality.
 
-Package: xrdp-sound
+Package: uxda-server-sound
 Architecture: any
-Depends: ${shlibs:Depends}, xrdp, pulseaudio,
+Depends: ${shlibs:Depends}, uxda-server, pulseaudio,
  alsa-base, alsa-utils, libasound2-plugins
-Description: XRDP plugin for PulseAudio
- This package contains the XRDP plugin for PulseAudio, a sound server for POSIX
+Description: UXDA plugin for PulseAudio
+ This package contains the UXDA plugin for PulseAudio, a sound server for POSIX
  and WIN32 systems.
 
-Package: xrdp-printer
+Package: uxda-server-printer
 Architecture: any
-Depends: ${python:Depends}, ${shlibs:Depends}, xrdp-rdpdr, ghostscript, cups
+Depends: ${python:Depends}, ${shlibs:Depends}, uxda-server-rdpdr, ghostscript, cups
 Description: cups file converter to ps format
- XRDP Printer converts a ps file from cups in ps
+ UXDA Printer converts a ps file from cups in ps
 
-Package: xrdp-python
+Package: uxda-server-python
 Section: python
 Architecture: all
-Depends: ${python:Depends}, xrdp
+Depends: ${python:Depends}, uxda-server
 XB-Python-Version: ${python:Versions}
-Description: Python API for XRDP
- XRDP-Python is a Python wrapper for XRDP
+Description: Python API for UXDA
+ UXDA-Python is a Python wrapper for UXDA
 
-Package: xrdp-scim
+Package: uxda-server-scim
 Architecture: any
 Depends: ${shlibs:Depends}, scim
-Description: XRDP Unicode input method
- XRDP-Scim provides unicode input support for XRDP using Scim
+Description: UXDA Unicode input method
+ UXDA-Scim provides unicode input support for UXDA using Scim
 
 ################
 # DEBUG packages
 
-Package: xrdp-dbg
+Package: uxda-server-dbg
 Section: debug
 Architecture: any
-Depends: xrdp (= ${binary:Version})
-Description: XRDP (debug symbols)
+Depends: uxda-server (= ${binary:Version})
+Description: UXDA (debug symbols)
 
-Package: xrdp-seamrdp-dbg
+Package: uxda-server-seamrdp-dbg
 Section: debug
 Architecture: any
-Depends: xrdp-seamrdp (= ${binary:Version})
-Description: XRDP seamless (debug symbols)
+Depends: uxda-server-seamrdp (= ${binary:Version})
+Description: UXDA seamless (debug symbols)
 
-Package: xrdp-rdpdr-dbg
+Package: uxda-server-rdpdr-dbg
 Section: debug
 Architecture: any
-Depends: xrdp-rdpdr (= ${binary:Version})
-Description: XRDP disk redirection (debug symbols)
+Depends: uxda-server-rdpdr (= ${binary:Version})
+Description: UXDA disk redirection (debug symbols)
 
-Package: xrdp-clipboard-dbg
+Package: uxda-server-clipboard-dbg
 Section: debug
 Architecture: any
-Depends: xrdp-clipboard (= ${binary:Version})
-Description: XRDP clipboard (debug symbols)
+Depends: uxda-server-clipboard (= ${binary:Version})
+Description: UXDA clipboard (debug symbols)
 
-Package: xrdp-printer-dbg
+Package: uxda-server-printer-dbg
 Section: debug
 Architecture: any
-Depends: xrdp-printer (= ${binary:Version})
-Description: XRDP printer (debug symbols)
+Depends: uxda-server-printer (= ${binary:Version})
+Description: UXDA printer (debug symbols)
 
-Package: xrdp-sound-dbg
+Package: uxda-server-sound-dbg
 Section: debug
 Architecture: any
-Depends: xrdp-sound (= ${binary:Version})
-Description: XRDP sound (debug symbols)
+Depends: uxda-server-sound (= ${binary:Version})
+Description: UXDA sound (debug symbols)
 
-Package: xrdp-scim-dbg
+Package: uxda-server-scim-dbg
 Section: debug
 Architecture: any
-Depends: xrdp-scim (= ${binary:Version})
-Description: XRDP Unicode input method (debug symbols)
+Depends: uxda-server-scim (= ${binary:Version})
+Description: UXDA Unicode input method (debug symbols)
