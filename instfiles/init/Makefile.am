@@ -17,6 +17,6 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 EXTRA_DIST = \
-  debian/xrdp \
-  suse/xrdp \
-  redhat/xrdp
+  debian/uxda-server \
+  suse/uxda-server \
+  redhat/uxda-server

@@ -1,4 +1,4 @@
-instfiles/init/debian/xrdp /etc/init.d
+instfiles/init/debian/uxda-server /etc/init.d
 debian/tmp/etc/xrdp/startwm.sh
 debian/tmp/etc/xrdp/*.ini
 debian/tmp/etc/xrdp/xrdp-log.conf

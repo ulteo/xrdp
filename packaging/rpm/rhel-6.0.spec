@@ -81,11 +81,11 @@ make install DESTDIR=%{buildroot}
 %{__python} setup.py install --prefix=%{_prefix} --root=%{buildroot} --record=INSTALLED_FILES
 mkdir -p %{buildroot}/var/log/xrdp %{buildroot}/var/spool/xrdp
 %if %{defined rhel}
-install -D instfiles/init/redhat/xrdp %{buildroot}/etc/init.d/xrdp
+install -D instfiles/init/redhat/uxda-server %{buildroot}/etc/init.d/uxda-server
 install -D instfiles/pam.d/xrdp-sesman.rhel  %{buildroot}/etc/pam.d/xrdp-sesman
 mv %{buildroot}/etc/asound.conf %{buildroot}/etc/xrdp/
 %else
-install -D instfiles/init/suse/xrdp %{buildroot}/etc/init.d/xrdp
+install -D instfiles/init/suse/uxda-server %{buildroot}/etc/init.d/uxda-server
 install -D instfiles/pam.d/xrdp-sesman.suse  %{buildroot}/etc/pam.d/xrdp-sesman
 mkdir -p %{buildroot}/etc/ld.so.conf.d
 echo "$LIBDIR/%{name}" > %{buildroot}/%{_sysconfdir}/ld.so.conf.d/%{name}.conf
@@ -137,13 +137,13 @@ getent group tsusers >/dev/null || groupadd tsusers
 chgrp tsusers /var/spool/xrdp
 
 ldconfig
-chkconfig --add xrdp > /dev/null
-service xrdp start
+chkconfig --add uxda-server > /dev/null
+service uxda-server start
 
 
 %preun
-service xrdp stop
-chkconfig --del xrdp > /dev/null
+service uxda-server stop
+chkconfig --del uxda-server > /dev/null
 
 
 %postun
