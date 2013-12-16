@@ -672,9 +672,9 @@ rdpfs_query_directory(int completion_id, int device_id, int information, const c
 		considerPath = 1;
 		g_strcpy(actions[completion_id].path, query);
 		convert_to_win_path(query, win_path);
-		win_path_length = (g_strlen(win_path)+1)*2;
 	}
 
+	win_path_length = (g_strlen(win_path)+1)*2;
 	actions[completion_id].last_req = IRP_MN_QUERY_DIRECTORY;
 	actions[completion_id].request_param = information;
 
