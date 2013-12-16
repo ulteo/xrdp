@@ -238,17 +238,19 @@ if test "x$enable_scim" = "xyes" ; then
 fi
 AM_CONDITIONAL(SCIM_ENABLED, [test x$enable_scim = xyes])
 
+AC_MSG_CHECKING([premium check: ])
 AM_CONDITIONAL(PREMIUM_ENABLED, [test -d premium])
-
-if ${PREMIUM_ENABLED} ; then
+AM_COND_IF([PREMIUM_ENABLED], [
+ AC_MSG_RESULT([yes])
  PE_CFLAGS=`$PKG_CONFIG --cflags libssl`
  PE_LDFLAGS=`$PKG_CONFIG --libs libssl`
  MAYBE_PREMIUM=premium
-else
+],[
+  AC_MSG_RESULT([no])
   PE_CFLAGS=""
   PE_LDFLAGS="" 
   MAYBE_PREMIUM=
-fi
+])
 AC_SUBST([MAYBE_PREMIUM])
 AC_SUBST(PE_CFLAGS)
 AC_SUBST(PE_LDFLAGS)
