@@ -239,7 +239,7 @@ fi
 AM_CONDITIONAL(SCIM_ENABLED, [test x$enable_scim = xyes])
 
 AC_MSG_CHECKING([premium check: ])
-AM_CONDITIONAL(PREMIUM_ENABLED, [test -d premium])
+AM_CONDITIONAL(PREMIUM_ENABLED, [test -d ${srcdir}/premium])
 AM_COND_IF([PREMIUM_ENABLED], [
  AC_MSG_RESULT([yes])
  PE_CFLAGS=`$PKG_CONFIG --cflags libssl`
