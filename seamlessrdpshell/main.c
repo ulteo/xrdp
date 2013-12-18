@@ -298,6 +298,7 @@ void synchronize()
 	Atom type;
 	int flags = 0;
 	int pid;
+	int state;
 
 	for (i = 0; i < window_list.item_count; i++) {
 		witem = &window_list.list[i];
@@ -330,6 +331,7 @@ void synchronize()
 		get_window_type(display, proper_win, &type);
 		get_window_pid(display, proper_win, &pid);
 		get_parent_window(display, proper_win, &parent_id);
+		state = get_window_state(display, proper_win);
 
 		if (type == XInternAtom(display, "_NET_WM_STATE_MODAL", False)) {
 			flags = SEAMLESSRDP_CREATE_MODAL;
@@ -368,7 +370,7 @@ void synchronize()
 		send_message(buffer, strlen(buffer));
 
 		sprintf(buffer, "STATE,%i,%s,0x%08x,0x%08x\n", message_id,
-			window_id, 0, 0);
+			window_id, state, 0);
 		send_message(buffer, strlen(buffer));
 
 		g_free(buffer);
