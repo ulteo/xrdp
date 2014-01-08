@@ -375,7 +375,7 @@ xrdp_qos_loop(void* in_val)
     if(use_qos && (session->bandwidth > 0))
     {
       int next_request_time = (total_tosend/session->bandwidth) - spent_time;
-      if (next_request_time < 0)
+      if (next_request_time <= 0)
       {
         next_request_time = 10;
       }
