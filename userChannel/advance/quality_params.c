@@ -295,8 +295,7 @@ void quality_params_prepare_data(struct quality_params* self, struct xrdp_screen
       (u->bandwidth) ? (u->bandwidth) : wm->session->bandwidth;
   if (bandwidth < 10)
     self->fps = 5;
-  float bw =
-      (u->bandwidth) ? u->bandwidth / self->fps : ((float) (wm->session->bandwidth)) / ((float) (self->fps));
+  float bw = ((float) (bandwidth)) / ((float) (self->fps));
   struct list* l_update = list_create();
   l_update->auto_free = true;
   bool send = false;
