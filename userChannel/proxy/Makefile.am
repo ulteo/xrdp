@@ -10,7 +10,8 @@ INCLUDES = \
   -I$(top_srcdir) \
   -I$(top_srcdir)/common \
   -I$(top_srcdir)/userChannel/ip \
-  -I$(top_srcdir)/userChannel/abstract
+  -I$(top_srcdir)/userChannel/abstract \
+  -I$(top_srcdir)/libxrdp
 
 pkglib_LTLIBRARIES = \
   lib_uc_proxy.la

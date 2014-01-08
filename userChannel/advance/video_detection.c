@@ -86,11 +86,11 @@ void video_detection_update(struct xrdp_screen* self, int x, int y, int cx, int 
         struct update_rect* urect = (struct update_rect*) g_malloc(sizeof(struct update_rect), 0);
         urect->quality = quality;
         urect->quality_already_send = -1;
-        urect->rect = (struct xrdp_rect*) g_malloc(sizeof(struct xrdp_rect), 0);
-        urect->rect->top = f_rect->top;
-        urect->rect->left = f_rect->left;
-        urect->rect->right = f_rect->right;
-        urect->rect->bottom = f_rect->bottom;
+//        urect->rect = (struct xrdp_rect*) g_malloc(sizeof(struct xrdp_rect), 0);
+        urect->rect.top = f_rect->top;
+        urect->rect.left = f_rect->left;
+        urect->rect.right = f_rect->right;
+        urect->rect.bottom = f_rect->bottom;
         fifo_push(f_tmp2, urect);
       }
     }
@@ -99,11 +99,11 @@ void video_detection_update(struct xrdp_screen* self, int x, int y, int cx, int 
       struct update_rect* urect = (struct update_rect*) g_malloc(sizeof(struct update_rect), 0);
       urect->quality = quality;
       urect->quality_already_send = -1;
-      urect->rect = (struct xrdp_rect*) g_malloc(sizeof(struct xrdp_rect), 0);
-      urect->rect->top = f_rect->top;
-      urect->rect->left = f_rect->left;
-      urect->rect->right = f_rect->right;
-      urect->rect->bottom = f_rect->bottom;
+//      urect->rect = (struct xrdp_rect*) g_malloc(sizeof(struct xrdp_rect), 0);
+      urect->rect.top = f_rect->top;
+      urect->rect.left = f_rect->left;
+      urect->rect.right = f_rect->right;
+      urect->rect.bottom = f_rect->bottom;
       fifo_push(f_tmp2, urect);
     }
   }

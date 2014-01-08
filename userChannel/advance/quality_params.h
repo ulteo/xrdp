@@ -25,7 +25,7 @@
 #include "list.h"
 #include "xrdp_screen.h"
 #include "userChannel.h"
-#include "libxrdpinc.h"
+
 
 #define MAX_REQUEST_TIME 1000
 #define MID_REQUEST_TIME 100

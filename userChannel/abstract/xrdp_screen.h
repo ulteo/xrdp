@@ -23,10 +23,11 @@
 
 #include "list.h"
 #include "ip_image.h"
+#include "libxrdpinc.h"
 
 struct update_rect
 {
-  struct xrdp_rect* rect;
+  struct xrdp_rect rect;
   int quality;
   int quality_already_send;
 };

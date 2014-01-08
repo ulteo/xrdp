@@ -94,7 +94,7 @@ float quality_params_estimate_progressive_display_size(struct quality_params* se
     for (i = 0; i < l->count; i++)
     {
       struct update_rect* cur = (struct update_rect*) list_get_item(l, i);
-      if ((rect_width(cur->rect) < 30 || rect_height(cur->rect) < 30) && cur->quality_already_send == -1)
+      if ((rect_width(&cur->rect) < 30 || rect_height(&cur->rect) < 30) && cur->quality_already_send == -1)
       {
         cur->quality = 0;
       }
@@ -103,8 +103,8 @@ float quality_params_estimate_progressive_display_size(struct quality_params* se
         scale_factor = 1;
       else
         scale_factor = self->progressive_display_scale << cur->quality;
-      w = rect_width(cur->rect);
-      h = rect_height(cur->rect);
+      w = rect_width(&cur->rect);
+      h = rect_height(&cur->rect);
       size += Bpp * w * h / (scale_factor * scale_factor);
     }
   }
@@ -123,8 +123,8 @@ float quality_params_estimate_video_regs_size(struct quality_params* self, struc
     for (i = 0; i < l->count; i++)
     {
       struct update_rect* cur = (struct update_rect*) list_get_item(l, i);
-      w = rect_width(cur->rect);
-      h = rect_height(cur->rect);
+      w = rect_width(&cur->rect);
+      h = rect_height(&cur->rect);
       size += Bpp * w * h;
     }
   }
@@ -137,7 +137,7 @@ void quality_params_decrease_quality_progressive_display(struct quality_params* 
   for (i = 0; i < l->count; i++)
   {
     struct update_rect* cur = (struct update_rect*) list_get_item(l, i);
-    if ((rect_width(cur->rect) < 30 || rect_height(cur->rect) < 30) && cur->quality_already_send == -1)
+    if ((rect_width(&cur->rect) < 30 || rect_height(&cur->rect) < 30) && cur->quality_already_send == -1)
     {
       cur->quality = 0;
     }
@@ -262,7 +262,7 @@ float quality_params_estimate_size_rect(struct quality_params* self, struct upda
     {
       scale_factor = self->progressive_display_scale << q;
     }
-    return rect_width(urect->rect) * rect_height(urect->rect) * Bpp / (scale_factor * scale_factor);
+    return rect_width(&urect->rect) * rect_height(&urect->rect) * Bpp / (scale_factor * scale_factor);
   }
   else
     return 0;
@@ -321,13 +321,7 @@ void quality_params_prepare_data(struct quality_params* self, struct xrdp_screen
       if (cur->quality_already_send == -1)
       {
         struct update_rect* tmp = (struct update_rect*) g_malloc(sizeof(struct update_rect), 0);
-        tmp->quality = cur->quality;
-        tmp->quality_already_send = -1;
-        tmp->rect = (struct xrdp_rect*) g_malloc(sizeof(struct xrdp_rect), 0);
-        tmp->rect->top = cur->rect->top;
-        tmp->rect->bottom = cur->rect->bottom;
-        tmp->rect->left = cur->rect->left;
-        tmp->rect->right = cur->rect->right;
+        g_memcpy(tmp, cur, sizeof(struct update_rect));
         list_add_item(list_rq, (tbus) tmp);
         list_remove_item(l_update, i);
       }
@@ -387,13 +381,7 @@ void quality_params_prepare_data(struct quality_params* self, struct xrdp_screen
           if (cur->quality_already_send == q)
           {
             struct update_rect* tmp = (struct update_rect*) g_malloc(sizeof(struct update_rect), 0);
-            tmp->quality = cur->quality;
-            tmp->quality_already_send = cur->quality_already_send;
-            tmp->rect = (struct xrdp_rect*) g_malloc(sizeof(struct xrdp_rect), 0);
-            tmp->rect->top = cur->rect->top;
-            tmp->rect->bottom = cur->rect->bottom;
-            tmp->rect->left = cur->rect->left;
-            tmp->rect->right = cur->rect->right;
+            g_memcpy(tmp, cur, sizeof(struct update_rect));
             list_add_item(list_r, (tbus) tmp);
             list_remove_item(l_update, i);
           }
@@ -414,13 +402,8 @@ void quality_params_prepare_data(struct quality_params* self, struct xrdp_screen
             if ((estimate_size + es) < bw)
             {
               struct update_rect* tmp = (struct update_rect*) g_malloc(sizeof(struct update_rect), 0);
+              g_memcpy(tmp, cur, sizeof(struct update_rect));
               tmp->quality = q;
-              tmp->quality_already_send = cur->quality_already_send;
-              tmp->rect = (struct xrdp_rect*) g_malloc(sizeof(struct xrdp_rect), 0);
-              tmp->rect->top = cur->rect->top;
-              tmp->rect->bottom = cur->rect->bottom;
-              tmp->rect->left = cur->rect->left;
-              tmp->rect->right = cur->rect->right;
               list_add_item(list_rq, (tbus) tmp);
               list_remove_item(list_r, i);
               estimate_size += es;
@@ -442,13 +425,8 @@ void quality_params_prepare_data(struct quality_params* self, struct xrdp_screen
             if ((estimate_size + es) < bw)
             {
               struct update_rect* tmp = (struct update_rect*) g_malloc(sizeof(struct update_rect), 0);
+              g_memcpy(tmp, cur, sizeof(struct update_rect));
               tmp->quality = q;
-              tmp->quality_already_send = cur->quality_already_send;
-              tmp->rect = (struct xrdp_rect*) g_malloc(sizeof(struct xrdp_rect), 0);
-              tmp->rect->top = cur->rect->top;
-              tmp->rect->bottom = cur->rect->bottom;
-              tmp->rect->left = cur->rect->left;
-              tmp->rect->right = cur->rect->right;
               list_add_item(list_rq, (tbus) tmp);
               estimate_size += es;
               list_remove_item(list_r, i);
@@ -464,13 +442,8 @@ void quality_params_prepare_data(struct quality_params* self, struct xrdp_screen
         {
           struct update_rect* cur = (struct update_rect*) list_get_item(list_r, i);
           struct update_rect* tmp = (struct update_rect*) g_malloc(sizeof(struct update_rect), 0);
+          g_memcpy(tmp, cur, sizeof(struct update_rect));
           tmp->quality = 0;
-          tmp->quality_already_send = cur->quality_already_send;
-          tmp->rect = (struct xrdp_rect*) g_malloc(sizeof(struct xrdp_rect), 0);
-          tmp->rect->top = cur->rect->top;
-          tmp->rect->bottom = cur->rect->bottom;
-          tmp->rect->left = cur->rect->left;
-          tmp->rect->right = cur->rect->right;
           fifo_push(desktop->candidate_update_rects, tmp);
           list_remove_item(list_r, i);
         }
@@ -514,9 +487,9 @@ void quality_params_prepare_data(struct quality_params* self, struct xrdp_screen
             i--)
         {
           urect = (struct update_rect*) list_get_item(list_rq /*desktop->update_rects*/, i);
-          if (!rect_equal(urect->rect, fu_rect->rect))
+          if (!rect_equal(&urect->rect, &fu_rect->rect))
           {
-            if (rect_intersect(urect->rect, fu_rect->rect, &intersection))
+            if (rect_intersect(&urect->rect, &fu_rect->rect, &intersection))
             {
               no_inter = false;
               progressive_display_rect_union(fu_rect, urect, l_tmp);
@@ -525,13 +498,7 @@ void quality_params_prepare_data(struct quality_params* self, struct xrdp_screen
               {
                 ur = (struct update_rect*) list_get_item(l_tmp, j);
                 tmp = (struct update_rect*) g_malloc(sizeof(struct update_rect), 0);
-                tmp->rect = (struct xrdp_rect*) g_malloc(sizeof(struct xrdp_rect), 0);
-                tmp->quality = ur->quality;
-                tmp->quality_already_send = ur->quality_already_send;
-                tmp->rect->top = ur->rect->top;
-                tmp->rect->bottom = ur->rect->bottom;
-                tmp->rect->left = ur->rect->left;
-                tmp->rect->right = ur->rect->right;
+                g_memcpy(tmp, ur, sizeof(struct update_rect));
                 fifo_push(desktop->candidate_update_rects, tmp);
               }
               list_clear(l_tmp);
@@ -548,12 +515,12 @@ void quality_params_prepare_data(struct quality_params* self, struct xrdp_screen
         }
         if (no_inter)
         {
-          list_add_progressive_display_rect(list_rq /*desktop->update_rects*/, fu_rect->rect->left, fu_rect->rect->top, fu_rect->rect->right, fu_rect->rect->bottom, fu_rect->quality, fu_rect->quality_already_send);
+          list_add_progressive_display_rect(list_rq /*desktop->update_rects*/, fu_rect->rect.left, fu_rect->rect.top, fu_rect->rect.right, fu_rect->rect.bottom, fu_rect->quality, fu_rect->quality_already_send);
         }
       }
       else
       {
-        list_add_progressive_display_rect(list_rq/*desktop->update_rects*/, fu_rect->rect->left, fu_rect->rect->top, fu_rect->rect->right, fu_rect->rect->bottom, fu_rect->quality, fu_rect->quality_already_send);
+        list_add_progressive_display_rect(list_rq/*desktop->update_rects*/, fu_rect->rect.left, fu_rect->rect.top, fu_rect->rect.right, fu_rect->rect.bottom, fu_rect->quality, fu_rect->quality_already_send);
       }
     }
   }
@@ -621,13 +588,9 @@ void quality_params_prepare_data2(struct quality_params* self, struct xrdp_scree
     {
       struct update_rect * cur = (struct update_rect*) list_get_item(l_update, i);
       struct update_rect* tmp = (struct update_rect*) g_malloc(sizeof(struct update_rect), 0);
+      g_memcpy(tmp, cur, sizeof(struct update_rect));
       tmp->quality = 0;
       tmp->quality_already_send = -1;
-      tmp->rect = (struct xrdp_rect*) g_malloc(sizeof(struct xrdp_rect), 0);
-      tmp->rect->top = cur->rect->top;
-      tmp->rect->bottom = cur->rect->bottom;
-      tmp->rect->left = cur->rect->left;
-      tmp->rect->right = cur->rect->right;
       list_add_item(list_rq, (tbus) tmp);
       list_remove_item(l_update, i);
     }

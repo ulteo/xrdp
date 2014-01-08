@@ -134,11 +134,11 @@ lib_userChannel_server_paint_rect(struct xrdp_mod* mod, int x, int y, int cx, in
   if (u)
   {
     struct update_rect* current_urect = (struct update_rect*) g_malloc(sizeof(struct update_rect), 0);
-    current_urect->rect = (struct xrdp_rect*) g_malloc(sizeof(struct xrdp_rect), 0);
-    current_urect->rect->left = x;
-    current_urect->rect->top = y;
-    current_urect->rect->right = x + cx;
-    current_urect->rect->bottom = y + cy;
+//    current_urect->rect = (struct xrdp_rect*) g_malloc(sizeof(struct xrdp_rect), 0);
+    current_urect->rect.left = x;
+    current_urect->rect.top = y;
+    current_urect->rect.right = x + cx;
+    current_urect->rect.bottom = y + cy;
     current_urect->quality = 0;
     fifo_push(u->desktop->candidate_update_rects, current_urect);
     xrdp_screen_update_desktop(u->desktop, x, y, cx, cy, data, width, height, srcx, srcy);
@@ -422,13 +422,13 @@ lib_userChannel_update_screen(struct userChannel* u)
     for (i = 0 ; i < desktop->update_rects->count ; i++)
     {
       struct update_rect* ucur = (struct update_rect*) list_get_item(desktop->update_rects, i);
-      struct xrdp_rect* cur = ucur->rect;
+      struct xrdp_rect cur = ucur->rect;
       up = g_malloc(sizeof(update), 1);
       up->order_type = paint_rect;
-      up->x = cur->left;
-      up->y = cur->top;
-      int w = cur->right - cur->left;
-      int h = cur->bottom - cur->top;
+      up->x = cur.left;
+      up->y = cur.top;
+      int w = cur.right - cur.left;
+      int h = cur.bottom - cur.top;
       up->cx = w;
       up->cy = h;
       up->width = w;

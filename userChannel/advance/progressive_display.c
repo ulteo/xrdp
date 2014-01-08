@@ -34,14 +34,14 @@ void fifo_rect_progressive_display(struct fifo* self)
 {
   int i;
   struct update_rect* cur;
-  struct xrdp_rect* rect;
+  struct xrdp_rect rect;
   printf("Fifo : %i elements : \n", self->count);
   struct fifo_item* head = self->head;
   while (head != NULL )
   {
     cur = (struct update_rect*) head->data;
     rect = cur->rect;
-    printf("  rect 0x%x : [%i %i %i %i] [%i, %i], level %i \n", rect, rect->left, rect->top, rect->right, rect->bottom, rect_width(rect), rect_height(rect), cur->quality);
+    printf("  rect : [%i %i %i %i] [%i, %i], level %i \n", rect.left, rect.top, rect.right, rect.bottom, rect_width(&rect), rect_height(&rect), cur->quality);
     head = head->next;
   }
 }
@@ -50,13 +50,13 @@ void list_rect_progressive_display(struct list* self)
 {
   int i;
   struct update_rect* cur;
-  struct xrdp_rect* rect;
+  struct xrdp_rect rect;
   printf("List : %i elements : \n", self->count);
   for (i = 0; i < self->count; i++)
   {
     cur = (struct update_rect*) list_get_item(self, i);
     rect = cur->rect;
-    printf("  rect 0x%x : [%i %i %i %i] [%i, %i], level %i \n", rect, rect->left, rect->top, rect->right, rect->bottom, rect_width(rect), rect_height(rect), cur->quality);
+    printf("  rect : [%i %i %i %i] [%i, %i], level %i \n", rect.left, rect.top, rect.right, rect.bottom, rect_width(&rect), rect_height(&rect), cur->quality);
   }
 }
 
@@ -83,9 +83,9 @@ void progressive_display_add_rect(struct xrdp_screen * self, int x, int y, int c
       for (i = update_rects->count - 1; i >= 0; i--)
       {
         urect = (struct update_rect*) list_get_item(update_rects, i);
-        if (!rect_equal(urect->rect, fu_rect->rect))
+        if (!rect_equal(&urect->rect, &fu_rect->rect))
         {
-          if (rect_intersect(urect->rect, fu_rect->rect, &intersection))
+          if (rect_intersect(&urect->rect, &fu_rect->rect, &intersection))
           {
             no_inter = false;
             progressive_display_rect_union(fu_rect, urect, l_tmp);
@@ -94,13 +94,7 @@ void progressive_display_add_rect(struct xrdp_screen * self, int x, int y, int c
             {
               ur = (struct update_rect*) list_get_item(l_tmp, j);
               tmp = (struct update_rect*) g_malloc(sizeof(struct update_rect), 0);
-              tmp->rect = (struct xrdp_rect*) g_malloc(sizeof(struct xrdp_rect), 0);
-              tmp->quality = ur->quality;
-              tmp->quality_already_send = ur->quality_already_send;
-              tmp->rect->top = ur->rect->top;
-              tmp->rect->bottom = ur->rect->bottom;
-              tmp->rect->left = ur->rect->left;
-              tmp->rect->right = ur->rect->right;
+              g_memcpy(tmp, ur, sizeof(struct update_rect));
               fifo_push(self->candidate_update_rects, tmp);
             }
             list_clear(l_tmp);
@@ -117,12 +111,12 @@ void progressive_display_add_rect(struct xrdp_screen * self, int x, int y, int c
       }
       if (no_inter)
       {
-        list_add_progressive_display_rect(update_rects, fu_rect->rect->left, fu_rect->rect->top, fu_rect->rect->right, fu_rect->rect->bottom, fu_rect->quality, fu_rect->quality_already_send);
+        list_add_progressive_display_rect(update_rects, fu_rect->rect.left, fu_rect->rect.top, fu_rect->rect.right, fu_rect->rect.bottom, fu_rect->quality, fu_rect->quality_already_send);
       }
     }
     else
     {
-      list_add_progressive_display_rect(update_rects, fu_rect->rect->left, fu_rect->rect->top, fu_rect->rect->right, fu_rect->rect->bottom, fu_rect->quality, fu_rect->quality_already_send);
+      list_add_progressive_display_rect(update_rects, fu_rect->rect.left, fu_rect->rect.top, fu_rect->rect.right, fu_rect->rect.bottom, fu_rect->quality, fu_rect->quality_already_send);
     }
   }
   list_delete(l_tmp);
@@ -147,10 +141,10 @@ void progressive_display_add_update_order(struct xrdp_screen* self, struct list*
       struct update_rect* cur = (struct update_rect*) list_get_item(p_display, i);
       up = (update*) g_malloc(sizeof(update), 1);
       up->order_type = paint_rect;
-      up->x = cur->rect->left;
-      up->y = cur->rect->top;
-      int w = rect_width(cur->rect);
-      int h = rect_height(cur->rect);
+      up->x = cur->rect.left;
+      up->y = cur->rect.top;
+      int w = rect_width(&cur->rect);
+      int h = rect_height(&cur->rect);
       up->cx = w;
       up->cy = h;
       up->width = w;
@@ -165,13 +159,9 @@ void progressive_display_add_update_order(struct xrdp_screen* self, struct list*
       if (cur->quality != 0)
       {
         struct update_rect* tmp = (struct update_rect*) g_malloc(sizeof(struct update_rect), 0);
+        g_memcpy(tmp, cur, sizeof(struct update_rect));
         tmp->quality = 0;
         tmp->quality_already_send = cur->quality;
-        tmp->rect = (struct xrdp_rect*) g_malloc(sizeof(struct xrdp_rect), 0);
-        tmp->rect->left = cur->rect->left;
-        tmp->rect->top = cur->rect->top;
-        tmp->rect->right = cur->rect->right;
-        tmp->rect->bottom = cur->rect->bottom;
         fifo_push(self->candidate_update_rects, tmp);
       }
       list_remove_item(p_display, i);
@@ -204,11 +194,10 @@ int list_add_progressive_display_rect(struct list* self, int left, int top, int 
     struct update_rect* tmp = (struct update_rect*) g_malloc(sizeof(struct update_rect), 0);
     tmp->quality = quality;
     tmp->quality_already_send = send;
-    tmp->rect = (struct xrdp_rect*) g_malloc(sizeof(struct xrdp_rect), 0);
-    tmp->rect->top = top;
-    tmp->rect->left = left;
-    tmp->rect->right = right;
-    tmp->rect->bottom = bottom;
+    tmp->rect.top = top;
+    tmp->rect.left = left;
+    tmp->rect.right = right;
+    tmp->rect.bottom = bottom;
     list_add_item(self, (tbus) tmp);
   }
   return 1;
@@ -219,8 +208,8 @@ void progressive_display_split_and_merge(struct list* self)
   int i, j;
   struct update_rect* item1;
   struct update_rect* item2;
-  struct xrdp_rect* first;
-  struct xrdp_rect* second;
+  struct xrdp_rect first;
+  struct xrdp_rect second;
   bool merged = true;
   bool remove;
 
@@ -237,18 +226,18 @@ void progressive_display_split_and_merge(struct list* self)
         second = item2->rect;
         if (item1->quality_already_send == item2->quality_already_send)
         {
-          if (!rect_equal(first, second))
+          if (!rect_equal(&first, &second))
           {
-            int adj = rect_adjacency(first, second);
+            int adj = rect_adjacency(&first, &second);
             switch (adj)
             {
             case 0:
               break;
             case 1: // first is at right of second
               merged = true;
-              if (rect_height(first) == rect_height(second))
+              if (rect_height(&first) == rect_height(&second))
               {
-                first->left = second->left;
+                item1->rect.left = item2->rect.left;
                 list_remove_item(self, j);
               }
               else
@@ -265,9 +254,9 @@ void progressive_display_split_and_merge(struct list* self)
               break;
             case 2: // first is at left of second
               merged = true;
-              if (rect_height(first) == rect_height(second))
+              if (rect_height(&first) == rect_height(&second))
               {
-                first->right = second->right;
+                item1->rect.right = item2->rect.right;
                 list_remove_item(self, j);
               }
               else
@@ -284,9 +273,9 @@ void progressive_display_split_and_merge(struct list* self)
               break;
             case 3: // first is under second
               merged = true;
-              if (rect_width(first) == rect_width(second))
+              if (rect_width(&first) == rect_width(&second))
               {
-                first->top = second->top;
+                item1->rect.top = item2->rect.top;
                 list_remove_item(self, j);
               }
               else
@@ -303,9 +292,9 @@ void progressive_display_split_and_merge(struct list* self)
               break;
             case 4: // first is above second
               merged = true;
-              if (rect_width(first) == rect_width(second))
+              if (rect_width(&first) == rect_width(&second))
               {
-                first->bottom = second->bottom;
+                item1->rect.bottom = item2->rect.bottom;
                 list_remove_item(self, j);
               }
               else
@@ -343,107 +332,107 @@ void progressive_display_split_and_merge(struct list* self)
 
 void progressive_display_rect_split_v(struct list* self, struct update_rect* f, struct update_rect* s, bool* remove)
 {
-  struct xrdp_rect* first = f->rect;
-  struct xrdp_rect* second = s->rect;
+  struct xrdp_rect first = f->rect;
+  struct xrdp_rect second = s->rect;
   int l = f->quality;
-  int w1 = rect_width(first);
-  int h1 = rect_height(first);
-  int w2 = rect_width(second);
-  int h2 = rect_height(second);
+  int w1 = rect_width(&first);
+  int h1 = rect_height(&first);
+  int w2 = rect_width(&second);
+  int h2 = rect_height(&second);
   int area1 = w1 * h1;
   int area2 = w2 * h2;
   int send1 = f->quality_already_send;
   int send2 = s->quality_already_send;
   *remove = false;
-  if (first->left < second->left)
+  if (first.left < second.left)
   {
-    if (first->right < second->right)
+    if (first.right < second.right)
     {
-      int temp_area = (second->left - first->right) * (first->bottom - second->top);
+      int temp_area = (second.left - first.right) * (first.bottom - second.top);
       if (temp_area > area1 && temp_area > area2)
       {
-        list_add_progressive_display_rect(self, first->left, first->top, second->left, first->bottom, l, send1);
-        list_add_progressive_display_rect(self, second->left, second->top, first->right, first->bottom, l, send2);
-        list_add_progressive_display_rect(self, first->right, second->top, second->right, second->bottom, l, send2);
+        list_add_progressive_display_rect(self, first.left, first.top, second.left, first.bottom, l, send1);
+        list_add_progressive_display_rect(self, second.left, second.top, first.right, first.bottom, l, send2);
+        list_add_progressive_display_rect(self, first.right, second.top, second.right, second.bottom, l, send2);
         *remove = true;
       }
     }
-    else if (first->right > second->right)
+    else if (first.right > second.right)
     {
-      int temp_area = (second->right - second->left) * (first->bottom - second->top);
+      int temp_area = (second.right - second.left) * (first.bottom - second.top);
       if (temp_area > area1 && temp_area > area2)
       {
-        list_add_progressive_display_rect(self, first->left, first->top, second->left, first->bottom, l, send1);
-        list_add_progressive_display_rect(self, second->left, second->top, second->right, first->bottom, l, send2);
-        list_add_progressive_display_rect(self, second->right, first->top, first->right, first->bottom, l, send1);
+        list_add_progressive_display_rect(self, first.left, first.top, second.left, first.bottom, l, send1);
+        list_add_progressive_display_rect(self, second.left, second.top, second.right, first.bottom, l, send2);
+        list_add_progressive_display_rect(self, second.right, first.top, first.right, first.bottom, l, send1);
         *remove = true;
       }
     }
     else
     {
-      int temp_area = (second->right - second->left) * (first->bottom - second->top);
+      int temp_area = (second.right - second.left) * (first.bottom - second.top);
       if (temp_area > area1 && temp_area > area2)
       {
-        list_add_progressive_display_rect(self, first->left, first->top, second->left, first->bottom, l, send1);
-        list_add_progressive_display_rect(self, second->left, second->top, second->right, first->bottom, l, send2);
+        list_add_progressive_display_rect(self, first.left, first.top, second.left, first.bottom, l, send1);
+        list_add_progressive_display_rect(self, second.left, second.top, second.right, first.bottom, l, send2);
         *remove = true;
       }
     }
   }
-  else if (first->left > second->left)
+  else if (first.left > second.left)
   {
-    if (first->right < second->right)
+    if (first.right < second.right)
     {
-      int temp_area = (first->right - first->left) * (first->bottom - second->top);
+      int temp_area = (first.right - first.left) * (first.bottom - second.top);
       if (temp_area > area1 && temp_area > area2)
       {
-        list_add_progressive_display_rect(self, second->left, second->top, first->left, second->bottom, l, send2);
-        list_add_progressive_display_rect(self, first->left, second->top, first->right, first->bottom, l, send1);
-        list_add_progressive_display_rect(self, first->right, second->top, second->right, second->bottom, l, send2);
+        list_add_progressive_display_rect(self, second.left, second.top, first.left, second.bottom, l, send2);
+        list_add_progressive_display_rect(self, first.left, second.top, first.right, first.bottom, l, send1);
+        list_add_progressive_display_rect(self, first.right, second.top, second.right, second.bottom, l, send2);
         *remove = true;
       }
     }
-    else if (first->right > second->right)
+    else if (first.right > second.right)
     {
-      int temp_area = (second->right - first->left) * (first->bottom - second->top);
+      int temp_area = (second.right - first.left) * (first.bottom - second.top);
       if (temp_area > area1 && temp_area > area2)
       {
-        list_add_progressive_display_rect(self, second->left, second->top, first->left, second->bottom, l, send2);
-        list_add_progressive_display_rect(self, first->left, second->top, second->right, first->bottom, l, send2);
-        list_add_progressive_display_rect(self, second->right, first->top, first->right, first->bottom, l, send1);
+        list_add_progressive_display_rect(self, second.left, second.top, first.left, second.bottom, l, send2);
+        list_add_progressive_display_rect(self, first.left, second.top, second.right, first.bottom, l, send2);
+        list_add_progressive_display_rect(self, second.right, first.top, first.right, first.bottom, l, send1);
         *remove = true;
       }
     }
     else
     {
-      int temp_area = (second->right - first->left) * (first->bottom - second->top);
+      int temp_area = (second.right - first.left) * (first.bottom - second.top);
       if (temp_area > area1 && temp_area > area2)
       {
-        list_add_progressive_display_rect(self, second->left, second->top, first->left, second->bottom, l, send2);
-        list_add_progressive_display_rect(self, first->left, second->top, first->right, first->bottom, l, send1);
+        list_add_progressive_display_rect(self, second.left, second.top, first.left, second.bottom, l, send2);
+        list_add_progressive_display_rect(self, first.left, second.top, first.right, first.bottom, l, send1);
         *remove = true;
       }
     }
   }
   else
   {
-    if (first->right < second->right)
+    if (first.right < second.right)
     {
-      int temp_area = (first->right - first->left) * (first->bottom - second->top);
+      int temp_area = (first.right - first.left) * (first.bottom - second.top);
       if (temp_area > area1 && temp_area > area2)
       {
-        list_add_progressive_display_rect(self, first->left, second->top, first->right, first->bottom, l, send1);
-        list_add_progressive_display_rect(self, first->right, second->top, second->right, second->bottom, l, send2);
+        list_add_progressive_display_rect(self, first.left, second.top, first.right, first.bottom, l, send1);
+        list_add_progressive_display_rect(self, first.right, second.top, second.right, second.bottom, l, send2);
         *remove = true;
       }
     }
-    else if (first->right > second->right)
+    else if (first.right > second.right)
     {
-      int temp_area = (second->right - first->left) * (first->bottom - second->top);
+      int temp_area = (second.right - first.left) * (first.bottom - second.top);
       if (temp_area > area1 && temp_area > area2)
       {
-        list_add_progressive_display_rect(self, second->left, second->top, second->right, first->bottom, l, send2);
-        list_add_progressive_display_rect(self, second->right, first->top, first->right, first->bottom, l, send1);
+        list_add_progressive_display_rect(self, second.left, second.top, second.right, first.bottom, l, send2);
+        list_add_progressive_display_rect(self, second.right, first.top, first.right, first.bottom, l, send1);
         *remove = true;
       }
     }
@@ -452,107 +441,107 @@ void progressive_display_rect_split_v(struct list* self, struct update_rect* f, 
 
 void progressive_display_rect_split_h(struct list* self, struct update_rect* f, struct update_rect* s, bool* remove)
 {
-  struct xrdp_rect* first = f->rect;
-  struct xrdp_rect* second = s->rect;
+  struct xrdp_rect first = f->rect;
+  struct xrdp_rect second = s->rect;
   int l = f->quality;
-  int w1 = rect_width(first);
-  int h1 = rect_height(first);
-  int w2 = rect_width(second);
-  int h2 = rect_height(second);
+  int w1 = rect_width(&first);
+  int h1 = rect_height(&first);
+  int w2 = rect_width(&second);
+  int h2 = rect_height(&second);
   int send1 = f->quality_already_send;
   int send2 = s->quality_already_send;
   int area1 = w1 * h1;
   int area2 = w2 * h2;
   *remove = false;
-  if (first->top < second->top)
+  if (first.top < second.top)
   {
-    if (first->bottom < second->bottom)
+    if (first.bottom < second.bottom)
     {
-      int temp_area = (first->right - second->left) * (first->bottom - second->top);
+      int temp_area = (first.right - second.left) * (first.bottom - second.top);
       if (temp_area > area1 && temp_area > area2)
       {
-        list_add_progressive_display_rect(self, first->left, first->top, first->right, second->top, l, send1);
-        list_add_progressive_display_rect(self, second->left, second->top, first->right, first->bottom, l, send2);
-        list_add_progressive_display_rect(self, second->left, first->bottom, second->right, second->bottom, l, send2);
+        list_add_progressive_display_rect(self, first.left, first.top, first.right, second.top, l, send1);
+        list_add_progressive_display_rect(self, second.left, second.top, first.right, first.bottom, l, send2);
+        list_add_progressive_display_rect(self, second.left, first.bottom, second.right, second.bottom, l, send2);
         *remove = true;
       }
     }
-    else if (first->bottom > second->bottom)
+    else if (first.bottom > second.bottom)
     {
-      int temp_area = (first->right - second->left) * (second->bottom - second->top);
+      int temp_area = (first.right - second.left) * (second.bottom - second.top);
       if (temp_area > area1 && temp_area > area2)
       {
-        list_add_progressive_display_rect(self, first->left, first->top, first->right, second->top, l, send1);
-        list_add_progressive_display_rect(self, second->left, second->top, first->right, second->bottom, l, send2);
-        list_add_progressive_display_rect(self, first->left, second->bottom, first->right, first->bottom, l, send1);
+        list_add_progressive_display_rect(self, first.left, first.top, first.right, second.top, l, send1);
+        list_add_progressive_display_rect(self, second.left, second.top, first.right, second.bottom, l, send2);
+        list_add_progressive_display_rect(self, first.left, second.bottom, first.right, first.bottom, l, send1);
         *remove = true;
       }
     }
     else
     {
-      int temp_area = (first->right - second->left) * (second->bottom - second->top);
+      int temp_area = (first.right - second.left) * (second.bottom - second.top);
       if (temp_area > area1 && temp_area > area2)
       {
-        list_add_progressive_display_rect(self, first->left, first->top, first->right, second->top, l, send1);
-        list_add_progressive_display_rect(self, second->left, second->top, first->right, second->bottom, l, send2);
+        list_add_progressive_display_rect(self, first.left, first.top, first.right, second.top, l, send1);
+        list_add_progressive_display_rect(self, second.left, second.top, first.right, second.bottom, l, send2);
         *remove = true;
       }
     }
   }
-  else if (first->top > second->top)
+  else if (first.top > second.top)
   {
-    if (first->bottom < second->bottom)
+    if (first.bottom < second.bottom)
     {
-      int temp_area = (first->right - second->left) * (first->bottom - first->top);
+      int temp_area = (first.right - second.left) * (first.bottom - first.top);
       if (temp_area > area1 && temp_area > area2)
       {
-        list_add_progressive_display_rect(self, second->left, second->top, second->right, first->top, l, send2);
-        list_add_progressive_display_rect(self, second->left, first->top, first->right, first->bottom, l, send1);
-        list_add_progressive_display_rect(self, second->left, first->bottom, second->right, second->bottom, l, send2);
+        list_add_progressive_display_rect(self, second.left, second.top, second.right, first.top, l, send2);
+        list_add_progressive_display_rect(self, second.left, first.top, first.right, first.bottom, l, send1);
+        list_add_progressive_display_rect(self, second.left, first.bottom, second.right, second.bottom, l, send2);
         *remove = true;
       }
     }
-    else if (first->bottom > second->bottom)
+    else if (first.bottom > second.bottom)
     {
-      int temp_area = (first->right - second->left) * (second->bottom - first->top);
+      int temp_area = (first.right - second.left) * (second.bottom - first.top);
       if (temp_area > area1 && temp_area > area2)
       {
-        list_add_progressive_display_rect(self, second->left, second->top, second->right, first->top, l, send2);
-        list_add_progressive_display_rect(self, second->left, first->top, first->right, second->bottom, l, send2);
-        list_add_progressive_display_rect(self, first->left, second->bottom, first->right, first->bottom, l, send1);
+        list_add_progressive_display_rect(self, second.left, second.top, second.right, first.top, l, send2);
+        list_add_progressive_display_rect(self, second.left, first.top, first.right, second.bottom, l, send2);
+        list_add_progressive_display_rect(self, first.left, second.bottom, first.right, first.bottom, l, send1);
         *remove = true;
       }
     }
     else
     {
-      int temp_area = (first->right - second->left) * (second->bottom - first->top);
+      int temp_area = (first.right - second.left) * (second.bottom - first.top);
       if (temp_area > area1 && temp_area > area2)
       {
-        list_add_progressive_display_rect(self, second->left, second->top, second->right, first->top, l, send2);
-        list_add_progressive_display_rect(self, second->left, first->top, first->right, first->bottom, l, send1);
+        list_add_progressive_display_rect(self, second.left, second.top, second.right, first.top, l, send2);
+        list_add_progressive_display_rect(self, second.left, first.top, first.right, first.bottom, l, send1);
         *remove = true;
       }
     }
   }
   else
   {
-    if (first->bottom < second->bottom)
+    if (first.bottom < second.bottom)
     {
-      int temp_area = (first->right - second->left) * (first->bottom - first->top);
+      int temp_area = (first.right - second.left) * (first.bottom - first.top);
       if (temp_area > area1 && temp_area > area2)
       {
-        list_add_progressive_display_rect(self, second->left, first->top, first->right, first->bottom, l, send1);
-        list_add_progressive_display_rect(self, second->left, first->bottom, second->right, second->bottom, l, send2);
+        list_add_progressive_display_rect(self, second.left, first.top, first.right, first.bottom, l, send1);
+        list_add_progressive_display_rect(self, second.left, first.bottom, second.right, second.bottom, l, send2);
         *remove = true;
       }
     }
-    else if (first->bottom > second->bottom)
+    else if (first.bottom > second.bottom)
     {
-      int temp_area = (first->right - second->left) * (second->bottom - first->top);
+      int temp_area = (first.right - second.left) * (second.bottom - first.top);
       if (temp_area > area1 && temp_area > area2)
       {
-        list_add_progressive_display_rect(self, second->left, second->top, first->right, second->bottom, l, send2);
-        list_add_progressive_display_rect(self, first->left, second->bottom, first->right, first->bottom, l, send1);
+        list_add_progressive_display_rect(self, second.left, second.top, first.right, second.bottom, l, send2);
+        list_add_progressive_display_rect(self, first.left, second.bottom, first.right, first.bottom, l, send1);
         *remove = true;
       }
     }
@@ -561,8 +550,8 @@ void progressive_display_rect_split_h(struct list* self, struct update_rect* f, 
 
 void progressive_display_rect_union(struct update_rect* r1, struct update_rect* r2, struct list* out)
 {
-  struct xrdp_rect* in1 = r1->rect;
-  struct xrdp_rect* in2 = r2->rect;
+  struct xrdp_rect in1 = r1->rect;
+  struct xrdp_rect in2 = r2->rect;
   int l1 = r1->quality;
   int l2 = r2->quality;
   int send1 = r1->quality_already_send;
@@ -574,264 +563,264 @@ void progressive_display_rect_union(struct update_rect* r1, struct update_rect* 
     nsend = -1;
   else
     nsend = (send2 <= send1) ? send1 : send2;
-  if (in1->left <= in2->left && in1->top <= in2->top && in1->right >= in2->right && in1->bottom >= in2->bottom)
+  if (in1.left <= in2.left && in1.top <= in2.top && in1.right >= in2.right && in1.bottom >= in2.bottom)
   {
     if (send1 == send2)
     {
-      list_add_progressive_display_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, send1);
+      list_add_progressive_display_rect(out, in1.left, in1.top, in1.right, in1.bottom, l1, send1);
     }
     else
     {
-      list_add_progressive_display_rect(out, in1->left, in1->top, in1->right, in2->top, l1, send1);
-      list_add_progressive_display_rect(out, in1->left, in2->top, in2->left, in2->bottom, l1, send1);
-      list_add_progressive_display_rect(out, in2->left, in2->top, in2->right, in2->bottom, l2, nsend);
-      list_add_progressive_display_rect(out, in2->right, in2->top, in1->right, in2->bottom, l2, send1);
-      list_add_progressive_display_rect(out, in1->left, in2->bottom, in1->right, in1->bottom, l1, send1);
+      list_add_progressive_display_rect(out, in1.left, in1.top, in1.right, in2.top, l1, send1);
+      list_add_progressive_display_rect(out, in1.left, in2.top, in2.left, in2.bottom, l1, send1);
+      list_add_progressive_display_rect(out, in2.left, in2.top, in2.right, in2.bottom, l2, nsend);
+      list_add_progressive_display_rect(out, in2.right, in2.top, in1.right, in2.bottom, l2, send1);
+      list_add_progressive_display_rect(out, in1.left, in2.bottom, in1.right, in1.bottom, l1, send1);
     }
   }
-  else if (in1->left <= in2->left && in1->right >= in2->right && in1->bottom < in2->bottom && in1->top <= in2->top)
+  else if (in1.left <= in2.left && in1.right >= in2.right && in1.bottom < in2.bottom && in1.top <= in2.top)
   { /* partially covered(whole top) */
     if (send1 == send2)
     {
-      list_add_progressive_display_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, send1);
-      list_add_progressive_display_rect(out, in2->left, in1->bottom, in2->right, in2->bottom, l2, send2);
+      list_add_progressive_display_rect(out, in1.left, in1.top, in1.right, in1.bottom, l1, send1);
+      list_add_progressive_display_rect(out, in2.left, in1.bottom, in2.right, in2.bottom, l2, send2);
     }
     else
     {
-      list_add_progressive_display_rect(out, in1->left, in1->top, in1->right, in2->top, l1, send1);
-      list_add_progressive_display_rect(out, in1->left, in2->top, in2->left, in1->bottom, l1, send1);
-      list_add_progressive_display_rect(out, in2->left, in2->top, in2->right, in1->bottom, l2, nsend);
-      list_add_progressive_display_rect(out, in2->right, in2->top, in1->right, in1->bottom, l1, send1);
-      list_add_progressive_display_rect(out, in2->left, in1->bottom, in2->right, in2->bottom, l2, send2);
+      list_add_progressive_display_rect(out, in1.left, in1.top, in1.right, in2.top, l1, send1);
+      list_add_progressive_display_rect(out, in1.left, in2.top, in2.left, in1.bottom, l1, send1);
+      list_add_progressive_display_rect(out, in2.left, in2.top, in2.right, in1.bottom, l2, nsend);
+      list_add_progressive_display_rect(out, in2.right, in2.top, in1.right, in1.bottom, l1, send1);
+      list_add_progressive_display_rect(out, in2.left, in1.bottom, in2.right, in2.bottom, l2, send2);
     }
   }
-  else if (in1->top <= in2->top && in1->bottom >= in2->bottom && in1->right < in2->right && in1->left <= in2->left)
+  else if (in1.top <= in2.top && in1.bottom >= in2.bottom && in1.right < in2.right && in1.left <= in2.left)
   { /* partially covered(left) */
     if (send1 == send2)
     {
-      list_add_progressive_display_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, send1);
-      list_add_progressive_display_rect(out, in1->right, in2->top, in2->right, in2->bottom, l2, send2);
+      list_add_progressive_display_rect(out, in1.left, in1.top, in1.right, in1.bottom, l1, send1);
+      list_add_progressive_display_rect(out, in1.right, in2.top, in2.right, in2.bottom, l2, send2);
     }
     else
     {
-      list_add_progressive_display_rect(out, in1->left, in1->top, in1->right, in2->top, l1, send1);
-      list_add_progressive_display_rect(out, in1->left, in2->top, in2->left, in2->bottom, l1, send1);
-      list_add_progressive_display_rect(out, in2->left, in2->top, in1->right, in2->bottom, l2, nsend);
-      list_add_progressive_display_rect(out, in1->right, in2->top, in2->right, in2->bottom, l2, send2);
-      list_add_progressive_display_rect(out, in1->left, in2->bottom, in1->right, in1->bottom, l1, send1);
+      list_add_progressive_display_rect(out, in1.left, in1.top, in1.right, in2.top, l1, send1);
+      list_add_progressive_display_rect(out, in1.left, in2.top, in2.left, in2.bottom, l1, send1);
+      list_add_progressive_display_rect(out, in2.left, in2.top, in1.right, in2.bottom, l2, nsend);
+      list_add_progressive_display_rect(out, in1.right, in2.top, in2.right, in2.bottom, l2, send2);
+      list_add_progressive_display_rect(out, in1.left, in2.bottom, in1.right, in1.bottom, l1, send1);
     }
   }
-  else if (in1->left <= in2->left && in1->right >= in2->right && in1->top > in2->top && in1->bottom >= in2->bottom)
+  else if (in1.left <= in2.left && in1.right >= in2.right && in1.top > in2.top && in1.bottom >= in2.bottom)
   { /* partially covered(bottom) */
     if (send1 == send2)
     {
-      list_add_progressive_display_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, send1);
-      list_add_progressive_display_rect(out, in2->left, in2->top, in2->right, in1->top, l2, send2);
+      list_add_progressive_display_rect(out, in1.left, in1.top, in1.right, in1.bottom, l1, send1);
+      list_add_progressive_display_rect(out, in2.left, in2.top, in2.right, in1.top, l2, send2);
     }
     else
     {
-      list_add_progressive_display_rect(out, in2->left, in2->top, in2->right, in1->top, l2, send2);
-      list_add_progressive_display_rect(out, in1->left, in1->top, in2->left, in2->bottom, l1, send1);
-      list_add_progressive_display_rect(out, in2->left, in1->top, in2->right, in2->bottom, l2, nsend);
-      list_add_progressive_display_rect(out, in2->right, in1->top, in1->right, in2->bottom, l1, send1);
-      list_add_progressive_display_rect(out, in1->left, in2->bottom, in1->right, in1->bottom, l1, send1);
+      list_add_progressive_display_rect(out, in2.left, in2.top, in2.right, in1.top, l2, send2);
+      list_add_progressive_display_rect(out, in1.left, in1.top, in2.left, in2.bottom, l1, send1);
+      list_add_progressive_display_rect(out, in2.left, in1.top, in2.right, in2.bottom, l2, nsend);
+      list_add_progressive_display_rect(out, in2.right, in1.top, in1.right, in2.bottom, l1, send1);
+      list_add_progressive_display_rect(out, in1.left, in2.bottom, in1.right, in1.bottom, l1, send1);
     }
   }
-  else if (in1->top <= in2->top && in1->bottom >= in2->bottom && in1->left > in2->left && in1->right >= in2->right)
+  else if (in1.top <= in2.top && in1.bottom >= in2.bottom && in1.left > in2.left && in1.right >= in2.right)
   { /* partially covered(right) */
     if (send1 == send2)
     {
-      list_add_progressive_display_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, send1);
-      list_add_progressive_display_rect(out, in2->left, in2->top, in1->left, in2->bottom, l2, send2);
+      list_add_progressive_display_rect(out, in1.left, in1.top, in1.right, in1.bottom, l1, send1);
+      list_add_progressive_display_rect(out, in2.left, in2.top, in1.left, in2.bottom, l2, send2);
     }
     else
     {
-      list_add_progressive_display_rect(out, in1->left, in1->top, in1->right, in2->top, l1, send1);
-      list_add_progressive_display_rect(out, in2->left, in2->top, in1->left, in2->bottom, l2, send2);
-      list_add_progressive_display_rect(out, in1->left, in2->top, in2->right, in2->bottom, l2, nsend);
-      list_add_progressive_display_rect(out, in2->right, in2->top, in1->right, in2->bottom, l1, send1);
-      list_add_progressive_display_rect(out, in1->left, in2->bottom, in1->right, in1->bottom, l1, send1);
+      list_add_progressive_display_rect(out, in1.left, in1.top, in1.right, in2.top, l1, send1);
+      list_add_progressive_display_rect(out, in2.left, in2.top, in1.left, in2.bottom, l2, send2);
+      list_add_progressive_display_rect(out, in1.left, in2.top, in2.right, in2.bottom, l2, nsend);
+      list_add_progressive_display_rect(out, in2.right, in2.top, in1.right, in2.bottom, l1, send1);
+      list_add_progressive_display_rect(out, in1.left, in2.bottom, in1.right, in1.bottom, l1, send1);
     }
   }
-  else if (in1->left <= in2->left && in1->top <= in2->top && in1->right < in2->right && in1->bottom < in2->bottom)
+  else if (in1.left <= in2.left && in1.top <= in2.top && in1.right < in2.right && in1.bottom < in2.bottom)
   { /* partially covered(top left) */
     if (send1 == send2)
     {
-      list_add_progressive_display_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, send1);
-      list_add_progressive_display_rect(out, in1->right, in2->top, in2->right, in1->bottom, l2, send2);
-      list_add_progressive_display_rect(out, in2->left, in1->bottom, in2->right, in2->bottom, l2, send2);
+      list_add_progressive_display_rect(out, in1.left, in1.top, in1.right, in1.bottom, l1, send1);
+      list_add_progressive_display_rect(out, in1.right, in2.top, in2.right, in1.bottom, l2, send2);
+      list_add_progressive_display_rect(out, in2.left, in1.bottom, in2.right, in2.bottom, l2, send2);
     }
     else
     {
-      list_add_progressive_display_rect(out, in1->left, in1->top, in1->right, in2->top, l1, send1);
-      list_add_progressive_display_rect(out, in1->left, in2->top, in2->left, in1->bottom, l1, send1);
-      list_add_progressive_display_rect(out, in2->left, in2->top, in1->right, in1->bottom, l2, nsend);
-      list_add_progressive_display_rect(out, in1->right, in2->top, in2->right, in1->bottom, l2, send2);
-      list_add_progressive_display_rect(out, in2->left, in1->bottom, in2->right, in2->bottom, l2, send2);
+      list_add_progressive_display_rect(out, in1.left, in1.top, in1.right, in2.top, l1, send1);
+      list_add_progressive_display_rect(out, in1.left, in2.top, in2.left, in1.bottom, l1, send1);
+      list_add_progressive_display_rect(out, in2.left, in2.top, in1.right, in1.bottom, l2, nsend);
+      list_add_progressive_display_rect(out, in1.right, in2.top, in2.right, in1.bottom, l2, send2);
+      list_add_progressive_display_rect(out, in2.left, in1.bottom, in2.right, in2.bottom, l2, send2);
     }
   }
-  else if (in1->left <= in2->left && in1->bottom >= in2->bottom && in1->right < in2->right && in1->top > in2->top)
+  else if (in1.left <= in2.left && in1.bottom >= in2.bottom && in1.right < in2.right && in1.top > in2.top)
   { /* partially covered(bottom left) */
     if (send1 == send2)
     {
-      list_add_progressive_display_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, send1);
-      list_add_progressive_display_rect(out, in1->right, in1->top, in2->right, in2->bottom, l2, send2);
-      list_add_progressive_display_rect(out, in2->left, in2->top, in2->right, in1->top, l2, send2);
+      list_add_progressive_display_rect(out, in1.left, in1.top, in1.right, in1.bottom, l1, send1);
+      list_add_progressive_display_rect(out, in1.right, in1.top, in2.right, in2.bottom, l2, send2);
+      list_add_progressive_display_rect(out, in2.left, in2.top, in2.right, in1.top, l2, send2);
     }
     else
     {
-      list_add_progressive_display_rect(out, in2->left, in2->top, in2->right, in1->top, l2, send2);
-      list_add_progressive_display_rect(out, in1->left, in1->top, in2->left, in2->bottom, l1, send1);
-      list_add_progressive_display_rect(out, in2->left, in1->top, in1->right, in2->bottom, l2, nsend);
-      list_add_progressive_display_rect(out, in1->right, in1->top, in2->right, in2->bottom, l2, send2);
-      list_add_progressive_display_rect(out, in1->left, in2->bottom, in1->right, in1->bottom, l1, send1);
+      list_add_progressive_display_rect(out, in2.left, in2.top, in2.right, in1.top, l2, send2);
+      list_add_progressive_display_rect(out, in1.left, in1.top, in2.left, in2.bottom, l1, send1);
+      list_add_progressive_display_rect(out, in2.left, in1.top, in1.right, in2.bottom, l2, nsend);
+      list_add_progressive_display_rect(out, in1.right, in1.top, in2.right, in2.bottom, l2, send2);
+      list_add_progressive_display_rect(out, in1.left, in2.bottom, in1.right, in1.bottom, l1, send1);
     }
   }
-  else if (in1->left > in2->left && in1->right >= in2->right && in1->top <= in2->top && in1->bottom < in2->bottom)
+  else if (in1.left > in2.left && in1.right >= in2.right && in1.top <= in2.top && in1.bottom < in2.bottom)
   { /* partially covered(top right) */
     if (send1 == send2)
     {
-      list_add_progressive_display_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, send1);
-      list_add_progressive_display_rect(out, in2->left, in2->top, in1->left, in1->bottom, l2, send2);
-      list_add_progressive_display_rect(out, in2->left, in1->bottom, in2->right, in2->bottom, l2, send2);
+      list_add_progressive_display_rect(out, in1.left, in1.top, in1.right, in1.bottom, l1, send1);
+      list_add_progressive_display_rect(out, in2.left, in2.top, in1.left, in1.bottom, l2, send2);
+      list_add_progressive_display_rect(out, in2.left, in1.bottom, in2.right, in2.bottom, l2, send2);
     }
     else
     {
-      list_add_progressive_display_rect(out, in1->left, in1->top, in1->right, in2->top, l1, send1);
-      list_add_progressive_display_rect(out, in2->left, in2->top, in1->left, in1->bottom, l2, send2);
-      list_add_progressive_display_rect(out, in1->left, in2->top, in2->right, in1->bottom, l2, nsend);
-      list_add_progressive_display_rect(out, in2->right, in2->top, in1->right, in1->bottom, l1, send1);
-      list_add_progressive_display_rect(out, in2->left, in1->bottom, in2->right, in2->bottom, l2, send2);
+      list_add_progressive_display_rect(out, in1.left, in1.top, in1.right, in2.top, l1, send1);
+      list_add_progressive_display_rect(out, in2.left, in2.top, in1.left, in1.bottom, l2, send2);
+      list_add_progressive_display_rect(out, in1.left, in2.top, in2.right, in1.bottom, l2, nsend);
+      list_add_progressive_display_rect(out, in2.right, in2.top, in1.right, in1.bottom, l1, send1);
+      list_add_progressive_display_rect(out, in2.left, in1.bottom, in2.right, in2.bottom, l2, send2);
     }
   }
-  else if (in1->left > in2->left && in1->right >= in2->right && in1->top > in2->top && in1->bottom >= in2->bottom)
+  else if (in1.left > in2.left && in1.right >= in2.right && in1.top > in2.top && in1.bottom >= in2.bottom)
   { /* partially covered(bottom right) */
     if (send1 == send2)
     {
-      list_add_progressive_display_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, send1);
-      list_add_progressive_display_rect(out, in2->left, in2->top, in2->right, in1->top, l2, send2);
-      list_add_progressive_display_rect(out, in2->left, in1->top, in1->left, in2->bottom, l2, send2);
+      list_add_progressive_display_rect(out, in1.left, in1.top, in1.right, in1.bottom, l1, send1);
+      list_add_progressive_display_rect(out, in2.left, in2.top, in2.right, in1.top, l2, send2);
+      list_add_progressive_display_rect(out, in2.left, in1.top, in1.left, in2.bottom, l2, send2);
     }
     else
     {
-      list_add_progressive_display_rect(out, in2->left, in2->top, in2->right, in1->top, l2, send2);
-      list_add_progressive_display_rect(out, in2->left, in1->top, in1->left, in2->bottom, l2, send2);
-      list_add_progressive_display_rect(out, in1->left, in1->top, in2->right, in2->bottom, l2, nsend);
-      list_add_progressive_display_rect(out, in2->right, in1->top, in1->right, in2->bottom, l1, send1);
-      list_add_progressive_display_rect(out, in1->left, in2->bottom, in1->right, in1->bottom, l1, send1);
+      list_add_progressive_display_rect(out, in2.left, in2.top, in2.right, in1.top, l2, send2);
+      list_add_progressive_display_rect(out, in2.left, in1.top, in1.left, in2.bottom, l2, send2);
+      list_add_progressive_display_rect(out, in1.left, in1.top, in2.right, in2.bottom, l2, nsend);
+      list_add_progressive_display_rect(out, in2.right, in1.top, in1.right, in2.bottom, l1, send1);
+      list_add_progressive_display_rect(out, in1.left, in2.bottom, in1.right, in1.bottom, l1, send1);
     }
   }
-  else if (in1->left > in2->left && in1->top <= in2->top && in1->right < in2->right && in1->bottom >= in2->bottom)
+  else if (in1.left > in2.left && in1.top <= in2.top && in1.right < in2.right && in1.bottom >= in2.bottom)
   { /* 2 rects, one on each end */
     if (send1 == send2)
     {
-      list_add_progressive_display_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, send2);
-      list_add_progressive_display_rect(out, in2->left, in2->top, in1->left, in2->bottom, l2, send2);
-      list_add_progressive_display_rect(out, in1->right, in2->top, in2->right, in2->bottom, l2, send2);
+      list_add_progressive_display_rect(out, in1.left, in1.top, in1.right, in1.bottom, l1, send2);
+      list_add_progressive_display_rect(out, in2.left, in2.top, in1.left, in2.bottom, l2, send2);
+      list_add_progressive_display_rect(out, in1.right, in2.top, in2.right, in2.bottom, l2, send2);
     }
     else
     {
-      list_add_progressive_display_rect(out, in1->left, in1->top, in1->right, in2->top, l1, send1);
-      list_add_progressive_display_rect(out, in2->left, in2->top, in1->left, in2->bottom, l2, send2);
-      list_add_progressive_display_rect(out, in1->left, in2->top, in1->right, in2->bottom, l2, nsend);
-      list_add_progressive_display_rect(out, in1->right, in2->top, in2->right, in2->bottom, l2, send2);
-      list_add_progressive_display_rect(out, in1->left, in2->bottom, in1->right, in1->bottom, l1, send1);
+      list_add_progressive_display_rect(out, in1.left, in1.top, in1.right, in2.top, l1, send1);
+      list_add_progressive_display_rect(out, in2.left, in2.top, in1.left, in2.bottom, l2, send2);
+      list_add_progressive_display_rect(out, in1.left, in2.top, in1.right, in2.bottom, l2, nsend);
+      list_add_progressive_display_rect(out, in1.right, in2.top, in2.right, in2.bottom, l2, send2);
+      list_add_progressive_display_rect(out, in1.left, in2.bottom, in1.right, in1.bottom, l1, send1);
     }
   }
-  else if (in1->left <= in2->left && in1->top > in2->top && in1->right >= in2->right && in1->bottom < in2->bottom)
+  else if (in1.left <= in2.left && in1.top > in2.top && in1.right >= in2.right && in1.bottom < in2.bottom)
   { /* 2 rects, one on each end */
     if (send1 == send2)
     {
-      list_add_progressive_display_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, send1);
-      list_add_progressive_display_rect(out, in2->left, in2->top, in2->right, in1->top, l2, send2);
-      list_add_progressive_display_rect(out, in2->left, in1->bottom, in2->right, in2->bottom, l2, send2);
+      list_add_progressive_display_rect(out, in1.left, in1.top, in1.right, in1.bottom, l1, send1);
+      list_add_progressive_display_rect(out, in2.left, in2.top, in2.right, in1.top, l2, send2);
+      list_add_progressive_display_rect(out, in2.left, in1.bottom, in2.right, in2.bottom, l2, send2);
     }
     else
     {
-      list_add_progressive_display_rect(out, in2->left, in2->top, in2->right, in1->top, l2, send2);
-      list_add_progressive_display_rect(out, in1->left, in1->top, in2->left, in1->bottom, l1, send1);
-      list_add_progressive_display_rect(out, in2->left, in1->top, in2->right, in1->bottom, l2, nsend);
-      list_add_progressive_display_rect(out, in2->right, in1->top, in1->right, in1->bottom, l1, send1);
-      list_add_progressive_display_rect(out, in2->left, in1->bottom, in2->right, in2->bottom, l2, send2);
+      list_add_progressive_display_rect(out, in2.left, in2.top, in2.right, in1.top, l2, send2);
+      list_add_progressive_display_rect(out, in1.left, in1.top, in2.left, in1.bottom, l1, send1);
+      list_add_progressive_display_rect(out, in2.left, in1.top, in2.right, in1.bottom, l2, nsend);
+      list_add_progressive_display_rect(out, in2.right, in1.top, in1.right, in1.bottom, l1, send1);
+      list_add_progressive_display_rect(out, in2.left, in1.bottom, in2.right, in2.bottom, l2, send2);
     }
   }
-  else if (in1->left > in2->left && in1->right < in2->right && in1->top <= in2->top && in1->bottom < in2->bottom)
+  else if (in1.left > in2.left && in1.right < in2.right && in1.top <= in2.top && in1.bottom < in2.bottom)
   { /* partially covered(top) */
     if (send1 == send2)
     {
-      list_add_progressive_display_rect(out, in2->left, in2->top, in2->right, in2->bottom, l2, send2);
-      list_add_progressive_display_rect(out, in1->left, in1->top, in1->right, in2->top, l1, send1);
+      list_add_progressive_display_rect(out, in2.left, in2.top, in2.right, in2.bottom, l2, send2);
+      list_add_progressive_display_rect(out, in1.left, in1.top, in1.right, in2.top, l1, send1);
     }
     else
     {
-      list_add_progressive_display_rect(out, in1->left, in1->top, in1->right, in2->top, l1, send1);
-      list_add_progressive_display_rect(out, in2->left, in2->top, in1->left, in1->bottom, l2, send2);
-      list_add_progressive_display_rect(out, in1->left, in2->top, in1->right, in1->bottom, l2, nsend);
-      list_add_progressive_display_rect(out, in1->right, in2->top, in2->right, in1->bottom, l2, send2);
-      list_add_progressive_display_rect(out, in2->left, in1->bottom, in2->right, in2->bottom, l2, send2);
+      list_add_progressive_display_rect(out, in1.left, in1.top, in1.right, in2.top, l1, send1);
+      list_add_progressive_display_rect(out, in2.left, in2.top, in1.left, in1.bottom, l2, send2);
+      list_add_progressive_display_rect(out, in1.left, in2.top, in1.right, in1.bottom, l2, nsend);
+      list_add_progressive_display_rect(out, in1.right, in2.top, in2.right, in1.bottom, l2, send2);
+      list_add_progressive_display_rect(out, in2.left, in1.bottom, in2.right, in2.bottom, l2, send2);
     }
   }
-  else if (in1->top > in2->top && in1->bottom < in2->bottom && in1->left <= in2->left && in1->right < in2->right)
+  else if (in1.top > in2.top && in1.bottom < in2.bottom && in1.left <= in2.left && in1.right < in2.right)
   { /* partially covered(left) */
     if (send1 == send2)
     {
-      list_add_progressive_display_rect(out, in2->left, in2->top, in2->right, in2->bottom, l2, send2);
-      list_add_progressive_display_rect(out, in1->left, in1->top, in2->left, in1->bottom, l1, send1);
+      list_add_progressive_display_rect(out, in2.left, in2.top, in2.right, in2.bottom, l2, send2);
+      list_add_progressive_display_rect(out, in1.left, in1.top, in2.left, in1.bottom, l1, send1);
     }
     else
     {
-      list_add_progressive_display_rect(out, in2->left, in2->top, in2->right, in1->top, l2, send2);
-      list_add_progressive_display_rect(out, in1->left, in1->top, in2->left, in1->bottom, l1, send1);
-      list_add_progressive_display_rect(out, in2->left, in1->top, in1->right, in1->bottom, l2, nsend);
-      list_add_progressive_display_rect(out, in1->right, in1->top, in2->right, in1->bottom, l2, send2);
-      list_add_progressive_display_rect(out, in2->left, in1->bottom, in2->right, in2->bottom, l2, send2);
+      list_add_progressive_display_rect(out, in2.left, in2.top, in2.right, in1.top, l2, send2);
+      list_add_progressive_display_rect(out, in1.left, in1.top, in2.left, in1.bottom, l1, send1);
+      list_add_progressive_display_rect(out, in2.left, in1.top, in1.right, in1.bottom, l2, nsend);
+      list_add_progressive_display_rect(out, in1.right, in1.top, in2.right, in1.bottom, l2, send2);
+      list_add_progressive_display_rect(out, in2.left, in1.bottom, in2.right, in2.bottom, l2, send2);
     }
   }
-  else if (in1->left > in2->left && in1->right < in2->right && in1->bottom >= in2->bottom && in1->top > in2->top)
+  else if (in1.left > in2.left && in1.right < in2.right && in1.bottom >= in2.bottom && in1.top > in2.top)
   { /* partially covered(bottom) */
     if (send1 == send2)
     {
-      list_add_progressive_display_rect(out, in2->left, in2->top, in2->right, in2->bottom, l2, send2);
-      list_add_progressive_display_rect(out, in1->left, in2->bottom, in1->right, in1->bottom, l1, send1);
+      list_add_progressive_display_rect(out, in2.left, in2.top, in2.right, in2.bottom, l2, send2);
+      list_add_progressive_display_rect(out, in1.left, in2.bottom, in1.right, in1.bottom, l1, send1);
     }
     else
     {
-      list_add_progressive_display_rect(out, in2->left, in2->top, in2->right, in1->top, l2, send2);
-      list_add_progressive_display_rect(out, in2->left, in1->top, in1->left, in2->bottom, l2, send2);
-      list_add_progressive_display_rect(out, in1->left, in1->top, in1->right, in2->bottom, l2, nsend);
-      list_add_progressive_display_rect(out, in1->right, in1->top, in2->right, in2->bottom, l2, send2);
-      list_add_progressive_display_rect(out, in1->left, in2->bottom, in1->right, in1->bottom, l1, send1);
+      list_add_progressive_display_rect(out, in2.left, in2.top, in2.right, in1.top, l2, send2);
+      list_add_progressive_display_rect(out, in2.left, in1.top, in1.left, in2.bottom, l2, send2);
+      list_add_progressive_display_rect(out, in1.left, in1.top, in1.right, in2.bottom, l2, nsend);
+      list_add_progressive_display_rect(out, in1.right, in1.top, in2.right, in2.bottom, l2, send2);
+      list_add_progressive_display_rect(out, in1.left, in2.bottom, in1.right, in1.bottom, l1, send1);
     }
   }
-  else if (in1->top > in2->top && in1->bottom < in2->bottom && in1->right >= in2->right && in1->left > in2->left)
+  else if (in1.top > in2.top && in1.bottom < in2.bottom && in1.right >= in2.right && in1.left > in2.left)
   { /* partially covered(right) */
     if (send1 == send2)
     {
-      list_add_progressive_display_rect(out, in2->left, in2->top, in2->right, in2->bottom, l2, send2);
-      list_add_progressive_display_rect(out, in2->right, in1->top, in1->right, in1->bottom, l1, send1);
+      list_add_progressive_display_rect(out, in2.left, in2.top, in2.right, in2.bottom, l2, send2);
+      list_add_progressive_display_rect(out, in2.right, in1.top, in1.right, in1.bottom, l1, send1);
     }
     else
     {
-      list_add_progressive_display_rect(out, in2->left, in2->top, in2->right, in1->top, l2, send2);
-      list_add_progressive_display_rect(out, in2->left, in1->top, in1->left, in1->bottom, l2, send2);
-      list_add_progressive_display_rect(out, in1->left, in1->top, in2->right, in1->bottom, l2, nsend);
-      list_add_progressive_display_rect(out, in2->right, in1->top, in1->right, in1->bottom, l1, send1);
-      list_add_progressive_display_rect(out, in2->left, in1->bottom, in2->right, in2->bottom, l2, send1);
+      list_add_progressive_display_rect(out, in2.left, in2.top, in2.right, in1.top, l2, send2);
+      list_add_progressive_display_rect(out, in2.left, in1.top, in1.left, in1.bottom, l2, send2);
+      list_add_progressive_display_rect(out, in1.left, in1.top, in2.right, in1.bottom, l2, nsend);
+      list_add_progressive_display_rect(out, in2.right, in1.top, in1.right, in1.bottom, l1, send1);
+      list_add_progressive_display_rect(out, in2.left, in1.bottom, in2.right, in2.bottom, l2, send1);
     }
   }
-  else if (in1->left > in2->left && in1->top > in2->top && in1->right < in2->right && in1->bottom < in2->bottom)
+  else if (in1.left > in2.left && in1.top > in2.top && in1.right < in2.right && in1.bottom < in2.bottom)
   { /* totally contained, 4 rects */
     if (send1 == send2)
     {
-      list_add_progressive_display_rect(out, in2->left, in2->top, in2->right, in2->bottom, l2, send2);
+      list_add_progressive_display_rect(out, in2.left, in2.top, in2.right, in2.bottom, l2, send2);
     }
     else
     {
-      list_add_progressive_display_rect(out, in1->left, in1->top, in1->right, in1->bottom, l1, nsend);
-      list_add_progressive_display_rect(out, in2->left, in2->top, in2->right, in1->top, l2, send2);
-      list_add_progressive_display_rect(out, in2->left, in1->top, in1->left, in1->bottom, l2, send2);
-      list_add_progressive_display_rect(out, in1->right, in1->top, in2->right, in1->bottom, l2, send2);
-      list_add_progressive_display_rect(out, in2->left, in1->bottom, in2->right, in2->bottom, l2, send2);
+      list_add_progressive_display_rect(out, in1.left, in1.top, in1.right, in1.bottom, l1, nsend);
+      list_add_progressive_display_rect(out, in2.left, in2.top, in2.right, in1.top, l2, send2);
+      list_add_progressive_display_rect(out, in2.left, in1.top, in1.left, in1.bottom, l2, send2);
+      list_add_progressive_display_rect(out, in1.right, in1.top, in2.right, in1.bottom, l2, send2);
+      list_add_progressive_display_rect(out, in2.left, in1.bottom, in2.right, in2.bottom, l2, send2);
     }
   }
 }

@@ -153,11 +153,10 @@ lib_userChannel_server_paint_rect(struct xrdp_mod* mod, int x, int y, int cx, in
       current_urect = (struct update_rect*) g_malloc(sizeof(struct update_rect), 0);
       current_urect->quality = 0;
       current_urect->quality_already_send = -1;
-      current_urect->rect = (struct xrdp_rect*) g_malloc(sizeof(struct xrdp_rect), 0);
-      current_urect->rect->left = x;
-      current_urect->rect->top = y;
-      current_urect->rect->right = x + cx;
-      current_urect->rect->bottom = y + cy;
+      current_urect->rect.left = x;
+      current_urect->rect.top = y;
+      current_urect->rect.right = x + cx;
+      current_urect->rect.bottom = y + cy;
       fifo_push(u->desktop->candidate_update_rects, current_urect);
     }
 
