@@ -144,7 +144,7 @@ lib_userChannel_server_paint_rect(struct xrdp_mod* mod, int x, int y, int cx, in
     struct xrdp_screen* self = u->desktop;
     struct update_rect* current_urect;
     unsigned int quality = (wm->client_info->use_progressive_display) ? wm->client_info->progressive_display_nb_level - 1 : 0;
-    if (q_params->use_video_detection)
+    if (q_params->is_video_detection_enable)
     {
       video_detection_update(u->desktop, x, y, cx, cy, 0);
     }
@@ -438,7 +438,7 @@ lib_userChannel_update_screen(struct userChannel* u)
 {
   struct xrdp_screen* desktop = u->desktop;
   struct quality_params* qp = (struct quality_params*) u->q_params;
-  if (qp->is_video_detection_enable && qp->is_progressive_display_enable)
+  if (qp->is_video_detection_enable || qp->is_progressive_display_enable)
   {
     quality_params_prepare_data(u->q_params, u->desktop, u);
   }
@@ -456,7 +456,7 @@ lib_userChannel_update(struct userChannel* u, long * t0)
 {
   int i;
   struct quality_params* q_params = (struct quality_params*) u->q_params;
-  if (q_params->use_video_detection)
+  if (q_params->is_video_detection_enable)
   {
     int t1 = g_time3();
     if ((t1 - *t0) > u->desktop->client_info->video_detection_updatetime)

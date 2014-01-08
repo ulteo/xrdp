@@ -480,7 +480,7 @@ void quality_params_prepare_data(struct quality_params* self, struct xrdp_screen
         send = true;
       }
       list_delete(list_r);
-      if (desktop->video_regs->count > 0)
+      if (self->is_video_detection_enable && desktop->video_regs->count > 0)
       {
         float vr_estimate_size = estimate_size_coef * quality_params_estimate_video_regs_size(self, desktop->video_regs) / 1024;
         if (vr_estimate_size <= bw)
@@ -567,7 +567,7 @@ void quality_params_prepare_data(struct quality_params* self, struct xrdp_screen
   {
     //progressive_display_split_and_merge(list_rq);
     progressive_display_add_update_order(desktop, list_rq, u->current_update_list);
-    if (self->use_video_detection)
+    if (self->is_video_detection_enable)
     {
       video_detection_add_update_order(desktop, u->current_update_list, u);
     }
