@@ -883,6 +883,10 @@ xrdp_rdp_incoming(struct xrdp_rdp* self)
 	  break;
   }
 
+  if (self->client_info.static_bandwidth != 0 && !self->client_info.support_network_detection)
+  {
+	  self->session->bandwidth = self->client_info.static_bandwidth;
+  }
 
   DEBUG(("out xrdp_rdp_incoming mcs channel %d", self->mcs_channel));
   return 0;
