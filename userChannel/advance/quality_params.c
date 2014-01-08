@@ -346,20 +346,22 @@ void quality_params_prepare_data(struct quality_params* self, struct xrdp_screen
         q_params_min = quality_params_is_min(self, list_rq, desktop->video_regs);
       }
 
-      float vr_estimate_size = estimate_size_coef * quality_params_estimate_video_regs_size(self, desktop->video_regs) / 1024;
       if (estimate_size <= bw)
       {
-        vr_estimate_size = estimate_size_coef * quality_params_estimate_video_regs_size(self, desktop->video_regs) / 1024;
-        if ((estimate_size + vr_estimate_size) <= bw)
+        if (self->is_video_detection_enable)
         {
-          self->use_video_detection = true;
-          self->video_display_fps = 1;
-          estimate_size += vr_estimate_size;
-        }
-        else
-        {
-          self->use_video_detection = true;
-          self->video_display_fps = 0;
+          float vr_estimate_size = estimate_size_coef * quality_params_estimate_video_regs_size(self, desktop->video_regs) / 1024;
+          if ((estimate_size + vr_estimate_size) <= bw)
+          {
+            self->use_video_detection = true;
+            self->video_display_fps = 1;
+            estimate_size += vr_estimate_size;
+          }
+          else
+          {
+            self->use_video_detection = true;
+            self->video_display_fps = 0;
+          }
         }
         send = true;
       }
