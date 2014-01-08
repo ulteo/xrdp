@@ -273,7 +273,6 @@ void quality_params_prepare_data(struct quality_params* self, struct xrdp_screen
   struct xrdp_wm* wm = (struct xrdp_wm*) u->wm;
   float estimate_size = 0;
   int k = 0;
-
   if (wm->session->next_request_time >= MAX_REQUEST_TIME)
   {
     self->coef_size = 3;
@@ -298,7 +297,6 @@ void quality_params_prepare_data(struct quality_params* self, struct xrdp_screen
   float bw = ((float) (bandwidth)) / ((float) (self->fps));
   struct list* l_update = list_create();
   l_update->auto_free = true;
-  bool send = false;
   bool reduce_list = false;
   bool q_params_min;
   int i;
@@ -363,7 +361,6 @@ void quality_params_prepare_data(struct quality_params* self, struct xrdp_screen
             self->video_display_fps = 0;
           }
         }
-        send = true;
       }
       else if (q_params_min && estimate_size > bw)
       {
@@ -428,7 +425,6 @@ void quality_params_prepare_data(struct quality_params* self, struct xrdp_screen
               list_remove_item(list_r, i);
               estimate_size += es;
               added = true;
-              send = true;
             }
           }
         }
@@ -454,7 +450,6 @@ void quality_params_prepare_data(struct quality_params* self, struct xrdp_screen
               tmp->rect->left = cur->rect->left;
               tmp->rect->right = cur->rect->right;
               list_add_item(list_rq, (tbus) tmp);
-              send = true;
               estimate_size += es;
               list_remove_item(list_r, i);
               break;
@@ -479,7 +474,6 @@ void quality_params_prepare_data(struct quality_params* self, struct xrdp_screen
           fifo_push(desktop->candidate_update_rects, tmp);
           list_remove_item(list_r, i);
         }
-        send = true;
       }
       list_delete(list_r);
       if (self->is_video_detection_enable && desktop->video_regs->count > 0)
@@ -496,7 +490,6 @@ void quality_params_prepare_data(struct quality_params* self, struct xrdp_screen
           self->use_video_detection = true;
           self->video_display_fps = 0;
         }
-        send = true;
       }
     }
   }
@@ -563,17 +556,105 @@ void quality_params_prepare_data(struct quality_params* self, struct xrdp_screen
         list_add_progressive_display_rect(list_rq/*desktop->update_rects*/, fu_rect->rect->left, fu_rect->rect->top, fu_rect->rect->right, fu_rect->rect->bottom, fu_rect->quality, fu_rect->quality_already_send);
       }
     }
-    send = true;
   }
-  if (send)
+  progressive_display_add_update_order(desktop, list_rq, u->current_update_list);
+  if (self->is_video_detection_enable)
   {
-    //progressive_display_split_and_merge(list_rq);
-    progressive_display_add_update_order(desktop, list_rq, u->current_update_list);
-    if (self->is_video_detection_enable)
+    video_detection_add_update_order(desktop, u->current_update_list, u);
+  }
+  list_delete(list_rq);
+}
+
+void quality_params_prepare_data2(struct quality_params* self, struct xrdp_screen* desktop, struct userChannel* u)
+{
+  struct xrdp_wm* wm = (struct xrdp_wm*) u->wm;
+  float estimate_size = 0;
+  int k = 0;
+
+  if (wm->session->next_request_time >= MAX_REQUEST_TIME)
+  {
+    self->coef_size = 3;
+  }
+  else if (wm->session->next_request_time >= MID_REQUEST_TIME && wm->session->next_request_time < MAX_REQUEST_TIME)
+  {
+    self->coef_size = (self->coef_size > 3) ? 3 : self->coef_size * 1.5;
+  }
+  else if (wm->session->next_request_time < MID_REQUEST_TIME && wm->session->next_request_time >= MIN_REQUEST_TIME)
+  {
+    self->coef_size =
+        (self->coef_size * 0.2 < 0.05) ? 0.05 : self->coef_size * 0.2;
+  }
+
+  float estimate_size_coef = self->coef_size;
+  struct list* list_rq = list_create();
+  list_rq->auto_free = true;
+  unsigned int bandwidth = (u->bandwidth) ? (u->bandwidth) : wm->session->bandwidth;
+
+  if (bandwidth < 10)
+  {
+    self->fps = 5;
+  }
+
+  float bw = ((float) (bandwidth)) / ((float) (self->fps));
+  struct list* l_update = list_create();
+  l_update->auto_free = true;
+  bool send = false;
+  bool reduce_list = false;
+  bool q_params_min;
+  int i;
+  if (desktop->update_rects->count > 0)
+  {
+    l_update = desktop->update_rects;
+  }
+  if (desktop->candidate_update_rects->count > 0)
+  {
+    while (!fifo_is_empty(desktop->candidate_update_rects))
     {
-      video_detection_add_update_order(desktop, u->current_update_list, u);
+      struct update_rect* cur = fifo_pop(desktop->candidate_update_rects);
+      list_add_item(l_update, (tbus) cur);
     }
   }
 
+  if (l_update->count > 0)
+  {
+    for (i = l_update->count - 1; i >= 0; i--)
+    {
+      struct update_rect * cur = (struct update_rect*) list_get_item(l_update, i);
+      struct update_rect* tmp = (struct update_rect*) g_malloc(sizeof(struct update_rect), 0);
+      tmp->quality = 0;
+      tmp->quality_already_send = -1;
+      tmp->rect = (struct xrdp_rect*) g_malloc(sizeof(struct xrdp_rect), 0);
+      tmp->rect->top = cur->rect->top;
+      tmp->rect->bottom = cur->rect->bottom;
+      tmp->rect->left = cur->rect->left;
+      tmp->rect->right = cur->rect->right;
+      list_add_item(list_rq, (tbus) tmp);
+      list_remove_item(l_update, i);
+    }
+    if (list_rq->count > 0)
+    {
+      estimate_size = estimate_size_coef * quality_params_estimate_progressive_display_size(self, list_rq) / 1024;
+      q_params_min = quality_params_is_min(self, list_rq, desktop->video_regs);
+      int cpt = list_rq->count * (self->progressive_display_nb_level - 1);
+      while (estimate_size > bw && !q_params_min && cpt-- > 0)
+      {
+        quality_params_decrease_quality(self, list_rq, desktop->video_regs);
+        estimate_size = estimate_size_coef * quality_params_estimate_progressive_display_size(self, list_rq) / 1024;
+        q_params_min = quality_params_is_min(self, list_rq, desktop->video_regs);
+      }
+
+      if (estimate_size >= bw)
+      {
+        bool r_list = xrdp_screen_reduce_update_list(desktop, list_rq);
+        estimate_size = estimate_size_coef * quality_params_estimate_size(self, list_rq, desktop->video_regs) / 1024;
+        while (estimate_size >= bw && r_list)
+        {
+          r_list = xrdp_screen_reduce_update_list(desktop, list_rq);
+          estimate_size = estimate_size_coef * quality_params_estimate_size(self, list_rq, desktop->video_regs) / 1024;
+        }
+      }
+    }
+  }
+  progressive_display_add_update_order(desktop, list_rq, u->current_update_list);
   list_delete(list_rq);
 }

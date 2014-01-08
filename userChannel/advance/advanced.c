@@ -444,7 +444,7 @@ lib_userChannel_update_screen(struct userChannel* u)
   }
   else
   {
-    xrdp_screen_add_update_orders(u->desktop, u->current_update_list);
+    quality_params_prepare_data2(u->q_params, u->desktop, u);
   }
   return 0;
 }

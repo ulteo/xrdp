@@ -61,5 +61,7 @@ bool quality_params_is_max(struct quality_params* self, struct list* l1, struct 
 bool quality_params_is_min(struct quality_params* self, struct list* l1, struct list* l2);
 float quality_params_estimate_size_rect(struct quality_params* self, struct update_rect* urect, int q);
 void quality_params_prepare_data(struct quality_params* self, struct xrdp_screen* screen, struct userChannel* u);
+void quality_params_prepare_data2(struct quality_params* self, struct xrdp_screen* screen, struct userChannel* u);
+
 
 #endif // _QUALITY_PARAMS_H
