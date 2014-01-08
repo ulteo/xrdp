@@ -27,6 +27,10 @@
 #include "userChannel.h"
 #include "libxrdpinc.h"
 
+#define MAX_REQUEST_TIME 1000
+#define MID_REQUEST_TIME 100
+#define MIN_REQUEST_TIME 10
+
 struct quality_params
 {
   struct xrdp_client_info* client_info;

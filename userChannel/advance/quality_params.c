@@ -274,15 +274,15 @@ void quality_params_prepare_data(struct quality_params* self, struct xrdp_screen
   float estimate_size = 0;
   int k = 0;
 
-  if (wm->session->next_request_time >= 1000)
+  if (wm->session->next_request_time >= MAX_REQUEST_TIME)
   {
     self->coef_size = 3;
   }
-  else if (wm->session->next_request_time >= 100 && wm->session->next_request_time < 1000)
+  else if (wm->session->next_request_time >= MID_REQUEST_TIME && wm->session->next_request_time < MAX_REQUEST_TIME)
   {
     self->coef_size = (self->coef_size > 3) ? 3 : self->coef_size * 1.5;
   }
-  else if (wm->session->next_request_time < 50 && wm->session->next_request_time >= 10)
+  else if (wm->session->next_request_time < MID_REQUEST_TIME && wm->session->next_request_time >= MIN_REQUEST_TIME)
   {
     self->coef_size =
         (self->coef_size * 0.2 < 0.05) ? 0.05 : self->coef_size * 0.2;
