@@ -160,13 +160,15 @@ lib_userChannel_server_paint_rect(struct xrdp_mod* mod, int x, int y, int cx, in
       fifo_push(u->desktop->candidate_update_rects, current_urect);
     }
 
+    xrdp_screen_update_screen(self, x, y, cx, cy, data, width, height, srcx, srcy);
+
     if (wm->client_info->use_progressive_display)
     {
-      progressive_display_add_rect(self, x, y, cx, cy, data, width, height, srcx, srcy);
+      progressive_display_add_rect(self);
 	}
     else
     {
-      xrdp_screen_update_desktop(u->desktop, x, y, cx, cy, data, width, height, srcx, srcy);
+      xrdp_screen_update_desktop(u->desktop);
     }
   }
   return 0;

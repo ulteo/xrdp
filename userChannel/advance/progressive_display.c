@@ -60,7 +60,7 @@ void list_rect_progressive_display(struct list* self)
   }
 }
 
-void progressive_display_add_rect(struct xrdp_screen * self, int x, int y, int cx, int cy, char* data, int w, int h, int srcx, int srcy)
+void progressive_display_add_rect(struct xrdp_screen * self)
 {
   int i, j;
   struct list* update_rects = self->update_rects;
@@ -71,7 +71,6 @@ void progressive_display_add_rect(struct xrdp_screen * self, int x, int y, int c
   struct update_rect* tmp;
   struct list* l_tmp = list_create();
   l_tmp->auto_free = 1;
-  ip_image_merge(self->screen, x, y, w, h, data);
 
   bool no_inter = true;
   while (!fifo_is_empty(self->candidate_update_rects))

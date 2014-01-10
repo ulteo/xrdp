@@ -80,7 +80,12 @@ void xrdp_screen_delete(struct xrdp_screen* self)
   g_free(self);
 }
 
-void xrdp_screen_update_desktop(struct xrdp_screen* self, int x, int y, int cx, int cy, char* data, int w, int h, int srcx, int srcy)
+void xrdp_screen_update_screen(struct xrdp_screen* self, int x, int y, int cx, int cy, char* data, int w, int h, int srcx, int srcy)
+{
+  ip_image_merge(self->screen, x, y, w, h, data);
+}
+
+void xrdp_screen_update_desktop(struct xrdp_screen* self)
 {
   int i, j;
   struct list* update_rects = self->update_rects;
@@ -91,7 +96,6 @@ void xrdp_screen_update_desktop(struct xrdp_screen* self, int x, int y, int cx, 
   struct update_rect* tmp;
 
   struct list* l_tmp = list_create();
-  ip_image_merge(self->screen, x, y, w, h, data);
   bool no_inter = true;
   while (!fifo_is_empty(self->candidate_update_rects))
   {

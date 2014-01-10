@@ -25,7 +25,7 @@
 #include "libxrdpinc.h"
 #include "xrdp_screen.h"
 
-void progressive_display_add_rect(struct xrdp_screen* self, int x, int y, int cx, int cy, char* data, int w, int h, int srcx, int srcy);
+void progressive_display_add_rect(struct xrdp_screen* self);
 void progressive_display_add_update_order(struct xrdp_screen* self, struct list* l, struct list* update);
 void progressive_display_update_level(struct xrdp_screen* self, long *t0);
 void progressive_display_rect_union(struct update_rect* pin1, struct update_rect* pin2, struct list* out);
