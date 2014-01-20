@@ -30,14 +30,14 @@
 
 struct video_reg
 {
-  struct xrdp_rect* rect;
+  struct xrdp_rect rect;
   int nb_update;
   bool already_send;
 };
 
 void video_detection_update(struct xrdp_screen* self, int x, int y, int cx, int cy, int quality);
 void update_video_regions(struct list* video, struct list* candidate, int fps);
-void update_candidate_video_regions(struct list* self, struct xrdp_rect* rect, int max_fps);
+void update_candidate_video_regions(struct list* self, struct xrdp_rect rect, int max_fps);
 int video_regions_union(struct video_reg* v1, struct video_reg* v2, struct list* out, int maxfps);
 void video_regions_merge(struct list* self);
 void list_add_video_reg(struct list* self, int left, int top, int right, int bottom, int nb_update);

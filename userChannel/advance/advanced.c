@@ -474,10 +474,10 @@ lib_userChannel_update(struct userChannel* u, long * t0)
           update* up;
           up = g_malloc(sizeof(update), 1);
           up->order_type = paint_rect;
-          up->x = tmp->rect->left;
-          up->y = tmp->rect->top;
-          int w = rect_width(tmp->rect);
-          int h = rect_height(tmp->rect);
+          up->x = tmp->rect.left;
+          up->y = tmp->rect.top;
+          int w = rect_width(&tmp->rect);
+          int h = rect_height(&tmp->rect);
           up->cx = w;
           up->cy = h;
           up->width = w;

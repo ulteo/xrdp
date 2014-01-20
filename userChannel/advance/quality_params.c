@@ -123,8 +123,8 @@ float quality_params_estimate_video_regs_size(struct quality_params* self, struc
     for (i = 0; i < l->count; i++)
     {
       struct video_reg* cur = (struct video_reg*) list_get_item(l, i);
-      w = (float) rect_width(cur->rect);
-      h = (float) rect_height(cur->rect);
+      w = (float) rect_width(&cur->rect);
+      h = (float) rect_height(&cur->rect);
       size +=((float) Bpp) * w * h;
     }
   }
