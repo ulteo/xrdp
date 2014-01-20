@@ -86,7 +86,6 @@ void video_detection_update(struct xrdp_screen* self, int x, int y, int cx, int 
         struct update_rect* urect = (struct update_rect*) g_malloc(sizeof(struct update_rect), 0);
         urect->quality = quality;
         urect->quality_already_send = -1;
-//        urect->rect = (struct xrdp_rect*) g_malloc(sizeof(struct xrdp_rect), 0);
         urect->rect.top = f_rect->top;
         urect->rect.left = f_rect->left;
         urect->rect.right = f_rect->right;
@@ -99,7 +98,6 @@ void video_detection_update(struct xrdp_screen* self, int x, int y, int cx, int 
       struct update_rect* urect = (struct update_rect*) g_malloc(sizeof(struct update_rect), 0);
       urect->quality = quality;
       urect->quality_already_send = -1;
-//      urect->rect = (struct xrdp_rect*) g_malloc(sizeof(struct xrdp_rect), 0);
       urect->rect.top = f_rect->top;
       urect->rect.left = f_rect->left;
       urect->rect.right = f_rect->right;
@@ -122,6 +120,7 @@ void update_video_regions(struct list* video, struct list* candidate, int fps)
       list_add_video_reg(video, cur->rect->left, cur->rect->top, cur->rect->right, cur->rect->bottom, cur->nb_update);
     }
   }
+  video_regions_merge(video);
 }
 
 void video_regions_merge(struct list* video)
@@ -134,9 +133,15 @@ void video_regions_merge(struct list* video)
     for (j = 0; j < video->count; j++)
     {
       struct video_reg* first = (struct video_reg*) list_get_item(video, j);
-      for (i = j; i < video->count; i++)
+      for (i = video->count - 1 ; i > j; i--)
       {
         struct video_reg* second = (struct video_reg*) list_get_item(video, i);
+        if (rect_equal(first->rect, second->rect))
+        {
+          list_remove_item(video, i);
+          merged = true;
+          break;
+        }
         if (abs(first->rect->left - second->rect->left) < DELTA_VIDEO && abs(first->rect->right - second->rect->right) < DELTA_VIDEO)
         {
           if (abs(first->rect->bottom - second->rect->top) < DELTA_VIDEO)
@@ -172,6 +177,7 @@ void video_regions_merge(struct list* video)
           }
         }
       }
+      if (merged == true) break;
     }
   }
 }
@@ -245,8 +251,8 @@ int video_regions_union(struct video_reg* v1, struct video_reg* v2, struct list*
   struct xrdp_rect* in1 = v1->rect;
   struct xrdp_rect* in2 = v2->rect;
 
-  int nb_update =
-      (v1->nb_update + v2->nb_update > maxfps) ? maxfps : v1->nb_update + v2->nb_update;
+  int nb_update = (MAX(v1->nb_update, v2->nb_update) + 1 > maxfps) ? maxfps : MAX(v1->nb_update, v2->nb_update) + 1;
+
   if (in1->left <= in2->left && in1->top <= in2->top && in1->right >= in2->right && in1->bottom >= in2->bottom)
   {
     list_add_video_reg(out, in1->left, in1->top, in1->right, in2->top, v1->nb_update);

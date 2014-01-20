@@ -117,15 +117,15 @@ float quality_params_estimate_video_regs_size(struct quality_params* self, struc
   if (l->count > 0)
   {
     int i;
-    int w, h;
+    float w, h;
     int Bpp = (self->client_info->bpp + 7) / 8;
     Bpp = (Bpp == 3) ? 4 : Bpp;
     for (i = 0; i < l->count; i++)
     {
-      struct update_rect* cur = (struct update_rect*) list_get_item(l, i);
-      w = rect_width(&cur->rect);
-      h = rect_height(&cur->rect);
-      size += Bpp * w * h;
+      struct video_reg* cur = (struct video_reg*) list_get_item(l, i);
+      w = (float) rect_width(cur->rect);
+      h = (float) rect_height(cur->rect);
+      size +=((float) Bpp) * w * h;
     }
   }
   return size;
@@ -230,21 +230,21 @@ bool quality_params_is_max(struct quality_params* self, struct list* lr, struct 
   return pd && vd;
 }
 
-bool quality_params_is_min(struct quality_params* self, struct list* lr, struct list* lv)
+bool quality_params_is_min(struct quality_params* self, struct list* lr)
 {
   bool pd = true;
-  bool vd = true;
   int i;
   for (i = 0; i < lr->count; i++)
   {
     struct update_rect* cur = (struct update_rect*) list_get_item(lr, i);
-    if ((cur->quality_already_send == -1 && cur->quality != self->progressive_display_nb_level - 1) || (cur->quality_already_send != -1 && cur->quality != cur->quality_already_send - 1))
+    if ((cur->quality_already_send == -1 && cur->quality != self->progressive_display_nb_level - 1) ||
+        (cur->quality_already_send != -1 && cur->quality != cur->quality_already_send - 1))
     {
       pd = false;
       break;
     }
   }
-  return pd && vd;
+  return pd;
 }
 
 float quality_params_estimate_size_rect(struct quality_params* self, struct update_rect* urect, int q)
@@ -329,13 +329,13 @@ void quality_params_prepare_data(struct quality_params* self, struct xrdp_screen
     if (list_rq->count > 0)
     {
       estimate_size = estimate_size_coef * quality_params_estimate_progressive_display_size(self, list_rq) / 1024;
-      q_params_min = quality_params_is_min(self, list_rq, desktop->video_regs);
+      q_params_min = quality_params_is_min(self, list_rq);
       int cpt = list_rq->count * (self->progressive_display_nb_level - 1);
       while (estimate_size > bw && !q_params_min && cpt-- > 0)
       {
         quality_params_decrease_quality(self, list_rq, desktop->video_regs);
         estimate_size = estimate_size_coef * quality_params_estimate_progressive_display_size(self, list_rq) / 1024;
-        q_params_min = quality_params_is_min(self, list_rq, desktop->video_regs);
+        q_params_min = quality_params_is_min(self, list_rq);
       }
 
       if (estimate_size <= bw)
@@ -597,13 +597,13 @@ void quality_params_prepare_data2(struct quality_params* self, struct xrdp_scree
     if (list_rq->count > 0)
     {
       estimate_size = estimate_size_coef * quality_params_estimate_progressive_display_size(self, list_rq) / 1024;
-      q_params_min = quality_params_is_min(self, list_rq, desktop->video_regs);
+      q_params_min = quality_params_is_min(self, list_rq);
       int cpt = list_rq->count * (self->progressive_display_nb_level - 1);
       while (estimate_size > bw && !q_params_min && cpt-- > 0)
       {
         quality_params_decrease_quality(self, list_rq, desktop->video_regs);
         estimate_size = estimate_size_coef * quality_params_estimate_progressive_display_size(self, list_rq) / 1024;
-        q_params_min = quality_params_is_min(self, list_rq, desktop->video_regs);
+        q_params_min = quality_params_is_min(self, list_rq);
       }
 
       if (estimate_size >= bw)
@@ -621,3 +621,216 @@ void quality_params_prepare_data2(struct quality_params* self, struct xrdp_scree
   progressive_display_add_update_order(desktop, list_rq, u->current_update_list);
   list_delete(list_rq);
 }
+
+float quality_params_select_regions(struct quality_params* self, struct xrdp_screen* screen, float bw, struct list* in, struct list* out)
+{
+  float estimate_size;
+  int i;
+  estimate_size = self->coef_size* quality_params_estimate_progressive_display_size(self, in) / 1024;
+  if (estimate_size < bw)
+  {
+    // copy
+    for (i = in->count - 1; i >= 0; i--)
+    {
+      struct update_rect * cur = (struct update_rect*) list_get_item(in, i);
+      struct update_rect* tmp = (struct update_rect*) g_malloc(sizeof(struct update_rect), 0);
+      g_memcpy(tmp, cur, sizeof(struct update_rect));
+      list_add_item(out, (tbus) tmp);
+      list_remove_item(in, i);
+    }
+    list_clear(in);
+  }
+  else
+  { // Reduce quality
+
+    bool q_params_min = quality_params_is_min(self, in);//, desktop->video_regs);
+    int cpt = in->count * (self->progressive_display_nb_level - 1);
+    while (estimate_size > bw /*&& q_params_min */&& cpt-- > 0)
+    {
+      quality_params_decrease_quality_progressive_display(self, in);//, desktop->video_regs);
+      estimate_size = self->coef_size* quality_params_estimate_progressive_display_size(self, in) / 1024;
+      q_params_min = quality_params_is_min(self, in);//, desktop->video_regs);
+    }
+    if (estimate_size <= bw)
+    {
+      for (i = in->count - 1; i >= 0; i--)
+      {
+        struct update_rect * cur = (struct update_rect*) list_get_item(in, i);
+        struct update_rect* tmp = (struct update_rect*) g_malloc(sizeof(struct update_rect), 0);
+        g_memcpy(tmp, cur, sizeof(struct update_rect));
+        list_add_item(out, (tbus) tmp);
+        list_remove_item(in, i);
+      }
+      list_clear(in);
+    }
+    else
+    {
+      // Reduce size of list
+      bool r_list = xrdp_screen_reduce_update_list(screen, in);
+      estimate_size = self->coef_size * quality_params_estimate_progressive_display_size(self, in) / 1024;
+      while (estimate_size >= bw && r_list)
+      {
+        r_list = xrdp_screen_reduce_update_list(screen, in);
+        estimate_size = self->coef_size* quality_params_estimate_progressive_display_size(self, in) / 1024;
+      }
+      // copy
+      for (i = in->count - 1; i >= 0; i--)
+      {
+        struct update_rect * cur = (struct update_rect*) list_get_item(in, i);
+        struct update_rect* tmp = (struct update_rect*) g_malloc(sizeof(struct update_rect), 0);
+        g_memcpy(tmp, cur, sizeof(struct update_rect));
+        list_add_item(out, (tbus) tmp);
+        list_remove_item(in, i);
+      }
+      list_clear(in);
+    }
+  }
+  return estimate_size;
+}
+
+void quality_params_prepare_data3(struct quality_params* self, struct xrdp_screen* desktop, struct userChannel* u)
+{
+  int i;
+  float estimate_size = 0;
+  struct list* list_rq = list_create();
+  list_rq->auto_free = true;
+  struct list* list_final= list_create();
+  list_final->auto_free = true;
+  struct xrdp_wm* wm = (struct xrdp_wm*) u->wm;
+  struct list* l_update = list_create();
+  l_update->auto_free = true;
+  float estimate_size_coef = self->coef_size;
+  bool reduce_list = false;
+  bool q_params_min;
+  unsigned int bandwidth =
+      (u->bandwidth) ? (u->bandwidth) : wm->session->bandwidth;
+
+  float bw = ((float) (bandwidth)) / ((float) (self->fps));
+
+  if (wm->session->next_request_time >= MAX_REQUEST_TIME)
+  {
+    self->coef_size = 3;
+  }
+  else if (wm->session->next_request_time >= MID_REQUEST_TIME && wm->session->next_request_time < MAX_REQUEST_TIME)
+  {
+    self->coef_size = (self->coef_size > 3) ? 3 : self->coef_size * 1.5;
+  }
+  else if (wm->session->next_request_time < MID_REQUEST_TIME && wm->session->next_request_time >= MIN_REQUEST_TIME)
+  {
+    self->coef_size =
+        (self->coef_size * 0.2 < 0.05) ? 0.05 : self->coef_size * 0.2;
+  }
+
+  if (desktop->update_rects->count > 0)
+  {
+    l_update = desktop->update_rects;
+  }
+  if (desktop->candidate_update_rects->count > 0)
+  {
+    while (!fifo_is_empty(desktop->candidate_update_rects))
+    {
+      struct update_rect* cur = fifo_pop(desktop->candidate_update_rects);
+      list_add_item(l_update, (tbus) cur);
+    }
+  }
+  if (l_update->count > 0)
+  {
+    // Get Priority data (not already send)
+    for (i = l_update->count - 1; i >= 0; i--)
+    {
+      struct update_rect * cur = (struct update_rect*) list_get_item(l_update, i);
+      if (cur->quality_already_send == -1)
+      {
+        struct update_rect* tmp = (struct update_rect*) g_malloc(sizeof(struct update_rect), 0);
+        g_memcpy(tmp, cur, sizeof(struct update_rect));
+        list_add_item(list_rq, (tbus) tmp);
+        list_remove_item(l_update, i);
+      }
+    }
+
+    if (list_rq->count > 0)
+    {
+      estimate_size = quality_params_select_regions(self, desktop, bw, list_rq, list_final);
+    }
+    else
+    {
+      // Get Priority data (not already send)
+      for (i = l_update->count - 1; i >= 0; i--)
+      {
+        struct update_rect * cur = (struct update_rect*) list_get_item(l_update, i);
+        if (cur->quality_already_send != -1)
+        {
+          struct update_rect* tmp = (struct update_rect*) g_malloc(sizeof(struct update_rect), 0);
+          g_memcpy(tmp, cur, sizeof(struct update_rect));
+          list_add_item(list_rq, (tbus) tmp);
+          list_remove_item(l_update, i);
+        }
+      }
+      estimate_size = quality_params_select_regions(self, desktop, bw, list_rq, list_final);
+    }
+  }
+  if (estimate_size < bw)
+  {
+    float test = quality_params_estimate_video_regs_size(self, desktop->video_regs)/1024.0;
+    if (test < 0)
+    {int k;
+      for (k = 0 ; k < desktop->video_regs->count ; k++)
+      {
+        struct video_reg* tmp = (struct video_reg*) list_get_item(desktop->video_regs, k);
+      }
+    }
+  }
+  list_clear(desktop->video_regs);
+
+  quality_params_add_update_order(desktop, list_final, u->current_update_list);
+  list_delete(list_rq);
+  list_delete(list_final);
+}
+
+void quality_params_add_update_order(struct xrdp_screen* self, struct list* p_display, struct list* update_list)
+{
+  struct ip_image* desktop = self->screen;
+  struct xrdp_rect* tmp_rect;
+  int i, w, h, color;
+  bool remove = false;
+  update* up;
+  int bpp = (self->bpp + 7) / 8;
+  if (bpp == 3)
+  {
+    bpp = 4;
+  }
+  if (p_display->count > 0)
+  {
+    for (i = p_display->count - 1; i >= 0; i--)
+    {
+      struct update_rect* cur = (struct update_rect*) list_get_item(p_display, i);
+      up = (update*) g_malloc(sizeof(update), 1);
+      up->order_type = paint_rect;
+      up->x = cur->rect.left;
+      up->y = cur->rect.top;
+      int w = rect_width(&cur->rect);
+      int h = rect_height(&cur->rect);
+      up->cx = w;
+      up->cy = h;
+      up->width = w;
+      up->height = h;
+      up->srcx = 0;
+      up->srcy = 0;
+      up->quality = cur->quality;
+      up->data_len = up->cx * up->cy * bpp;
+      up->data = g_malloc(up->data_len, 0);
+      ip_image_crop(desktop, up->x, up->y, up->cx, up->cy, up->data);
+      list_add_item(update_list, (tbus) up);
+      if (cur->quality != 0)
+      {
+        struct update_rect* tmp = (struct update_rect*) g_malloc(sizeof(struct update_rect), 0);
+        g_memcpy(tmp, cur, sizeof(struct update_rect));
+        tmp->quality = 0;
+        tmp->quality_already_send = cur->quality;
+        fifo_push(self->candidate_update_rects, tmp);
+      }
+      list_remove_item(p_display, i);
+    }
+  }
+}
+

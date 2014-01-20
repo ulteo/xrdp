@@ -439,14 +439,7 @@ lib_userChannel_update_screen(struct userChannel* u)
 {
   struct xrdp_screen* desktop = u->desktop;
   struct quality_params* qp = (struct quality_params*) u->q_params;
-  if (qp->is_video_detection_enable || qp->is_progressive_display_enable)
-  {
-    quality_params_prepare_data(u->q_params, u->desktop, u);
-  }
-  else
-  {
-    quality_params_prepare_data2(u->q_params, u->desktop, u);
-  }
+  quality_params_prepare_data3(u->q_params, u->desktop, u);
   return 0;
 }
 

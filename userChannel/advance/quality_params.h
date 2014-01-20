@@ -58,10 +58,13 @@ void quality_params_decrease_quality_progressive_display(struct quality_params* 
 void quality_params_increase_quality_progressive_display(struct quality_params* self, struct list* l1);
 void quality_params_display(struct quality_params* self);
 bool quality_params_is_max(struct quality_params* self, struct list* l1, struct list* l2);
-bool quality_params_is_min(struct quality_params* self, struct list* l1, struct list* l2);
+bool quality_params_is_min(struct quality_params* self, struct list* l1);
 float quality_params_estimate_size_rect(struct quality_params* self, struct update_rect* urect, int q);
 void quality_params_prepare_data(struct quality_params* self, struct xrdp_screen* screen, struct userChannel* u);
 void quality_params_prepare_data2(struct quality_params* self, struct xrdp_screen* screen, struct userChannel* u);
+void quality_params_add_update_order(struct xrdp_screen* self, struct list* p_display, struct list* update_list);
 
+void quality_params_prepare_data3(struct quality_params* self, struct xrdp_screen* desktop, struct userChannel* u);
+float quality_params_select_regions(struct quality_params* self, struct xrdp_screen* screen, float bw, struct list* in, struct list* out);
 
 #endif // _QUALITY_PARAMS_H
