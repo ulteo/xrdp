@@ -112,12 +112,55 @@ void video_detection_update(struct xrdp_screen* self, int x, int y, int cx, int 
 void update_video_regions(struct list* video, struct list* candidate, int fps)
 {
   int i;
+  int k;
+  struct xrdp_rect intersection;
+
   for (i = 0; i < candidate->count; i++)
   {
     struct video_reg* cur = (struct video_reg*) list_get_item(candidate, i);
     if (cur->nb_update >= fps)
     {
-      list_add_video_reg(video, cur->rect.left, cur->rect.top, cur->rect.right, cur->rect.bottom, cur->nb_update);
+      if (video->count == 0)
+      {
+        list_add_video_reg(video, cur->rect.left, cur->rect.top, cur->rect.right, cur->rect.bottom, cur->nb_update);
+      }
+      else
+      {
+        int vc = video->count;
+        for (k = 0 ; k < vc ; k++)
+        {
+          struct video_reg* bb = (struct video_reg*) list_get_item(video, k);
+          if (rect_intersect(&bb->rect, &cur->rect, &intersection))
+          {
+            bb->rect.top = MIN(bb->rect.top, cur->rect.top);
+            bb->rect.left = MIN(bb->rect.left, cur->rect.left);
+            bb->rect.bottom= MAX(bb->rect.bottom, cur->rect.bottom);
+            bb->rect.right= MAX(bb->rect.right, cur->rect.right);
+            bb->nb_update = MAX(bb->nb_update, cur->nb_update);
+            break;
+          }
+          else
+          {
+            if ( ( ((cur->rect.bottom - bb->rect.top) < DELTA_VIDEO || (bb->rect.bottom - cur->rect.top) < DELTA_VIDEO) &&
+                ( abs(cur->rect.left - bb->rect.left) < DELTA_VIDEO || abs(cur->rect.right - bb->rect.right) < DELTA_VIDEO) ) ||
+                ( ((cur->rect.right - bb->rect.left) < DELTA_VIDEO || (bb->rect.right - cur->rect.left) < DELTA_VIDEO) &&
+                    ( abs(cur->rect.top - bb->rect.top) < DELTA_VIDEO || abs(cur->rect.bottom - bb->rect.bottom) < DELTA_VIDEO)))
+            {
+              bb->rect.top = MIN(bb->rect.top, cur->rect.top);
+              bb->rect.left = MIN(bb->rect.left, cur->rect.left);
+              bb->rect.bottom= MAX(bb->rect.bottom, cur->rect.bottom);
+              bb->rect.right= MAX(bb->rect.right, cur->rect.right);
+              bb->nb_update = MAX(bb->nb_update, cur->nb_update);
+              break;
+            }
+            else
+            {
+              list_add_video_reg(video, cur->rect.left, cur->rect.top, cur->rect.right, cur->rect.bottom, cur->nb_update);
+              break;
+            }
+          }
+        }
+      }
     }
   }
   video_regions_merge(video);

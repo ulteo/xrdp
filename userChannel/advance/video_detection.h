@@ -26,7 +26,7 @@
 #include "list.h"
 #include "userChannel.h"
 
-#define DELTA_VIDEO 50
+#define DELTA_VIDEO 128
 
 struct video_reg
 {

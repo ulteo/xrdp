@@ -449,6 +449,9 @@ int DEFAULT_CC
 lib_userChannel_update(struct userChannel* u, long * t0)
 {
   int i;
+  int k;
+  struct xrdp_rect intersection;
+  bool inter;
   struct quality_params* q_params = (struct quality_params*) u->q_params;
   if (q_params->is_video_detection_enable)
   {
@@ -463,37 +466,52 @@ lib_userChannel_update(struct userChannel* u, long * t0)
       }
       for (i = u->desktop->candidate_video_regs->count-1 ; i >= 0; i--)
       {
-        struct video_reg* tmp = (struct video_reg*) list_get_item(u->desktop->candidate_video_regs, i);
-        int Bpp = (u->desktop->bpp + 7) / 8;
-        if (Bpp == 3)
+        struct video_reg* cand = (struct video_reg*) list_get_item(u->desktop->candidate_video_regs, i);
+        inter = false;
+        for (k = 0 ; k < u->desktop->video_regs->count ; k++)
         {
-          Bpp = 4;
+          struct video_reg* bb = (struct video_reg*) list_get_item(u->desktop->video_regs, k);
+          if (rect_intersect(&bb->rect, &cand->rect, &intersection))
+          {
+            inter = true;
+            break;
+          }
         }
-        if (tmp->nb_update <= 0)
+
+        if (!inter)
         {
-          update* up;
-          up = g_malloc(sizeof(update), 1);
-          up->order_type = paint_rect;
-          up->x = tmp->rect.left;
-          up->y = tmp->rect.top;
-          int w = rect_width(&tmp->rect);
-          int h = rect_height(&tmp->rect);
-          up->cx = w;
-          up->cy = h;
-          up->width = w;
-          up->height = h;
-          up->srcx = 0;
-          up->srcy = 0;
-          up->data_len = up->cx * up->cy * Bpp;
-          up->data = g_malloc(up->data_len, 0);
-          ip_image_crop(u->desktop->screen, up->x, up->y, up->cx, up->cy, up->data);
-          list_add_item(u->current_update_list, (tbus) up);
-          list_remove_item(u->desktop->candidate_video_regs, i);
+          int Bpp = (u->desktop->bpp + 7) / 8;
+          if (Bpp == 3)
+          {
+            Bpp = 4;
+          }
+          if (cand->nb_update <= 0)
+          {
+            update* up;
+            up = g_malloc(sizeof(update), 1);
+            up->order_type = paint_rect;
+            up->x = cand->rect.left;
+            up->y = cand->rect.top;
+            int w = rect_width(&cand->rect);
+            int h = rect_height(&cand->rect);
+            up->cx = w;
+            up->cy = h;
+            up->width = w;
+            up->height = h;
+            up->srcx = 0;
+            up->srcy = 0;
+            up->data_len = up->cx * up->cy * Bpp;
+            up->data = g_malloc(up->data_len, 0);
+            ip_image_crop(u->desktop->screen, up->x, up->y, up->cx, up->cy, up->data);
+            list_add_item(u->current_update_list, (tbus) up);
+            list_remove_item(u->desktop->candidate_video_regs, i);
+          }
         }
       }
       *t0 = g_time3();
     }
   }
+
   return 0;
 }
 
