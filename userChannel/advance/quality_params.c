@@ -769,20 +769,9 @@ void quality_params_prepare_data3(struct quality_params* self, struct xrdp_scree
       estimate_size = quality_params_select_regions(self, desktop, bw, list_rq, list_final);
     }
   }
-  if (estimate_size < bw)
-  {
-    float test = quality_params_estimate_video_regs_size(self, desktop->video_regs)/1024.0;
-    if (test < 0)
-    {int k;
-      for (k = 0 ; k < desktop->video_regs->count ; k++)
-      {
-        struct video_reg* tmp = (struct video_reg*) list_get_item(desktop->video_regs, k);
-      }
-    }
-  }
-  list_clear(desktop->video_regs);
-
   quality_params_add_update_order(desktop, list_final, u->current_update_list);
+
+  video_detection_add_update_order(desktop, u->current_update_list, u);
   list_delete(list_rq);
   list_delete(list_final);
 }

@@ -114,7 +114,6 @@ void update_video_regions(struct list* video, struct list* candidate, int fps)
   int i;
   int k;
   struct xrdp_rect intersection;
-
   for (i = 0; i < candidate->count; i++)
   {
     struct video_reg* cur = (struct video_reg*) list_get_item(candidate, i);
@@ -446,97 +445,24 @@ void video_detection_add_update_order(struct xrdp_screen* self, struct list* upd
 {
   update* up;
   int i;
-  int bpp = (self->bpp + 7) / 8;
-  if (bpp == 3)
-  {
-    bpp = 4;
-  }
-
-  struct quality_params* q_params = (struct quality_params*) u->q_params;
-  video_regions_merge(self->video_regs);
   if (self->video_regs->count > 0)
   {
-    int w, h;
-    int color;
-    if (q_params->video_display_fps != 0)
+    for (i = 0; i < self->video_regs->count; i++)
     {
-      for (i = 0; i < self->video_regs->count; i++)
-      {
-        color = 255;
-        struct video_reg* vr = (struct video_reg*) list_get_item(self->video_regs, i);
-
-        w = vr->rect.right - vr->rect.left;
-        h = vr->rect.bottom - vr->rect.top;
-        up = g_malloc(sizeof(update), 1);
-        up->order_type = paint_update;
-        up->x = vr->rect.left;
-        up->y = vr->rect.top;
-        up->cx = w;
-        up->cy = h;
-        up->data_len = up->cx * up->cy * bpp;
-        up->data = g_malloc(up->data_len, 0);
-        ip_image_crop(self->screen, up->x, up->y, up->cx, up->cy, up->data);
-        list_add_item(update_list, (tbus) up);
-
-        if (!vr->already_send)
-        {
-          vr->already_send = true;
-          if (self->client_info->video_display_borders)
-          {
-            if (w < 6 || h < 6)
-            {
-              color = 33023;
-              up = g_malloc(sizeof(update), 1);
-              up->order_type = set_fgcolor;
-              up->color = color;
-              list_add_item(update_list, (tbus) up);
-              up = g_malloc(sizeof(update), 1);
-              up->order_type = fill_rect;
-              up->x = vr->rect.left;
-              up->y = vr->rect.top;
-              up->width = w;
-              up->height = h;
-              list_add_item(update_list, (tbus) up);
-            }
-            else
-            {
-              up = g_malloc(sizeof(update), 1);
-              up->order_type = set_fgcolor;
-              up->color = color;
-              list_add_item(update_list, (tbus) up);
-              up = g_malloc(sizeof(update), 1);
-              up->order_type = fill_rect;
-              up->x = vr->rect.left + 1;
-              up->y = vr->rect.top + 1;
-              up->width = vr->rect.right - vr->rect.left - 2;
-              up->height = 2;
-              list_add_item(update_list, (tbus) up);
-              up = g_malloc(sizeof(update), 1);
-              up->order_type = fill_rect;
-              up->x = vr->rect.left + 1;
-              up->y = vr->rect.top + 1;
-              up->width = 2;
-              up->height = vr->rect.bottom - vr->rect.top - 2;
-              list_add_item(update_list, (tbus) up);
-              up = g_malloc(sizeof(update), 1);
-              up->order_type = fill_rect;
-              up->x = vr->rect.left + 1;
-              up->y = vr->rect.bottom - 3;
-              up->width = vr->rect.right - vr->rect.left - 2;
-              up->height = 2;
-              list_add_item(update_list, (tbus) up);
-              up = g_malloc(sizeof(update), 1);
-              up->order_type = fill_rect;
-              up->x = vr->rect.right - 3;
-              up->y = vr->rect.top + 1;
-              up->width = 2;
-              up->height = vr->rect.bottom - vr->rect.top - 2;
-              list_add_item(update_list, (tbus) up);
-            }
-          }
-        }
-      }
+      struct video_reg* vr = (struct video_reg*) list_get_item(self->video_regs, i);
+      vr->already_send = true;
+      up = g_malloc(sizeof(update), 1);
+      up->order_type = set_fgcolor;
+      up->color = 0;
+      list_add_item(update_list, (tbus) up);
+      up = g_malloc(sizeof(update), 1);
+      up->order_type = fill_rect;
+      up->x = vr->rect.left;
+      up->y = vr->rect.top;
+      up->width = rect_width(&vr->rect);
+      up->height = rect_height(&vr->rect);
+      list_add_item(update_list, (tbus) up);
     }
-    list_clear(self->video_regs);
   }
+  list_clear(self->video_regs);
 }
