@@ -100,7 +100,7 @@ xrdp_mm_module_cleanup(struct xrdp_mm* self)
 {
   if (self->mod != 0)
   {
-    lib_userChannel_cleanup(self->mod);
+    lib_userChannel_cleanup((struct userChannel*)self->mod);
   }
 }
 
@@ -271,7 +271,7 @@ xrdp_mm_load_userchannel(struct xrdp_mm* self, const char* lib)
   {
     return 1;
   }
-  self->mod = lib_userChannel_init();
+  self->mod = (struct xrdp_mod*)lib_userChannel_init();
   self->mod->wm = (long)(self->wm);
   return 0;
 }
@@ -293,7 +293,7 @@ xrdp_mm_setup_mod2(struct xrdp_mm* self)
 
   if (!g_is_wait_obj_set(term_event))
   {
-    if (lib_userChannel_mod_start(self->mod, self->wm->screen->width, self->wm->screen->height, self->wm->screen->bpp) != 0)
+    if (lib_userChannel_mod_start((struct userChannel*)self->mod, self->wm->screen->width, self->wm->screen->height, self->wm->screen->bpp) != 0)
     {
       g_set_wait_obj(term_event); /* kill session */
     }
@@ -424,11 +424,8 @@ xrdp_mm_process_login_response(struct xrdp_mm* self, struct stream* s)
   int ok;
   int display;
   int rv;
-  int index;
   char ip[256];
   char lib[256];
-  char port[256];
-  char text[256];
   char display_string[256];
 
   rv = 0;
@@ -472,7 +469,7 @@ xrdp_mm_process_login_response(struct xrdp_mm* self, struct stream* s)
       return 1;
     }
 
-    if (lib_userChannel_load_library(self->mod, lib) == 0)
+    if (lib_userChannel_load_library((struct userChannel*)self->mod, lib) == 0)
     {
       if (xrdp_mm_setup_mod2(self) == 0)
       {
@@ -744,21 +741,21 @@ xrdp_mm_send_disconnect(struct xrdp_mm* self)
 int APP_CC
 xrdp_mm_end(struct xrdp_mm* self)
 {
-  lib_userChannel_mod_end(self->mod);
+  lib_userChannel_mod_end((struct userChannel*)self->mod);
   return 0;
 }
 
 void APP_CC
 xrdp_mm_set_network_stat(struct xrdp_mm* self, long bandwidth, int rtt)
 {
-  lib_userChannel_set_network_stat(self->mod, bandwidth, rtt);
+  lib_userChannel_set_network_stat((struct userChannel*)self->mod, bandwidth, rtt);
 }
 
 /*****************************************************************************/
 void APP_CC
 xrdp_mm_set_static_framerate(struct xrdp_mm* self, int framerate)
 {
-  lib_userChannel_set_static_framerate(self->mod, framerate);
+  lib_userChannel_set_static_framerate((struct userChannel*)self->mod, framerate);
 }
 
 /*****************************************************************************/

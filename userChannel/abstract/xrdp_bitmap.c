@@ -44,6 +44,7 @@
 
 */
 
+#include <stdlib.h>
 #include "xrdp_bitmap.h"
 #include "xrdp_painter.h"
 #include "funcs.h"
@@ -104,6 +105,16 @@ static int g_crc_table[256] =
 #define CRC_PASS(in_pixel, in_crc) \
   (in_crc) = g_crc_table[((in_crc) ^ (in_pixel)) & 0xff] ^ ((in_crc) >> 8)
 #define CRC_END(in_crc) (in_crc) = ((in_crc) ^ g_crc_seed)
+
+
+/*****************************************************************************/
+void xrdp_bitmap_free_coords(struct xrdp_bitmap* self)
+{
+  if (self->coords)
+    g_free(self->coords);
+
+  self->coords = 0;
+}
 
 /*****************************************************************************/
 struct xrdp_bitmap* APP_CC
@@ -1834,15 +1845,6 @@ xrdp_bitmap_get_screen_clip(struct xrdp_bitmap* self,
     *dy = ldy;
   }
   return 0;
-}
-
-/*****************************************************************************/
-void xrdp_bitmap_free_coords(struct xrdp_bitmap* self)
-{
-  if (self->coords)
-    g_free(self->coords);
-
-  self->coords = 0;
 }
 
 /*****************************************************************************/

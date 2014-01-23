@@ -44,7 +44,7 @@ lib_userChannel_mod_start(struct userChannel* u, int w, int h, int bpp)
   int res = false;
   struct xrdp_wm* wm = (struct xrdp_wm*) u->wm;
   u->desktop = xrdp_screen_create(u->server_width, u->server_height, u->server_bpp, wm->client_info);
-  u->q_params = (struct quality_params*) quality_params_create(wm->client_info);
+  u->q_params = (long) quality_params_create(wm->client_info);
   res = u->mod->mod_start(u->mod, w, h, bpp);
 
   return res;
@@ -60,7 +60,7 @@ lib_userChannel_mod_end(struct userChannel* u)
     u->mod->mod_end(u->mod);
   }
   xrdp_screen_delete(u->desktop);
-  quality_params_delete(u->q_params);
+  quality_params_delete((struct quality_params*)u->q_params);
   return 0;
 }
 
@@ -139,11 +139,9 @@ lib_userChannel_server_paint_rect(struct xrdp_mod* mod, int x, int y, int cx, in
   if (u)
   {
     struct xrdp_wm* wm = (struct xrdp_wm*) u->wm;
-    struct xrdp_cache* cache = (struct xrdp_cache*) wm->cache;
     struct quality_params* q_params = (struct quality_params*) u->q_params;
     struct xrdp_screen* self = u->desktop;
     struct update_rect* current_urect;
-    unsigned int quality = (wm->client_info->use_progressive_display) ? wm->client_info->progressive_display_nb_level - 1 : 0;
     if (q_params->is_video_detection_enable)
     {
       video_detection_update(u->desktop, x, y, cx, cy, 0);
@@ -188,7 +186,7 @@ lib_userChannel_server_screen_blt(struct xrdp_mod* mod, int x, int y, int cx, in
      }
      char* data = (char*) g_malloc(cx*cy*bpp, 0);
      ip_image_crop(u->desktop->screen, srcx, srcy, cx, cy, data);
-     lib_userChannel_server_paint_rect(u, x, y, cx, cy, data, cx, cy, srcx, srcy);
+     lib_userChannel_server_paint_rect(u->mod, x, y, cx, cy, data, cx, cy, srcx, srcy);
   }
   return 0;
 }
@@ -437,9 +435,7 @@ lib_userChannel_server_send_to_channel(struct xrdp_mod* mod, int channel_id,
 int DEFAULT_CC
 lib_userChannel_update_screen(struct userChannel* u)
 {
-  struct xrdp_screen* desktop = u->desktop;
-  struct quality_params* qp = (struct quality_params*) u->q_params;
-  quality_params_prepare_data3(u->q_params, u->desktop, u);
+  quality_params_prepare_data3((struct quality_params*)u->q_params, u->desktop, u);
   return 0;
 }
 

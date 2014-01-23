@@ -35,7 +35,7 @@ static tbus session_creation_lock;
 extern long last_time_premium_edition_check;
 #include "check_premium.h"
 #include "os_calls.h"
-#endif CHECK_PREMIUM_EDITION
+#endif // CHECK_PREMIUM_EDITION
 
 void DEFAULT_CC
 scp_init_mutex()

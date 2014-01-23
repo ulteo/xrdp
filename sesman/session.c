@@ -893,7 +893,7 @@ session_test_line(int fd, int *file_pos)
 	}
 	buffer[size] = 0;
 
-	endline = strchr(buffer, '\0');
+	endline = g_strchr(buffer, '\0');
 	if (endline == NULL || endline == buffer)
 	{
 		return -1;

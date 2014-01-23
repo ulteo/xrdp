@@ -85,7 +85,7 @@ chansrv_transmit(int socket, int type, char* mess, int length, int total_length 
   rv = g_tcp_send(socket, header->data, 9, 0);
   log_message(&log_conf, LOG_LEVEL_DEBUG_PLUS, "chansrv[chansrv_transmit]: "
   		"Header sended:");
-  log_hexdump(&log_conf, LOG_LEVEL_DEBUG_PLUS, header->data, 9);
+  log_hexdump(&log_conf, LOG_LEVEL_DEBUG_PLUS, (unsigned char*)header->data, 9);
   if (rv != 9)
   {
     log_message(&log_conf, LOG_LEVEL_ERROR, "chansrv[chansrv_transmit]: "
@@ -97,7 +97,7 @@ chansrv_transmit(int socket, int type, char* mess, int length, int total_length 
   rv = g_tcp_send(socket, mess, length, 0);
   log_message(&log_conf, LOG_LEVEL_DEBUG_PLUS, "chansrv[chansrv_transmit]: "
   		"Message sended:");
-  log_hexdump(&log_conf, LOG_LEVEL_DEBUG_PLUS, mess, length);
+  log_hexdump(&log_conf, LOG_LEVEL_DEBUG_PLUS, (unsigned char*)mess, length);
   if (rv != length)
   {
     log_message(&log_conf, LOG_LEVEL_ERROR, "chansrv[chansrv_transmit]: "
@@ -206,7 +206,7 @@ chansrv_get_channel_from_name(char* channel_name)
 	int i;
 	for(i=0 ; i<channel_count ; i++)
 	{
-		if(strcmp(user_channels[i].channel_name, channel_name) == 0)
+		if(g_strcmp(user_channels[i].channel_name, channel_name) == 0)
 		{
 			return i;
 		}
@@ -359,7 +359,7 @@ chansrv_get_data(vchannel* v, int chanid, struct stream* s)
 			//s->data[data_length] = 0;
 			log_message(&log_conf, LOG_LEVEL_DEBUG_PLUS, "chansrv[chansrv_check_wait_objs]: "
 					"Data:");
-			log_hexdump(&log_conf, LOG_LEVEL_DEBUG_PLUS, s->data, data_length);
+			log_hexdump(&log_conf, LOG_LEVEL_DEBUG_PLUS, (unsigned char*)s->data, data_length);
 			if( channel->channel_id == -1)
 			{
 				log_message(&log_conf, LOG_LEVEL_DEBUG, "chansrv[chansrv_check_wait_objs]: "
@@ -449,7 +449,7 @@ chansrv_send_data(vchannel* v, unsigned char* data, int chan_id, int chan_flags,
 			  		"server side channel is not opened");
 				return 0;
 			}
-			chansrv_transmit(user_channels[i].client_channel_socket[0], DATA_MESSAGE, data, length, total_length);
+			chansrv_transmit(user_channels[i].client_channel_socket[0], DATA_MESSAGE, (char*)data, length, total_length);
 			return 0;
 		}
 	}

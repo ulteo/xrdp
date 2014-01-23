@@ -348,7 +348,7 @@ int cliprdr_process_data_request_response(struct stream* s, int msg_flags, int s
 		g_free(clipboard_data);
 	}
 	clipboard_data = g_malloc(size, 1);
-	clipboard_size = uni_rdp_in_str(s, clipboard_data, size, size);
+	clipboard_size = uni_rdp_in_str(s, (char*)clipboard_data, size, size);
 
 	// Remove NULL characters from clipboard data end, it is not a null terminated string
 	if (clipboard_data)

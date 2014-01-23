@@ -20,6 +20,7 @@
 #include "defines.h"
 #include "xrdp_vchannel.h"
 #include "xrdp.h"
+#include "libxrdp.h"
 
 
 
@@ -62,7 +63,7 @@ xrdp_vchannel_create()
     goto failed;
   }
 
-  v->exit = (bool(*)(vchannel*))func;
+  v->exit = (void(*)(vchannel*))func;
   if ((v->init != 0) && (v->exit != 0))
   {
 
@@ -118,14 +119,14 @@ xrdp_vchannel_setup(vchannel* vc)
   }
 
   index = 0;
-  while (libxrdp_query_channel(vc->session, index++, chan_name, &chan_flags) == 0)
+  while (libxrdp_query_channel(session, index++, chan_name, &chan_flags) == 0)
   {
-    chan_id = libxrdp_get_channel_id(vc->session, chan_name);
+    chan_id = libxrdp_get_channel_id(session, chan_name);
     vc->add_channel(vc, chan_name, chan_id, chan_flags);
 
     if (!list_contains_string(channel_priority, chan_name))
     {
-      list_add_item(channel_priority, g_strdup(chan_name));
+      list_add_item(channel_priority, (tbus)g_strdup(chan_name));
     }
   }
 
@@ -164,7 +165,7 @@ xrdp_vchannel_send_data(vchannel* vc, int chan_id, char* data, int size)
       chan_flags |= 2; /* last */
     }
 
-    rv = libxrdp_send_to_channel(vc->session,chan_id, data + sent, size, total_size, chan_flags);
+    rv = libxrdp_send_to_channel((struct xrdp_session*)vc->session,chan_id, data + sent, size, total_size, chan_flags);
     if (rv != 0)
     {
       break;
@@ -190,7 +191,7 @@ xrdp_vchannel_process_channel_data(vchannel* vc, tbus param1, tbus param2, tbus 
   unsigned char* data;
   unsigned char chan_name[8];
   rv = 0;
-  struct xrdp_session* session = vc->session;
+  struct xrdp_session* session = (struct xrdp_session*)vc->session;
   bw_limit_list* channels_limitation = session->client_info->channels_bw_limit;
 
   if ((vc != 0))
@@ -211,7 +212,7 @@ xrdp_vchannel_process_channel_data(vchannel* vc, tbus param1, tbus param2, tbus 
 
       if (libxrdp_query_channel(session, id, chan_name, NULL) == 0)
       {
-        bw_limit* chan_limit = xrdp_qos_get_channel(channels_limitation, chan_name);
+        bw_limit* chan_limit = xrdp_qos_get_channel(channels_limitation, (char*)chan_name);
         if (chan_limit)
         {
           chan_limit->already_sended += length;

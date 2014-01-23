@@ -95,7 +95,7 @@ xrdp_wm_create(int session_id, struct xrdp_session* session)
   {
     if (self->client_info->static_bandwidth || self->client_info->static_rtt)
     {
-      xrdp_wm_set_network_stat(self, self->client_info->static_bandwidth, self->client_info->static_rtt);
+      xrdp_wm_set_network_stat((struct xrdp_user_channel*)session->id, self->client_info->static_bandwidth, self->client_info->static_rtt);
     }
   }
 
@@ -1387,7 +1387,7 @@ callback(long id, int msg, long param1, long param2, long param3, long param4)
   {
     return 0;
   }
-  wm = ((struct xrdp_user_channel*)id)->wm;
+  wm = (struct xrdp_wm*)((struct xrdp_user_channel*)id)->wm;
   if (wm == 0)
   {
     return 0;
@@ -1702,7 +1702,7 @@ xrdp_wm_set_login_mode(struct xrdp_wm* self, int login_mode)
 int APP_CC
 xrdp_wm_get_login_mode(struct xrdp_user_channel* user_channel)
 {
-  struct xrdp_wm* wm = user_channel->wm;
+  struct xrdp_wm* wm = (struct xrdp_wm*)user_channel->wm;
 
   if (wm != NULL)
   {
@@ -1752,8 +1752,9 @@ xrdp_wm_end(struct xrdp_user_channel* user_channel)
 }
 
 void APP_CC
-xrdp_wm_set_network_stat(struct xrdp_wm* wm, long bandwidth, int rtt)
+xrdp_wm_set_network_stat(struct xrdp_user_channel* user_channel, long bandwidth, int rtt)
 {
+  struct xrdp_wm* wm = (struct xrdp_wm*)user_channel->wm;
   return xrdp_mm_set_network_stat(wm->mm, bandwidth, rtt);
 }
 

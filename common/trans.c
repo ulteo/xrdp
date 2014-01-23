@@ -272,7 +272,7 @@ trans_force_write_s(struct trans* self, struct stream* out_s)
   while (total < size && self->status == TRANS_STATUS_UP)
   {
     to_send = (size - total);
-    if (self->frame_size & to_send > self->frame_size)
+    if ((self->frame_size > 0) && (to_send > self->frame_size))
     {
       to_send = self->frame_size;
     }

@@ -199,4 +199,6 @@ int main(int argc, char** argv, char** environ)
 				"Fail to start fuse");
 	}
 	g_free(l_config);
+
+	return 0;
 }

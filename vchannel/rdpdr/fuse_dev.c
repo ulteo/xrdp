@@ -651,13 +651,6 @@ static int fuse_dev_utimens(const char *path, const struct timespec ts[2])
 }
 
 /************************************************************************/
-static int fuse_dev_open(const char *path, struct fuse_file_info *fi)
-{
-	log_message(l_config, LOG_LEVEL_DEBUG, "fuse_dev_open");
-	return 0;
-}
-
-/************************************************************************/
 static int fuse_dev_read(const char *path, char *buf, size_t size, off_t offset,
 		    struct fuse_file_info *fi)
 {

@@ -144,5 +144,9 @@ bool
 xrdp_wm_connect(struct xrdp_user_channel* user_channel, int session_id, struct xrdp_session* session);
 bool APP_CC
 xrdp_module_init(struct xrdp_user_channel* user_channel);
+void APP_CC
+xrdp_wm_set_network_stat(struct xrdp_user_channel* user_channel, long bandwidth, int rtt);
+void APP_CC
+xrdp_wm_set_static_framerate(struct xrdp_user_channel* user_channel, int framerate);
 
 #endif // XRDP_WM_H

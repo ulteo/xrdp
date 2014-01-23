@@ -32,7 +32,6 @@
 extern int count;
 void fifo_rect_progressive_display(struct fifo* self)
 {
-  int i;
   struct update_rect* cur;
   struct xrdp_rect rect;
   printf("Fifo : %i elements : \n", self->count);
@@ -124,9 +123,7 @@ void progressive_display_add_rect(struct xrdp_screen * self)
 void progressive_display_add_update_order(struct xrdp_screen* self, struct list* p_display, struct list* update_list)
 {
   struct ip_image* desktop = self->screen;
-  struct xrdp_rect* tmp_rect;
   int i;
-  bool remove = false;
   update* up;
   int bpp = (self->bpp + 7) / 8;
   if (bpp == 3)

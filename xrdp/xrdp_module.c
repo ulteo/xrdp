@@ -75,7 +75,7 @@ xrdp_module_load(struct xrdp_process* self, const char* module_name)
       return false;
     }
 
-    self->mod->exit = (bool(*)(struct xrdp_user_channel*))func;
+    self->mod->exit = (int(*)(struct xrdp_user_channel*))func;
     if ((self->mod->init != 0) && (self->mod->exit != 0))
     {
       self->mod->init(self->mod);

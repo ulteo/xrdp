@@ -50,6 +50,7 @@
 #if defined(HAVE_CONFIG_H)
 #include "config_ac.h"
 #endif
+#include <string.h>
 #include "arch.h"
 #include "parse.h"
 #include "trans.h"
@@ -510,6 +511,8 @@ struct xrdp_qos*
 xrdp_qos_create(struct xrdp_session* session);
 struct xrdp_qos* DEFAULT_CC
 xrdp_qos_create(struct xrdp_session* session);
+bw_limit* DEFAULT_CC
+xrdp_qos_get_channel(bw_limit_list* channel_bw_limit, char* chan_name);
 void DEFAULT_CC
 xrdp_qos_add_limitation(bw_limit_list* channels_bw_limit, char* item, char* value);
 int DEFAULT_CC

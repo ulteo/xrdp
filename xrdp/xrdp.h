@@ -94,9 +94,6 @@ xrdp_listen_delete(struct xrdp_listen* self);
 int APP_CC
 xrdp_listen_main_loop(struct xrdp_listen* self);
 
-int APP_CC
-xrdp_mm_scim_send_unicode(struct xrdp_mm* self, unsigned int unicode_key);
-
 bool
 xrdp_module_load(struct xrdp_process* self, const char* module_name);
 int

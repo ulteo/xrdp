@@ -161,7 +161,7 @@ lib_userChannel_server_screen_blt(struct xrdp_mod* mod, int x, int y, int cx, in
     }
     char* data = (char*) g_malloc(cx*cy*bpp, 0);
     ip_image_crop(u->desktop->screen, srcx, srcy, cx, cy, data);
-    lib_userChannel_server_paint_rect(u, x, y, cx, cy, data, cx, cy, srcx, srcy);
+    lib_userChannel_server_paint_rect((struct xrdp_mod*)u, x, y, cx, cy, data, cx, cy, srcx, srcy);
   }
   return 0;
 }

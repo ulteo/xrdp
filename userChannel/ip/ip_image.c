@@ -82,7 +82,7 @@ void ip_image_merge(struct ip_image* self, int x, int y, int w, int h, char* dat
 
 void ip_image_crop(struct ip_image* self, int x, int y, int cx, int cy, char* out)
 {
-  int i, j, r, g, b;
+  int i, j;
   for (j = 0; j < cy; j++)
   {
     for (i = 0; i < cx; i++)

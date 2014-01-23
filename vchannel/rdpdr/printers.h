@@ -38,6 +38,8 @@
 int DEFAULT_CC
 printer_init();
 int DEFAULT_CC
+printer_dinit();
+int DEFAULT_CC
 printer_add(const char* username, const char* printer);
 int DEFAULT_CC
 printer_del(const char* username, const char* printer);

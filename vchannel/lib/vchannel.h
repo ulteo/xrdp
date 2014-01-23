@@ -74,5 +74,9 @@ int APP_CC
 vchannel_close(int sock);
 int APP_CC
 vchannel_init();
+int
+vchannel_get_channel_from_socket(int sock);
+int
+vchannel_try_open(const char* name);
 
 #endif /* VCHANNEL_H_ */

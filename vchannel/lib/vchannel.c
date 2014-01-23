@@ -20,12 +20,16 @@
  **/
 
 #include "vchannel.h"
+#include <file.h>
 
 
 
 static Vchannel channel_list[25];
 static struct log_config* log_conf;
 static int channel_count = 0;
+
+int
+_vchannel_send(int sock, int type, const char* data, int length);
 
 
 /*****************************************************************************/
@@ -207,7 +211,7 @@ _vchannel_send(int sock, int type, const char* data, int length)
 	s_mark_end(header);
 	log_message(log_conf, LOG_LEVEL_DEBUG_PLUS ,"vchannel{%s}[vchannel_send]: "
 			"Header send: ", channel->name);
-	log_hexdump(log_conf, LOG_LEVEL_DEBUG_PLUS, header->data, 5);
+	log_hexdump(log_conf, LOG_LEVEL_DEBUG_PLUS, (unsigned char*)header->data, 5);
 	if(g_tcp_send(sock, header->data, 5, 0) < 5)
 	{
 		log_message(log_conf, LOG_LEVEL_ERROR ,"vchannel{%s}[vchannel_send]: "
@@ -272,7 +276,7 @@ vchannel_receive(int sock, const char* data, int* length, int* total_length)
 	}
 	log_message(log_conf, LOG_LEVEL_DEBUG_PLUS ,"vchannel{%s}[vchannel_receive]: "
 			"Header received: ", channel->name);
-	log_hexdump(log_conf, LOG_LEVEL_DEBUG_PLUS, header->data, *length);
+	log_hexdump(log_conf, LOG_LEVEL_DEBUG_PLUS, (unsigned char*)header->data, *length);
 	in_uint8(header, type);
 	in_uint32_be(header, *length);
 	in_uint32_be(header, *total_length);
@@ -361,7 +365,6 @@ vchannel_init()
 {
   char filename[256];
   char log_filename[256];
-  char display_text;
   struct list* names;
   struct list* values;
   char* name;

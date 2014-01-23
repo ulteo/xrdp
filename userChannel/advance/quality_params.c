@@ -272,7 +272,7 @@ void quality_params_prepare_data(struct quality_params* self, struct xrdp_screen
 {
   struct xrdp_wm* wm = (struct xrdp_wm*) u->wm;
   float estimate_size = 0;
-  int k = 0;
+
   if (wm->session->next_request_time >= MAX_REQUEST_TIME)
   {
     self->coef_size = 3;
@@ -297,7 +297,6 @@ void quality_params_prepare_data(struct quality_params* self, struct xrdp_screen
   float bw = ((float) (bandwidth)) / ((float) (self->fps));
   struct list* l_update = list_create();
   l_update->auto_free = true;
-  bool reduce_list = false;
   bool q_params_min;
   int i;
   if (desktop->update_rects->count > 0)
@@ -418,7 +417,7 @@ void quality_params_prepare_data(struct quality_params* self, struct xrdp_screen
         for (i = list_r->count - 1; i >= 0; i--)
         {
           struct update_rect* cur = (struct update_rect*) list_get_item(list_r, i);
-          bool reduce_rect = xrdp_screen_reduce_rect(desktop, cur, list_r);
+          xrdp_screen_reduce_rect(desktop, cur, list_r);
           for (q = 0; q < cur->quality_already_send; q++)
           {
             float es = estimate_size_coef * quality_params_estimate_size_rect(self, cur, q) / 1024;
@@ -536,7 +535,6 @@ void quality_params_prepare_data2(struct quality_params* self, struct xrdp_scree
 {
   struct xrdp_wm* wm = (struct xrdp_wm*) u->wm;
   float estimate_size = 0;
-  int k = 0;
 
   if (wm->session->next_request_time >= MAX_REQUEST_TIME)
   {
@@ -565,8 +563,6 @@ void quality_params_prepare_data2(struct quality_params* self, struct xrdp_scree
   float bw = ((float) (bandwidth)) / ((float) (self->fps));
   struct list* l_update = list_create();
   l_update->auto_free = true;
-  bool send = false;
-  bool reduce_list = false;
   bool q_params_min;
   int i;
   if (desktop->update_rects->count > 0)
@@ -699,9 +695,6 @@ void quality_params_prepare_data3(struct quality_params* self, struct xrdp_scree
   struct xrdp_wm* wm = (struct xrdp_wm*) u->wm;
   struct list* l_update = list_create();
   l_update->auto_free = true;
-  float estimate_size_coef = self->coef_size;
-  bool reduce_list = false;
-  bool q_params_min;
   unsigned int bandwidth =
       (u->bandwidth) ? (u->bandwidth) : wm->session->bandwidth;
 
@@ -779,9 +772,7 @@ void quality_params_prepare_data3(struct quality_params* self, struct xrdp_scree
 void quality_params_add_update_order(struct xrdp_screen* self, struct list* p_display, struct list* update_list)
 {
   struct ip_image* desktop = self->screen;
-  struct xrdp_rect* tmp_rect;
-  int i, w, h, color;
-  bool remove = false;
+  int i;
   update* up;
   int bpp = (self->bpp + 7) / 8;
   if (bpp == 3)

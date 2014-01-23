@@ -50,7 +50,7 @@ struct xrdp_mod
   int (*server_screen_blt)(struct xrdp_mod* v, int x, int y, int cx, int cy,
                            int srcx, int srcy);
   int (*server_paint_rect)(struct xrdp_mod* v, int x, int y, int cx, int cy,
-                           char* data, int width, int height, int srcx, int srcy, int quality);
+                           char* data, int width, int height, int srcx, int srcy);
   int (*server_set_pointer)(struct xrdp_mod* v, int x, int y, char* data, char* mask);
   int (*server_palette)(struct xrdp_mod* v, int* palette);
   int (*server_msg)(struct xrdp_mod* v, char* msg, int code);
@@ -142,6 +142,8 @@ int APP_CC
 xrdp_mm_end(struct xrdp_mm* self);
 void APP_CC
 xrdp_mm_set_network_stat(struct xrdp_mm* self, long bandwidth, int rtt);
+void APP_CC
+xrdp_mm_set_static_framerate(struct xrdp_mm* self, int framerate);
 int APP_CC
 xrdp_mm_get_wait_objs(struct xrdp_mm* self, tbus* read_objs, int* rcount, tbus* write_objs, int* wcount, int* timeout);
 int APP_CC
@@ -192,6 +194,9 @@ int DEFAULT_CC
 server_get_channel_id(struct userChannel* mod, char* name);
 int DEFAULT_CC
 server_send_to_channel(struct userChannel* mod, int channel_id, char* data, int data_len, int total_data_len, int flags);
+int APP_CC
+xrdp_mm_scim_send_unicode(struct xrdp_mm* self, unsigned int unicode_key);
+
 
 #endif // XRDP_MM_H
 

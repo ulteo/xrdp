@@ -157,6 +157,8 @@ int DEFAULT_CC
 lib_userChannel_mod_connect(struct userChannel* u);
 void DEFAULT_CC
 lib_userChannel_set_network_stat(struct userChannel* u, long bandwidth, int rtt);
+void DEFAULT_CC
+lib_userChannel_set_static_framerate(struct userChannel* u, int framerate);
 int DEFAULT_CC
 lib_userChannel_update_screen(struct userChannel* u);
 int DEFAULT_CC

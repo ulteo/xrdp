@@ -518,7 +518,7 @@ bool xrdp_screen_reduce_regions(struct xrdp_screen* self, struct list* l)
   int max_area = 0;
   int tmp_area;
   bool div = false;
-  max = list_get_item(l, 0);
+  max = (struct update_rect*)list_get_item(l, 0);
   for (i = 1; i < l->count; i++)
   {
     cur = (struct update_rect*) list_get_item(l, i);

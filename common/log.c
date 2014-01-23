@@ -131,7 +131,7 @@ log_message(struct log_config* l_cfg, const unsigned int lvl, const char* msg, .
   }
   else
   {
-		snprintf(buff, LOG_BUFFER_SIZE, msg);
+		g_strncpy(buff, msg, LOG_BUFFER_SIZE);
   }
 
   if (lvl <= l_cfg->log_level)

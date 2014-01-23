@@ -434,7 +434,7 @@ xrdp_process_main_loop(struct xrdp_process* self)
   self->session->id = (tbus)self->mod;
   self->session->callback = self->mod->callback;
   self->session->chan_id = (tbus)self->vc;
-  self->session->channel_callback = xrdp_vchannel_process_channel_data;
+  self->session->channel_callback = (int (*)(long, long, long, long, long))xrdp_vchannel_process_channel_data;
   self->mod->self_term_event = self->self_term_event;
 
   /* this callback function is in xrdp_wm.c */
