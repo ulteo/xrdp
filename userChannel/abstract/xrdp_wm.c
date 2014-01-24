@@ -95,7 +95,9 @@ xrdp_wm_create(int session_id, struct xrdp_session* session)
   {
     if (self->client_info->static_bandwidth || self->client_info->static_rtt)
     {
-      xrdp_wm_set_network_stat((struct xrdp_user_channel*)session->id, self->client_info->static_bandwidth, self->client_info->static_rtt);
+      struct xrdp_user_channel* user_channel = session->id;
+      user_channel->wm = self;
+      xrdp_wm_set_network_stat(user_channel, self->client_info->static_bandwidth, self->client_info->static_rtt);
     }
   }
 
