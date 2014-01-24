@@ -764,7 +764,10 @@ void quality_params_prepare_data3(struct quality_params* self, struct xrdp_scree
   }
   quality_params_add_update_order(desktop, list_final, u->current_update_list);
 
-  video_detection_add_update_order(desktop, u->current_update_list, u);
+  if (self->is_video_detection_enable)
+  {
+    video_detection_add_update_order(desktop, u->current_update_list, u);
+  }
   list_delete(list_rq);
   list_delete(list_final);
 }
