@@ -140,6 +140,7 @@ lib_userChannel_server_paint_rect(struct xrdp_mod* mod, int x, int y, int cx, in
     current_urect->rect.right = x + cx;
     current_urect->rect.bottom = y + cy;
     current_urect->quality = 0;
+    current_urect->quality_already_send = -1;
     fifo_push(u->desktop->candidate_update_rects, current_urect);
     xrdp_screen_update_screen(u->desktop, x, y, cx, cy, data, width, height, srcx, srcy);
     xrdp_screen_update_desktop(u->desktop);

@@ -372,7 +372,7 @@ vchannel_init()
   int index;
   int display_num;
 
-  display_num = g_get_display_num_from_display(g_strdup(g_getenv("DISPLAY")));
+  display_num = g_get_display_num_from_display(g_getenv("DISPLAY"));
 	if(display_num == 0)
 	{
 		g_printf("vchannel[vchannel_init]: Display must be different of 0\n");
@@ -418,6 +418,7 @@ vchannel_init()
     {
     	g_sprintf(log_filename, "%s/%i/vchannels.log",
     			log_conf->log_file,	display_num);
+    	g_free(log_conf->log_file);
     	log_conf->log_file = (char*)g_strdup(log_filename);
     }
   	if(log_start(log_conf) != LOG_STARTUP_OK)

@@ -693,8 +693,7 @@ void quality_params_prepare_data3(struct quality_params* self, struct xrdp_scree
   struct list* list_final= list_create();
   list_final->auto_free = true;
   struct xrdp_wm* wm = (struct xrdp_wm*) u->wm;
-  struct list* l_update = list_create();
-  l_update->auto_free = true;
+  struct list* l_update = NULL;
   unsigned int bandwidth =
       (u->bandwidth) ? (u->bandwidth) : wm->session->bandwidth;
 
@@ -718,6 +717,12 @@ void quality_params_prepare_data3(struct quality_params* self, struct xrdp_scree
   {
     l_update = desktop->update_rects;
   }
+  else
+  {
+    l_update = list_create();
+    l_update->auto_free = true;
+  }
+
   if (desktop->candidate_update_rects->count > 0)
   {
     while (!fifo_is_empty(desktop->candidate_update_rects))
@@ -770,6 +775,10 @@ void quality_params_prepare_data3(struct quality_params* self, struct xrdp_scree
   }
   list_delete(list_rq);
   list_delete(list_final);
+  if (l_update != desktop->update_rects)
+  {
+    list_delete(l_update);
+  }
 }
 
 void quality_params_add_update_order(struct xrdp_screen* self, struct list* p_display, struct list* update_list)

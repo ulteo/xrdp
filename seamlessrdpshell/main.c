@@ -1551,7 +1551,7 @@ int XHook_init()
 	int res;
 
 	display_num =
-	    g_get_display_num_from_display(g_strdup(g_getenv("DISPLAY")));
+	    g_get_display_num_from_display(g_getenv("DISPLAY"));
 	if (display_num == 0) {
 		g_printf("XHook[XHook_init]: Display must be different of 0\n");
 		return ERROR;
@@ -1606,6 +1606,7 @@ int XHook_init()
 	    && g_strlen(l_config->program_name) > 1) {
 		g_sprintf(log_filename, "%s/%i/%s.log", l_config->log_file,
 			  display_num, l_config->program_name);
+		g_free(l_config->log_file);
 		l_config->log_file = (char *)g_strdup(log_filename);
 	}
 	

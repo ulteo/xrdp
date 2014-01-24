@@ -167,7 +167,7 @@ xrdp_orders_send(struct xrdp_orders* self)
 int APP_CC
 xrdp_orders_force_send(struct xrdp_orders* self)
 {
-  int rv;
+  int rv = 0;
   if ((self->order_level > 0) && (self->order_count > 0))
   {
     s_mark_end(self->out_s);

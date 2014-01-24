@@ -337,6 +337,7 @@ lib_userChannel_cleanup(struct userChannel* self)
     if (self->mod_end != 0)
     {
       /* let the module cleanup */
+      self->mod_end(self);
       self->mod_lib_exit(self->mod);
     }
   }

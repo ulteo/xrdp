@@ -234,6 +234,7 @@ void update_candidate_video_regions(struct list* self, struct xrdp_rect rect, in
   struct video_reg* tmp_vr2;
   struct xrdp_rect intersection;
   struct list* l_tmp = list_create();
+  l_tmp->auto_free = 1;
   int i, j;
   bool no_inter = true;
   struct video_reg* cur_vr = (struct video_reg*) g_malloc(sizeof(struct video_reg), 1);

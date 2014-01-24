@@ -44,7 +44,7 @@ disk_init()
 	int display_num;
 	int res;
 
-	display_num = g_get_display_num_from_display(g_strdup(g_getenv("DISPLAY")));
+	display_num = g_get_display_num_from_display(g_getenv("DISPLAY"));
 	if(display_num == 0)
 	{
 		g_printf("vchannel_rdpdr[disk_init]: Display must be different of 0\n");
@@ -105,6 +105,7 @@ disk_init()
 	if( g_strlen(l_config->log_file) > 1 && g_strlen(l_config->program_name) > 1)
 	{
 		g_sprintf(log_filename, "%s/%i/%s.log", l_config->log_file, display_num, l_config->program_name);
+		g_free(l_config->log_file);
 		l_config->log_file = (char*)g_strdup(log_filename);
 	}
 	list_delete(names);
@@ -139,6 +140,7 @@ int main(int argc, char** argv, char** environ)
 	if (argc != 2)
 	{
 		g_printf("Usage : vchannel_rdpdr USERNAME\n");
+		g_free(l_config);
 		return 1;
 	}
 
@@ -160,12 +162,14 @@ int main(int argc, char** argv, char** environ)
 	{
 		log_message(l_config, LOG_LEVEL_WARNING, "vchannel_rdpdr[main]: "
 				"Error while testing if user %s is member of fuse group", username);
+		g_free(l_config);
 		return 1;
 	}
 	if (ok == 0)
 	{
 		log_message(l_config, LOG_LEVEL_WARNING, "vchannel_rdpdr[main]: "
 				"User %s is not allow to use fuse", username);
+		g_free(l_config);
 		return 1;
 	}
 

@@ -735,6 +735,7 @@ xrdp_mm_send_disconnect(struct xrdp_mm* self)
 		g_writeln("Error while sending data");
 	}
 	free_stream(s);
+	g_free(data);
   return 0;
 }
 

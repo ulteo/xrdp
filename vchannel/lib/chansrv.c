@@ -62,12 +62,15 @@ chansrv_get_channel_app_property(const char* channel_file_conf, const char* prop
       {
         if( g_strlen(value) > 1)
         {
-        	return value;
+          char* ret = g_strdup(value);
+          list_delete(names);
+          list_delete(values);
+          return ret;
         }
       }
     }
   }
-  return "";
+  return NULL;
 }
 
 /*****************************************************************************/
@@ -129,7 +132,7 @@ chansrv_launch_server_channel(vchannel* v, int display, char* channel_name)
 	channel_type = chansrv_get_channel_app_property(channel_file_conf, CHANNEL_TYPE_PROP);
 	channel_program_arguments = chansrv_get_channel_app_property(channel_file_conf, CHANNEL_APP_ARGS_PROP);
 
-	if (g_strcmp(channel_program_name, "") == 0 || g_strcmp(channel_type, "") == 0)
+	if (channel_program_name == NULL || channel_type == NULL)
 	{
 		log_message(&log_conf, LOG_LEVEL_WARNING, "chansrv[chansrv_launch_server_channel]: "
 				"Channel conf file for %s is not correct", channel_name);
@@ -173,6 +176,13 @@ chansrv_launch_server_channel(vchannel* v, int display, char* channel_name)
 					"Unable to launch the channel application %s ", channel_program_path);
 		return 1;
 	}
+
+	g_free(channel_type);
+	g_free(channel_program_name);
+	g_free(channel_program_arguments);
+
+	list_delete(channel_params);
+
 	return 0;
 }
 

@@ -196,27 +196,24 @@ xrdp_vchannel_process_channel_data(vchannel* vc, tbus param1, tbus param2, tbus 
 
   if ((vc != 0))
   {
-    if (data != 0)
+    id = LOWORD(param1);
+    flags = HIWORD(param1);
+    length = param2;
+    data = (char*)param3;
+    total_length = param4;
+    if (total_length < length)
     {
-      id = LOWORD(param1);
-      flags = HIWORD(param1);
-      length = param2;
-      data = (char*)param3;
-      total_length = param4;
-      if (total_length < length)
-      {
-        g_writeln("warning in xrdp_mm_process_channel_data total_len < length");
-        total_length = length;
-      }
-      vc->send_data(vc, data, id, flags, length, total_length);
+      g_writeln("warning in xrdp_mm_process_channel_data total_len < length");
+      total_length = length;
+    }
+    vc->send_data(vc, data, id, flags, length, total_length);
 
-      if (libxrdp_query_channel(session, id, chan_name, NULL) == 0)
+    if (libxrdp_query_channel(session, id, chan_name, NULL) == 0)
+    {
+      bw_limit* chan_limit = xrdp_qos_get_channel(channels_limitation, (char*)chan_name);
+      if (chan_limit)
       {
-        bw_limit* chan_limit = xrdp_qos_get_channel(channels_limitation, (char*)chan_name);
-        if (chan_limit)
-        {
-          chan_limit->already_sended += length;
-        }
+        chan_limit->already_sended += length;
       }
     }
   }

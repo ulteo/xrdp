@@ -801,7 +801,7 @@ cliprdr_init()
   int index;
   int display_num;
 
-  display_num = g_get_display_num_from_display(g_strdup(g_getenv("DISPLAY")));
+  display_num = g_get_display_num_from_display(g_getenv("DISPLAY"));
 	if(display_num == 0)
 	{
 		g_printf("cliprdr[cliprdr_init]: Display must be different of 0\n");

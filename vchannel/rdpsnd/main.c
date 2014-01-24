@@ -312,7 +312,7 @@ sndchannel_init()
   int index;
   int res;
 
-  display_num = g_get_display_num_from_display(g_strdup(g_getenv("DISPLAY")));
+  display_num = g_get_display_num_from_display(g_getenv("DISPLAY"));
 	if(display_num == 0)
 	{
 		g_printf( "vchannel_rdpsnd[sndchannel_init]: "
