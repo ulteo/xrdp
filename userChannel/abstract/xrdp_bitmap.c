@@ -1861,7 +1861,7 @@ xrdp_bitmap_add_coords(struct xrdp_bitmap* self, int x, int y)
     }
     else
     {
-        tmp = realloc(self->coords, (self->coords[0] * 2) * sizeof(long));
+        tmp = realloc(self->coords, ((self->coords[0] + 1) * 2) * sizeof(long));
         if (tmp == 0) return 0;
         self->coords = tmp;
         self->coords[0]++;
