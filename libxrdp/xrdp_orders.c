@@ -216,7 +216,7 @@ xrdp_orders_check(struct xrdp_orders* self, int max_size)
 
   if (self->rdp_layer->client_info.order_packet_size > 0)
   {
-    max_packet_size = self->rdp_layer->client_info.order_packet_size;
+    max_size = self->rdp_layer->client_info.order_packet_size;
   }
 
   if (self->order_level < 1)
