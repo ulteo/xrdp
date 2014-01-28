@@ -43,6 +43,8 @@ rect_intersect(struct xrdp_rect* in1, struct xrdp_rect* in2, struct xrdp_rect* o
 int APP_CC
 rect_contained_by(struct xrdp_rect* in1, int left, int top, int right, int bottom);
 int APP_CC
+rect_update_bounding_box(struct xrdp_rect* BB, struct xrdp_rect* r, int DELTA);
+int APP_CC
 check_bounds(struct xrdp_bitmap* b, int* x, int* y, int* cx, int* cy);
 int APP_CC
 add_char_at(char* text, int text_size, twchar ch, int index);

@@ -130,40 +130,52 @@ void update_video_regions(struct list* video, struct list* candidate, int fps)
         for (k = 0 ; k < vc ; k++)
         {
           struct video_reg* bb = (struct video_reg*) list_get_item(video, k);
-          if (rect_intersect(&bb->rect, &cur->rect, &intersection))
+          int rv = rect_update_bounding_box(&bb->rect, &cur->rect, DELTA_VIDEO);
+          if (rv == 0)
           {
-            bb->rect.top = MIN(bb->rect.top, cur->rect.top);
-            bb->rect.left = MIN(bb->rect.left, cur->rect.left);
-            bb->rect.bottom= MAX(bb->rect.bottom, cur->rect.bottom);
-            bb->rect.right= MAX(bb->rect.right, cur->rect.right);
-            bb->nb_update = MAX(bb->nb_update, cur->nb_update);
             break;
           }
-          else
+          else if (rv == 1 && k == vc-1)
           {
-            if ( ( ((cur->rect.bottom - bb->rect.top) < DELTA_VIDEO || (bb->rect.bottom - cur->rect.top) < DELTA_VIDEO) &&
-                ( abs(cur->rect.left - bb->rect.left) < DELTA_VIDEO || abs(cur->rect.right - bb->rect.right) < DELTA_VIDEO) ) ||
-                ( ((cur->rect.right - bb->rect.left) < DELTA_VIDEO || (bb->rect.right - cur->rect.left) < DELTA_VIDEO) &&
-                    ( abs(cur->rect.top - bb->rect.top) < DELTA_VIDEO || abs(cur->rect.bottom - bb->rect.bottom) < DELTA_VIDEO)))
-            {
-              bb->rect.top = MIN(bb->rect.top, cur->rect.top);
-              bb->rect.left = MIN(bb->rect.left, cur->rect.left);
-              bb->rect.bottom= MAX(bb->rect.bottom, cur->rect.bottom);
-              bb->rect.right= MAX(bb->rect.right, cur->rect.right);
-              bb->nb_update = MAX(bb->nb_update, cur->nb_update);
-              break;
-            }
-            else
-            {
-              list_add_video_reg(video, cur->rect.left, cur->rect.top, cur->rect.right, cur->rect.bottom, cur->nb_update);
-              break;
-            }
+            struct video_reg* tmp = (struct video_reg*) g_malloc(sizeof(struct video_reg), 0);
+            g_memcpy(tmp, cur, sizeof(struct video_reg));
+            list_add_item(video, (tbus) tmp);
           }
         }
       }
     }
   }
-  video_regions_merge(video);
+  video_detection_rect_merge(video);
+}
+
+void video_detection_rect_merge(struct list* video, int DELTA)
+{
+  int i, j;
+  bool merged = true;
+  while (merged)
+  {
+    merged = false;
+    for (j = 0 ; j < video->count ; j++)
+    {
+      struct video_reg * bb = (struct video_reg *) list_get_item(video, j);
+      for (i = video->count - 1; i > j ; i--)
+      {
+        struct video_reg * r = (struct video_reg *) list_get_item(video, i);
+        int rv = rect_update_bounding_box(&bb->rect, &r->rect, DELTA);
+        if (rv == 0)
+        {
+          merged = true;
+          list_remove_item(video, i);
+          break;
+        } else if (rv == 1 && i == 1)
+        {
+          merged = false;
+          break;
+        }
+      }
+      if (merged == true) break;
+    }
+  }
 }
 
 void video_regions_merge(struct list* video)

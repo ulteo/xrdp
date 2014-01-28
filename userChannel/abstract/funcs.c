@@ -400,6 +400,49 @@ rect_contained_by(struct xrdp_rect* in1, int left, int top,
 }
 
 /*****************************************************************************/
+/* returns int */
+int APP_CC
+rect_update_bounding_box(struct xrdp_rect* BB, struct xrdp_rect* r, int DELTA)
+{
+  struct xrdp_rect inter;
+  if (rect_equal(BB, r))
+  {
+    return 0;
+  }
+  if (rect_contained_by(r, BB->left, BB->top, BB->right, BB->bottom))
+  {
+    BB->left = r->left;
+    BB->top = r->top;
+    BB->bottom = r->bottom;
+    BB->right = r->right;
+    return 0;
+  }
+  if (rect_contained_by(BB, r->left, r->top, r->right, r->bottom))
+  {
+    return 0;
+  }
+  struct xrdp_rect tmp;
+  tmp.left = BB->left - DELTA;
+  tmp.right = BB->right + DELTA;
+  tmp.top = BB->top - DELTA;
+  tmp.bottom = BB->bottom + DELTA;
+
+  if (rect_intersect(BB, r, &inter) || rect_intersect(&tmp, r, &inter))
+  {
+    BB->top = MIN(BB->top, r->top);
+    BB->left = MIN(BB->left, r->left);
+    BB->right = MAX(BB->right, r->right);
+    BB->bottom = MAX(BB->bottom, r->bottom);
+    return 0;
+  }
+  else
+  {
+    return 1;
+  }
+  return -1;
+}
+
+/*****************************************************************************/
 /* adjust the bounds to fit in the bitmap */
 /* return false if there is nothing to draw else return true */
 int APP_CC
