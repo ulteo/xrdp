@@ -106,10 +106,10 @@ rect_equal(struct xrdp_rect* in1, struct xrdp_rect* in2)
 int APP_CC
 rect_substract(struct xrdp_rect* in1, struct xrdp_rect* in2, struct list* out) {
 
-	if (in1->left < in2->left &&
-		in1->top < in2->top &&
-		in1->right > in2->right &&
-		in1->bottom > in2->bottom) {
+	if (in1->left <= in2->left &&
+		in1->top <= in2->top &&
+		in1->right >= in2->right &&
+		in1->bottom >= in2->bottom) {
 		list_add_rect(out, in1->left, in1->top, in1->right, in2->top);
 		list_add_rect(out, in1->left, in2->top, in2->left, in2->bottom);
 		list_add_rect(out, in2->right, in2->top, in1->right, in2->bottom);
