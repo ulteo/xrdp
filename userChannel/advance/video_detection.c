@@ -133,12 +133,14 @@ void update_video_regions(struct list* video, struct list* candidate, int fps)
           int rv = rect_update_bounding_box(&bb->rect, &cur->rect, DELTA_VIDEO);
           if (rv == 0)
           {
+            bb->already_send = false;
             break;
           }
           else if (rv == 1 && k == vc-1)
           {
             struct video_reg* tmp = (struct video_reg*) g_malloc(sizeof(struct video_reg), 0);
             g_memcpy(tmp, cur, sizeof(struct video_reg));
+            tmp->already_send = false;
             list_add_item(video, (tbus) tmp);
           }
         }
@@ -165,6 +167,7 @@ void video_detection_rect_merge(struct list* video, int DELTA)
         if (rv == 0)
         {
           merged = true;
+          bb->already_send = false;
           list_remove_item(video, i);
           break;
         } else if (rv == 1 && i == 1)
@@ -252,6 +255,7 @@ void update_candidate_video_regions(struct list* self, struct xrdp_rect rect, in
   struct video_reg* cur_vr = (struct video_reg*) g_malloc(sizeof(struct video_reg), 1);
   cur_vr->rect = rect;
   cur_vr->nb_update = 1;
+  cur_vr->already_send = false;
   fifo_push(f_tmp, cur_vr);
   while (!fifo_is_empty(f_tmp))
   {
@@ -447,6 +451,7 @@ void list_add_video_reg(struct list* self, int left, int top, int right, int bot
   {
     struct video_reg* tmp = (struct video_reg*) g_malloc(sizeof(struct video_reg), 0);
     tmp->nb_update = nb_update;
+    tmp->already_send = false;
     tmp->rect.top = top;
     tmp->rect.left = left;
     tmp->rect.right = right;
@@ -464,19 +469,21 @@ void video_detection_add_update_order(struct xrdp_screen* self, struct list* upd
     for (i = 0; i < self->video_regs->count; i++)
     {
       struct video_reg* vr = (struct video_reg*) list_get_item(self->video_regs, i);
-      vr->already_send = true;
-      up = g_malloc(sizeof(update), 1);
-      up->order_type = set_fgcolor;
-      up->color = 0;
-      list_add_item(update_list, (tbus) up);
-      up = g_malloc(sizeof(update), 1);
-      up->order_type = fill_rect;
-      up->x = vr->rect.left;
-      up->y = vr->rect.top;
-      up->width = rect_width(&vr->rect);
-      up->height = rect_height(&vr->rect);
-      list_add_item(update_list, (tbus) up);
+      if (vr->already_send == false)
+      {
+        vr->already_send = true;
+        up = g_malloc(sizeof(update), 1);
+        up->order_type = set_fgcolor;
+        up->color = 0;
+        list_add_item(update_list, (tbus) up);
+        up = g_malloc(sizeof(update), 1);
+        up->order_type = fill_rect;
+        up->x = vr->rect.left;
+        up->y = vr->rect.top;
+        up->width = rect_width(&vr->rect);
+        up->height = rect_height(&vr->rect);
+        list_add_item(update_list, (tbus) up);
+      }
     }
   }
-  list_clear(self->video_regs);
 }
