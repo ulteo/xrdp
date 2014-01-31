@@ -483,6 +483,41 @@ void video_detection_add_update_order(struct xrdp_screen* self, struct list* upd
         up->width = rect_width(&vr->rect);
         up->height = rect_height(&vr->rect);
         list_add_item(update_list, (tbus) up);
+        if (self->client_info->video_display_borders)
+        {
+          up = g_malloc(sizeof(update), 1);
+          up->order_type = set_fgcolor;
+          up->color = 255;
+          list_add_item(u->current_update_list, (tbus) up);
+          up = g_malloc(sizeof(update), 1);
+          up->order_type = fill_rect;
+          up->x = vr->rect.left + 1;
+          up->y = vr->rect.top + 1;
+          up->width = vr->rect.right - vr->rect.left - 2;
+          up->height = 2;
+          list_add_item(u->current_update_list, (tbus) up);
+          up = g_malloc(sizeof(update), 1);
+          up->order_type = fill_rect;
+          up->x = vr->rect.left + 1;
+          up->y = vr->rect.top + 1;
+          up->width = 2;
+          up->height = vr->rect.bottom - vr->rect.top - 2;
+          list_add_item(u->current_update_list, (tbus) up);
+          up = g_malloc(sizeof(update), 1);
+          up->order_type = fill_rect;
+          up->x = vr->rect.left + 1;
+          up->y = vr->rect.bottom - 3;
+          up->width = vr->rect.right - vr->rect.left - 2;
+          up->height = 2;
+          list_add_item(u->current_update_list, (tbus) up);
+          up = g_malloc(sizeof(update), 1);
+          up->order_type = fill_rect;
+          up->x = vr->rect.right - 3;
+          up->y = vr->rect.top + 1;
+          up->width = 2;
+          up->height = vr->rect.bottom - vr->rect.top - 2;
+          list_add_item(u->current_update_list, (tbus) up);
+        }
       }
     }
   }
