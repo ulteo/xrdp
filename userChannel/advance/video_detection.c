@@ -290,12 +290,12 @@ void update_candidate_video_regions(struct list* self, struct xrdp_rect rect, in
       }
       if (no_inter)
       {
-        list_add_item(self, (tbus) f_vr);
+        list_add_video_reg(self, f_vr->rect.left, f_vr->rect.top, f_vr->rect.right, f_vr->rect.bottom, f_vr->nb_update);
       }
     }
     else
     {
-      list_add_item(self, (tbus) f_vr);
+      list_add_video_reg(self, f_vr->rect.left, f_vr->rect.top, f_vr->rect.right, f_vr->rect.bottom, f_vr->nb_update);
     }
   }
   list_delete(l_tmp);
