@@ -53,9 +53,9 @@ lib_userChannel_mod_end(struct userChannel* u)
   LIB_DEBUG(u, "lib_userChannel_mod_end");
   if (u->mod)
   {
+    xrdp_screen_delete(u->desktop);
     u->mod->mod_end(u->mod);
   }
-  xrdp_screen_delete(u->desktop);
   return 0;
 }
 
