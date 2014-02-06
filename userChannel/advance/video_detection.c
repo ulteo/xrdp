@@ -137,10 +137,7 @@ void update_video_regions(struct list* video, struct list* candidate, int fps)
           }
           else if (rv == 1 && k == vc-1)
           {
-            struct video_reg* tmp = (struct video_reg*) g_malloc(sizeof(struct video_reg), 0);
-            g_memcpy(tmp, cur, sizeof(struct video_reg));
-            tmp->already_send = false;
-            list_add_item(video, (tbus) tmp);
+            list_add_video_reg(video, cur->rect.left, cur->rect.top, cur->rect.right, cur->rect.bottom, cur->nb_update);
           }
         }
       }
