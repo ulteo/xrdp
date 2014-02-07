@@ -445,69 +445,32 @@ int DEFAULT_CC
 lib_userChannel_update(struct userChannel* u, long * t0)
 {
   int i;
-  int k;
-  struct xrdp_rect intersection;
-  bool inter;
   struct quality_params* q_params = (struct quality_params*) u->q_params;
   if (q_params->is_video_detection_enable)
   {
     int t1 = g_time3();
     if ((t1 - *t0) > u->desktop->client_info->video_detection_updatetime)
     {
-      /* // ici */
-      for (i = u->desktop->candidate_video_regs->count-1 ; i >= 0; i--)
+      bool diff = video_detection_check_video_regions(u->desktop);
+      if (diff)
       {
-        struct video_reg* tmp = (struct video_reg*) list_get_item(u->desktop->candidate_video_regs, i);
-        tmp->nb_update-= 5;
-      }
-      for (i = u->desktop->candidate_video_regs->count-1 ; i >= 0; i--)
-      {
-        struct video_reg* cand = (struct video_reg*) list_get_item(u->desktop->candidate_video_regs, i);
-        inter = false;
-        for (k = 0 ; k < u->desktop->video_regs->count ; k++)
+        for (i = u->desktop->video_regs->count - 1 ; i >= 0; i--)
         {
-          struct video_reg* bb = (struct video_reg*) list_get_item(u->desktop->video_regs, k);
-          if (rect_intersect(&bb->rect, &cand->rect, &intersection))
-          {
-            inter = true;
-            break;
-          }
-        }
-
-        if (!inter)
-        {
-          int Bpp = (u->desktop->bpp + 7) / 8;
-          if (Bpp == 3)
-          {
-            Bpp = 4;
-          }
-          if (cand->nb_update <= 0)
-          {
-            update* up;
-            up = g_malloc(sizeof(update), 1);
-            up->order_type = paint_rect;
-            up->x = cand->rect.left;
-            up->y = cand->rect.top;
-            int w = rect_width(&cand->rect);
-            int h = rect_height(&cand->rect);
-            up->cx = w;
-            up->cy = h;
-            up->width = w;
-            up->height = h;
-            up->srcx = 0;
-            up->srcy = 0;
-            up->data_len = up->cx * up->cy * Bpp;
-            up->data = g_malloc(up->data_len, 0);
-            ip_image_crop(u->desktop->screen, up->x, up->y, up->cx, up->cy, up->data);
-            list_add_item(u->current_update_list, (tbus) up);
-            list_remove_item(u->desktop->candidate_video_regs, i);
-          }
+          struct video_reg* bb = (struct video_reg*) list_get_item(u->desktop->video_regs, i);
+          struct update_rect* up = (struct update_rect* ) g_malloc(sizeof(struct update_rect), 0);
+          up->rect.left = bb->rect.left;
+          up->rect.top = bb->rect.top;
+          up->rect.right = bb->rect.right;
+          up->rect.bottom = bb->rect.bottom;
+          up->quality = 0;
+          up->quality_already_send = -1;
+          list_remove_item(u->desktop->video_regs, i);
+          fifo_push(u->desktop->candidate_update_rects, up);
         }
       }
       *t0 = g_time3();
     }
   }
-
   return 0;
 }
 

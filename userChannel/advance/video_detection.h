@@ -43,5 +43,6 @@ void video_regions_merge(struct list* self);
 void list_add_video_reg(struct list* self, int left, int top, int right, int bottom, int nb_update);
 void video_regions_merge(struct list* video);
 void video_detection_add_update_order(struct xrdp_screen* self, struct list* update_list, struct userChannel* u);
+bool video_detection_check_video_regions(struct xrdp_screen* desktop);
 
 #endif // _VIDEO_DETECTION_H

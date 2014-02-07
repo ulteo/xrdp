@@ -48,7 +48,6 @@ void video_detection_update(struct xrdp_screen* self, int x, int y, int cx, int 
   current_rect.right = x + cx;
   current_rect.bottom = y + cy;
   update_candidate_video_regions(c_video_regs, current_rect, self->client_info->video_detection_maxfps);
-  update_video_regions(video_regs, c_video_regs, self->client_info->video_detection_fps);
   fifo_push(f_tmp, &current_rect);
   while (!fifo_is_empty(f_tmp))
   {
@@ -521,4 +520,59 @@ void video_detection_add_update_order(struct xrdp_screen* self, struct list* upd
       }
     }
   }
+}
+
+bool video_detection_check_video_regions(struct xrdp_screen* desktop)
+{
+  int i, k;
+  struct list* video = desktop->video_regs;
+  struct list* candidate = desktop->candidate_video_regs;
+  bool diff = false;
+  for (i = candidate->count-1 ; i >= 0; i--)
+  {
+    struct video_reg* tmp = (struct video_reg*) list_get_item(candidate, i);
+    tmp->nb_update-= 5;
+    if (tmp->nb_update <= 0)
+    {
+      list_remove_item(candidate, i);
+    }
+  }
+
+  if (video->count == 0) {
+    update_video_regions(video, candidate, desktop->client_info->video_detection_fps );
+    diff = false;
+  }
+  else
+  {
+    struct list * list_v = list_create();
+    list_v->auto_free = true;
+    update_video_regions(list_v, candidate, desktop->client_info->video_detection_fps );
+    diff = false;
+    if (list_v->count != 0)
+    {
+      for (i = 0 ; i < list_v->count ; i++)
+      {
+        struct video_reg* first = (struct video_reg *)list_get_item(list_v, i);
+        for (k = 0 ; k < video->count ; k++)
+        {
+          struct video_reg* second = (struct video_reg *)list_get_item(video, k);
+          if (!rect_equal(&first->rect, &second->rect))
+          {
+            diff = true;
+            break;
+          }
+        }
+        if (diff)
+        {
+          break;
+        }
+      }
+    }
+    else
+    {
+      diff = true;
+    }
+    list_delete(list_v);
+  }
+  return diff;
 }
