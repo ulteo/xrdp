@@ -303,6 +303,11 @@ xrdp_rdp_read_config(struct xrdp_client_info* client_info)
         client_info->video_display_fps = g_atoi(value);
         printf("Video display fps : %i \n", client_info->video_display_fps);
     }
+    else if (g_strcasecmp(item, "video_display_box_time_delay") == 0)
+    {
+      client_info->video_display_box_time_delay = g_atoi(value);
+      printf("Video display box time delay : %i \n", client_info->video_display_box_time_delay);
+    }
     else if (g_strcasecmp(item, "use_subtiling") == 0)
     {
       client_info->use_subtiling = log_text2bool(value);
@@ -401,6 +406,7 @@ xrdp_rdp_create(struct xrdp_session* session, struct trans* trans)
   self->client_info.video_detection_updatetime = 400;
   self->client_info.video_display_borders = false;
   self->client_info.video_display_fps = 0;
+  self->client_info.video_display_box_time_delay = 2000;
   self->client_info.use_subtiling = false;
   self->client_info.use_progressive_display = false;
   self->client_info.progressive_display_nb_level = 3;

@@ -448,6 +448,7 @@ void list_add_video_reg(struct list* self, int left, int top, int right, int bot
     struct video_reg* tmp = (struct video_reg*) g_malloc(sizeof(struct video_reg), 0);
     tmp->nb_update = nb_update;
     tmp->already_send = false;
+    tmp->timestamps = g_time3();
     tmp->rect.top = top;
     tmp->rect.left = left;
     tmp->rect.right = right;
@@ -462,10 +463,11 @@ void video_detection_add_update_order(struct xrdp_screen* self, struct list* upd
   int i;
   if (self->video_regs->count > 0)
   {
+    long cur_time = g_time3();
     for (i = 0; i < self->video_regs->count; i++)
     {
       struct video_reg* vr = (struct video_reg*) list_get_item(self->video_regs, i);
-      if (vr->already_send == false)
+      if (cur_time - vr->timestamps > self->client_info->video_display_box_time_delay && vr->already_send == false)
       {
         vr->already_send = true;
         up = g_malloc(sizeof(update), 1);

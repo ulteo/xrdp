@@ -132,6 +132,7 @@ struct xrdp_client_info
   int video_detection_updatetime;
   bool video_display_borders;
   int video_display_fps;
+  int video_display_box_time_delay;
   bool use_subtiling;
   bool use_progressive_display;
   int progressive_display_nb_level;
