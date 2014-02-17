@@ -571,60 +571,41 @@ session_start_fork(int width, int height, int bpp, char* username,
 
           if (!error)
           {
-            int scimpid = g_fork();
+            int scimpid;
+            struct list* scim_params = list_create();
+            scim_params->auto_free = 1;
+            list_add_item(scim_params, (long)g_strdup(SCIM_PATH SCIM_BIN));
+            list_add_item(scim_params, (long)g_strdup("-e xrdp"));
+            list_add_item(scim_params, 0);
 
-            if (scimpid == -1)
+            scimpid = g_launch_process(display, scim_params, 1);
+
+            list_delete(scim_params);
+
+            if (scimpid == 0) /* Error */
             {
               log_message(&(g_cfg->log), LOG_LEVEL_ERROR,"error : unable to fork for scim");
               /* no scim started, no env pushed */
-            }
-            else /* fork successfull */
-            {
-              if (scimpid == 0) /* child */
+            } else { /* fork successfull */
+              int panelpid;
+              struct list* panel_params = list_create();
+              panel_params->auto_free = 1;
+              list_add_item(panel_params, (long)g_strdup(SCIM_PANEL_BIN));
+              list_add_item(panel_params, 0);
+
+              panelpid = g_launch_process(display, panel_params, 1);
+
+              list_delete(panel_params);
+
+              if (panelpid == 0) /* Error */
               {
-                char *args[] =
-                { SCIM_BIN,
-                  "-e",
-                  "xrdp",
-                  NULL
-                };
-
-                log_message(&(g_cfg->log), LOG_LEVEL_INFO,"sesman[session_start_fork]: Starting scim");
-                g_execvp( SCIM_PATH SCIM_BIN, args);
-                log_message(&(g_cfg->log), LOG_LEVEL_ERROR,"error : scim returned");
-                g_exit(0);
-              }
-              else /* parent */
-              {
-                int panelpid = g_fork();
-
-                if (panelpid == -1)
-                {
-                  log_message(&(g_cfg->log), LOG_LEVEL_ERROR,"sesman[session_start_fork]: Unable to fork for scim-panel");
-                }
-                else /* fork successfull */
-                {
-                  if (panelpid == 0) /* child */
-                  {
-                    char *args[] =
-                    { SCIM_PANEL_BIN,
-                      NULL
-                    };
-
-                    log_message(&(g_cfg->log), LOG_LEVEL_INFO,"sesman[session_start_fork]: Starting scim-panel");
-                    g_execvp( SCIM_PATH SCIM_PANEL_BIN, args);
-                    log_message(&(g_cfg->log), LOG_LEVEL_ERROR,"sesman[session_start_fork]: Scim-panel returned");
-                    g_exit(0);
-                  }
-                  else /* parent */
-                  {
-                    /* Push scim env */
-                    g_setenv("XMODIFIERS", "@im=SCIM", 1);
-                    g_setenv("GTK_IM_MODULE", SCIM_BIN, 1);
-                    g_setenv("QT_IM_MODULE", SCIM_BIN, 1);
-                    log_message(&(g_cfg->log), LOG_LEVEL_INFO,"sesman[session_start_fork]: Scim env initialized");
-                  }
-                }
+                log_message(&(g_cfg->log), LOG_LEVEL_ERROR,"sesman[session_start_fork]: Unable to fork for scim-panel");
+              } else { /* fork successfull */
+                /* Push scim env */
+                g_setenv("XMODIFIERS", "@im=SCIM", 1);
+                g_setenv("GTK_IM_MODULE", SCIM_BIN, 1);
+                g_setenv("QT_IM_MODULE", SCIM_BIN, 1);
+                log_message(&(g_cfg->log), LOG_LEVEL_INFO,"sesman[session_start_fork]: Scim env initialized");
               }
             }
           }
