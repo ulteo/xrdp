@@ -1,7 +1,7 @@
 /**
- * Copyright (C) 2008 Ulteo SAS
+ * Copyright (C) 2008-2014 Ulteo SAS
  * http://www.ulteo.com
- * Author David LECHEVALIER <david@ulteo.com> 2010
+ * Author David LECHEVALIER <david@ulteo.com> 2010, 2014
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -627,6 +627,8 @@ share_symlink_purge()
 
 	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_rdpdr[share_symlink_purge]: "
 			"Purge symlink\n");
+
+	g_snprintf(path_preffix, sizeof(path_preffix), "%s/%s", home_dir, RDPDRIVE_NAME);
 
 	dir = opendir(home_dir);
 	if( dir == NULL)
