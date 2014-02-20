@@ -1192,6 +1192,10 @@ xrdp_wm_key(struct xrdp_wm* self, int device_flags, int scan_code)
       {
         self->mm->mod->mod_event(self->mm->mod, msg, ki->chr, ki->sym,
                                  scan_code, device_flags);
+
+        if(self->session->client_info->use_scim == 1 && msg == WM_KEYUP) {
+          usleep(5000);
+        }
       }
     }
   }
