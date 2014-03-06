@@ -478,7 +478,7 @@ chansrv_get_wait_objs(tbus* objs, int* count)
   int lcount;
   int i;
 
-  if ((!g_chansrv_up) || (objs == 0) || (count == 0))
+  if ((!g_chansrv_up) || (objs == 0))
   {
     return 0;
   }
