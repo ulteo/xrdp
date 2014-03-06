@@ -1,7 +1,8 @@
 /**
- * Copyright (C) 2010 Ulteo SAS
+ * Copyright (C) 2014 Ulteo SAS
  * http://www.ulteo.com
  * Author David Lechevalier <david@ulteo.com>
+ * Author Vincent Roullier <v.roullier@ulteo.com> 2014
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -59,6 +60,8 @@ typedef struct _vchannel
 
 	bool (*add_channel)(struct _vchannel*, char*, int, int);
 	int (*has_data)(struct _vchannel*, int);
+	int (*thread_launch)(struct _vchannel*);
+
 	int (*get_data)(struct _vchannel*, int, struct stream* s);
 	int (*send_data)(struct _vchannel*, unsigned char*, int, int, int, int);
 	int (*get_data_descriptor)(struct _vchannel*, tbus*, int*, tbus*, int*, int*);
@@ -80,6 +83,8 @@ chansrv_do_up(vchannel* v, char* chan_name);
 
 bool APP_CC
 chansrv_add(vchannel* v, char* channel_name, int channel_id, int chan_flags);
+void APP_CC
+chansrv_launch(vchannel* v);
 int APP_CC
 chansrv_deinit(void);
 int APP_CC

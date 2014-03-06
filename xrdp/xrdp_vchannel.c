@@ -1,7 +1,8 @@
 /**
- * Copyright (C) 2013 Ulteo SAS
+ * Copyright (C) 2014 Ulteo SAS
  * http://www.ulteo.com
  * Author David LECHEVALIER <david@ulteo.com> 2013
+ * Author Vincent Roullier <v.roullier@ulteo.com> 2014
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -111,6 +112,7 @@ xrdp_vchannel_setup(vchannel* vc)
   char chan_name[256];
   struct xrdp_session* session = (struct xrdp_session*)vc->session;
   struct list* channel_priority = session->client_info->channel_priority;
+  int channel_count = 0;
 
   if (channel_priority == NULL)
   {
@@ -128,8 +130,13 @@ xrdp_vchannel_setup(vchannel* vc)
     {
       list_add_item(channel_priority, (tbus)g_strdup(chan_name));
     }
+    channel_count++;
   }
 
+  if (channel_count > 0)
+  {
+    vc->thread_launch(vc);
+  }
   return true;
 }
 

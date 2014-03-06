@@ -1,7 +1,8 @@
 /**
- * Copyright (C) 2010-2012 Ulteo SAS
+ * Copyright (C) 2010-2014 Ulteo SAS
  * http://www.ulteo.com
  * Author David Lechevalier <david@ulteo.com> 2010, 2012
+ * Author Vincent Roullier <v.roullier@ulteo.com> 2014
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -613,6 +614,12 @@ channel_thread_loop(void* in_val)
   return rv;
 }
 
+void APP_CC
+chansrv_launch(vchannel* v)
+{
+  tc_thread_create(channel_thread_loop, v);
+}
+
 /*****************************************************************************/
 bool chansrv_init(vchannel* vc)
 {
@@ -621,7 +628,7 @@ bool chansrv_init(vchannel* vc)
   vc->get_data = chansrv_get_data;
   vc->send_data = chansrv_send_data;
   vc->get_data_descriptor = chansrv_get_data_descriptor;
-  vc->thread_handle = tc_thread_create(channel_thread_loop, vc);
+  vc->thread_launch = chansrv_launch;
 
   return true;
 }
