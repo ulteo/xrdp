@@ -283,6 +283,38 @@ int spawn_app(char *cmdline)
 }
 
 /*****************************************************************************/
+int sync_begin()
+{
+	int ret;
+	char* buffer = g_malloc(128, 1);
+
+	log_message(l_config, LOG_LEVEL_INFO, "XHook[sync_begin]: "
+		    "Starting windows synchronization");
+
+	g_sprintf(buffer, "SYNCBEGIN,%i,0x0\n", message_id);
+	ret = send_message(buffer, g_strlen(buffer));
+	g_free(buffer);
+
+	return ret;
+}
+
+/*****************************************************************************/
+int sync_end()
+{
+	int ret;
+	char* buffer = g_malloc(128, 1);
+
+	log_message(l_config, LOG_LEVEL_INFO, "XHook[sync_end]: "
+		    "Ending windows synchronization");
+
+	g_sprintf(buffer, "SYNCEND,%i,0x0\n", message_id);
+	ret = send_message(buffer, g_strlen(buffer));
+	g_free(buffer);
+
+	return ret;
+}
+
+/*****************************************************************************/
 void synchronize()
 {
 	char *buffer;
@@ -299,6 +331,8 @@ void synchronize()
 	int flags = 0;
 	int pid;
 	int state;
+
+	sync_begin();
 
 	for (i = 0; i < window_list.item_count; i++) {
 		witem = &window_list.list[i];
@@ -324,7 +358,7 @@ void synchronize()
 			} else {
 				log_message(l_config, LOG_LEVEL_ERROR, "XHook[synchronize]: "
 					    "No good window");
-				return;
+				goto end;
 			}
 		}
 
@@ -379,6 +413,9 @@ void synchronize()
 		send_title(witem->window_id, witem->name);
 		get_icon(witem->window_id);
 	}
+
+end:
+	sync_end();
 }
 
 /*****************************************************************************/
