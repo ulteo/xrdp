@@ -111,7 +111,8 @@ log_message(struct log_config* l_cfg, const unsigned int lvl, const char* msg, .
 		/* checking for truncated messages */
 		if (len > LOG_BUFFER_SIZE)
 		{
-			log_message(l_cfg, LOG_LEVEL_WARNING, "next message will be truncated");
+			log_message(l_cfg, LOG_LEVEL_WARNING, "next message will be truncated (%d/%d)", LOG_BUFFER_SIZE, len);
+			len = LOG_BUFFER_SIZE;
 		}
 
 		/* forcing the end of message string */
