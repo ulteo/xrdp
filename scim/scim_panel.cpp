@@ -150,33 +150,7 @@ static bool run_panel_agent(void) {
 	return (_panel_agent_thread != NULL);
 }
 
-static gpointer xrdp_scim_server_thread_func(gpointer data) {
-	int num;
-	char name[250];
-	char *p = getenv("DISPLAY");
-
-	/* socket name */
-	sscanf(p, ":%d", &num);
-	g_snprintf(name, 250, "/var/spool/xrdp/xrdp_scim_socket_72%d", num);
-
-	g_printf("Socket name : %s\n", name);
-
-	/* destroy file if it already exist */
-	unlink(name);
-
-	if ((listen_sock = g_create_unix_socket(name)) == 1) {
-		/* error creating socket */
-		fprintf(stderr, "Failed to create socket : %s\n", name);
-		return ((gpointer) NULL);
-	}
-
-	g_printf("Waiting for incomming connection\n");
-
-	if ((data_sock = g_tcp_accept(listen_sock)) == -1) {
-		fprintf(stderr, "Failed to accept\n");
-		return ((gpointer) NULL);
-	}
-
+static void server_process_loop(int data_sock) {
 	/* Initial values */
 	imeStateLast = imeState = 0;
 
@@ -191,13 +165,13 @@ static gpointer xrdp_scim_server_thread_func(gpointer data) {
 			if (status == -1) {
 				/* got an error */
 				fprintf(stderr, "Connection error\n");
-				break;
+				return;
 			}
 
 			if (status == 0) {
 				/* disconnection */
 				fprintf(stderr, "Disconnected\n");
-				break;
+				return;
 			}
 
 			/* Dirty hack Used to send an unicode symbol without a keypress */
@@ -214,15 +188,50 @@ static gpointer xrdp_scim_server_thread_func(gpointer data) {
 			if (status == -1) {
 				/* got an error */
 				fprintf(stderr, "Connection error\n");
-				break;
+				return;
 			}
 
 			if (status == 0) {
 				/* disconnection */
 				fprintf(stderr, "Disconnected\n");
-				break;
+				return;
 			}
 		}
+	}
+}
+
+static gpointer xrdp_scim_server_thread_func(gpointer data) {
+	int num;
+	char name[250];
+	char *p = getenv("DISPLAY");
+
+	/* socket name */
+	sscanf(p, ":%d", &num);
+	g_snprintf(name, 250, "/var/spool/xrdp/xrdp_scim_socket_72%d", num);
+
+	g_printf("Socket name : %s\n", name);
+
+	/* Listen loop */
+	while(true) {
+
+		/* destroy file if it already exist */
+		unlink(name);
+
+		if ((listen_sock = g_create_unix_socket(name)) == 1) {
+			/* error creating socket */
+			fprintf(stderr, "Failed to create socket : %s\n", name);
+			return ((gpointer) NULL);
+		}
+
+		g_printf("Waiting for incomming connection\n");
+
+		if ((data_sock = g_tcp_accept(listen_sock)) == -1) {
+			fprintf(stderr, "Failed to accept\n");
+			return ((gpointer) NULL);
+		}
+
+		/* Process loop */
+		server_process_loop(data_sock);
 	}
 
 	gdk_threads_enter();
