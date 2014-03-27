@@ -1357,8 +1357,10 @@ void *thread_Xvent_process(void *arg)
 			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
 				    "Window 0x%08lx mapped", w);
 			Window_get(window_list, w, witem);
-			if (! witem)
+			if (! witem) {
 				create_window(w);
+				check_window_state(witem);
+			}
 			break;
 
 		case DestroyNotify:
