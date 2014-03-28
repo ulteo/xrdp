@@ -15,9 +15,9 @@
 
    xrdp: A Remote Desktop Protocol server.
    Copyright (C) Jay Sorg 2004-2009
-   Copyright (C) 2011-2013 Ulteo SAS
+   Copyright (C) 2011-2014 Ulteo SAS
    http://www.ulteo.com
-   Author David LECHEVALIER <david@ulteo.com> 2011, 2012, 2013
+   Author David LECHEVALIER <david@ulteo.com> 2011, 2012, 2013, 2014
    Author James B. MacLean <macleajb@ednet.ns.ca> 2012
 
    main rdp process
@@ -338,6 +338,7 @@ xrdp_qos_loop(void* in_val)
   printf("=====> QOS Start\n");
 
   use_qos = session->client_info->use_qos;
+  session->trans = process->server_trans;
 
   while(process->cont)
   {
