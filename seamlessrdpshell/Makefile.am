@@ -1,8 +1,10 @@
-# Copyright (C) 2010, 2012 Ulteo SAS
+# Copyright (C) 2010, 2014 Ulteo SAS
 # http://www.ulteo.com
 # Author Samuel BOVEE <samuel@ulteo.com> 2010
 # Author David LECHEVALIER <david@ulteo.com> 2010
 # Author David PHAM-VAN <d.pham-van@ulteo.com> 2012
+# Author Alexandre CONFIANT-DELATOUR <a.confiant@ulteo.com> 2014
+# Author Vincent ROULLIER <v.roullier@ulteo.com> 2014
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -38,7 +40,7 @@ XHook_SOURCES = \
   xutils.c xutils.h
 
 XHook_LDADD = \
-  -lX11 -lpthread \
+  -lX11 \
   $(top_builddir)/vchannel/lib/libxrdp_vchannel.la \
   $(top_builddir)/common/libxrdp_common.la
 

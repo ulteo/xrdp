@@ -1,9 +1,11 @@
 /**
- * Copyright (C) 2008-2013 Ulteo SAS
+ * Copyright (C) 2008-2014 Ulteo SAS
  * http://www.ulteo.com
  * Author David LECHEVALIER <david@ulteo.com> 2009-2011
  * Author Thomas MOUTON <thomas@ulteo.com> 2010-2013
  * Author Guillaume DUPAS <guillaume@ulteo.com> 2011
+ * Author Alexandre CONFIANT-DELATOUR <a.confiant@ulteo.com> 2014
+ *
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,7 +30,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <pthread.h>
 #include <string.h>
 #include <errno.h>
 #include <sys/wait.h>
@@ -45,12 +46,12 @@ const char seamless_class[] = "InternalSeamlessClass";
 /* external function declaration */
 extern char **environ;
 
-static pthread_mutex_t mutex;
-static pthread_mutex_t send_mutex;
 static int message_id;
 static Display *display;
 static Window_list window_list;
 static int seamrdp_channel;
+static int x11_fd;
+static int exit_mainloop = 0;
 struct log_config *l_config;
 Window internal_window;
 
@@ -87,7 +88,6 @@ int IOerror_handler(Display * display)
 /*****************************************************************************/
 int send_message(char *data, int data_len)
 {
-	pthread_mutex_lock(&send_mutex);
 	struct stream *s;
 	make_stream(s);
 	init_stream(s, data_len + 1);
@@ -96,11 +96,9 @@ int send_message(char *data, int data_len)
 	if (vchannel_send(seamrdp_channel, s->data, data_len + 1) < 0) {
 		log_message(l_config, LOG_LEVEL_ERROR, "XHook[send_message]: "
 			    "Unable to send message");
-		pthread_mutex_unlock(&send_mutex);
 		return 1;
 	}
 	message_id++;
-	pthread_mutex_unlock(&send_mutex);
 	return 0;
 }
 
@@ -155,10 +153,8 @@ int send_title(Window wnd, const char* title)
 /*****************************************************************************/
 void handler(int sig)
 {
-	int pid, statut;
-	pid = waitpid(-1, &statut, 0);
-	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[handler]: "
-		    "A processus has ended");
+	exit_mainloop = 1;
+	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[handler]: " "Exit");
 	return;
 }
 
@@ -673,9 +669,7 @@ void process_message(char *buffer)
 		ev.xconfigure.width = atoi(token6);
 		ev.xconfigure.height = atoi(token7);
 
-		pthread_mutex_lock(&mutex);
 		process_move_action(&ev);
-		pthread_mutex_unlock(&mutex);
 		sprintf(buffer2, "ACK,%i,%s\n", message_id, token2);
 		send_message(buffer2, strlen(buffer2));
 		g_free(buffer2);
@@ -1314,7 +1308,7 @@ void check_window_name(Window_item *witem)
 }
 
 /*****************************************************************************/
-void *thread_Xvent_process(void *arg)
+void event_process()
 {
 	Window w;
 	Window root_windows;
@@ -1322,23 +1316,16 @@ void *thread_Xvent_process(void *arg)
 	Window lastActivatedWindow = None;
 
 	root_windows = DefaultRootWindow(display);
-	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
-		    "Windows root ID : 0x%08lx", root_windows);
 
-	XSelectInput(display, root_windows, SubstructureNotifyMask | PropertyChangeMask);
-	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
-		    "Begin the event loop ");
-
-	while (1) {
+	while (XPending(display)) {
 		XEvent ev;
 		XNextEvent(display, &ev);
-		pthread_mutex_lock(&mutex);
 
 		switch (ev.type) {
 
 		case ConfigureNotify:
 			w = ev.xconfigure.window;
-			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
+			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[event_process]: "
 				    "Window move : 0x%08lx x:%i y:%i w:%i h:%i", w, ev.xconfigure.x, ev.xconfigure.y, ev.xconfigure.width, ev.xconfigure.height);
 			move_window(w, ev.xconfigure.x, ev.xconfigure.y,
 				    ev.xconfigure.width, ev.xconfigure.height);
@@ -1346,7 +1333,7 @@ void *thread_Xvent_process(void *arg)
 
 		case ReparentNotify:
 			w = ev.xreparent.window;
-			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
+			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[event_process]: "
 				    "Window reparented : 0x%08lx parent:0x%08lx x:%d y:%d", w, ev.xreparent.parent, ev.xreparent.x, ev.xreparent.y);
 			if (is_splash_window(display, w))
 				create_window(ev.xreparent.parent);
@@ -1354,7 +1341,7 @@ void *thread_Xvent_process(void *arg)
 
 		case MapNotify:
 			w = ev.xmap.window;
-			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
+			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[event_process]: "
 				    "Window 0x%08lx mapped", w);
 			Window_get(window_list, w, witem);
 			if (! witem) {
@@ -1365,12 +1352,12 @@ void *thread_Xvent_process(void *arg)
 
 		case DestroyNotify:
 			w = ev.xdestroywindow.window;
-			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
+			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[event_process]: "
 				    "Destroy of the window: 0x%08lx", w);
 
 			Window_get(window_list, w, witem);
 			if (witem == 0) {
-				log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
+				log_message(l_config, LOG_LEVEL_DEBUG, "XHook[event_process]: "
 					    "Unknowed window\n");
 				break;
 			}
@@ -1381,13 +1368,13 @@ void *thread_Xvent_process(void *arg)
 
 		case UnmapNotify:
 			w = ev.xunmap.window;
-			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
+			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[event_process]: "
 				    "Unmap of the window: 0x%08lx", w);
 			//Window_dump(window_list);
 
 			Window_get(window_list, w, witem);
 			if (witem == 0) {
-				log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
+				log_message(l_config, LOG_LEVEL_DEBUG, "XHook[event_process]: "
 					    "Unknowed window\n");
 				break;
 			}
@@ -1395,7 +1382,7 @@ void *thread_Xvent_process(void *arg)
 			if (exists_window(display, witem->window_id)) {
 				check_window_state(witem);
 				if (witem->state == SEAMLESSRDP_MINIMIZED) {
-					log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
+					log_message(l_config, LOG_LEVEL_DEBUG, "XHook[event_process]: "
 						    "Window 0x%08lx is iconified\n", witem->window_id);
 					break;
 				}
@@ -1414,7 +1401,7 @@ void *thread_Xvent_process(void *arg)
 
 					Window_get(window_list, activeWindow, witem);
 					if (witem) {
-						log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
+						log_message(l_config, LOG_LEVEL_DEBUG, "XHook[event_process]: "
 							    "Window 0x%08lx gained the focus", activeWindow);
 						
 						lastFocusedSeamlessWindow = witem;
@@ -1439,88 +1426,59 @@ void *thread_Xvent_process(void *arg)
 			break;
 
 		default:
-			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
+			log_message(l_config, LOG_LEVEL_DEBUG, "XHook[event_process]: "
 				    "Event type [%i] ignored", ev.type);
 			break;
 
 		}
-		pthread_mutex_unlock(&mutex);
 	}
 
-	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[thread_Xvent_process]: "
+	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[event_process]: "
 		    "Closing display");
-	XCloseDisplay(display);
-	pthread_exit(0);
 }
 
-void process_connection() {
-	char *buffer = g_malloc(1024, 1);
+/*****************************************************************************/
+void vchannel_process()
+{
+	char *buffer;
 	struct stream *s = NULL;
 	int rv;
 	int length;
 	int total_length;
+	make_stream(s);
+	init_stream(s, 1600);
 
-	signal(SIGCHLD, handler);
-	sprintf(buffer, "HELLO,%i,0x%08x\n", 0, 0);
-	send_message(buffer, strlen(buffer));
-	g_free(buffer);
-	while (seamrdp_channel > 0) {
-		make_stream(s);
-		init_stream(s, 1600);
-
-		rv = vchannel_receive(seamrdp_channel, s->data, &length,
-				      &total_length);
-		if (rv == ERROR) {
-			log_message(l_config, LOG_LEVEL_ERROR, "XHook[thread_Xvent_process]: "
-				    "Closing the connexion to the channel server");
-			vchannel_close(seamrdp_channel);
-			pthread_exit((void *)1);
-		}
-		switch (rv) {
-		case ERROR:
-			log_message(l_config, LOG_LEVEL_ERROR, "XHook[thread_vchannel_process]: "
-				    "Invalid message");
-			break;
-		case STATUS_CONNECTED:
-			log_message(l_config, LOG_LEVEL_INFO, "XHook[thread_vchannel_process]: "
-				    "Status connected");
-			
-			buffer = g_malloc(1024, 1);
-			sprintf(buffer, "HELLO,%i,0x%08x\n", 0, SEAMLESS_HELLO_RECONNECT);
-			send_message(buffer, strlen(buffer));
-			g_free(buffer);
-			break;
-		case STATUS_DISCONNECTED:
-			log_message(l_config, LOG_LEVEL_INFO, "XHook[thread_vchannel_process]: "
-				    "Status disconnected");
-			vchannel_close(seamrdp_channel);
-			seamrdp_channel = 0;
-			break;
-		default:
-			s->data[length] = 0;
-			process_message(s->data);
-			break;
-		}
-		free_stream(s);
+	rv = vchannel_receive(seamrdp_channel, s->data, &length,
+			&total_length);
+	if (rv == ERROR) {
+		log_message(l_config, LOG_LEVEL_ERROR, "XHook[vchannel_process]: "
+				"Closing the connexion to the channel server");
+		vchannel_close(seamrdp_channel);
 	}
-}
+	switch (rv) {
+	case ERROR:
+		log_message(l_config, LOG_LEVEL_ERROR, "XHook[vchannel_process]: "
+				"Invalid message");
+		break;
+	case STATUS_CONNECTED:
+		log_message(l_config, LOG_LEVEL_INFO, "XHook[vchannel_process]: "
+				"Status connected");
 
-
-/*****************************************************************************/
-void *thread_vchannel_process(void *arg)
-{
-	while(1) {
-		process_connection();
-
-		sleep(2);
-		while(seamrdp_channel <= 0) {
-			seamrdp_channel = vchannel_try_open("seamrdp");
-			if(seamrdp_channel == ERROR) {
-				sleep(1);
-			}
-		}
+		buffer = g_malloc(1024, 1);
+		sprintf(buffer, "HELLO,%i,0x%08x\n", 0, SEAMLESS_HELLO_RECONNECT);
+		send_message(buffer, strlen(buffer));
+		g_free(buffer);
+		break;
+	case STATUS_DISCONNECTED:
+		log_message(l_config, LOG_LEVEL_INFO, "XHook[vchannel_process]: "
+				"Status disconnected");
+		break;
+	default:
+		s->data[length] = 0;
+		process_message(s->data);
+		break;
 	}
-	pthread_exit(0);
+	free_stream(s);
 }
 
 int init_internal_window()
@@ -1575,6 +1533,14 @@ int init_internal_window()
 	XFlush(display);
 
 	return 0;
+}
+
+void init_seamless_channel() {
+  char *buffer = g_malloc(1024, 1);
+
+  sprintf(buffer, "HELLO,%i,0x%08x\n", 0, 0);
+  send_message(buffer, strlen(buffer));
+  g_free(buffer);
 }
 
 int XHook_init()
@@ -1679,8 +1645,6 @@ int XHook_init()
 /*****************************************************************************/
 int main(int argc, char **argv, char **environ)
 {
-	pthread_t Xevent_thread, Vchannel_thread;
-	void *ret;
 	l_config = g_malloc(sizeof(struct log_config), 1);
 	if (XHook_init() != LOG_STARTUP_OK) {
 		g_printf("XHook[main]: Unable to init log system\n");
@@ -1694,8 +1658,6 @@ int main(int argc, char **argv, char **environ)
 	}
 
 	Window_list_init(window_list);
-	pthread_mutex_init(&mutex, NULL);
-	pthread_mutex_init(&send_mutex, NULL);
 	message_id = 0;
 	seamrdp_channel = vchannel_open("seamrdp");
 	if (seamrdp_channel == ERROR) {
@@ -1718,29 +1680,46 @@ int main(int argc, char **argv, char **environ)
 	}
 	XSetErrorHandler(error_handler);
 	XSetIOErrorHandler(IOerror_handler);
+	XSelectInput(display, DefaultRootWindow(display), SubstructureNotifyMask | PropertyChangeMask);
 
+	/* Set a signal handler to exit */
+	signal(SIGTERM, handler);
 	initializeXUtils(display);
 
 	init_internal_window();
+	init_seamless_channel();
 
-	if (pthread_create
-	    (&Xevent_thread, NULL, thread_Xvent_process, (void *)0) < 0) {
-		log_message(l_config, LOG_LEVEL_ERROR, "XHook[main]: "
-			    "Pthread_create error for thread : Xevent_thread");
-		g_free(l_config);
-		return 1;
-	}
-	if (pthread_create
-	    (&Vchannel_thread, NULL, thread_vchannel_process, (void *)0) < 0) {
-		log_message(l_config, LOG_LEVEL_ERROR, "XHook[main]: "
-			    "Pthread_create error for thread : Vchannel_thread");
-		g_free(l_config);
-		return 1;
-	}
+	x11_fd = ConnectionNumber(display);
 
-	(void)pthread_join(Xevent_thread, &ret);
-	(void)pthread_join(Vchannel_thread, &ret);
-	pthread_mutex_destroy(&mutex);
+	/* mainloop */
+	while(!exit_mainloop) {
+	  fd_set rfds;
+	  int max, ret;
+
+	  FD_ZERO(&rfds);
+	  FD_SET(seamrdp_channel, &rfds);
+	  FD_SET(x11_fd, &rfds);
+	  max = seamrdp_channel > x11_fd ? seamrdp_channel : x11_fd;
+
+	  ret = select(max + 1, &rfds, NULL, NULL, NULL);
+
+	  if (ret >= 0) {
+	    if (FD_ISSET(seamrdp_channel, &rfds)) {
+	      vchannel_process();
+	    }
+
+	    if (FD_ISSET(x11_fd, &rfds)) {
+	      event_process();
+	    }
+	  } else {
+	    log_message(l_config, LOG_LEVEL_DEBUG, "XHook[Mainloop]: Error !");
+	    exit_mainloop = 1;
+	  }
+	}
+	log_message(l_config, LOG_LEVEL_DEBUG, "XHook[Xvent_process]: "
+	    "Closing display");
+	XCloseDisplay(display);
+
 	xutils_delete_all_lists();
 	g_free(l_config);
 	return 0;
