@@ -44,22 +44,10 @@ uni_rdp_out_str(struct stream* s, char *string, int len)
 	{
 		if (iconv_h == (iconv_t) - 1)
 		{
-			size_t i = 1, o = 4;
 			if ((iconv_h = iconv_open(WINDOWS_CODEPAGE, DEFAULT_CODEPAGE)) == (iconv_t) - 1)
 			{
 				printf("rdp_out_unistr: iconv_open[%s -> %s] fail %p\n",
 						DEFAULT_CODEPAGE, WINDOWS_CODEPAGE, iconv_h);
-
-				g_iconv_works = 0;
-				uni_rdp_out_str(s, string, len);
-				return;
-			}
-			if (iconv(iconv_h, (ICONV_CONST char **) &pin, &i, &pout, &o) ==
-			    (size_t) - 1)
-			{
-				iconv_close(iconv_h);
-				iconv_h = (iconv_t) - 1;
-				printf("rdp_out_unistr: iconv(1) fail, errno %d %s\n", errno, strerror(errno));
 
 				g_iconv_works = 0;
 				uni_rdp_out_str(s, string, len);
@@ -73,7 +61,7 @@ uni_rdp_out_str(struct stream* s, char *string, int len)
 		{
 			iconv_close(iconv_h);
 			iconv_h = (iconv_t) - 1;
-			printf("rdp_out_unistr: iconv(2) fail, errno %d %s\n", errno, strerror(errno));
+			printf("rdp_out_unistr: iconv(1) fail, errno %d %s\n", errno, strerror(errno));
 
 			g_iconv_works = 0;
 			uni_rdp_out_str(s, string, len);

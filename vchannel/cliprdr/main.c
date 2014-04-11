@@ -347,8 +347,13 @@ int cliprdr_process_data_request_response(struct stream* s, int msg_flags, int s
 	{
 		g_free(clipboard_data);
 	}
-	clipboard_data = g_malloc(size, 1);
-	clipboard_size = uni_rdp_in_str(s, (char*)clipboard_data, size, size);
+
+	/* An UTF-16 String form RDP is always on 16bits. An UTF-8 string can be coded either
+	 * on 8, 16, 24 or 32 bits. So it can be AT MOST input size*2
+	 */
+
+	clipboard_data = g_malloc(size*2, 1);
+	clipboard_size = uni_rdp_in_str(s, (char*)clipboard_data, size*2, size);
 
 	// Remove NULL characters from clipboard data end, it is not a null terminated string
 	if (clipboard_data)
