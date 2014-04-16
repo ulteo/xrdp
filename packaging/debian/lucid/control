@@ -12,9 +12,8 @@ XS-Python-Version: >= 2.5
 
 Package: uxda-server
 Architecture: any
-Depends: ${shlibs:Depends}, ${python:Depends}, ulteo-ovd-vnc-server
+Depends: ${shlibs:Depends}, ${python:Depends}, ulteo-ovd-vnc-server, uxda-server-scim
 Recommends: xfonts-base, xfonts-encodings
-Suggests: uxda-server-scim
 Conflicts: xrdp
 Description: RDP server for Linux
  UXDA Server is a RDP server for Linux. It provides remote display of a desktop and
