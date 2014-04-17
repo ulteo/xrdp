@@ -293,5 +293,6 @@ AC_CONFIG_FILES([Makefile
                  userChannel/plugins/rdp/Makefile
                  xrdp/Makefile
                  scim/Makefile
+                 ukbrdr/Makefile
 ])
 AC_OUTPUT

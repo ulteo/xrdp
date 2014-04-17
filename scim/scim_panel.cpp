@@ -35,6 +35,8 @@
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
 #include <glib.h>
+#include <syslog.h>
+#include "proto.h"
 
 #define XRDP_SOCKET_TIMEOUT 100
 
@@ -53,6 +55,22 @@ extern "C" {
 	int g_file_close(int fd);
 }
 
+int log_message(const char* msg, ...) {
+	va_list ap;
+	char buffer[2048] = {0};
+	int len;
+
+	va_start(ap, msg);
+	len = vsnprintf(buffer, sizeof(buffer), msg, ap);
+	va_end(ap);
+
+	openlog("uxda-scim", LOG_PID|LOG_CONS, LOG_USER);
+	syslog(LOG_ERR, buffer);
+	closelog();
+
+	return 0;
+}
+
 using namespace scim;
 
 static PanelAgent *_panel_agent = 0;
@@ -62,11 +80,13 @@ static ConfigPointer _config;
 static int listen_sock, data_sock;
 static GThread *_xrdp_scim_server_thread = 0;
 static char imeState, imeStateLast;
+static int caretX, caretY = 0;
 
 static void slot_update_factory_info(const PanelFactoryInfo &info) { } 
 static void slot_show_help(const String &help) { }
 static void slot_show_factory_menu(const std::vector <PanelFactoryInfo> &factories) { }
-static void slot_update_spot_location(int x, int y) { }
+
+
 static void slot_update_preedit_string(const String &str, const AttributeList &attrs) { }
 static void slot_update_aux_string(const String &str, const AttributeList &attrs) { }
 static void slot_update_lookup_table(const LookupTable &table) { }
@@ -150,13 +170,27 @@ static bool run_panel_agent(void) {
 	return (_panel_agent_thread != NULL);
 }
 
-static void server_process_loop(int data_sock) {
+static void server_process_loop(int data_sock, char* vchannel_socket_name) {
 	/* Initial values */
 	imeStateLast = imeState = 0;
+	int vchannel_socket = 0;
+	int vchannel_client = 0;
+	int lastCaretX = 0;
+	int lastCaretY = 0;
+	caretX = 0;
+	caretY = 0;
+
+	unlink(vchannel_socket_name);
+
+	if ((vchannel_socket = g_create_unix_socket(vchannel_socket_name)) == 1) {
+		/* error creating socket */
+		log_message("Failed to create socket : %s\n", vchannel_socket_name);
+		return;
+	}
 
 	/* Server mainloop */
 	while (true) {
-		int status;
+		int status = 1;
 		unsigned int unicode;
 
 		if (g_tcp_can_recv(data_sock, XRDP_SOCKET_TIMEOUT)) {
@@ -180,22 +214,80 @@ static void server_process_loop(int data_sock) {
 
 		/* read ImeState spool */
 		if (imeState != imeStateLast) {
+			log_message("IME status change %i", imeState);
 
-			/* send it */
-			status = data_send(data_sock, &imeState, 1);
+			if (vchannel_client > 0) {
+				struct ukb_msg msg;
+
+				log_message("send IME status using new method");
+
+				msg.header.type = UKB_IME_STATUS;
+				msg.header.flags = 0;
+				msg.header.len = sizeof(msg.u.ime_status);
+				msg.u.ime_status.state = imeState;
+
+				status = data_send(vchannel_client, (char*)&msg, sizeof(msg.header) + msg.header.len);
+			}
+			else {
+				/* send it */
+				log_message("send IME status using old message");
+
+				status = data_send(data_sock, &imeState, 1);
+			}
+
 			imeStateLast = imeState;
+		}
 
-			if (status == -1) {
-				/* got an error */
-				fprintf(stderr, "Connection error\n");
-				return;
-			}
+		/* manage caret position */
+		if (lastCaretX != caretX || lastCaretY != caretY) {
+			lastCaretX = caretX;
+			lastCaretY = caretY;
 
-			if (status == 0) {
-				/* disconnection */
-				fprintf(stderr, "Disconnected\n");
-				return;
+			log_message("IME status change %i", imeState);
+
+			if (vchannel_client > 0) {
+				struct ukb_msg msg;
+
+				log_message("send Caret position using new method");
+
+				msg.header.type = UKB_CARET_POS;
+				msg.header.flags = 0;
+				msg.header.len = sizeof(msg.u.caret_pos);
+				msg.u.caret_pos.x = lastCaretX;
+				msg.u.caret_pos.y = lastCaretY;
+
+				status = data_send(vchannel_client, (char*)&msg, sizeof(msg.header) + msg.header.len);
 			}
+		}
+
+		if (status == -1) {
+			/* got an error */
+			log_message("Connection error");
+			fprintf(stderr, "Connection error\n");
+			return;
+		}
+
+		if (status == 0) {
+			/* disconnection */
+			log_message("Disconnected");
+			fprintf(stderr, "Disconnected\n");
+			return;
+		}
+
+		// Manage vchannel client
+		if (vchannel_client == 0 && g_tcp_can_recv(vchannel_socket, 0)) {
+			log_message("client is comming");
+			vchannel_client = g_tcp_accept(vchannel_socket);
+			if ( vchannel_client == -1) {
+				log_message("Failed to accept internal vchannel socket");
+				vchannel_client = 0;
+			}
+			log_message("new client %i", vchannel_client);
+		}
+
+		// Manage vchannel request
+		if (vchannel_client == 0 && g_tcp_can_recv(vchannel_client, 0)) {
+			log_message("New data");
 		}
 	}
 }
@@ -203,11 +295,13 @@ static void server_process_loop(int data_sock) {
 static gpointer xrdp_scim_server_thread_func(gpointer data) {
 	int num;
 	char name[250];
+	char vchannel_socket[250];
 	char *p = getenv("DISPLAY");
 
 	/* socket name */
 	sscanf(p, ":%d", &num);
 	g_snprintf(name, 250, "/var/spool/xrdp/xrdp_scim_socket_72%d", num);
+	g_snprintf(vchannel_socket, 250, "/var/spool/xrdp/%d/ukbrdr_internal", num);
 
 	g_printf("Socket name : %s\n", name);
 
@@ -223,7 +317,7 @@ static gpointer xrdp_scim_server_thread_func(gpointer data) {
 			return ((gpointer) NULL);
 		}
 
-		g_printf("Waiting for incomming connection\n");
+		log_message("Waiting for incomming connection\n");
 
 		if ((data_sock = g_tcp_accept(listen_sock)) == -1) {
 			fprintf(stderr, "Failed to accept\n");
@@ -231,7 +325,7 @@ static gpointer xrdp_scim_server_thread_func(gpointer data) {
 		}
 
 		/* Process loop */
-		server_process_loop(data_sock);
+		server_process_loop(data_sock, vchannel_socket);
 	}
 
 	gdk_threads_enter();
@@ -249,12 +343,21 @@ static bool run_xrdp_scim_server(void) {
 
 static void slot_turn_on(void) {
 	imeState = 1;
+	log_message("IME turn on");
 	fprintf(stderr, "IME enabled\n");
 }
 
 static void slot_turn_off(void) {
 	imeState = 0;
+	log_message("IME turn off");
 	fprintf(stderr, "IME disabled\n");
+}
+
+
+static void slot_update_spot_location(int x, int y) {
+	log_message("slot_update_spot_location %i %i", x, y);
+	caretX = x;
+	caretY = y;
 }
 
 static void slot_transaction_start(void) {

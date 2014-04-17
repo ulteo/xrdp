@@ -35,6 +35,7 @@ SUBDIRS = \
   python \
   logd \
   scim \
+  ukbrdr \
   seamlessrdpshell
 
 
