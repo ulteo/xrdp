@@ -30,6 +30,7 @@ class XrdpInstance : public IMEngineInstanceBase {
 
 	private:
 		XrdpFactory *m_factory;
+	    WideString  m_preedit_string;
 
 	public:
 		XrdpInstance(XrdpFactory *factory, const String &encoding, int id = -1);

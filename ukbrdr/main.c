@@ -37,6 +37,7 @@
 #include "ukbrdr.h"
 
 static int ukbrdr_channel;
+static int scim_client;
 struct log_config* l_config;
 static int running;
 
@@ -55,6 +56,32 @@ int ukbrdr_send(char* data, int len) {
 	}
 
 	return rv;
+}
+
+static int data_send(int socket, char* data, int len) {
+	int sent;
+
+	while (len > 0) {
+		sent = g_tcp_send(socket, data, len, 0);
+
+		if (sent == -1) {
+			if (g_tcp_last_error_would_block(socket)) {
+				/* not an error, must retry */
+				g_tcp_can_send(socket, 10);
+			} else {
+				/* error, stop */
+				return -1;
+			}
+		} else if (sent == 0) {
+			/* disconnection, stop */
+			return 0;
+		} else {
+			/* got data */
+			data += sent;
+			len -= sent;
+		}
+	}
+	return 1;
 }
 
 
@@ -107,19 +134,14 @@ int ukbrdr_send_caret_position(int x, int y) {
 }
 
 
-int ukbrdr_process_composition_message(struct ukb_msg* msg) {
-	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_ukbrdr[process_message]: "
-				"Process composition message");
-	return 0;
-}
-
-
 void ukbrdr_process_message(struct stream* packet, int length, int total_length) {
 	log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_ukbrdr[process_message]: "
 			"New message for ukbchannel");
 
 	struct stream* s;
 	struct ukb_msg* msg;
+	int str_size;
+	char* data;
 
 	if(length != total_length) {
 		log_message(l_config, LOG_LEVEL_DEBUG_PLUS, "vchannel_ukbrdr[ukbrdr_process_message]: "
@@ -153,13 +175,25 @@ void ukbrdr_process_message(struct stream* packet, int length, int total_length)
 		s = packet;
 	}
 
-	msg = (struct ukb_msg*)s->data;
+	msg = (struct ukb_msg*)s->p;
 
 	switch (msg->header.type) {
 	case UKB_PUSH_COMPOSITION:
+		str_size = msg->header.len * 2;
+		data = g_malloc(str_size, 1);
+
+		s->p = &msg->u.update_composition;
+		uni_rdp_in_str(s, data, str_size, msg->header.len);
+
 		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_ukbrdr[process_message]: "
-				"Client format list announce");
-		ukbrdr_process_composition_message(msg);
+								"Process composition message %s", data);
+
+		msg->header.len = strlen(data) + 1;
+
+		data_send(scim_client, (char*)msg, sizeof(msg->header));
+		data_send(scim_client, data, msg->header.len);
+
+		g_free(data);
 		break;
 
 	default:
@@ -205,30 +239,23 @@ static int data_recv(int socket, char* data, int len) {
 void *thread_scim_process (void * arg) {
 	char scim_socket[250];
 	int display_num = g_get_display_num_from_display(g_getenv("DISPLAY"));
-	int client;
 	int status;
 	int i;
-
-	log_message(l_config, LOG_LEVEL_ERROR, "vchannel_ukbrdr[thread_vchannel_process]: "
-								"POUET");
 
 	// Connect to scim panel
 	for (i = 0 ; i < 10 ; i++) {
 		g_snprintf(scim_socket, 250, "/var/spool/xrdp/%d/ukbrdr_internal", display_num);
-		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_ukbrdr[thread_vchannel_process]: pouet 0");
-		client = g_unix_connect(scim_socket);
-		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_ukbrdr[thread_vchannel_process]: pouet 1");
-		if (client > 0) {
-			log_message(l_config, LOG_LEVEL_ERROR, "vchannel_ukbrdr[thread_vchannel_process]: pouet 2");
+		scim_client = g_unix_connect(scim_socket);
+		if (scim_client > 0) {
 			break;
 		}
 
-		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_ukbrdr[thread_vchannel_process]: "
+		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_ukbrdr[thread_vchannel_process]: "
 							"Failed to connect to scim panel");
 		g_sleep(1000);
 	}
 
-	if (client <= 0) {
+	if (scim_client <= 0) {
 		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_ukbrdr[thread_vchannel_process]: "
 							"Failed to connect to scim panel");
 		pthread_exit (0);
@@ -237,18 +264,18 @@ void *thread_scim_process (void * arg) {
 	ukbrdr_send_init();
 
 	while (running) {
-		if (g_tcp_can_recv(client, 100)) {
+		if (g_tcp_can_recv(scim_client, 100)) {
 			struct ukb_msg msg;
 
-			status = data_recv(client, (char*)&msg, sizeof(msg.header));
+			status = data_recv(scim_client, (char*)&msg, sizeof(msg.header));
 
 			if (status > 0) {
 				switch(msg.header.type) {
 				case UKB_IME_STATUS:
-					log_message(l_config, LOG_LEVEL_ERROR, "vchannel_ukbrdr[thread_vchannel_process]: "
+					log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_ukbrdr[thread_vchannel_process]: "
 																"new IME status");
 
-					status = data_recv(client, (char*)&msg.u.ime_status, msg.header.len);
+					status = data_recv(scim_client, (char*)&msg.u.ime_status, msg.header.len);
 					if (status <= 0) {
 						break;
 					}
@@ -257,10 +284,10 @@ void *thread_scim_process (void * arg) {
 					break;
 
 				case UKB_CARET_POS:
-					log_message(l_config, LOG_LEVEL_ERROR, "vchannel_ukbrdr[thread_vchannel_process]: "
+					log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_ukbrdr[thread_vchannel_process]: "
 																"new CARET POSITION");
 
-					status = data_recv(client, (char*)&msg.u.ime_status, msg.header.len);
+					status = data_recv(scim_client, (char*)&msg.u.ime_status, msg.header.len);
 					if (status <= 0) {
 						break;
 					}
@@ -270,7 +297,7 @@ void *thread_scim_process (void * arg) {
 
 
 				default:
-					log_message(l_config, LOG_LEVEL_ERROR, "vchannel_ukbrdr[thread_vchannel_process]: "
+					log_message(l_config, LOG_LEVEL_WARNING, "vchannel_ukbrdr[thread_vchannel_process]: "
 																				"Unknown message type");
 					break;
 				}
@@ -278,7 +305,7 @@ void *thread_scim_process (void * arg) {
 
 			if (status == -1) {
 				/* got an error */
-				log_message(l_config, LOG_LEVEL_ERROR, "vchannel_ukbrdr[thread_vchannel_process]: "
+				log_message(l_config, LOG_LEVEL_WARNING, "vchannel_ukbrdr[thread_vchannel_process]: "
 											"Error while receiving data from scim panel");
 				running = 0;
 				continue;
@@ -286,7 +313,7 @@ void *thread_scim_process (void * arg) {
 
 			if (status == 0) {
 				/* disconnection */
-				log_message(l_config, LOG_LEVEL_ERROR, "vchannel_ukbrdr[thread_vchannel_process]: "
+				log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_ukbrdr[thread_vchannel_process]: "
 											"Scim panel is stopped");
 				running = 0;
 				continue;
@@ -347,8 +374,6 @@ void *thread_vchannel_process (void * arg) {
 				pthread_exit (0);
 			}
 
-			log_message(l_config, LOG_LEVEL_ERROR, "vchannel_ukbrdr[thread_vchannel_process]: "
-								"new message");
 			ukbrdr_process_message(s, length, total_length);
 			break;
 		}

@@ -55,7 +55,14 @@ extern "C" {
 	int g_file_close(int fd);
 }
 
-int log_message(const char* msg, ...) {
+#ifdef DEBUG
+  #define log_message(args...) log_message_internal(args);
+#else
+  #define log_message(args...)
+#endif
+
+
+int log_message_internal(const char* msg, ...) {
 	va_list ap;
 	char buffer[2048] = {0};
 	int len;
@@ -169,6 +176,37 @@ static bool run_panel_agent(void) {
 	}
 	return (_panel_agent_thread != NULL);
 }
+
+
+static int server_process_ime_message(int socket) {
+	char* preedit_string = NULL;
+	struct ukb_msg msg;
+	int status = 1;
+
+	if (socket == 0 || !g_tcp_can_recv(socket, 0))
+		goto failed;
+
+	status = data_recv(socket, (char*)&msg, sizeof(msg.header));
+	if (status <= 0) {
+		goto failed;
+	}
+
+	preedit_string = new char[msg.header.len];
+	status = data_recv(socket, preedit_string, msg.header.len);
+	if (status <= 0)
+		goto failed;
+
+	log_message("new preedit string %s", preedit_string);
+
+	_panel_agent->trigger_property(preedit_string);
+
+failed:
+	if (preedit_string != NULL)
+		delete[] preedit_string;
+
+	return status;
+}
+
 
 static void server_process_loop(int data_sock, char* vchannel_socket_name) {
 	/* Initial values */
@@ -285,10 +323,7 @@ static void server_process_loop(int data_sock, char* vchannel_socket_name) {
 			log_message("new client %i", vchannel_client);
 		}
 
-		// Manage vchannel request
-		if (vchannel_client == 0 && g_tcp_can_recv(vchannel_client, 0)) {
-			log_message("New data");
-		}
+		server_process_ime_message(vchannel_client);
 	}
 }
 
