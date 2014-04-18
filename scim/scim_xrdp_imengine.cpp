@@ -64,6 +64,12 @@ bool XrdpInstance::process_key_event(const KeyEvent& key) {
 
 void XrdpInstance::move_preedit_caret(unsigned int pos) { }
 void XrdpInstance::select_candidate(unsigned int item) {
+	if (item == 0) {
+		commit_string(m_preedit_string);
+		reset();
+		return;
+	}
+
 	WideString ret;
 	ret.push_back(item);
 	commit_string(ret);
@@ -96,12 +102,6 @@ void XrdpInstance::focus_out() {
 
 void XrdpInstance::trigger_property(const String &property) {
 	log_message("trigger property %s", property.c_str());
-
-	if (property.length() == 0) {
-		commit_string(m_preedit_string);
-		reset();
-		return;
-	}
 
 	m_preedit_string = utf8_mbstowcs(property);
 

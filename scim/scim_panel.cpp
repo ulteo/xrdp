@@ -191,14 +191,21 @@ static int server_process_ime_message(int socket) {
 		goto failed;
 	}
 
-	preedit_string = new char[msg.header.len];
-	status = data_recv(socket, preedit_string, msg.header.len);
-	if (status <= 0)
-		goto failed;
+	if (msg.header.type == UKB_PUSH_COMPOSITION) {
+		preedit_string = new char[msg.header.len];
+		status = data_recv(socket, preedit_string, msg.header.len);
+		if (status <= 0)
+			goto failed;
 
-	log_message("new preedit string %s", preedit_string);
+		log_message("new preedit string %s", preedit_string);
 
-	_panel_agent->trigger_property(preedit_string);
+		_panel_agent->trigger_property(preedit_string);
+	}
+
+	if (msg.header.type == UKB_STOP_COMPOSITION) {
+		log_message("new stop message");
+		_panel_agent->select_candidate(0);
+	}
 
 failed:
 	if (preedit_string != NULL)

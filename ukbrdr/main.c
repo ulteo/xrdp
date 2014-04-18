@@ -196,6 +196,12 @@ void ukbrdr_process_message(struct stream* packet, int length, int total_length)
 		g_free(data);
 		break;
 
+	case UKB_STOP_COMPOSITION:
+		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_ukbrdr[process_message]: "
+								"Process stop composition message");
+		data_send(scim_client, (char*)msg, sizeof(msg->header));
+		break;
+
 	default:
 		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_ukbrdr[process_message]: "
 				"Unknow message type : %i", msg->header.type);
@@ -272,13 +278,13 @@ void *thread_scim_process (void * arg) {
 			if (status > 0) {
 				switch(msg.header.type) {
 				case UKB_IME_STATUS:
-					log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_ukbrdr[thread_vchannel_process]: "
-																"new IME status");
-
 					status = data_recv(scim_client, (char*)&msg.u.ime_status, msg.header.len);
 					if (status <= 0) {
 						break;
 					}
+
+					log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_ukbrdr[thread_vchannel_process]: "
+																"new IME status %i", msg.u.ime_status);
 
 					ukbrdr_send((char*)&msg, sizeof(msg.header) + msg.header.len);
 					break;
