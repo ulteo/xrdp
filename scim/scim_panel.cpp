@@ -261,25 +261,8 @@ static void server_process_loop(int data_sock, char* vchannel_socket_name) {
 		if (imeState != imeStateLast) {
 			log_message("IME status change %i", imeState);
 
-			if (vchannel_client > 0) {
-				struct ukb_msg msg;
-
-				log_message("send IME status using new method");
-
-				msg.header.type = UKB_IME_STATUS;
-				msg.header.flags = 0;
-				msg.header.len = sizeof(msg.u.ime_status);
-				msg.u.ime_status.state = imeState;
-
-				status = data_send(vchannel_client, (char*)&msg, sizeof(msg.header) + msg.header.len);
-			}
-			else {
-				/* send it */
-				log_message("send IME status using old message");
-
-				status = data_send(data_sock, &imeState, 1);
-			}
-
+			/* send it */
+			status = data_send(data_sock, &imeState, 1);
 			imeStateLast = imeState;
 		}
 
