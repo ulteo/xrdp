@@ -1687,7 +1687,7 @@ g_remove_dirs(const char* dir_path)
 			continue;
 		}
 		g_sprintf(path, "%s/%s", dir_path, dir_entry->d_name);
-		if(dir_entry->d_type & DT_DIR)
+		if(g_directory_exist(path))
 		{
 			g_remove_dirs(path);
 		}

@@ -547,6 +547,16 @@ session_start_fork(int width, int height, int bpp, char* username,
         {
           int error = 0;
           char user_scim_files[256];
+          char scim_socket_buffer[512];
+
+          g_snprintf(scim_socket_buffer, sizeof(scim_socket_buffer), "local:%s/scim-socket", session_spool_dir);
+          g_setenv("SCIM_SOCKET_ADDRESS", scim_socket_buffer, 1);
+
+          g_snprintf(scim_socket_buffer, sizeof(scim_socket_buffer), "local:%s/scim-panel-socket", session_spool_dir);
+          g_setenv("SCIM_PANEL_SOCKET_ADDRESS", scim_socket_buffer, 1);
+
+          g_snprintf(scim_socket_buffer, sizeof(scim_socket_buffer), "local:%s/scim-helper-manager-socket", session_spool_dir);
+          g_setenv("SCIM_HELPER_MANAGER_SOCKET_ADDRESS", scim_socket_buffer, 1);
 
           /* Push config */
           g_snprintf(user_scim_files, sizeof(user_scim_files), "%s/.scim/", user_dir);
@@ -1088,6 +1098,7 @@ session_destroy(struct session_item* sess)
 	struct stat st;
 	int i = 0;
 	DIR *dir;
+	char session_spool_dir[256];
 
 	if (sess == NULL)
 	{
@@ -1145,6 +1156,13 @@ session_destroy(struct session_item* sess)
 	}
 	session_unmount_drive(sess);
 	session_clean_display(sess);
+	
+	g_snprintf(session_spool_dir, sizeof(session_spool_dir), "%s/%i", "/var/spool/xrdp", sess->display);
+	if (g_directory_exist(session_spool_dir))
+	{
+		g_remove_dirs(session_spool_dir);
+	}
+	
 	//g_free(dir);
 	return 0;
 }
