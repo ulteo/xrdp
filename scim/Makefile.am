@@ -41,6 +41,7 @@ xrdp_scim_panel_CXXFLAGS = @SCIMGTKUTILS_CFLAGS@
 xrdp_scim_panel_LDFLAGS = @SCIMGTKUTILS_LDFLAGS@
 
 xrdp_scim_panel_SOURCES = \
+  proto.h \
   scim_panel.cpp
 
 xrdp_scim_panel_LDADD = \

@@ -11,7 +11,9 @@ bin_PROGRAMS = \
   ukbrdr
 
 ukbrdr_SOURCES = \
-  main.c proto.h 
+  main.c \
+  proto.h \
+  ukbrdr.h
   
 
 ukbrdr_LDADD = \

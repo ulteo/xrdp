@@ -21,8 +21,6 @@
 #ifndef PROTO_H_
 #define PROTO_H_
 
-#include <common/arch.h>
-
 #ifndef _WIN32
 	#define PACK( __Declaration__ )  __Declaration__ __attribute__((__packed__))
 #else
@@ -30,12 +28,12 @@
 #endif
 
 
-typedef uint8  __u8;
-typedef uint16 __u16;
-typedef uint32 __u32;
+typedef unsigned char  __u8;
+typedef unsigned short __u16;
+typedef unsigned int   __u32;
 
 
-#define UKB_VERSION 1;
+#define UKB_VERSION 1
 
 enum message_type {
 	UKB_INIT = 0,
