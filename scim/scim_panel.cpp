@@ -32,6 +32,9 @@
 #define Uses_SCIM_PANEL_AGENT
 #include <scim.h>
 
+#include <stdio.h>
+#include <string.h>
+
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
 #include <glib.h>
@@ -54,6 +57,8 @@ extern "C" {
 	int g_tcp_accept(int sck);
 	int g_file_close(int fd);
 }
+
+#define DEBUG
 
 #ifdef DEBUG
   #define log_message(args...) log_message_internal(args);
@@ -84,16 +89,17 @@ static PanelAgent *_panel_agent = 0;
 static GThread *_panel_agent_thread = 0;
 static ConfigModule *_config_module = 0;
 static ConfigPointer _config;
-static int listen_sock, data_sock;
 static GThread *_xrdp_scim_server_thread = 0;
-static char imeState, imeStateLast;
-static int caretX, caretY = 0;
+static int imeState = 0;
+static int caretX = 0;
+static int caretY = 0;
 
 static void slot_update_factory_info(const PanelFactoryInfo &info) { } 
 static void slot_show_help(const String &help) { }
 static void slot_show_factory_menu(const std::vector <PanelFactoryInfo> &factories) { }
 
 
+static void slot_update_spot_location(int x, int y);
 static void slot_update_preedit_string(const String &str, const AttributeList &attrs) { }
 static void slot_update_aux_string(const String &str, const AttributeList &attrs) { }
 static void slot_update_lookup_table(const LookupTable &table) { }
@@ -157,6 +163,38 @@ static int data_send(int socket, char* data, int len) {
 	return 1;
 }
 
+static int ukbrdr_send_caret_position(int socket, int x, int y) {
+	if (socket > 0) {
+		struct ukb_msg msg;
+
+		msg.header.type = UKB_CARET_POS;
+		msg.header.flags = 0;
+		msg.header.len = sizeof(msg.u.caret_pos);
+		msg.u.caret_pos.x = x;
+		msg.u.caret_pos.y = y;
+
+		return data_send(socket, (char*)&msg, sizeof(msg.header) + msg.header.len);
+	}
+
+	return 1;
+};
+
+
+static int ukbrdr_send_ime_status(int socket, int status) {
+	if (socket > 0) {
+		struct ukb_msg msg;
+
+		msg.header.type = UKB_IME_STATUS;
+		msg.header.flags = 0;
+		msg.header.len = sizeof(msg.u.ime_status);
+		msg.u.ime_status.state = status;
+
+		return data_send(socket, (char*)&msg, sizeof(msg.header) + msg.header.len);
+	}
+
+	return 1;
+};
+
 static gpointer panel_agent_thread_func(gpointer data) {
 	if (!_panel_agent->run()) {
 		fprintf(stderr, "Failed to run Panel.\n");
@@ -176,7 +214,6 @@ static bool run_panel_agent(void) {
 	}
 	return (_panel_agent_thread != NULL);
 }
-
 
 static int server_process_ime_message(int socket) {
 	char* preedit_string = NULL;
@@ -214,150 +251,181 @@ failed:
 	return status;
 }
 
+static int server_process_client_message(int socket) {
+	int status;
+	struct ukb_msg msg;
 
-static void server_process_loop(int data_sock, char* vchannel_socket_name) {
-	/* Initial values */
-	imeStateLast = imeState = 0;
-	int vchannel_socket = 0;
-	int vchannel_client = 0;
-	int lastCaretX = 0;
-	int lastCaretY = 0;
-	caretX = 0;
-	caretY = 0;
-
-	unlink(vchannel_socket_name);
-
-	if ((vchannel_socket = g_create_unix_socket(vchannel_socket_name)) == 1) {
-		/* error creating socket */
-		log_message("Failed to create socket : %s\n", vchannel_socket_name);
-		return;
+	if (socket == 0 || !g_tcp_can_recv(socket, 0)) {
+		return 1;
 	}
 
+	log_message("Client message !!!!");
+
+	status = data_recv(socket, (char*)&msg, sizeof(msg.header));
+	if (status != 1) {
+		return status;
+	}
+
+	if (msg.header.type == UKB_CARET_POS) {
+		status = data_recv(socket, (char*) &msg.u.caret_pos, msg.header.len);
+		if (status != 1) {
+			return status;
+		}
+
+		log_message("New Caret position : %d, %d\n", msg.u.caret_pos.x, msg.u.caret_pos.y);
+		slot_update_spot_location(msg.u.caret_pos.x, msg.u.caret_pos.y);
+	}
+
+	return 1;
+}
+
+static void server_process_loop(int xrdp_client, int vchannel_socket, int extclient_socket) {
+	int vchannel_client;
+	int extclient_client;
+	int status = 1;
+	int lastCaretX = 0;
+	int lastCaretY = 0;
+	int lastImeState = 0;
+
+	/* Initial values */
+	imeState = 0;
+	caretX = caretY = 0;
+
 	/* Server mainloop */
-	while (true) {
-		int status = 1;
+	while (status == 1) {
 		unsigned int unicode;
 
-		if (g_tcp_can_recv(data_sock, XRDP_SOCKET_TIMEOUT)) {
-			status = data_recv(data_sock, (char*)(&unicode), sizeof(uint32));
-
-			if (status == -1) {
-				/* got an error */
-				fprintf(stderr, "Connection error\n");
-				return;
-			}
-
-			if (status == 0) {
-				/* disconnection */
-				fprintf(stderr, "Disconnected\n");
-				return;
-			}
+		if (g_tcp_can_recv(xrdp_client, XRDP_SOCKET_TIMEOUT)) {
+			status = data_recv(xrdp_client, (char*)(&unicode), sizeof(uint32));
+			if(status != 1) { break; }
 
 			/* Dirty hack Used to send an unicode symbol without a keypress */
 			_panel_agent->select_candidate(unicode);
 		}
 
 		/* read ImeState spool */
-		if (imeState != imeStateLast) {
-			struct ukb_msg msg;
+		if (imeState != lastImeState) {
+			char msg[] = {0, 1};
+			int status1, status2;
+
+			lastImeState = imeState;
 			log_message("IME status change %i", imeState);
 
-			msg.header.type = UKB_IME_STATUS;
-			msg.header.flags = 0;
-			msg.header.len = sizeof(msg.u.ime_status);
-			msg.u.ime_status.state = imeState;
-			status = data_send(vchannel_client, (char*)&msg, sizeof(msg.header) + msg.header.len);
-
 			/* send it */
-			status = data_send(data_sock, &imeState, 1);
-			imeStateLast = imeState;
+
+			status1 = data_send(xrdp_client, &(msg[imeState]) , 1);
+			status2 = ukbrdr_send_ime_status(vchannel_client, imeState);
+
+			status = (status1 == 1 ) ? status2 : status1;
+			if(status != 1) { break; }
 		}
 
 		/* manage caret position */
 		if (lastCaretX != caretX || lastCaretY != caretY) {
 			lastCaretX = caretX;
 			lastCaretY = caretY;
+			log_message("Caret position change : %d, %d", caretX, caretY);
 
-			log_message("IME status change %i", imeState);
+			status = ukbrdr_send_caret_position(vchannel_client, caretX, caretY);
 
-			if (vchannel_client > 0) {
-				struct ukb_msg msg;
-
-				log_message("send Caret position using new method");
-
-				msg.header.type = UKB_CARET_POS;
-				msg.header.flags = 0;
-				msg.header.len = sizeof(msg.u.caret_pos);
-				msg.u.caret_pos.x = lastCaretX;
-				msg.u.caret_pos.y = lastCaretY;
-
-				status = data_send(vchannel_client, (char*)&msg, sizeof(msg.header) + msg.header.len);
-			}
+			if(status != 1) { break; }
 		}
 
-		if (status == -1) {
-			/* got an error */
-			log_message("Connection error");
-			fprintf(stderr, "Connection error\n");
-			return;
-		}
+		/* manage ime messages (pre-edit string) */ 
+		status = server_process_ime_message(vchannel_client);
+		if(status != 1) { break; }
 
-		if (status == 0) {
-			/* disconnection */
-			log_message("Disconnected");
-			fprintf(stderr, "Disconnected\n");
-			return;
-		}
+		/* manage client messages (pre-edit string) */ 
+		status = server_process_client_message(extclient_client);
+		if(status != 1) { break; }
 
-		// Manage vchannel client
+		/* Manage vchannel client */
 		if (vchannel_client == 0 && g_tcp_can_recv(vchannel_socket, 0)) {
-			log_message("client is comming");
-			vchannel_client = g_tcp_accept(vchannel_socket);
-			if ( vchannel_client == -1) {
+			if ((vchannel_client = g_tcp_accept(vchannel_socket)) == -1) {
 				log_message("Failed to accept internal vchannel socket");
 				vchannel_client = 0;
 			}
-			log_message("new client %i", vchannel_client);
+			log_message("VChannel client %i", vchannel_client);
 		}
 
-		server_process_ime_message(vchannel_client);
+		/* Manage extclient client */
+		if (extclient_client == 0 && g_tcp_can_recv(extclient_socket, 0)) {
+			if ((extclient_client = g_tcp_accept(extclient_socket)) == -1) {
+				log_message("Failed to accept internal extClient socket");
+				extclient_client = 0;
+			}
+			log_message("ExtClient client %i", extclient_client);
+		}
 	}
+
+	if (status == -1) {
+		/* got an error */
+		fprintf(stderr, "Connection error\n");
+		return;
+	}
+
+	if (status == 0) {
+		/* disconnection */
+		fprintf(stderr, "Disconnected\n");
+		return;
+	}
+
 }
 
 static gpointer xrdp_scim_server_thread_func(gpointer data) {
 	int num;
-	char name[250];
-	char vchannel_socket[250];
 	char *p = getenv("DISPLAY");
+	char xrdp_socket_name[250];
+	char vchannel_socket_name[250];
+	char extclient_socket_name[250];
+	int xrdp_socket, xrdp_client;
+	int vchannel_socket;
+	int extclient_socket;
 
 	/* socket name */
 	sscanf(p, ":%d", &num);
-	g_snprintf(name, 250, "/var/spool/xrdp/xrdp_scim_socket_72%d", num);
-	g_snprintf(vchannel_socket, 250, "/var/spool/xrdp/%d/ukbrdr_internal", num);
-
-	g_printf("Socket name : %s\n", name);
+	g_snprintf(xrdp_socket_name, 250, "/var/spool/xrdp/xrdp_scim_socket_72%d", num);
+	g_snprintf(vchannel_socket_name, 250, "/var/spool/xrdp/%d/ukbrdr_internal", num);
+	g_snprintf(extclient_socket_name, 250, "/var/spool/xrdp/%d/ukbrdr_internal_client", num);
 
 	/* Listen loop */
 	while(true) {
 
 		/* destroy file if it already exist */
-		unlink(name);
+		unlink(xrdp_socket_name);
+		unlink(vchannel_socket_name);
+		unlink(extclient_socket_name);
 
-		if ((listen_sock = g_create_unix_socket(name)) == 1) {
+		/* XRDP Connection */
+		if ((xrdp_socket = g_create_unix_socket(xrdp_socket_name)) == 1) {
 			/* error creating socket */
-			fprintf(stderr, "Failed to create socket : %s\n", name);
+			fprintf(stderr, "Failed to create socket : %s\n", xrdp_socket_name);
+			return ((gpointer) NULL);
+		}
+
+		/* VChannel Connection */
+		if ((vchannel_socket = g_create_unix_socket(vchannel_socket_name)) == 1) {
+			/* error creating socket */
+			fprintf(stderr, "Failed to create socket : %s\n", vchannel_socket_name);
+			return ((gpointer) NULL);
+		}
+
+		/* Client Connection */
+		if ((extclient_socket = g_create_unix_socket(extclient_socket_name)) == 1) {
+			/* error creating socket */
+			fprintf(stderr, "Failed to create socket : %s\n", extclient_socket_name);
 			return ((gpointer) NULL);
 		}
 
 		log_message("Waiting for incomming connection\n");
 
-		if ((data_sock = g_tcp_accept(listen_sock)) == -1) {
+		if ((xrdp_client = g_tcp_accept(xrdp_socket)) == -1) {
 			fprintf(stderr, "Failed to accept\n");
 			return ((gpointer) NULL);
 		}
 
 		/* Process loop */
-		server_process_loop(data_sock, vchannel_socket);
+		server_process_loop(xrdp_client, vchannel_socket, extclient_socket);
 	}
 
 	gdk_threads_enter();
@@ -491,9 +559,6 @@ int main(int argc, char *argv []) {
 	// Exiting...
 	g_thread_join(_panel_agent_thread);
 	_config.reset();
-	g_file_close(data_sock);
-	g_file_close(listen_sock);
-
 	fprintf(stderr, "Successfully exited.\n");
 	return 0;
 }
