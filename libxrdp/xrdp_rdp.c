@@ -413,6 +413,7 @@ xrdp_rdp_create(struct xrdp_session* session, struct trans* trans)
   self->client_info.progressive_display_scale = 4;
   self->client_info.progressive_display_maxfps = 24;
   self->client_info.progressive_display_minfps = 5;
+  self->client_info.use_scim = false;
   self->client_info.use_subtiling = false;
   self->client_info.channels_bw_limit = xrdp_qos_create_bw_limit();
   self->client_info.order_packet_size = 0;
