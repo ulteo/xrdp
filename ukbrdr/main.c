@@ -242,7 +242,7 @@ static int data_recv(int socket, char* data, int len) {
 }
 
 
-void *thread_scim_process (void * arg) {
+void process_scim_connection () {
 	char scim_socket[250];
 	int display_num = g_get_display_num_from_display(g_getenv("DISPLAY"));
 	int status;
@@ -256,20 +256,18 @@ void *thread_scim_process (void * arg) {
 			break;
 		}
 
-		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_ukbrdr[thread_vchannel_process]: "
+		log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_ukbrdr[process_scim_connection]: "
 							"Failed to connect to scim panel");
 		g_sleep(1000);
 	}
 
 	if (scim_client <= 0) {
-		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_ukbrdr[thread_vchannel_process]: "
+		log_message(l_config, LOG_LEVEL_ERROR, "vchannel_ukbrdr[process_scim_connection]: "
 							"Failed to connect to scim panel");
 		pthread_exit (0);
 	}
 
-	ukbrdr_send_init();
-
-	while (running) {
+	while (ukbrdr_channel > 0) {
 		if (g_tcp_can_recv(scim_client, 100)) {
 			struct ukb_msg msg;
 
@@ -283,14 +281,14 @@ void *thread_scim_process (void * arg) {
 						break;
 					}
 
-					log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_ukbrdr[thread_vchannel_process]: "
+					log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_ukbrdr[process_scim_connection]: "
 																"new IME status %i", msg.u.ime_status);
 
 					ukbrdr_send((char*)&msg, sizeof(msg.header) + msg.header.len);
 					break;
 
 				case UKB_CARET_POS:
-					log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_ukbrdr[thread_vchannel_process]: "
+					log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_ukbrdr[process_scim_connection]: "
 																"new CARET POSITION");
 
 					status = data_recv(scim_client, (char*)&msg.u.ime_status, msg.header.len);
@@ -303,7 +301,7 @@ void *thread_scim_process (void * arg) {
 
 
 				default:
-					log_message(l_config, LOG_LEVEL_WARNING, "vchannel_ukbrdr[thread_vchannel_process]: "
+					log_message(l_config, LOG_LEVEL_WARNING, "vchannel_ukbrdr[process_scim_connection]: "
 																				"Unknown message type");
 					break;
 				}
@@ -311,7 +309,7 @@ void *thread_scim_process (void * arg) {
 
 			if (status == -1) {
 				/* got an error */
-				log_message(l_config, LOG_LEVEL_WARNING, "vchannel_ukbrdr[thread_vchannel_process]: "
+				log_message(l_config, LOG_LEVEL_WARNING, "vchannel_ukbrdr[process_scim_connection]: "
 											"Error while receiving data from scim panel");
 				running = 0;
 				continue;
@@ -319,7 +317,7 @@ void *thread_scim_process (void * arg) {
 
 			if (status == 0) {
 				/* disconnection */
-				log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_ukbrdr[thread_vchannel_process]: "
+				log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_ukbrdr[process_scim_connection]: "
 											"Scim panel is stopped");
 				running = 0;
 				continue;
@@ -328,56 +326,65 @@ void *thread_scim_process (void * arg) {
 
 		g_sleep(1000);
 	}
-
-//	ukbrdr_release();
-
-	pthread_exit (0);
 }
 
 
-void *thread_vchannel_process (void * arg) {
+void *thread_scim_process (void * arg) {
+	while(1) {
+		process_scim_connection();
+
+		sleep(2);
+		while(ukbrdr_channel <= 0) {
+			sleep(1);
+		}
+	}
+	pthread_exit(0);
+}
+
+
+void process_rdp_connection() {
 	struct stream* s = NULL;
 	int rv;
 	int length;
 	int total_length;
 
-	signal(SIGCHLD, handler);
-
-	while(running) {
+	while(ukbrdr_channel > 0) {
 		make_stream(s);
 		init_stream(s, 1600);
 
 		rv = vchannel_receive(ukbrdr_channel, s->data, &length, &total_length);
 		if (rv == ERROR) {
-			log_message(l_config, LOG_LEVEL_ERROR, "vchannel_ukbrdr[thread_vchannel_process]: "
+			log_message(l_config, LOG_LEVEL_ERROR, "vchannel_ukbrdr[process_rdp_connection]: "
 					"Invalid message");
 			vchannel_close(ukbrdr_channel);
-			pthread_exit ((void*)1);
+			free_stream(s);
+			return;
 		}
 
 		switch(rv)
 		{
 		case ERROR:
-			log_message(l_config, LOG_LEVEL_ERROR, "vchannel_ukbrdr[thread_vchannel_process]: "
+			log_message(l_config, LOG_LEVEL_ERROR, "vchannel_ukbrdr[process_rdp_connection]: "
 					"Invalid message");
 			break;
 
 		case STATUS_CONNECTED:
-			log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_ukbrdr[thread_vchannel_process]: "
+			log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_ukbrdr[process_rdp_connection]: "
 					"Status connected");
+			ukbrdr_send_init();
 			break;
 
 		case STATUS_DISCONNECTED:
-			log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_ukbrdr[thread_vchannel_process]: "
+			log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_ukbrdr[process_rdp_connection]: "
 					"Status disconnected");
-			running = 0;
-
+			vchannel_close(ukbrdr_channel);
+			ukbrdr_channel = 0;
 			break;
 
 		default:
 			if (length == 0) {
 				running = false;
-				pthread_exit (0);
+				break;
 			}
 
 			ukbrdr_process_message(s, length, total_length);
@@ -385,7 +392,21 @@ void *thread_vchannel_process (void * arg) {
 		}
 		free_stream(s);
 	}
-	pthread_exit (0);
+}
+
+void *thread_vchannel_process(void *arg) {
+	while(1) {
+		process_rdp_connection();
+
+		sleep(2);
+		while(ukbrdr_channel <= 0) {
+			ukbrdr_channel = vchannel_try_open("ukbrdr");
+			if(ukbrdr_channel == ERROR) {
+				sleep(1);
+			}
+		}
+	}
+	pthread_exit(0);
 }
 
 
@@ -461,6 +482,8 @@ int main(int argc, char** argv, char** environ) {
 	pthread_t Scim_thread, Vchannel_thread;
 	void *ret;
 	l_config = g_malloc(sizeof(struct log_config), 1);
+
+	signal(SIGCHLD, handler);
 
 	if (ukbrdr_init() != LOG_STARTUP_OK) {
 		g_printf("ukbrdr[main]: Unable to init log system\n");
