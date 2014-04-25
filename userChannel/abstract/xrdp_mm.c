@@ -396,7 +396,6 @@ xrdp_mm_scim_data_in(struct trans* trans)
   }
   state = (s->p)[0];
   self->wm->compose = state;
-  libxrdp_send_ime_status(self->wm->session, state);
   return 0;
 }
 
@@ -826,7 +825,6 @@ xrdp_mm_check_wait_objs(struct xrdp_mm* self)
         g_writeln("xrdp_mm_check_wait_objs: scim-panel connection OK");
         self->scim_trans_up = 1;
         self->wm->compose=false;
-        libxrdp_send_ime_status(self->wm->session, self->wm->compose);
       }
       else
       {

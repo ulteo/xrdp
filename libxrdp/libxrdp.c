@@ -948,28 +948,6 @@ libxrdp_update_frame_rate(struct xrdp_session* self, unsigned long data_sended)
 }
 
 /*****************************************************************************/
-int EXPORT_CC
-libxrdp_send_ime_status(struct xrdp_session* session, int status)
-{
-  struct stream* s;
-  unsigned int state = 0;
-
-  DEBUG(("libxrdp_send_ime_status sending input method status"));
-  make_stream(s);
-  init_stream(s, 8192);
-  xrdp_rdp_init_data((struct xrdp_rdp*)session->rdp, s);
-  out_uint16_le(s, 0);               /* UnitId : always 0 */
-  out_uint32_le(s, IME_STATE_OPEN ); /* ImeOpen : Open or close state of IME */
-  state |= status ? IME_CMODE_NATIVE : 0;
-  out_uint32_le(s, state);           /* ImeConvMode : see flags IME_CMODE_* */
-  s_mark_end(s);
-  xrdp_rdp_spool_data((struct xrdp_rdp*)session->rdp, s, RDP_DATA_PDU_SET_IME_STATUS);
-  free_stream(s);
-  return 0;
-}
-
-
-/*****************************************************************************/
 bool DEFAULT_CC
 libxrdp_can_send_to_channel(bw_limit_list* channels_limitation, char* chan_name, unsigned int bandwidth, unsigned int data_len)
 {

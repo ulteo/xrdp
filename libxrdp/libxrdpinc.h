@@ -324,9 +324,6 @@ libxrdp_send_ts_frame_end(struct xrdp_session* session);
 int DEFAULT_CC
 libxrdp_emt_loop(struct xrdp_session* session);
 
-int DEFAULT_CC
-libxrdp_send_ime_status(struct xrdp_session* session, int status);
-
 bool DEFAULT_CC
 libxrdp_emt_start_check(struct xrdp_session* session);
 

@@ -259,7 +259,14 @@ static void server_process_loop(int data_sock, char* vchannel_socket_name) {
 
 		/* read ImeState spool */
 		if (imeState != imeStateLast) {
+			struct ukb_msg msg;
 			log_message("IME status change %i", imeState);
+
+			msg.header.type = UKB_IME_STATUS;
+			msg.header.flags = 0;
+			msg.header.len = sizeof(msg.u.ime_status);
+			msg.u.ime_status.state = imeState;
+			status = data_send(vchannel_client, (char*)&msg, sizeof(msg.header) + msg.header.len);
 
 			/* send it */
 			status = data_send(data_sock, &imeState, 1);
