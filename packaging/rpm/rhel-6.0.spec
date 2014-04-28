@@ -352,5 +352,7 @@ UXDA-Scim provides unicode input support for UXDA using Scim
 /usr/share/scim/*
 /usr/lib*/scim-1.0/*
 %config /etc/xrdp/scim/*
+%config /etc/xrdp/ukbrdr.conf
 /usr/bin/xrdp-scim-panel
+/usr/bin/ukbrdr
 %endif
