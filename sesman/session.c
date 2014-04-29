@@ -585,7 +585,8 @@ session_start_fork(int width, int height, int bpp, char* username,
             struct list* scim_params = list_create();
             scim_params->auto_free = 1;
             list_add_item(scim_params, (long)g_strdup(SCIM_PATH SCIM_BIN));
-            list_add_item(scim_params, (long)g_strdup("-e xrdp"));
+            list_add_item(scim_params, (long)g_strdup("-e"));
+            list_add_item(scim_params, (long)g_strdup("xrdp"));
             list_add_item(scim_params, 0);
 
             scimpid = g_launch_process(display, scim_params, 1);
