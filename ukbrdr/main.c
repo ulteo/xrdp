@@ -324,7 +324,7 @@ void process_scim_connection () {
 			}
 		}
 
-		g_sleep(1000);
+		g_sleep(100);
 	}
 }
 
