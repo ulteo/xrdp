@@ -44,6 +44,8 @@ static int running;
 static int is_fragmented_packet = 0;
 static int fragment_size;
 static struct stream* splitted_packet;
+static int lastCaretX = 0;
+static int lastCaretY = 0;
 
 
 int ukbrdr_send(char* data, int len) {
@@ -297,6 +299,8 @@ void process_scim_connection () {
 					}
 
 					ukbrdr_send((char*)&msg, sizeof(msg.header) + msg.header.len);
+					lastCaretX = msg.u.caret_pos.x;
+					lastCaretY = msg.u.caret_pos.y;
 					break;
 
 
@@ -372,6 +376,8 @@ void process_rdp_connection() {
 			log_message(l_config, LOG_LEVEL_DEBUG, "vchannel_ukbrdr[process_rdp_connection]: "
 					"Status connected");
 			ukbrdr_send_init();
+			ukbrdr_send_caret_position(lastCaretX, lastCaretY);
+
 			break;
 
 		case STATUS_DISCONNECTED:
