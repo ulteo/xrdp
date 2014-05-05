@@ -237,6 +237,7 @@ static int server_process_ime_message(int socket) {
 		log_message("new preedit string %s", preedit_string);
 
 		_panel_agent->trigger_property(preedit_string);
+		_panel_agent->move_preedit_caret(0);
 	}
 
 	if (msg.header.type == UKB_STOP_COMPOSITION) {

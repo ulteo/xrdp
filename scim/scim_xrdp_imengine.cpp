@@ -62,7 +62,10 @@ bool XrdpInstance::process_key_event(const KeyEvent& key) {
 	return false; /* X handled */
 }
 
-void XrdpInstance::move_preedit_caret(unsigned int pos) { }
+void XrdpInstance::move_preedit_caret(unsigned int pos) {
+	this->update_preedit_caret(pos);
+}
+
 void XrdpInstance::select_candidate(unsigned int item) {
 	if (item == 0) {
 		commit_string(m_preedit_string);
