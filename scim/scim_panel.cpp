@@ -77,7 +77,7 @@ int log_message_internal(const char* msg, ...) {
 	va_end(ap);
 
 	openlog("uxda-scim", LOG_PID|LOG_CONS, LOG_USER);
-	syslog(LOG_ERR, buffer);
+	syslog(LOG_ERR, "%s", buffer);
 	closelog();
 
 	return 0;
