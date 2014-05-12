@@ -1,3 +1,4 @@
+if SCIM_ENABLED
 
 AM_CFLAGS = \
   -DXRDP_CFG_PATH=\"${sysconfdir}/xrdp\" \
@@ -29,3 +30,4 @@ ukbrdrsysconf_DATA = \
 EXTRA_DIST = \
   $(ukbrdrsysconf_DATA)
 
+endif # SCIM_ENABLED
