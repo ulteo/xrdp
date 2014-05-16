@@ -29,6 +29,11 @@
 
 extern struct log_config *l_config;
 
+#ifndef _CUPS_API_1_6
+	#define ippGetStatusCode(response) response->request.status.status_code
+	#define ippGetString(attr, num, lang) attr->values[num].string.text
+	#define ippGetCount(attr) attr->num_values
+#endif
 
 /************************************************************************/
 static const char *
@@ -138,7 +143,7 @@ printer_add_printer(http_t* http, char* lp_name)
 				" %s", cupsLastErrorString());
 		return 1;
 	}
-	else if (response->request.status.status_code > IPP_OK_CONFLICT)
+	else if (ippGetStatusCode(response) > IPP_OK_CONFLICT)
 	{
 		log_message(l_config, LOG_LEVEL_WARNING, "printerd[printer_add_printer]: "
 				" %s", cupsLastErrorString());
@@ -178,7 +183,7 @@ printer_get_printer_list(http_t* http)
 				"%s", cupsLastErrorString());
 		goto fail;
 	}
-	else if (response->request.status.status_code > IPP_OK_CONFLICT)
+	else if (ippGetStatusCode(response) > IPP_OK_CONFLICT)
 	{
 		log_message(l_config, LOG_LEVEL_WARNING, "printerd[printer_get_printer_list]: "
 				"%s", cupsLastErrorString());
@@ -186,21 +191,14 @@ printer_get_printer_list(http_t* http)
 	}
 	printers = list_create();
 
-	for (attr = response->attrs; attr != NULL; attr = attr->next) {
-		if (attr->name == NULL)
-		{
-			continue;
-		}
+	attr = ippFindAttribute(response, "printer-name", IPP_TAG_NAME);
+	if (attr != NULL) {
+		printer_name = ippGetString(attr, 0, NULL);
+	}
 
-		if (g_strcmp(attr->name, "printer-name") == 0)
-		{
-			printer_name = attr->values[0].string.text;
-		}
-
-		if ((g_strcmp(attr->name, "device-uri") == 0) && (g_strcmp(attr->values[0].string.text, DEVICE_URI) == 0))
-		{
+	attr = ippFindAttribute(response, "device-uri", IPP_TAG_NAME);
+	if (attr != NULL && (g_strcmp(ippGetString(attr, 0, NULL), DEVICE_URI) == 0)) {
 			list_add_item(printers, (long)g_strdup(printer_name));
-		}
 	}
 
 	ippDelete(response);
@@ -234,7 +232,7 @@ printer_del_printer(http_t* http, char* lp_name)
 				" %s", cupsLastErrorString());
 		return 1;
 	}
-	else if (response->request.status.status_code > IPP_OK_CONFLICT)
+	else if (ippGetStatusCode(response) > IPP_OK_CONFLICT)
 	{
 		log_message(l_config, LOG_LEVEL_WARNING, "printerd[printer_del_printer]: "
 				" %s", cupsLastErrorString());
@@ -464,19 +462,19 @@ printer_get_restricted_user_list(http_t* http, char* printer_name)
 		goto failed;
 	}
 	attr = ippFindAttribute(response, "requesting-user-name-allowed", IPP_TAG_NAME);
-	if (attr == 0 || attr->num_values == 0)
+	if (attr == 0 || ippGetCount(attr) == 0)
 	{
 		goto failed;
 	}
 	user_list = list_create();
 	user_list->auto_free = 1;
 
-	for(i=0 ; i < attr->num_values ; i++)
+	for(i=0 ; i < ippGetCount(attr) ; i++)
 	{
 
-		if (g_strlen(attr->values[i].string.text) > 0)
+		if (g_strlen(ippGetString(attr, i, NULL)) > 0)
 		{
-			list_add_item(user_list, (long)g_strdup(attr->values[i].string.text));
+			list_add_item(user_list, (long)g_strdup(ippGetString(attr, i, NULL)));
 		}
 	}
 
