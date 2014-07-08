@@ -370,6 +370,16 @@ xrdp_rdp_read_config(struct xrdp_client_info* client_info)
     }
 
   }
+
+#ifndef SCIM_ENABLED
+  if (client_info->use_scim) {
+    client_info->use_scim = false;
+    printf("scim is activated but support is not included on the server\n");
+  }
+
+#endif
+
+
   list_delete(items);
   list_delete(values);
 

@@ -545,6 +545,7 @@ session_start_fork(int width, int height, int bpp, char* username,
 
         if (use_scim)
         {
+#ifdef SCIM_ENABLED
           int error = 0;
           char user_scim_files[256];
           char scim_socket_buffer[512];
@@ -624,6 +625,9 @@ session_start_fork(int width, int height, int bpp, char* username,
           {
             log_message(&(g_cfg->log), LOG_LEVEL_ERROR,"error : unable to initialize scim.");
           }
+#else
+          log_message(&(g_cfg->log), LOG_LEVEL_ERROR, "sesman[session_start_fork]: scim support not included on the server");
+#endif
         }
 
         auth_set_env(data);
