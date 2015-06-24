@@ -1,11 +1,8 @@
 #!/usr/bin/make -f
 
-ifneq ("$(wildcard /usr/bin/pycentral)","")
-	DEB_PYTHON_SYSTEM := pycentral
-	DEB_PYTHON_COMPILE_VERSION = 2.6
-else
-	DEB_PYTHON2_MODULE_PACKAGES = uxda-server-python
-endif
+DEB_PYTHON_SYSTEM := pycentral
+DEB_PYTHON_COMPILE_VERSION = 2.7
+DEB_PYTHON_MODULE_PACKAGES = uxda-server-python
 
 include /usr/share/cdbs/1/class/autotools.mk
 include /usr/share/cdbs/1/rules/debhelper.mk
