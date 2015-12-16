@@ -11,7 +11,7 @@ INCLUDES = \
   
 AM_LDFLAGS = \
   `xml2-config --libs` \
-  `cups-config --libs`
+  `cups-config --libs` -lz
 
 
 sbin_PROGRAMS = \

@@ -23,10 +23,10 @@
 AM_CFLAGS = \
   -DXRDP_CFG_PATH=\"${sysconfdir}/xrdp\" \
   -Wall -O2 -D_REENTRANT -DIMAGE_MAGICK_SUPPORT \
-  `Wand-config --cflags`
+  `pkg-config MagickWand --cflags`
 
 AM_LDFLAGS = \
-  $(filter-out -lglib-2.0, $(shell Wand-config --ldflags --libs))
+  $(filter-out -lglib-2.0, $(shell pkg-config MagickWand --libs))
 
 INCLUDES = \
   -I$(top_srcdir)/common \
