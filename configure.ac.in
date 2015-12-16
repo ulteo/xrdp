@@ -108,11 +108,11 @@ CPPFLAGS="-D_FILE_OFFSET_BITS=64"
 AC_CHECK_HEADER([fuse.h], [], [AC_MSG_ERROR([Please install libfuse-dev])])
 
 # Check for ImageMagick headers
-if which Wand-config >/dev/null; then
-    CFLAGS=$(Wand-config --cflags)
+if pkg-config MagickWand >/dev/null; then
+    CFLAGS=$(pkg-config MagickWand --cflags)
     AC_CHECK_HEADER([wand/MagickWand.h], [], [AC_MSG_ERROR([Please install libmagickwand-dev])])
 else
-    AC_MSG_ERROR([Do not found MagickWand-config tool])
+    AC_MSG_ERROR([Do not found MagickWand pkg-config module])
 fi
 
 # iconv library
