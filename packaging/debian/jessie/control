@@ -5,7 +5,7 @@ Maintainer: David PHAM-VAN <d.pham-van@ulteo.com>
 Build-Depends: debhelper (>= 6), cdbs, quilt,
  python (>= 2.6), dh-python,
  libxml2-dev, libx11-dev, libxfixes-dev, libssl-dev, libpam0g-dev,
- libpulse-dev, libcups2-dev, libltdl-dev, libfuse-dev, libjpeg8-dev,
+ libpulse-dev, libcups2-dev, libltdl-dev, libfuse-dev, libjpeg-dev,
  libmagickwand-dev, libscim-dev, libcurl-dev | libcurl4-openssl-dev
 Standards-Version: 3.8.3
 X-Python-Version: >= 2.5
