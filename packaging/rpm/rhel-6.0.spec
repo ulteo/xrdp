@@ -116,6 +116,7 @@ rm -rf %{buildroot}
 /usr/lib*/%{name}/lib_uc_proxy.so*
 /usr/lib*/%{name}/lib_uc_advance.so*
 /usr/lib*/*.so*
+%exclude /usr/lib*/python*
 /usr/sbin/xrdp*
 /usr/share/xrdp/*
 /usr/bin/xrdp-disconnect
